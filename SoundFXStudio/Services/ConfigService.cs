@@ -87,6 +87,8 @@ public class ConfigService
 
     public string GetImagesFolder() => Path.Combine(GetAppFolder(), "Images");
 
+    public bool HasSavedConfig() => File.Exists(_configPath);
+
     private static AppConfig CreateDefaultConfig()
     {
         var config = new AppConfig();

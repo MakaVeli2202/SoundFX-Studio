@@ -318,6 +318,10 @@
 
                                 <TextBlock Text="Storage" FontSize="18" FontWeight="Bold" Margin="0,12,0,8" />
                                 <TextBlock Text="Config, sounds, and images are stored under the app data folder managed by ConfigService." TextWrapping="Wrap" Opacity="0.78" />
+                                <Button Content="Open Audio Setup Wizard"
+                                        Width="200"
+                                        Margin="0,14,0,0"
+                                        Command="{Binding OpenSetupWizardCommand}" />
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>

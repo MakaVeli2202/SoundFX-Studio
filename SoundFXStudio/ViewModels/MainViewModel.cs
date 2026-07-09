@@ -2,6 +2,7 @@ using Microsoft.Win32;
 using SoundFXStudio.Infrastructure;
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
+using SoundFXStudio.Views.Dialogs;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -68,6 +69,7 @@ public sealed class MainViewModel : ObservableObject
         SaveCommand = new RelayCommand(_ => Save());
         RefreshCommand = new RelayCommand(_ => Refresh());
         AutoConfigureAudioCommand = new RelayCommand(_ => AutoConfigureAudio());
+        OpenSetupWizardCommand = new RelayCommand(_ => OpenSetupWizard());
         CreateProfileCommand = new RelayCommand(_ => CreateProfile());
         DeleteProfileCommand = new RelayCommand(_ => DeleteSelectedProfile(), _ => SelectedProfile is not null && Profiles.Count > 1);
         SetGlobalHotkeyCommand = new RelayCommand(_ => SetSelectedSoundHotkey());
@@ -144,6 +146,8 @@ public sealed class MainViewModel : ObservableObject
     public ICommand RefreshCommand { get; }
 
     public ICommand AutoConfigureAudioCommand { get; }
+
+    public ICommand OpenSetupWizardCommand { get; }
 
     public ICommand CreateProfileCommand { get; }
 
@@ -1270,6 +1274,17 @@ public sealed class MainViewModel : ObservableObject
     {
         Load();
         RegisterGlobalHotkeys();
+    }
+
+    private void OpenSetupWizard()
+    {
+        var wizard = new SetupWizardWindow
+        {
+            Owner = _window
+        };
+
+        wizard.ShowDialog();
+        Refresh();
     }
 
     private void AutoConfigureAudio()

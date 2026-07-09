@@ -1,0 +1,95 @@
+<Window x:Class="SoundFXStudio.Views.Dialogs.SetupWizardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Audio Setup Wizard"
+        Width="920"
+        Height="620"
+        WindowStartupLocation="CenterScreen"
+        Background="#050505"
+        ResizeMode="NoResize">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="PanelBrush" Color="#0D0D0D" />
+        <SolidColorBrush x:Key="SecondaryPanelBrush" Color="#141414" />
+        <SolidColorBrush x:Key="BorderBrushTheme" Color="#2B2B2B" />
+        <SolidColorBrush x:Key="TextBrush" Color="#F5F7FB" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#A0A7B4" />
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Border Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource BorderBrushTheme}"
+                BorderThickness="1"
+                CornerRadius="24"
+                Padding="22">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Margin="0,0,0,18">
+                    <TextBlock Text="Audio Setup Wizard" FontSize="28" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                    <TextBlock Text="Pick the devices you actually use. Then auto-configure SoundFX Studio for a clean first run." Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.25*" />
+                        <ColumnDefinition Width="0.95*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Background="{StaticResource SecondaryPanelBrush}"
+                            BorderBrush="{StaticResource BorderBrushTheme}"
+                            BorderThickness="1"
+                            CornerRadius="20"
+                            Padding="18"
+                            Margin="0,0,12,0">
+                        <StackPanel>
+                            <TextBlock Text="Devices" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,14" />
+
+                            <TextBlock Text="Output device" Foreground="{StaticResource MutedBrush}" />
+                            <ComboBox x:Name="OutputCombo" Margin="0,6,0,14" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
+
+                            <TextBlock Text="Input device" Foreground="{StaticResource MutedBrush}" />
+                            <ComboBox x:Name="InputCombo" Margin="0,6,0,14" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
+
+                            <TextBlock Text="Virtual cable" Foreground="{StaticResource MutedBrush}" />
+                            <ComboBox x:Name="CableCombo" Margin="0,6,0,0" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
+
+                            <TextBlock x:Name="StatusText" Margin="0,16,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="1"
+                            Background="{StaticResource SecondaryPanelBrush}"
+                            BorderBrush="{StaticResource BorderBrushTheme}"
+                            BorderThickness="1"
+                            CornerRadius="20"
+                            Padding="18">
+                        <StackPanel>
+                            <TextBlock Text="What this sets" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,14" />
+                            <TextBlock Text="1. Output and input device defaults" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                            <TextBlock Text="2. Virtual cable detection flag" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                            <TextBlock Text="3. A saved timestamp so the setup is not repeated" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16" />
+
+                            <Border Background="#0B1320" CornerRadius="16" Padding="14">
+                                <StackPanel>
+                                    <TextBlock Text="Simple routing" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                    <TextBlock Text="Your sounds follow the selected output. Your mic follows the selected input. If a VB-CABLE / Voicemeeter device is found, the app marks it for later routing." Margin="0,6,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+                    <Button Content="Open Windows Sound" Width="170" Margin="0,0,10,0" Click="OpenSound_Click" />
+                    <Button Content="Auto-configure" Width="150" Margin="0,0,10,0" Click="AutoConfigure_Click" />
+                    <Button Content="Finish" Width="110" IsDefault="True" Click="Finish_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
