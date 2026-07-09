@@ -67,6 +67,7 @@ public sealed class MainViewModel : ObservableObject
         ToggleFavoriteCommand = new RelayCommand(_ => ToggleFavorite(), _ => SelectedSound is not null);
         SaveCommand = new RelayCommand(_ => Save());
         RefreshCommand = new RelayCommand(_ => Refresh());
+        AutoConfigureAudioCommand = new RelayCommand(_ => AutoConfigureAudio());
         CreateProfileCommand = new RelayCommand(_ => CreateProfile());
         DeleteProfileCommand = new RelayCommand(_ => DeleteSelectedProfile(), _ => SelectedProfile is not null && Profiles.Count > 1);
         SetGlobalHotkeyCommand = new RelayCommand(_ => SetSelectedSoundHotkey());
@@ -141,6 +142,8 @@ public sealed class MainViewModel : ObservableObject
     public ICommand SaveCommand { get; }
 
     public ICommand RefreshCommand { get; }
+
+    public ICommand AutoConfigureAudioCommand { get; }
 
     public ICommand CreateProfileCommand { get; }
 
@@ -1269,6 +1272,43 @@ public sealed class MainViewModel : ObservableObject
         RegisterGlobalHotkeys();
     }
 
+    private void AutoConfigureAudio()
+    {
+        var output = PickBestDevice(OutputDevices, preferVirtual: false);
+        var input = PickBestDevice(InputDevices, preferVirtual: false);
+        var virtualCable = PickBestDevice(OutputDevices.Concat(InputDevices), preferVirtual: true);
+
+        if (output is not null)
+        {
+            Settings.OutputDeviceId = output.Id;
+            Settings.PlaybackDeviceId = output.Id;
+        }
+
+        if (input is not null)
+        {
+            Settings.InputDeviceId = input.Id;
+            Settings.MicrophoneDeviceId = input.Id;
+        }
+
+        if (virtualCable is not null && _audioDeviceService.IsVBCableDevice(virtualCable.Name))
+        {
+            Settings.VirtualCableDeviceId = virtualCable.Id;
+            Settings.VBCableDetected = true;
+        }
+        else
+        {
+            Settings.VirtualCableDeviceId = string.Empty;
+            Settings.VBCableDetected = _audioDeviceService.IsVBCableInstalled(OutputDevices.Concat(InputDevices));
+        }
+
+        Settings.LastConfigurationDate = DateTime.UtcNow;
+        Save();
+
+        var outputName = output?.Name ?? "no output device";
+        var inputName = input?.Name ?? "no input device";
+        StatusText = $"Auto-configured audio: {outputName} / {inputName}";
+    }
+
     private void Save()
     {
         _config.Sounds = new ObservableCollection<SoundEntry>(Sounds);
@@ -1357,6 +1397,27 @@ public sealed class MainViewModel : ObservableObject
     {
         var extension = Path.GetExtension(path).ToLowerInvariant();
         return extension is ".png" or ".jpg" or ".jpeg" or ".bmp" or ".gif" or ".webp";
+    }
+
+    private static AudioDeviceInfo? PickBestDevice(IEnumerable<AudioDeviceInfo> devices, bool preferVirtual)
+    {
+        var list = devices.ToList();
+        if (list.Count == 0)
+        {
+            return null;
+        }
+
+        var byDefault = list.FirstOrDefault(device => device.IsDefaultCommunication) ?? list.FirstOrDefault(device => device.IsDefault);
+        if (byDefault is not null)
+        {
+            return byDefault;
+        }
+
+        var preferred = preferVirtual
+            ? list.FirstOrDefault(device => device.IsVirtual)
+            : list.FirstOrDefault(device => !device.IsVirtual);
+
+        return preferred ?? list.First();
     }
 
     private static string ToKeyToken(Key key, ModifierKeys modifiers)

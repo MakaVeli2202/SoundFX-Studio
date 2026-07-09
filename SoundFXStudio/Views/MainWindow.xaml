@@ -301,6 +301,11 @@
                                               SelectedValuePath="Id"
                                               SelectedValue="{Binding Settings.InputDeviceId, Mode=TwoWay}" />
                                 </StackPanel>
+                                <Button Content="Auto-configure audio"
+                                    Width="180"
+                                    Margin="160,4,0,0"
+                                    HorizontalAlignment="Left"
+                                    Command="{Binding AutoConfigureAudioCommand}" />
 
                                 <TextBlock Text="Hotkeys" FontSize="18" FontWeight="Bold" Margin="0,12,0,8" />
                                 <TextBlock Text="Global hotkeys are registered per profile assignment. Key bindings can be edited from the keyboard context menu." TextWrapping="Wrap" Opacity="0.78" Margin="0,0,0,8" />
