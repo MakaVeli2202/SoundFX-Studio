@@ -17,6 +17,8 @@ public class AppSettings : ObservableObject
     private bool _allowMultipleInstances;
     private DateTime? _lastConfigurationDate;
     private bool _vbcableDetected;
+    private bool _defaultSoundsSeeded;
+    private bool _setupCompleted;
 
     public string InputDeviceId
     {
@@ -94,5 +96,17 @@ public class AppSettings : ObservableObject
     {
         get => _vbcableDetected;
         set => SetProperty(ref _vbcableDetected, value);
+    }
+
+    public bool DefaultSoundsSeeded
+    {
+        get => _defaultSoundsSeeded;
+        set => SetProperty(ref _defaultSoundsSeeded, value);
+    }
+
+    public bool SetupCompleted
+    {
+        get => _setupCompleted;
+        set => SetProperty(ref _setupCompleted, value);
     }
 }

@@ -23,6 +23,8 @@ public sealed class MainViewModel : ObservableObject
     private readonly KeyboardHookService _keyboardHookService = new();
     private readonly AudioDeviceService _audioDeviceService = new();
     private readonly HttpClient _httpClient = new();
+    private readonly HashSet<string> _pressedKeys = new(); // Track multi-key presses
+    private readonly Dictionary<string, CancellationTokenSource> _unhighlightTimers = new(); // Auto-unhighlight fallback
     private AppConfig _config = new();
     private Window? _window;
     private KeyboardKey? _selectedKey;
@@ -36,6 +38,8 @@ public sealed class MainViewModel : ObservableObject
     private int _selectedTabIndex;
     private string _statusText = "Ready";
     private string _windowTitle = "SoundFX Studio";
+    private string _currentOutputDevice = "System Default";
+    private string _currentPreset = "Default";
 
     public MainViewModel()
     {
@@ -329,6 +333,18 @@ public sealed class MainViewModel : ObservableObject
         set => SetProperty(ref _windowTitle, value);
     }
 
+    public string CurrentOutputDevice
+    {
+        get => _currentOutputDevice;
+        set => SetProperty(ref _currentOutputDevice, value);
+    }
+
+    public string CurrentPreset
+    {
+        get => _currentPreset;
+        set => SetProperty(ref _currentPreset, value);
+    }
+
     public AppSettings Settings => _config.Settings;
 
     public void AttachWindow(Window window)
@@ -366,7 +382,12 @@ public sealed class MainViewModel : ObservableObject
 
     public void HandlePreviewKeyDown(System.Windows.Input.KeyEventArgs e)
     {
-        HandlePhysicalKey(e.Key);
+        HandlePhysicalKey(e.Key, isKeyDown: true);
+    }
+
+    public void HandlePreviewKeyUp(System.Windows.Input.KeyEventArgs e)
+    {
+        HandlePhysicalKey(e.Key, isKeyDown: false);
     }
 
     public void HandleDropFiles(IEnumerable<string> files)
@@ -528,7 +549,7 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    private void HandlePhysicalKey(Key key)
+    private void HandlePhysicalKey(Key key, bool isKeyDown = true)
     {
         var token = NormalizeTokenForLayout(ToKeyToken(key, GetModifierState()));
         if (string.IsNullOrWhiteSpace(token))
@@ -544,9 +565,49 @@ public sealed class MainViewModel : ObservableObject
 
         RunOnUiThread(() =>
         {
-            SelectedKey = keyboardKey;
-            FlashKey(keyboardKey);
-            PlayKey(keyboardKey);
+            if (isKeyDown)
+            {
+                // Cancel existing unhighlight timer for this key (user is pressing again)
+                if (_unhighlightTimers.TryGetValue(token, out var cts))
+                {
+                    cts.Cancel();
+                    _unhighlightTimers.Remove(token);
+                }
+
+                // Track multi-key presses
+                _pressedKeys.Add(token);
+                keyboardKey.IsSelected = true; // Show visual feedback
+                FlashKey(keyboardKey);
+                PlayKey(keyboardKey);
+
+                // Start auto-unhighlight timer (fallback in case KeyUp doesn't fire)
+                var unhighlightCts = new CancellationTokenSource();
+                _unhighlightTimers[token] = unhighlightCts;
+
+                Task.Delay(300, unhighlightCts.Token).ContinueWith(_ =>
+                {
+                    if (!unhighlightCts.Token.IsCancellationRequested)
+                    {
+                        RunOnUiThread(() =>
+                        {
+                            keyboardKey.IsSelected = false;
+                            _unhighlightTimers.Remove(token);
+                        });
+                    }
+                });
+            }
+            else
+            {
+                // Release key - cancel timer and deselect immediately
+                if (_unhighlightTimers.TryGetValue(token, out var cts))
+                {
+                    cts.Cancel();
+                    _unhighlightTimers.Remove(token);
+                }
+
+                _pressedKeys.Remove(token);
+                keyboardKey.IsSelected = false;
+            }
         });
     }
 
@@ -1373,11 +1434,25 @@ public sealed class MainViewModel : ObservableObject
     private void UpdateStatus()
     {
         StatusText = $"{Sounds.Count} sounds · {Profiles.Count} profiles · {KeyboardKeys.Count} keys";
+        
+        // Update status indicators
+        var outputDevice = _config.Settings.OutputDeviceId;
+        if (!string.IsNullOrEmpty(outputDevice))
+        {
+            var device = OutputDevices.FirstOrDefault(d => d.Id == outputDevice);
+            CurrentOutputDevice = device?.Name ?? "Unknown Device";
+        }
+        else
+        {
+            CurrentOutputDevice = "System Default";
+        }
     }
 
     private void UpdateTitle()
     {
-        WindowTitle = $"SoundFX Studio · {SelectedProfile?.Name ?? "No Profile"}";
+        var presetName = SelectedProfile?.Name ?? ActiveProfile?.Name ?? "Default";
+        WindowTitle = $"SoundFX Studio · {presetName}";
+        CurrentPreset = presetName;
     }
 
     private void RaiseSoundCollectionStats()

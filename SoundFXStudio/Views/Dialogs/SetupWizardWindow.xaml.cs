@@ -20,6 +20,27 @@ public partial class SetupWizardWindow : Window
 
     private void SetupWizardWindow_Loaded(object sender, RoutedEventArgs e)
     {
+        // Check if Voicemeeter is installed
+        if (!VoicemeeterService.IsVoicemeeterInstalled())
+        {
+            var result = MessageBox.Show(
+                "Voicemeeter is required for audio routing and virtual cable support.\n\n" +
+                "Would you like to download Voicemeeter now?\n\n" +
+                "SoundFX Studio works best with Voicemeeter installed.",
+                "Voicemeeter Not Found",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo("https://vb-audio.com/Voicemeeter/") { UseShellExecute = true });
+                }
+                catch { }
+            }
+        }
+
         OutputCombo.ItemsSource = _audioDeviceService.GetOutputDevices();
         InputCombo.ItemsSource = _audioDeviceService.GetInputDevices();
         CableCombo.ItemsSource = _audioDeviceService.GetOutputDevices().Concat(_audioDeviceService.GetInputDevices()).ToList();

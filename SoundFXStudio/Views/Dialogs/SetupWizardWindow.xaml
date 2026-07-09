@@ -30,8 +30,8 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Margin="0,0,0,18">
-                    <TextBlock Text="Audio Setup Wizard" FontSize="28" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
-                    <TextBlock Text="Pick the devices you actually use. Then auto-configure SoundFX Studio for a clean first run." Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                    <TextBlock Text="Let's Set Up Your Audio" FontSize="28" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                    <TextBlock Text="Pick the speakers and microphone you use, and we'll get SoundFX Studio ready to go." Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap" />
                 </StackPanel>
 
                 <Grid Grid.Row="1">
@@ -47,15 +47,15 @@
                             Padding="18"
                             Margin="0,0,12,0">
                         <StackPanel>
-                            <TextBlock Text="Devices" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,14" />
+                            <TextBlock Text="Pick Your Devices" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,14" />
 
-                            <TextBlock Text="Output device" Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock Text="🔊 Speakers (where you hear sounds)" Foreground="{StaticResource MutedBrush}" />
                             <ComboBox x:Name="OutputCombo" Margin="0,6,0,14" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
 
-                            <TextBlock Text="Input device" Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock Text="🎙️ Microphone (your voice)" Foreground="{StaticResource MutedBrush}" />
                             <ComboBox x:Name="InputCombo" Margin="0,6,0,14" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
 
-                            <TextBlock Text="Virtual cable" Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock Text="🎛️ Virtual Audio Cable (optional, for advanced routing)" Foreground="{StaticResource MutedBrush}" />
                             <ComboBox x:Name="CableCombo" Margin="0,6,0,0" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
 
                             <TextBlock x:Name="StatusText" Margin="0,16,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
@@ -69,15 +69,15 @@
                             CornerRadius="20"
                             Padding="18">
                         <StackPanel>
-                            <TextBlock Text="What this sets" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,14" />
-                            <TextBlock Text="1. Output and input device defaults" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
-                            <TextBlock Text="2. Virtual cable detection flag" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
-                            <TextBlock Text="3. A saved timestamp so the setup is not repeated" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16" />
+                            <TextBlock Text="How It Works" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,14" />
+                            <TextBlock Text="✓ Sounds play through your speakers" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                            <TextBlock Text="✓ Your microphone is ready to use" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                            <TextBlock Text="✓ Click keyboard buttons (or press F1-F12) to play sounds" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16" />
 
                             <Border Background="#0B1320" CornerRadius="16" Padding="14">
                                 <StackPanel>
-                                    <TextBlock Text="Simple routing" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
-                                    <TextBlock Text="Your sounds follow the selected output. Your mic follows the selected input. If a VB-CABLE / Voicemeeter device is found, the app marks it for later routing." Margin="0,6,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                                    <TextBlock Text="Pro Tip: Voicemeeter" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                    <TextBlock Text="If you're using Voicemeeter for streaming or gaming, select the Virtual Cable to enable advanced routing between your sounds and what others hear." Margin="0,6,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>

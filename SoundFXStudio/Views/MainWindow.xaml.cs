@@ -14,6 +14,7 @@ public partial class MainWindow : Window
         DataContext = new MainViewModel();
         Loaded += MainWindow_Loaded;
         PreviewKeyDown += MainWindow_PreviewKeyDown;
+        PreviewKeyUp += MainWindow_PreviewKeyUp;
         AllowDrop = true;
         Drop += MainWindow_Drop;
     }
@@ -35,6 +36,11 @@ public partial class MainWindow : Window
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         ViewModel.HandlePreviewKeyDown(e);
+    }
+
+    private void MainWindow_PreviewKeyUp(object sender, KeyEventArgs e)
+    {
+        ViewModel.HandlePreviewKeyUp(e);
     }
 
     private void MainWindow_Drop(object sender, DragEventArgs e)

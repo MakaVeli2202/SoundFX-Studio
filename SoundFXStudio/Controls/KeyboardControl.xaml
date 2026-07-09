@@ -135,34 +135,36 @@
                             Height="{Binding HeightUnits, Converter={StaticResource KeySizeConverter}, ConverterParameter=Height}">
                         <Button.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="Assign Sound"
-                                          Command="{Binding PlacementTarget.DataContext.AssignSelectedSoundToKeyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <MenuItem Header="Remove Sound"
-                                          Command="{Binding PlacementTarget.DataContext.RemoveSoundFromKeyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <MenuItem Header="Set Image"
-                                          Command="{Binding PlacementTarget.DataContext.ChooseKeyImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <MenuItem Header="Remove Image"
-                                          Command="{Binding PlacementTarget.DataContext.RemoveKeyImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <MenuItem Header="Rename Binding"
-                                          Command="{Binding PlacementTarget.DataContext.RenameBindingCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                <MenuItem Header="➕ Assign Sound"
+                                          Command="{Binding DataContext.AssignSelectedSoundToKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          CommandParameter="{Binding}" />
+                                <MenuItem Header="❌ Remove Sound"
+                                          Command="{Binding DataContext.RemoveSoundFromKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          CommandParameter="{Binding}" />
+                                <MenuItem Header="🖼️ Set Image"
+                                          Command="{Binding DataContext.ChooseKeyImageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          CommandParameter="{Binding}" />
+                                <MenuItem Header="❌ Remove Image"
+                                          Command="{Binding DataContext.RemoveKeyImageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          CommandParameter="{Binding}" />
                                 <Separator />
-                                <MenuItem Header="Volume"
-                                          Command="{Binding PlacementTarget.DataContext.ChangeKeyVolumeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <MenuItem Header="Toggle loop"
-                                          Command="{Binding PlacementTarget.DataContext.ToggleKeyLoopCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <MenuItem Header="Stop playback"
-                                          Command="{Binding PlacementTarget.DataContext.StopKeyPlaybackCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <MenuItem Header="Duplicate binding"
-                                          Command="{Binding PlacementTarget.DataContext.DuplicateBindingCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                <MenuItem Header="📝 Rename Binding"
+                                          Command="{Binding DataContext.RenameBindingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          CommandParameter="{Binding}" />
+                                <Separator />
+                                <MenuItem Header="🔊 Volume"
+                                          Command="{Binding DataContext.ChangeKeyVolumeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          CommandParameter="{Binding}" />
+                                <MenuItem Header="🔁 Toggle Loop"
+                                          Command="{Binding DataContext.ToggleKeyLoopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          CommandParameter="{Binding}" />
+                                <MenuItem Header="⏹️ Stop Playback"
+                                          Command="{Binding DataContext.StopKeyPlaybackCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          CommandParameter="{Binding}" />
+                                <Separator />
+                                <MenuItem Header="📋 Duplicate Binding"
+                                          Command="{Binding DataContext.DuplicateBindingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          CommandParameter="{Binding}" />
                             </ContextMenu>
                         </Button.ContextMenu>
 
