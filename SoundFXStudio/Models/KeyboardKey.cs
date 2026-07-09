@@ -1,0 +1,147 @@
+﻿using SoundFXStudio.Infrastructure;
+
+namespace SoundFXStudio.Models;
+
+public class KeyboardKey : ObservableObject
+{
+    private string _id = string.Empty;
+    private string _keyName = string.Empty;
+    private string _displayLabel = string.Empty;
+    private double _widthUnits = 1;
+    private double _heightUnits = 1;
+    private int _rowIndex;
+    private double _columnIndex;
+    private string? _imagePath;
+    private string? _assignedSoundId;
+    private string? _assignedSoundName;
+    private string? _assignmentName;
+    private string _categoryAccentColor = "#00000000";
+    private KeyState _state = KeyState.Empty;
+    private bool _isEnabled = true;
+    private bool _isSelected;
+    private bool _isHovered;
+
+    public string Id
+    {
+        get => _id;
+        set => SetProperty(ref _id, value);
+    }
+
+    public string KeyName
+    {
+        get => _keyName;
+        set => SetProperty(ref _keyName, value);
+    }
+
+    public string DisplayLabel
+    {
+        get => string.IsNullOrWhiteSpace(_displayLabel) ? _keyName : _displayLabel;
+        set => SetProperty(ref _displayLabel, value);
+    }
+
+    public double WidthUnits
+    {
+        get => _widthUnits;
+        set => SetProperty(ref _widthUnits, value);
+    }
+
+    public double HeightUnits
+    {
+        get => _heightUnits;
+        set => SetProperty(ref _heightUnits, value);
+    }
+
+    public int RowIndex
+    {
+        get => _rowIndex;
+        set => SetProperty(ref _rowIndex, value);
+    }
+
+    public double ColumnIndex
+    {
+        get => _columnIndex;
+        set => SetProperty(ref _columnIndex, value);
+    }
+
+    public string? ImagePath
+    {
+        get => _imagePath;
+        set
+        {
+            if (SetProperty(ref _imagePath, value))
+            {
+                OnPropertyChanged(nameof(HasAssignment));
+            }
+        }
+    }
+
+    public string? AssignedSoundId
+    {
+        get => _assignedSoundId;
+        set
+        {
+            if (SetProperty(ref _assignedSoundId, value))
+            {
+                OnPropertyChanged(nameof(HasAssignment));
+            }
+        }
+    }
+
+    public string? AssignedSoundName
+    {
+        get => _assignedSoundName;
+        set
+        {
+            if (SetProperty(ref _assignedSoundName, value))
+            {
+                OnPropertyChanged(nameof(HasAssignment));
+            }
+        }
+    }
+
+    public string? AssignmentName
+    {
+        get => _assignmentName;
+        set
+        {
+            if (SetProperty(ref _assignmentName, value))
+            {
+                OnPropertyChanged(nameof(HasAssignment));
+            }
+        }
+    }
+
+    public string CategoryAccentColor
+    {
+        get => _categoryAccentColor;
+        set => SetProperty(ref _categoryAccentColor, value);
+    }
+
+    public KeyState State
+    {
+        get => _state;
+        set => SetProperty(ref _state, value);
+    }
+
+    public bool IsEnabled
+    {
+        get => _isEnabled;
+        set => SetProperty(ref _isEnabled, value);
+    }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
+    }
+
+    public bool IsHovered
+    {
+        get => _isHovered;
+        set => SetProperty(ref _isHovered, value);
+    }
+
+    public bool HasAssignment => !string.IsNullOrWhiteSpace(AssignedSoundId)
+                                 || !string.IsNullOrWhiteSpace(ImagePath)
+                                 || !string.IsNullOrWhiteSpace(AssignmentName);
+}
