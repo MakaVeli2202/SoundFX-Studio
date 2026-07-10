@@ -10,12 +10,14 @@
 
   <ItemGroup>
     <Folder Include="Assets\" />
+    <Folder Include="Assets\Keyboards\" />
     <Folder Include="Controls\" />
     <Folder Include="Views\Dialogs\" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Assets\SoundFXStudioLogo.png" />
+    <Resource Include="Assets\Keyboards\SoundFXKeyBoard.png" />
   </ItemGroup>
 
   <ItemGroup>

@@ -120,12 +120,20 @@
             BorderBrush="#223A56"
             BorderThickness="1"
             Padding="6">
-        <ItemsControl ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType=UserControl}}">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <controls:KeyboardLayoutPanel />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
+        <Grid>
+            <Image Source="/Assets/Keyboards/SoundFXKeyBoard.png"
+                   Stretch="Uniform"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   IsHitTestVisible="False" />
+
+            <ItemsControl ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          Panel.ZIndex="1">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <controls:KeyboardLayoutPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
 
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
@@ -259,6 +267,7 @@
                     </Button>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
-        </ItemsControl>
+            </ItemsControl>
+        </Grid>
     </Border>
 </UserControl>
