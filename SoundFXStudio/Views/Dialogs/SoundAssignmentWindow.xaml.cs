@@ -1,6 +1,8 @@
 using System.Windows;
 using System.ComponentModel;
 using Microsoft.Win32;
+using System.Runtime.CompilerServices;
+using SoundFXStudio.Models;
 
 namespace SoundFXStudio.Views.Dialogs;
 
@@ -10,6 +12,18 @@ public partial class SoundAssignmentWindow : Window
     {
         InitializeComponent();
     }
+
+    private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            return;
+        }
+
+        DragMove();
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
     private void BrowseButton_Click(object sender, RoutedEventArgs e)
     {
@@ -25,8 +39,7 @@ public partial class SoundAssignmentWindow : Window
             if (DataContext is SoundAssignmentViewModel vm)
             {
                 vm.FilePath = dialog.FileName;
-                
-                // Auto-fill name from filename
+
                 if (string.IsNullOrEmpty(vm.Name))
                 {
                     vm.Name = System.IO.Path.GetFileNameWithoutExtension(dialog.FileName);
@@ -143,10 +156,21 @@ public class SoundAssignmentViewModel : INotifyPropertyChanged
         set => SetProperty(ref _loop, value);
     }
 
-    public List<string> AvailableKeys { get; } = new()
+    public List<KeyboardKey> AvailableKeys { get; }
+
+    public SoundAssignmentViewModel(IEnumerable<KeyboardKey>? availableKeys = null)
     {
-        "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"
-    };
+        AvailableKeys = availableKeys?.Select(key => new KeyboardKey
+        {
+            Id = key.Id,
+            KeyName = key.KeyName,
+            DisplayLabel = key.DisplayLabel
+        }).ToList() ?? new List<KeyboardKey>();
+    }
+
+    public SoundAssignmentViewModel() : this(null)
+    {
+    }
 
     public List<string> Categories { get; } = new()
     {
@@ -155,12 +179,12 @@ public class SoundAssignmentViewModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void SetProperty<T>(ref T field, T value)
+    private void SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
         if (!Equals(field, value))
         {
             field = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(field)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

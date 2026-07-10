@@ -59,7 +59,7 @@ public sealed class KeyboardLayoutService
         }
         else
         {
-            bottomRow.Add(Key("Y", displayLabel: "Y"));
+            bottomRow.Add(Key("Z", displayLabel: "Z"));
         }
 
         bottomRow.AddRange(new[]

@@ -6,7 +6,9 @@
         Height="620"
         WindowStartupLocation="CenterScreen"
         Background="#050505"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        Icon="/Assets/SoundFXStudioLogo.png">
 
     <Window.Resources>
         <SolidColorBrush x:Key="PanelBrush" Color="#0D0D0D" />
@@ -20,8 +22,8 @@
         <Border Background="{StaticResource PanelBrush}"
                 BorderBrush="{StaticResource BorderBrushTheme}"
                 BorderThickness="1"
-                CornerRadius="24"
-                Padding="22">
+                CornerRadius="20"
+                Padding="18">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -29,10 +31,51 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <StackPanel Margin="0,0,0,18">
-                    <TextBlock Text="Let's Set Up Your Audio" FontSize="28" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
-                    <TextBlock Text="Pick the speakers and microphone you use, and we'll get SoundFX Studio ready to go." Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap" />
-                </StackPanel>
+                <Border Background="{StaticResource SecondaryPanelBrush}"
+                    CornerRadius="16"
+                        BorderBrush="#252525"
+                        BorderThickness="1"
+                    Padding="12"
+                    Margin="0,0,0,14">
+                    <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Width="44"
+                                    Height="44"
+                                    CornerRadius="12"
+                                    Background="#0A0A0A"
+                                    BorderBrush="#303030"
+                                    BorderThickness="1"
+                                    Padding="4"
+                                    Margin="0,0,12,0">
+                                <Image Source="/Assets/SoundFXStudioLogo.png" Stretch="Uniform" />
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="SoundFX Studio" FontSize="13" FontWeight="Bold" Foreground="{StaticResource MutedBrush}" />
+                                <TextBlock Text="Audio setup wizard" FontSize="26" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <Button Grid.Column="1"
+                                Content="✕"
+                            Width="40"
+                            Height="30"
+                                VerticalAlignment="Top"
+                                Background="#2A1118"
+                                BorderBrush="#5F2336"
+                                Click="CloseButton_Click" />
+                    </Grid>
+                </Border>
+
+                <TextBlock Grid.Row="0"
+                           Text="Pick the speakers and microphone you use, and we'll get SoundFX Studio ready to go."
+                           Foreground="{StaticResource MutedBrush}"
+                           Margin="0,54,0,14"
+                           TextWrapping="Wrap" />
 
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
@@ -43,8 +86,8 @@
                     <Border Background="{StaticResource SecondaryPanelBrush}"
                             BorderBrush="{StaticResource BorderBrushTheme}"
                             BorderThickness="1"
-                            CornerRadius="20"
-                            Padding="18"
+                            CornerRadius="18"
+                            Padding="16"
                             Margin="0,0,12,0">
                         <StackPanel>
                             <TextBlock Text="Pick Your Devices" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,14" />
@@ -55,9 +98,6 @@
                             <TextBlock Text="🎙️ Microphone (your voice)" Foreground="{StaticResource MutedBrush}" />
                             <ComboBox x:Name="InputCombo" Margin="0,6,0,14" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
 
-                            <TextBlock Text="🎛️ Virtual Audio Cable (optional, for advanced routing)" Foreground="{StaticResource MutedBrush}" />
-                            <ComboBox x:Name="CableCombo" Margin="0,6,0,0" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
-
                             <TextBlock x:Name="StatusText" Margin="0,16,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
@@ -66,20 +106,13 @@
                             Background="{StaticResource SecondaryPanelBrush}"
                             BorderBrush="{StaticResource BorderBrushTheme}"
                             BorderThickness="1"
-                            CornerRadius="20"
-                            Padding="18">
+                            CornerRadius="18"
+                            Padding="16">
                         <StackPanel>
                             <TextBlock Text="How It Works" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,14" />
                             <TextBlock Text="✓ Sounds play through your speakers" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
                             <TextBlock Text="✓ Your microphone is ready to use" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
                             <TextBlock Text="✓ Click keyboard buttons (or press F1-F12) to play sounds" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16" />
-
-                            <Border Background="#0B1320" CornerRadius="16" Padding="14">
-                                <StackPanel>
-                                    <TextBlock Text="Pro Tip: Voicemeeter" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
-                                    <TextBlock Text="If you're using Voicemeeter for streaming or gaming, select the Virtual Cable to enable advanced routing between your sounds and what others hear." Margin="0,6,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
-                                </StackPanel>
-                            </Border>
                         </StackPanel>
                     </Border>
                 </Grid>

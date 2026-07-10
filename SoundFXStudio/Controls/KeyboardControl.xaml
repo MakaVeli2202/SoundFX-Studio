@@ -31,18 +31,18 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Root"
-                                CornerRadius="12"
+                                CornerRadius="10"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 SnapsToDevicePixels="True">
                             <Grid ClipToBounds="True">
-                                <Border x:Name="BaseLayer" Background="#121A27" CornerRadius="12" />
-                                <Border x:Name="HoverGlow" Background="#00000000" CornerRadius="12" Opacity="0" />
-                                <Border x:Name="PlayingGlow" Background="#00000000" CornerRadius="12" Opacity="0" />
+                                <Border x:Name="BaseLayer" Background="#121A27" CornerRadius="10" />
+                                <Border x:Name="HoverGlow" Background="#00000000" CornerRadius="10" Opacity="0" />
+                                <Border x:Name="PlayingGlow" Background="#00000000" CornerRadius="10" Opacity="0" />
                                 <Border x:Name="SelectionRing"
                                         Margin="1"
-                                        CornerRadius="11"
+                                        CornerRadius="9"
                                         BorderBrush="#00000000"
                                         BorderThickness="0"
                                         Opacity="0" />
@@ -116,10 +116,10 @@
     </UserControl.Resources>
 
     <Border Background="#09111B"
-            CornerRadius="22"
+            CornerRadius="20"
             BorderBrush="#223A56"
             BorderThickness="1"
-            Padding="8">
+            Padding="6">
         <ItemsControl ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType=UserControl}}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -131,40 +131,41 @@
                 <DataTemplate>
                     <Button Command="{Binding DataContext.KeyClickedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                             CommandParameter="{Binding}"
+                            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}"
                             Width="{Binding WidthUnits, Converter={StaticResource KeySizeConverter}, ConverterParameter=Width}"
                             Height="{Binding HeightUnits, Converter={StaticResource KeySizeConverter}, ConverterParameter=Height}">
                         <Button.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Header="➕ Assign Sound"
-                                          Command="{Binding DataContext.AssignSelectedSoundToKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                          CommandParameter="{Binding}" />
+                                          Command="{Binding PlacementTarget.Tag.AssignSelectedSoundToKeyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                 <MenuItem Header="❌ Remove Sound"
-                                          Command="{Binding DataContext.RemoveSoundFromKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                          CommandParameter="{Binding}" />
+                                          Command="{Binding PlacementTarget.Tag.RemoveSoundFromKeyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                 <MenuItem Header="🖼️ Set Image"
-                                          Command="{Binding DataContext.ChooseKeyImageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                          CommandParameter="{Binding}" />
+                                          Command="{Binding PlacementTarget.Tag.ChooseKeyImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                 <MenuItem Header="❌ Remove Image"
-                                          Command="{Binding DataContext.RemoveKeyImageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                          CommandParameter="{Binding}" />
+                                          Command="{Binding PlacementTarget.Tag.RemoveKeyImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                 <Separator />
                                 <MenuItem Header="📝 Rename Binding"
-                                          Command="{Binding DataContext.RenameBindingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                          CommandParameter="{Binding}" />
+                                          Command="{Binding PlacementTarget.Tag.RenameBindingCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                 <Separator />
                                 <MenuItem Header="🔊 Volume"
-                                          Command="{Binding DataContext.ChangeKeyVolumeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                          CommandParameter="{Binding}" />
+                                          Command="{Binding PlacementTarget.Tag.ChangeKeyVolumeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                 <MenuItem Header="🔁 Toggle Loop"
-                                          Command="{Binding DataContext.ToggleKeyLoopCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                          CommandParameter="{Binding}" />
+                                          Command="{Binding PlacementTarget.Tag.ToggleKeyLoopCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                 <MenuItem Header="⏹️ Stop Playback"
-                                          Command="{Binding DataContext.StopKeyPlaybackCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                          CommandParameter="{Binding}" />
+                                          Command="{Binding PlacementTarget.Tag.StopKeyPlaybackCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                 <Separator />
                                 <MenuItem Header="📋 Duplicate Binding"
-                                          Command="{Binding DataContext.DuplicateBindingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                          CommandParameter="{Binding}" />
+                                          Command="{Binding PlacementTarget.Tag.DuplicateBindingCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                             </ContextMenu>
                         </Button.ContextMenu>
 
@@ -201,7 +202,7 @@
                                     Background="{Binding CategoryAccentColor}"
                                     Visibility="{Binding HasAssignment, Converter={StaticResource BoolToVisibilityConverter}}" />
 
-                            <Grid Grid.Column="1" Margin="8,7,8,7">
+                            <Grid Grid.Column="1" Margin="6,6,6,6">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
@@ -216,9 +217,10 @@
                                            TextWrapping="Wrap" />
 
                                 <Grid Grid.Row="1"
-                                      Margin="0,6,0,4"
+                                      Margin="0,4,0,3"
                                       Visibility="{Binding HasAssignment, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <Border CornerRadius="8"
+                                        ClipToBounds="True"
                                             Background="#14000000" />
                                     <Image Source="{Binding ImagePath}"
                                            Stretch="UniformToFill"
@@ -237,7 +239,7 @@
                                 <StackPanel Grid.Row="2"
                                             Visibility="{Binding HasAssignment, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <TextBlock Text="{Binding AssignedSoundName}"
-                                               FontSize="10"
+                                               FontSize="9"
                                                FontWeight="SemiBold"
                                                HorizontalAlignment="Center"
                                                TextAlignment="Center"
@@ -245,7 +247,7 @@
                                                TextTrimming="CharacterEllipsis"
                                                Opacity="0.96" />
                                     <TextBlock Text="{Binding AssignmentName}"
-                                               FontSize="8"
+                                               FontSize="7"
                                                HorizontalAlignment="Center"
                                                TextAlignment="Center"
                                                TextWrapping="Wrap"

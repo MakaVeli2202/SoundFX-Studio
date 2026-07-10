@@ -6,7 +6,9 @@
         Width="600"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="#050505">
+        Background="#050505"
+        WindowStyle="None"
+        Icon="/Assets/SoundFXStudioLogo.png">
 
     <Window.Resources>
         <SolidColorBrush x:Key="PanelBrush" Color="#0D0D0D" />
@@ -23,21 +25,61 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Margin="0,0,0,16">
-            <TextBlock Text="Add Sound to Keyboard" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
-            <TextBlock Text="Upload an audio file and assign it to a keyboard button" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" />
-        </StackPanel>
+        <Border Background="{StaticResource SecondaryPanelBrush}"
+                BorderBrush="#252525"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="12"
+                Margin="0,0,0,14">
+            <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="42"
+                            Height="42"
+                            CornerRadius="12"
+                            Background="#0A0A0A"
+                            BorderBrush="#303030"
+                            BorderThickness="1"
+                            Padding="4"
+                            Margin="0,0,12,0">
+                        <Image Source="/Assets/SoundFXStudioLogo.png" Stretch="Uniform" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="SoundFX Studio" FontSize="13" FontWeight="Bold" Foreground="{StaticResource MutedBrush}" />
+                        <TextBlock Text="Sound Details" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Content="✕"
+                        Width="40"
+                        Height="30"
+                        VerticalAlignment="Top"
+                        Background="#2A1118"
+                        BorderBrush="#5F2336"
+                        Click="CloseButton_Click" />
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="0"
+                   Text="Pick a file, name, image, shortcut, and options before saving"
+                   Foreground="{StaticResource MutedBrush}"
+                   Margin="0,54,0,14" />
 
         <Border Grid.Row="1"
                 Background="{StaticResource SecondaryPanelBrush}"
                 BorderBrush="{StaticResource BorderBrushTheme}"
                 BorderThickness="1"
-                CornerRadius="16"
-                Padding="18">
+                CornerRadius="14"
+                Padding="16">
             <ScrollViewer>
                 <StackPanel>
                     <!-- File Selection -->
-                    <Border Background="{StaticResource PanelBrush}" CornerRadius="12" Padding="14" Margin="0,0,0,14">
+                    <Border Background="{StaticResource PanelBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,12">
                         <StackPanel>
                             <TextBlock Text="📁 Sound File" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8" />
                             <TextBlock Text="Pick an audio file (MP3, WAV, OGG, FLAC)" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="0,0,0,10" />
@@ -51,8 +93,8 @@
                                 <TextBox x:Name="FilePathBox" 
                                          IsReadOnly="True" 
                                          Text="{Binding FilePath, Mode=OneWay}"
-                                         Height="36" 
-                                         Padding="12,8"
+                                         Height="34" 
+                                         Padding="10,6"
                                          Background="{StaticResource PanelBrush}"
                                          BorderBrush="{StaticResource BorderBrushTheme}"
                                          BorderThickness="1"
@@ -62,7 +104,7 @@
                                 <Button x:Name="BrowseButton" 
                                         Content="Browse" 
                                         Width="100" 
-                                        Height="36"
+                                    Height="34"
                                         Grid.Column="1"
                                         Click="BrowseButton_Click"
                                         Background="#36D1FF"
@@ -73,15 +115,15 @@
                     </Border>
 
                     <!-- Display Name -->
-                    <StackPanel Margin="0,0,0,14">
+                    <StackPanel Margin="0,0,0,12">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                             <TextBlock Text="Sound Name" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
                             <TextBlock Text="(label on keyboard button)" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="8,2,0,0" />
                         </StackPanel>
                         <TextBox x:Name="NameBox"
                                  Text="{Binding Name}"
-                                 Height="40"
-                                 Padding="12,10"
+                                 Height="36"
+                                 Padding="10,6"
                                  Background="{StaticResource PanelBrush}"
                                  BorderBrush="{StaticResource BorderBrushTheme}"
                                  BorderThickness="1"
@@ -89,12 +131,14 @@
                     </StackPanel>
 
                     <!-- Keyboard Button Selection -->
-                    <StackPanel Margin="0,0,0,14">
+                    <StackPanel Margin="0,0,0,12">
                         <TextBlock Text="⌨️ Keyboard Button" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6" />
                         <ComboBox ItemsSource="{Binding AvailableKeys}"
-                                  SelectedItem="{Binding SelectedKey}"
-                                  Height="40"
-                                  Padding="12,8"
+                                  DisplayMemberPath="DisplayLabel"
+                                  SelectedValuePath="Id"
+                                  SelectedValue="{Binding SelectedKey}"
+                                  Height="36"
+                                  Padding="10,6"
                                   Background="{StaticResource PanelBrush}"
                                   BorderBrush="{StaticResource BorderBrushTheme}"
                                   BorderThickness="1"
@@ -102,12 +146,12 @@
                     </StackPanel>
 
                     <!-- Category -->
-                    <StackPanel Margin="0,0,0,14">
+                    <StackPanel Margin="0,0,0,12">
                         <TextBlock Text="📂 Sound Group" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6" />
                         <ComboBox ItemsSource="{Binding Categories}"
                                   SelectedItem="{Binding Category}"
-                                  Height="40"
-                                  Padding="12,8"
+                                  Height="36"
+                                  Padding="10,6"
                                   Background="{StaticResource PanelBrush}"
                                   BorderBrush="{StaticResource BorderBrushTheme}"
                                   BorderThickness="1"
@@ -115,7 +159,7 @@
                     </StackPanel>
 
                     <!-- Volume -->
-                    <StackPanel Margin="0,0,0,14">
+                    <StackPanel Margin="0,0,0,12">
                         <TextBlock Text="🔊 Volume" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6" />
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -137,7 +181,7 @@
                     </StackPanel>
 
                     <!-- Options -->
-                    <StackPanel Margin="0,0,0,14">
+                    <StackPanel Margin="0,0,0,12">
                         <TextBlock Text="⚙️ Options" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,10" />
                         <CheckBox Content="Mark as favorite (⭐ icon)"
                                   IsChecked="{Binding IsFavorite}"
@@ -149,7 +193,7 @@
                     </StackPanel>
 
                     <!-- Image Selection -->
-                    <Border Background="{StaticResource PanelBrush}" CornerRadius="12" Padding="14">
+                    <Border Background="{StaticResource PanelBrush}" CornerRadius="10" Padding="12">
                         <StackPanel>
                             <TextBlock Text="🖼️ Custom Image (Optional)" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,10" />
                             
@@ -162,8 +206,8 @@
                                 <TextBox x:Name="ImagePathBox" 
                                          IsReadOnly="True" 
                                          Text="{Binding ImagePath, Mode=OneWay}"
-                                         Height="36"
-                                         Padding="12,8"
+                                         Height="34"
+                                         Padding="10,6"
                                          Background="{StaticResource SecondaryPanelBrush}"
                                          BorderBrush="{StaticResource BorderBrushTheme}"
                                          BorderThickness="1"
@@ -172,7 +216,7 @@
                                 <Button x:Name="ImageBrowseButton" 
                                         Content="Choose" 
                                         Width="90" 
-                                        Height="36"
+                                    Height="34"
                                         Grid.Column="1"
                                         Margin="10,0,0,0"
                                         Click="ImageBrowseButton_Click"
@@ -201,7 +245,7 @@
         <StackPanel Grid.Row="2"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
-                    Margin="0,16,0,0">
+                Margin="0,14,0,0">
             <Button Content="Cancel"
                     Width="100"
                     Margin="0,0,10,0"
