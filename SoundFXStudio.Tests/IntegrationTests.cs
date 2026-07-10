@@ -2,6 +2,7 @@ using SoundFXStudio.Infrastructure;
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
 using System.Collections.ObjectModel;
+using Xunit;
 
 namespace SoundFXStudio.Tests;
 
@@ -59,7 +60,7 @@ public class IntegrationTests
         var missingFile = @"C:\NonExistent\sound.mp3";
 
         // Act & Assert
-        player.Play("test-id", missingFile, 1f, false, -1); // Should return early, not throw
+        player.Play("test-id", missingFile, 1f, false, PlaybackMode.Restart, -1); // Should return early, not throw
         Assert.True(true); // If we got here, no exception was thrown
     }
 
@@ -67,13 +68,14 @@ public class IntegrationTests
     public void KeyboardLayout_Initializes_WithAllFunctionKeys()
     {
         // Arrange & Act
-        var layout = KeyboardLayoutService.GetDefaultLayout();
+        var service = new KeyboardLayoutService();
+        var layout = service.CreateKeyboard(KeyboardLayoutMode.English);
 
         // Assert
         Assert.NotNull(layout);
-        Assert.NotEmpty(layout.Keys);
-        
-        var fKeys = layout.Keys.Where(k => k.KeyName.StartsWith("F", StringComparison.OrdinalIgnoreCase));
+        Assert.NotEmpty(layout);
+
+        var fKeys = layout.Where(k => k.KeyName.StartsWith("F", StringComparison.OrdinalIgnoreCase));
         Assert.True(fKeys.Count() >= 12, "Should have at least F1-F12 keys");
     }
 

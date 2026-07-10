@@ -1,4 +1,5 @@
-﻿using NAudio.Wave;
+﻿using SoundFXStudio.Models;
+using NAudio.Wave;
 using System.IO;
 
 namespace SoundFXStudio.Services;
@@ -6,16 +7,35 @@ namespace SoundFXStudio.Services;
 public sealed class AudioPlayer : IDisposable
 {
     private readonly object _gate = new();
-    private readonly Dictionary<string, PlaybackSession> _sessions = new();
+    private readonly Dictionary<string, List<PlaybackSession>> _sessions = new(StringComparer.OrdinalIgnoreCase);
 
-    public void Play(string soundId, string filePath, float volume = 1f, bool loop = false, int outputDeviceNumber = -1)
+    public void Play(string soundId, string filePath, float volume = 1f, bool loop = false, PlaybackMode playbackMode = PlaybackMode.Restart, int outputDeviceNumber = -1)
     {
         if (!File.Exists(filePath))
         {
             return;
         }
 
-        Stop(soundId);
+        var existingSessions = GetSessions(soundId);
+
+        if (playbackMode == PlaybackMode.Ignore && existingSessions.Count > 0)
+        {
+            return;
+        }
+
+        if (playbackMode == PlaybackMode.Toggle)
+        {
+            if (existingSessions.Count > 0)
+            {
+                Stop(soundId);
+                return;
+            }
+        }
+
+        if (playbackMode == PlaybackMode.Restart)
+        {
+            Stop(soundId);
+        }
 
         var reader = new AudioFileReader(filePath)
         {
@@ -36,7 +56,13 @@ public sealed class AudioPlayer : IDisposable
 
         lock (_gate)
         {
-            _sessions[soundId] = session;
+            if (!_sessions.TryGetValue(soundId, out var sessions))
+            {
+                sessions = new List<PlaybackSession>();
+                _sessions[soundId] = sessions;
+            }
+
+            sessions.Add(session);
         }
 
         output.Play();
@@ -44,40 +70,38 @@ public sealed class AudioPlayer : IDisposable
 
     public void Stop(string soundId)
     {
-        PlaybackSession? session;
-        lock (_gate)
-        {
-            _sessions.TryGetValue(soundId, out session);
-        }
+        List<PlaybackSession> sessions = GetSessions(soundId);
 
-        session?.Stop();
-        RemoveSession(soundId, session);
+        foreach (var session in sessions)
+        {
+            session.Stop();
+            RemoveSession(soundId, session);
+        }
     }
 
     public async Task FadeOutAndStopAsync(string soundId, int milliseconds)
     {
-        PlaybackSession? session;
-        lock (_gate)
-        {
-            _sessions.TryGetValue(soundId, out session);
-        }
-
-        if (session is null)
+        var sessions = GetSessions(soundId);
+        if (sessions.Count == 0)
         {
             return;
         }
 
         var steps = Math.Max(1, milliseconds / 20);
-        var current = session.Reader.Volume;
 
-        for (var i = steps; i >= 0; i--)
+        foreach (var session in sessions)
         {
-            session.Reader.Volume = current * i / steps;
-            await Task.Delay(20).ConfigureAwait(false);
-        }
+            var current = session.Reader.Volume;
 
-        session.Stop();
-        RemoveSession(soundId, session);
+            for (var i = steps; i >= 0; i--)
+            {
+                session.Reader.Volume = current * i / steps;
+                await Task.Delay(20).ConfigureAwait(false);
+            }
+
+            session.Stop();
+            RemoveSession(soundId, session);
+        }
     }
 
     public void StopAll()
@@ -85,7 +109,7 @@ public sealed class AudioPlayer : IDisposable
         List<PlaybackSession> sessions;
         lock (_gate)
         {
-            sessions = _sessions.Values.ToList();
+            sessions = _sessions.Values.SelectMany(item => item).ToList();
             _sessions.Clear();
         }
 
@@ -99,7 +123,7 @@ public sealed class AudioPlayer : IDisposable
     {
         lock (_gate)
         {
-            return _sessions.ContainsKey(soundId);
+            return _sessions.TryGetValue(soundId, out var sessions) && sessions.Count > 0;
         }
     }
 
@@ -114,13 +138,31 @@ public sealed class AudioPlayer : IDisposable
 
         lock (_gate)
         {
-            if (_sessions.TryGetValue(soundId, out var existing) && ReferenceEquals(existing, session))
+            if (_sessions.TryGetValue(soundId, out var sessions))
             {
-                _sessions.Remove(soundId);
+                sessions.RemoveAll(existing => ReferenceEquals(existing, session));
+
+                if (sessions.Count == 0)
+                {
+                    _sessions.Remove(soundId);
+                }
             }
         }
 
         session.Dispose();
+    }
+
+    private List<PlaybackSession> GetSessions(string soundId)
+    {
+        lock (_gate)
+        {
+            if (_sessions.TryGetValue(soundId, out var sessions))
+            {
+                return sessions.ToList();
+            }
+
+            return new List<PlaybackSession>();
+        }
     }
 
     private sealed class PlaybackSession : IDisposable

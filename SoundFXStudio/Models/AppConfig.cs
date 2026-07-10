@@ -9,6 +9,18 @@ public class AppConfig : ObservableObject
 
     public ObservableCollection<SoundEntry> Sounds { get; set; } = new();
 
+    public ObservableCollection<ActionDefinition> Actions { get; set; } = new();
+
+    public ObservableCollection<ComboDefinition> Combos { get; set; } = new();
+
+    public ObservableCollection<KeyChord> KeyChords { get; set; } = new();
+
+    public ObservableCollection<PlaylistDefinition> Playlists { get; set; } = new();
+
+    public ObservableCollection<MacroDefinition> Macros { get; set; } = new();
+
+    public ObservableCollection<AudioRoutingPreset> RoutingPresets { get; set; } = new();
+
     public ObservableCollection<Profile> Profiles { get; set; } = new();
 
     public ObservableCollection<Category> Categories { get; set; } = new();

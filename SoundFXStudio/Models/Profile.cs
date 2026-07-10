@@ -11,6 +11,18 @@ public class Profile : ObservableObject
     private string _accentColor = "#00D4FF";
     private bool _isDefault;
 
+    public ObservableCollection<ActionDefinition> Actions { get; set; } = new();
+
+    public ObservableCollection<ComboDefinition> Combos { get; set; } = new();
+
+    public ObservableCollection<KeyChord> KeyChords { get; set; } = new();
+
+    public ObservableCollection<PlaylistDefinition> Playlists { get; set; } = new();
+
+    public ObservableCollection<MacroDefinition> Macros { get; set; } = new();
+
+    public ObservableCollection<AudioRoutingPreset> RoutingPresets { get; set; } = new();
+
     public string Id
     {
         get => _id;

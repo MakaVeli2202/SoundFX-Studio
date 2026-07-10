@@ -7,6 +7,12 @@ namespace SoundFXStudio.Controls;
 
 public partial class KeyboardControl : UserControl
 {
+    public static readonly DependencyProperty ButtonScaleProperty = DependencyProperty.Register(
+        nameof(ButtonScale),
+        typeof(double),
+        typeof(KeyboardControl),
+        new PropertyMetadata(0.8d));
+
     public static readonly DependencyProperty ItemsSourceProperty = DependencyProperty.Register(
         nameof(ItemsSource),
         typeof(IEnumerable),
@@ -28,6 +34,12 @@ public partial class KeyboardControl : UserControl
     {
         get => (IEnumerable?)GetValue(ItemsSourceProperty);
         set => SetValue(ItemsSourceProperty, value);
+    }
+
+    public double ButtonScale
+    {
+        get => (double)GetValue(ButtonScaleProperty);
+        set => SetValue(ButtonScaleProperty, value);
     }
 
     public ICommand? KeyClickedCommand

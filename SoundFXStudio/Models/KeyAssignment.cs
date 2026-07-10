@@ -6,6 +6,7 @@ public class KeyAssignment : ObservableObject
 {
     private string _id = Guid.NewGuid().ToString();
     private string _keyId = string.Empty;
+    private Guid? _actionId;
     private string _soundId = string.Empty;
     private string? _bindingName;
     private string? _imagePath;
@@ -26,6 +27,12 @@ public class KeyAssignment : ObservableObject
     {
         get => _keyId;
         set => SetProperty(ref _keyId, value);
+    }
+
+    public Guid? ActionId
+    {
+        get => _actionId;
+        set => SetProperty(ref _actionId, value);
     }
 
     public string SoundId

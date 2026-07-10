@@ -8,6 +8,8 @@ public sealed class KeyboardHookService : IDisposable
     private const int WhKeyboardLl = 13;
     private const int WmKeyDown = 0x0100;
     private const int WmSysKeyDown = 0x0104;
+    private const int WmKeyUp = 0x0101;
+    private const int WmSysKeyUp = 0x0105;
 
     private readonly LowLevelKeyboardProc _proc;
     private IntPtr _hookId = IntPtr.Zero;
@@ -18,6 +20,7 @@ public sealed class KeyboardHookService : IDisposable
     }
 
     public event EventHandler<KeyboardHookKeyEventArgs>? KeyDown;
+    public event EventHandler<KeyboardHookKeyEventArgs>? KeyUp;
 
     public void Attach()
     {
@@ -53,6 +56,12 @@ public sealed class KeyboardHookService : IDisposable
                 var data = Marshal.PtrToStructure<KbdLlHookStruct>(lParam);
                 var key = KeyInterop.KeyFromVirtualKey((int)data.VkCode);
                 KeyDown?.Invoke(this, new KeyboardHookKeyEventArgs(key));
+            }
+            else if (message is WmKeyUp or WmSysKeyUp)
+            {
+                var data = Marshal.PtrToStructure<KbdLlHookStruct>(lParam);
+                var key = KeyInterop.KeyFromVirtualKey((int)data.VkCode);
+                KeyUp?.Invoke(this, new KeyboardHookKeyEventArgs(key));
             }
         }
 

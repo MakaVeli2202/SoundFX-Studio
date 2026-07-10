@@ -34,7 +34,13 @@ public class ConfigService
         {
             var json = File.ReadAllText(_configPath);
             var config = JsonSerializer.Deserialize<AppConfig>(json, SerializerOptions);
-            return Normalize(config ?? CreateDefaultConfig());
+            var normalized = Normalize(config ?? CreateDefaultConfig(), out var migrated);
+            if (migrated)
+            {
+                Save(normalized);
+            }
+
+            return normalized;
         }
         catch
         {
@@ -44,7 +50,13 @@ public class ConfigService
                 {
                     var backupJson = File.ReadAllText(_backupPath);
                     var backup = JsonSerializer.Deserialize<AppConfig>(backupJson, SerializerOptions);
-                    return Normalize(backup ?? CreateDefaultConfig());
+                    var normalized = Normalize(backup ?? CreateDefaultConfig(), out var migrated);
+                    if (migrated)
+                    {
+                        Save(normalized);
+                    }
+
+                    return normalized;
                 }
                 catch
                 {
@@ -109,12 +121,21 @@ public class ConfigService
         return config;
     }
 
-    private static AppConfig Normalize(AppConfig config)
+    private static AppConfig Normalize(AppConfig config, out bool migrated)
     {
+        migrated = false;
         config.Sounds ??= new();
+        config.Actions ??= new();
+        config.Combos ??= new();
+        config.KeyChords ??= new();
+        config.Playlists ??= new();
+        config.Macros ??= new();
+        config.RoutingPresets ??= new();
         config.Profiles ??= new();
         config.Categories ??= new();
         config.Settings ??= new AppSettings();
+
+        migrated |= MigrateLegacySoundAssignments(config);
 
         if (config.Profiles.Count == 0)
         {
@@ -130,5 +151,69 @@ public class ConfigService
         }
 
         return config;
+    }
+
+    private static bool MigrateLegacySoundAssignments(AppConfig config)
+    {
+        var changed = false;
+        var soundActions = new Dictionary<string, ActionDefinition>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var action in config.Actions.Where(action => action.Type == ActionType.Sound && !string.IsNullOrWhiteSpace(action.Payload)))
+        {
+            soundActions[action.Payload] = action;
+        }
+
+        foreach (var profile in config.Profiles)
+        {
+            profile.KeyChords ??= new();
+            foreach (var assignment in profile.Assignments)
+            {
+                if (string.IsNullOrWhiteSpace(assignment.SoundId))
+                {
+                    continue;
+                }
+
+                if (!soundActions.TryGetValue(assignment.SoundId, out var action))
+                {
+                    var sound = config.Sounds.FirstOrDefault(item => string.Equals(item.Id, assignment.SoundId, StringComparison.OrdinalIgnoreCase));
+                    action = new ActionDefinition
+                    {
+                        Name = sound?.Name ?? assignment.SoundId,
+                        Description = sound is null ? "Legacy sound action" : $"Play {sound.Name}",
+                        Type = ActionType.Sound,
+                        IconPath = sound?.ImagePath ?? string.Empty,
+                        Category = sound?.Category ?? string.Empty,
+                        Payload = assignment.SoundId
+                    };
+
+                    config.Actions.Add(action);
+                    soundActions[assignment.SoundId] = action;
+                    changed = true;
+                }
+
+                if (assignment.ActionId != action.Id)
+                {
+                    assignment.ActionId = action.Id;
+                    changed = true;
+                }
+            }
+        }
+
+        foreach (var assignment in config.Profiles.SelectMany(profile => profile.Assignments))
+        {
+            if (assignment.ActionId is null || !string.IsNullOrWhiteSpace(assignment.SoundId))
+            {
+                continue;
+            }
+
+            var action = config.Actions.FirstOrDefault(item => item.Id == assignment.ActionId.Value);
+            if (action is not null && action.Type == ActionType.Sound && !string.IsNullOrWhiteSpace(action.Payload))
+            {
+                assignment.SoundId = action.Payload;
+                changed = true;
+            }
+        }
+
+        return changed;
     }
 }

@@ -90,5 +90,33 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="#F5F7FB" />
+            <Setter Property="Background" Value="#101010" />
+            <Setter Property="BorderBrush" Value="#2C2C2C" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="18,10" />
+            <Setter Property="Margin" Value="0,0,10,0" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background">
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#FF4D8D" Offset="0" />
+                                <GradientStop Color="#8857FF" Offset="0.5" />
+                                <GradientStop Color="#22D3FF" Offset="1" />
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="BorderBrush" Value="#22D3FF" />
+                    <Setter Property="Foreground" Value="#050505" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#171717" />
+                    <Setter Property="BorderBrush" Value="#22D3FF" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Application.Resources>
 </Application>

@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:SoundFXStudio.Controls"
              xmlns:converters="clr-namespace:SoundFXStudio.Converters"
+             xmlns:effects="clr-namespace:System.Windows.Media.Effects;assembly=PresentationCore"
              Background="Transparent"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True">
@@ -12,101 +13,79 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
         <Style TargetType="Button">
-            <Setter Property="Background" Value="#121A27" />
+            <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="#F5F7FB" />
-            <Setter Property="BorderBrush" Value="#2F465D" />
-            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="VerticalContentAlignment" Value="Stretch" />
-            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
-            <Setter Property="RenderTransform">
-                <Setter.Value>
-                    <ScaleTransform ScaleX="1" ScaleY="1" />
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Opacity" Value="0.24" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Root"
+                        <Grid SnapsToDevicePixels="True" Background="Transparent">
+                            <Border x:Name="GlowLayer"
+                                    Margin="-2"
+                                    CornerRadius="12"
+                                    Background="Transparent"
+                                    BorderBrush="#22D3FF"
+                                    BorderThickness="2"
+                                    Opacity="0"
+                                    IsHitTestVisible="False" />
+
+                            <Border x:Name="Frame"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="10"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                SnapsToDevicePixels="True">
-                            <Grid ClipToBounds="True">
-                                <Border x:Name="BaseLayer" Background="#121A27" CornerRadius="10" />
-                                <Border x:Name="HoverGlow" Background="#00000000" CornerRadius="10" Opacity="0" />
-                                <Border x:Name="PlayingGlow" Background="#00000000" CornerRadius="10" Opacity="0" />
-                                <Border x:Name="SelectionRing"
-                                        Margin="1"
-                                        CornerRadius="9"
-                                        BorderBrush="#00000000"
-                                        BorderThickness="0"
-                                        Opacity="0" />
-                                <ContentPresenter HorizontalAlignment="Stretch"
-                                                  VerticalAlignment="Stretch"
-                                                  Margin="0"
-                                                  RecognizesAccessKey="True" />
-                                <Border x:Name="PlayingBar"
-                                        Height="3"
-                                        Margin="10,0,10,8"
-                                        CornerRadius="1.5"
-                                        VerticalAlignment="Bottom"
-                                        Background="#36D1FF"
-                                        Opacity="0" />
-                            </Grid>
-                        </Border>
+                                    Opacity="{TemplateBinding Opacity}" />
+
+                            <ContentPresenter HorizontalAlignment="Stretch"
+                                              VerticalAlignment="Stretch"
+                                              Margin="0"
+                                              RecognizesAccessKey="True" />
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="BorderBrush" Value="#67D1FF" />
-                                <Setter TargetName="BaseLayer" Property="Background" Value="#172232" />
-                                <Setter TargetName="HoverGlow" Property="Opacity" Value="1" />
-                                <Setter TargetName="HoverGlow" Property="Background" Value="#1667D1FF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="RenderTransform">
+                                <Setter Property="Opacity" Value="1" />
+                                <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
+                                <Setter TargetName="GlowLayer" Property="Effect">
                                     <Setter.Value>
-                                        <ScaleTransform ScaleX="0.975" ScaleY="0.975" />
+                                        <effects:DropShadowEffect Color="#22D3FF" BlurRadius="10" ShadowDepth="0" Opacity="0.7" />
                                     </Setter.Value>
                                 </Setter>
-                                <Setter TargetName="Root" Property="BorderBrush" Value="#8BC4FF" />
-                                <Setter TargetName="BaseLayer" Property="Background" Value="#203447" />
-                                <Setter TargetName="HoverGlow" Property="Opacity" Value="1" />
-                                <Setter TargetName="HoverGlow" Property="Background" Value="#2546F1FF" />
-                                <Setter TargetName="PlayingBar" Property="Opacity" Value="0.4" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="1" />
+                                <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
+                                <Setter TargetName="GlowLayer" Property="Effect">
+                                    <Setter.Value>
+                                        <effects:DropShadowEffect Color="#22D3FF" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                             <DataTrigger Binding="{Binding HasAssignment}" Value="False">
-                                <Setter TargetName="Root" Property="BorderBrush" Value="#2F465D" />
-                                <Setter TargetName="BaseLayer" Property="Background" Value="#111923" />
-                                <Setter TargetName="PlayingGlow" Property="Opacity" Value="0" />
-                                <Setter TargetName="PlayingBar" Property="Opacity" Value="0" />
+                                <Setter Property="Opacity" Value="0.22" />
+                                <Setter TargetName="Frame" Property="Opacity" Value="0.22" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding HasAssignment}" Value="True">
-                                <Setter TargetName="Root" Property="BorderBrush" Value="#4CD7FF" />
-                                <Setter TargetName="BaseLayer" Property="Background" Value="#172434" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding State}" Value="Pressed">
-                                <Setter TargetName="Root" Property="BorderBrush" Value="#6EE7FF" />
-                                <Setter TargetName="BaseLayer" Property="Background" Value="#20384F" />
-                                <Setter TargetName="PlayingBar" Property="Opacity" Value="0.6" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding State}" Value="Playing">
-                                <Setter TargetName="Root" Property="BorderBrush" Value="#36D1FF" />
-                                <Setter TargetName="BaseLayer" Property="Background" Value="#183144" />
-                                <Setter TargetName="PlayingGlow" Property="Opacity" Value="1" />
-                                <Setter TargetName="PlayingGlow" Property="Background" Value="#2346F1FF" />
-                                <Setter TargetName="PlayingBar" Property="Opacity" Value="1" />
+                                <Setter Property="Opacity" Value="0.95" />
+                                <Setter TargetName="Frame" Property="Opacity" Value="0.95" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                <Setter TargetName="SelectionRing" Property="BorderThickness" Value="2" />
-                                <Setter TargetName="SelectionRing" Property="BorderBrush" Value="#FF4D8D" />
-                                <Setter TargetName="SelectionRing" Property="Opacity" Value="1" />
+                                <Setter Property="Opacity" Value="1" />
+                                <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
+                                <Setter TargetName="GlowLayer" Property="Effect">
+                                    <Setter.Value>
+                                        <effects:DropShadowEffect Color="#FF4D8D" BlurRadius="10" ShadowDepth="0" Opacity="0.7" />
+                                    </Setter.Value>
+                                </Setter>
                             </DataTrigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Root" Property="Opacity" Value="0.5" />
+                                <Setter Property="Opacity" Value="0.26" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -115,11 +94,11 @@
         </Style>
     </UserControl.Resources>
 
-    <Border Background="#09111B"
-            CornerRadius="20"
-            BorderBrush="#223A56"
-            BorderThickness="1"
-            Padding="6">
+    <Border Background="Transparent"
+            CornerRadius="0"
+            BorderBrush="Transparent"
+            BorderThickness="0"
+            Padding="0">
         <Grid>
             <Image Source="/Assets/Keyboards/SoundFXKeyBoard.png"
                    Stretch="Uniform"
@@ -135,138 +114,161 @@
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
 
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Button Command="{Binding DataContext.KeyClickedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                            CommandParameter="{Binding}"
-                            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                            Width="{Binding WidthUnits, Converter={StaticResource KeySizeConverter}, ConverterParameter=Width}"
-                            Height="{Binding HeightUnits, Converter={StaticResource KeySizeConverter}, ConverterParameter=Height}">
-                        <Button.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="➕ Assign Sound"
-                                          Command="{Binding PlacementTarget.Tag.AssignSelectedSoundToKeyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <MenuItem Header="❌ Remove Sound"
-                                          Command="{Binding PlacementTarget.Tag.RemoveSoundFromKeyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <MenuItem Header="🖼️ Set Image"
-                                          Command="{Binding PlacementTarget.Tag.ChooseKeyImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <MenuItem Header="❌ Remove Image"
-                                          Command="{Binding PlacementTarget.Tag.RemoveKeyImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <Separator />
-                                <MenuItem Header="📝 Rename Binding"
-                                          Command="{Binding PlacementTarget.Tag.RenameBindingCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <Separator />
-                                <MenuItem Header="🔊 Volume"
-                                          Command="{Binding PlacementTarget.Tag.ChangeKeyVolumeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <MenuItem Header="🔁 Toggle Loop"
-                                          Command="{Binding PlacementTarget.Tag.ToggleKeyLoopCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <MenuItem Header="⏹️ Stop Playback"
-                                          Command="{Binding PlacementTarget.Tag.StopKeyPlaybackCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                <Separator />
-                                <MenuItem Header="📋 Duplicate Binding"
-                                          Command="{Binding PlacementTarget.Tag.DuplicateBindingCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                            </ContextMenu>
-                        </Button.ContextMenu>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Command="{Binding DataContext.KeyClickedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                            <Button.Width>
+                                <MultiBinding Converter="{StaticResource KeySizeConverter}">
+                                    <Binding Path="WidthUnits" />
+                                    <Binding Path="ButtonScale" RelativeSource="{RelativeSource AncestorType=controls:KeyboardControl}" />
+                                </MultiBinding>
+                            </Button.Width>
+                            <Button.Height>
+                                <MultiBinding Converter="{StaticResource KeySizeConverter}">
+                                    <Binding Path="HeightUnits" />
+                                    <Binding Path="ButtonScale" RelativeSource="{RelativeSource AncestorType=controls:KeyboardControl}" />
+                                </MultiBinding>
+                            </Button.Height>
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="➕ Assign Sound"
+                                              Command="{Binding PlacementTarget.Tag.AssignSelectedSoundToKeyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    <MenuItem Header="❌ Remove Sound"
+                                              Command="{Binding PlacementTarget.Tag.RemoveSoundFromKeyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    <MenuItem Header="🖼️ Set Image"
+                                              Command="{Binding PlacementTarget.Tag.ChooseKeyImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    <MenuItem Header="❌ Remove Image"
+                                              Command="{Binding PlacementTarget.Tag.RemoveKeyImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    <Separator />
+                                    <MenuItem Header="📝 Rename Binding"
+                                              Command="{Binding PlacementTarget.Tag.RenameBindingCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    <Separator />
+                                    <MenuItem Header="🔊 Volume"
+                                              Command="{Binding PlacementTarget.Tag.ChangeKeyVolumeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    <MenuItem Header="🔁 Toggle Loop"
+                                              Command="{Binding PlacementTarget.Tag.ToggleKeyLoopCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    <MenuItem Header="⏹️ Stop Playback"
+                                              Command="{Binding PlacementTarget.Tag.StopKeyPlaybackCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                    <Separator />
+                                    <MenuItem Header="📋 Duplicate Binding"
+                                              Command="{Binding PlacementTarget.Tag.DuplicateBindingCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
 
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding State}" Value="Pressed">
-                                        <Setter Property="Background" Value="#20384F" />
-                                        <Setter Property="BorderBrush" Value="#6EE7FF" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding State}" Value="Playing">
-                                        <Setter Property="Background" Value="#183144" />
-                                        <Setter Property="BorderBrush" Value="#36D1FF" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                        <Setter Property="BorderBrush" Value="#FF4D8D" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding HasAssignment}" Value="True">
-                                        <Setter Property="Background" Value="#172434" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasAssignment}" Value="True">
+                                            <Setter Property="Opacity" Value="0.94" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding HasAssignment}" Value="False">
+                                            <Setter Property="Opacity" Value="0.2" />
+                                        </DataTrigger>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Opacity" Value="0.26" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
 
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="4" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <Border Grid.Column="0"
-                                    Margin="5,6,0,6"
-                                    CornerRadius="2"
-                                    Background="{Binding CategoryAccentColor}"
-                                    Visibility="{Binding HasAssignment, Converter={StaticResource BoolToVisibilityConverter}}" />
-
-                            <Grid Grid.Column="1" Margin="6,6,6,6">
+                            <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Text="{Binding DisplayLabel}"
-                                           FontSize="12"
-                                           FontWeight="SemiBold"
-                                           HorizontalAlignment="Center"
-                                           TextAlignment="Center"
-                                           TextWrapping="Wrap" />
+                                <Border Grid.RowSpan="3"
+                                        CornerRadius="10"
+                                        Background="#09000000"
+                                        Opacity="0.06" />
+
+                                <Border Grid.RowSpan="3"
+                                        Width="4"
+                                        HorizontalAlignment="Left"
+                                        CornerRadius="2"
+                                        Background="{Binding CategoryAccentColor}"
+                                        Opacity="0.85"
+                                        Visibility="{Binding HasAssignment, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                                <Grid Grid.Row="0" Margin="4,2,4,0">
+                                    <TextBlock Text="{Binding DisplayLabel}"
+                                               Foreground="#FFFFFF"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Left"
+                                               VerticalAlignment="Top"
+                                               TextWrapping="NoWrap"
+                                               TextTrimming="CharacterEllipsis"
+                                               Opacity="1">
+                                        <TextBlock.Effect>
+                                            <DropShadowEffect Color="#000000" BlurRadius="3" ShadowDepth="0" Opacity="0.85" />
+                                        </TextBlock.Effect>
+                                    </TextBlock>
+                                </Grid>
 
                                 <Grid Grid.Row="1"
-                                      Margin="0,4,0,3"
+                                      Margin="4,1,4,1"
                                       Visibility="{Binding HasAssignment, Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <Border CornerRadius="8"
-                                        ClipToBounds="True"
-                                            Background="#14000000" />
+                                    <Border CornerRadius="8" Background="#12000000" />
                                     <Image Source="{Binding ImagePath}"
                                            Stretch="UniformToFill"
-                                           Opacity="0.82"
-                                           ClipToBounds="True" />
+                                           Opacity="0.4"
+                                                                                     ClipToBounds="False" />
                                     <Border CornerRadius="8">
                                         <Border.Background>
                                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                <GradientStop Color="#10000000" Offset="0" />
-                                                <GradientStop Color="#A8000000" Offset="1" />
+                                                <GradientStop Color="#30000000" Offset="0" />
+                                                <GradientStop Color="#C8000000" Offset="1" />
                                             </LinearGradientBrush>
                                         </Border.Background>
                                     </Border>
                                 </Grid>
 
                                 <StackPanel Grid.Row="2"
+                                            Margin="4,0,4,2"
                                             Visibility="{Binding HasAssignment, Converter={StaticResource BoolToVisibilityConverter}}">
                                     <TextBlock Text="{Binding AssignedSoundName}"
+                                               Foreground="#FFFFFF"
                                                FontSize="9"
                                                FontWeight="SemiBold"
-                                               HorizontalAlignment="Center"
-                                               TextAlignment="Center"
-                                               TextWrapping="Wrap"
+                                               HorizontalAlignment="Left"
+                                               TextAlignment="Left"
+                                               TextWrapping="NoWrap"
                                                TextTrimming="CharacterEllipsis"
-                                               Opacity="0.96" />
+                                               Opacity="1">
+                                        <TextBlock.Effect>
+                                            <DropShadowEffect Color="#000000" BlurRadius="3" ShadowDepth="0" Opacity="0.8" />
+                                        </TextBlock.Effect>
+                                    </TextBlock>
                                     <TextBlock Text="{Binding AssignmentName}"
-                                               FontSize="7"
-                                               HorizontalAlignment="Center"
-                                               TextAlignment="Center"
-                                               TextWrapping="Wrap"
+                                               Foreground="#D9D9D9"
+                                               FontSize="8"
+                                               HorizontalAlignment="Left"
+                                               TextAlignment="Left"
+                                               TextWrapping="NoWrap"
                                                TextTrimming="CharacterEllipsis"
-                                               Opacity="0.72" />
+                                               Opacity="1">
+                                        <TextBlock.Effect>
+                                            <DropShadowEffect Color="#000000" BlurRadius="2" ShadowDepth="0" Opacity="0.75" />
+                                        </TextBlock.Effect>
+                                    </TextBlock>
                                 </StackPanel>
                             </Grid>
-                        </Grid>
-                    </Button>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
             </ItemsControl>
         </Grid>
     </Border>

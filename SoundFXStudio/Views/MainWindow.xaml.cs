@@ -1,4 +1,5 @@
 ﻿using SoundFXStudio.ViewModels;
+using SoundFXStudio.Views.Dialogs;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,6 +12,7 @@ namespace SoundFXStudio;
 public partial class MainWindow : Window
 {
     private MainViewModel ViewModel => (MainViewModel)DataContext;
+    private KeyboardCalibrationWindow? _keyboardCalibrationWindow;
 
     public MainWindow()
     {
@@ -129,5 +131,27 @@ public partial class MainWindow : Window
         {
             ViewModel.StatusText = "Could not open Windows Sound settings.";
         }
+    }
+
+    private void OpenCalibrationButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_keyboardCalibrationWindow is { IsLoaded: true })
+        {
+            if (_keyboardCalibrationWindow.WindowState == WindowState.Minimized)
+            {
+                _keyboardCalibrationWindow.WindowState = WindowState.Normal;
+            }
+
+            _keyboardCalibrationWindow.Activate();
+            return;
+        }
+
+        _keyboardCalibrationWindow = new KeyboardCalibrationWindow
+        {
+            Owner = this
+        };
+
+        _keyboardCalibrationWindow.Closed += (_, _) => _keyboardCalibrationWindow = null;
+        _keyboardCalibrationWindow.Show();
     }
 }
