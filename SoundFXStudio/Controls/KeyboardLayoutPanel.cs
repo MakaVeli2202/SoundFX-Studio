@@ -7,16 +7,20 @@ namespace SoundFXStudio.Controls;
 
 public sealed class KeyboardLayoutPanel : Panel
 {
+    private const double BaseLayoutWidth = 1536;
+    private const double BaseLayoutHeight = 1024;
+
     private static double _keyUnit = 43;
     private static double _gap = 3;
     private static double _offsetX = 65;
     private static double _offsetY = 72;
-    private static double _buttonScale = 0.8;
+    private static double _buttonScale = 1.0;
 
     private static readonly Dictionary<string, SpecialKeyOverride> SpecialKeyOverrides = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, PerKeyOverride> PerKeyOverrides = new(StringComparer.OrdinalIgnoreCase);
     private static event Action? CalibrationChanged;
 
-    public static bool DebugKeyboardCalibration { get; set; } = true;
+    public static bool DebugKeyboardCalibration { get; set; }
 
     public static double KeyUnit
     {
@@ -133,6 +137,24 @@ public sealed class KeyboardLayoutPanel : Panel
         NotifyCalibrationChanged();
     }
 
+    public static void SetPerKeyOverride(string keyId, double offsetX, double offsetY, double widthAdjustment, double heightAdjustment)
+    {
+        PerKeyOverrides[keyId] = new PerKeyOverride(offsetX, offsetY, widthAdjustment, heightAdjustment);
+        NotifyCalibrationChanged();
+    }
+
+    public static void ClearPerKeyOverride(string keyId)
+    {
+        PerKeyOverrides.Remove(keyId);
+        NotifyCalibrationChanged();
+    }
+
+    public static void ClearAllPerKeyOverrides()
+    {
+        PerKeyOverrides.Clear();
+        NotifyCalibrationChanged();
+    }
+
     public KeyboardLayoutPanel()
     {
         Loaded += KeyboardLayoutPanel_Loaded;
@@ -209,8 +231,8 @@ public sealed class KeyboardLayoutPanel : Panel
             .DefaultIfEmpty(0d)
             .Max();
 
-        var desiredWidth = maxWidth + Gap;
-        var desiredHeight = maxHeight + Gap;
+        var desiredWidth = Math.Max(BaseLayoutWidth, Math.Max(0d, maxWidth + Gap));
+        var desiredHeight = Math.Max(BaseLayoutHeight, Math.Max(0d, maxHeight + Gap));
 
         // Constrain to available size if not infinite
         return new Size(
@@ -239,11 +261,15 @@ public sealed class KeyboardLayoutPanel : Panel
             var cluster = GetCluster(key);
             var clusterCalibration = KeyboardClusterLayout.Get(cluster);
             var specialOverride = GetSpecialOverride(key);
-            var width = Math.Max(1d, (key.WidthUnits * KeyUnit) + ((key.WidthUnits - 1) * Gap) + specialOverride.WidthAdjustment);
-            var height = Math.Max(1d, key.HeightUnits * KeyUnit + ((key.HeightUnits - 1) * Gap));
+            var keyOverride = GetPerKeyOverride(key);
+            var baseWidth = Math.Max(1d, (key.WidthUnits * KeyUnit) + specialOverride.WidthAdjustment + keyOverride.WidthAdjustment);
+            var baseHeight = Math.Max(1d, (key.HeightUnits * KeyUnit) + keyOverride.HeightAdjustment);
+            var width = Math.Max(1d, baseWidth * ButtonScale);
+            var height = Math.Max(1d, baseHeight * ButtonScale);
 
-            var x = OffsetX + clusterCalibration.OffsetX + key.ColumnIndex * (KeyUnit + Gap);
-            var y = OffsetY + clusterCalibration.OffsetY + key.RowIndex * (KeyUnit + Gap);
+            // Keep scaled keys centered within their logical slot so global spacing stays stable.
+            var x = OffsetX + clusterCalibration.OffsetX + key.ColumnIndex * (KeyUnit + Gap) + keyOverride.OffsetX + ((baseWidth - width) / 2d);
+            var y = OffsetY + clusterCalibration.OffsetY + key.RowIndex * (KeyUnit + Gap) + keyOverride.OffsetY + ((baseHeight - height) / 2d);
 
             child.Arrange(new Rect(new Point(x, y), new Size(width, height)));
         }
@@ -258,7 +284,9 @@ public sealed class KeyboardLayoutPanel : Panel
             .DefaultIfEmpty(0d)
             .Max();
 
-        return new Size(maxWidth + Gap, maxHeight + Gap);
+        return new Size(
+            Math.Max(BaseLayoutWidth, Math.Max(0d, maxWidth + Gap)),
+            Math.Max(BaseLayoutHeight, Math.Max(0d, maxHeight + Gap)));
     }
 
     private static SpecialKeyOverride GetSpecialOverride(KeyboardKey key)
@@ -268,6 +296,11 @@ public sealed class KeyboardLayoutPanel : Panel
             ? default
             : calibration;
     }
+
+    private static PerKeyOverride GetPerKeyOverride(KeyboardKey key)
+        => string.IsNullOrWhiteSpace(key.Id) || !PerKeyOverrides.TryGetValue(key.Id, out var calibration)
+            ? default
+            : calibration;
 
     private static string? GetSpecialOverrideKey(KeyboardKey key)
     {
@@ -331,6 +364,11 @@ public sealed class KeyboardLayoutPanel : Panel
             return KeyboardCluster.F9ToF12Cluster;
         }
 
+        if (IsPrintScrollPauseKey(key.KeyName))
+        {
+            return KeyboardCluster.PrintScrollPauseCluster;
+        }
+
         if (IsNavigationKey(key.KeyName))
         {
             return KeyboardCluster.NavigationCluster;
@@ -360,7 +398,10 @@ public sealed class KeyboardLayoutPanel : Panel
     }
 
     private static bool IsNavigationKey(string keyName)
-        => keyName is "INSERT" or "HOME" or "PAGE UP" or "PRINT SCREEN" or "SCROLL LOCK" or "PAUSE" or "DELETE" or "END" or "PAGE DOWN";
+        => keyName is "INSERT" or "HOME" or "PAGE UP" or "DELETE" or "END" or "PAGE DOWN";
+
+    private static bool IsPrintScrollPauseKey(string keyName)
+        => keyName is "PRINT SCREEN" or "SCROLL LOCK" or "PAUSE";
 
     private static bool IsArrowKey(string keyName)
         => keyName is "LEFT" or "DOWN" or "RIGHT" or "UP";
@@ -396,18 +437,23 @@ public sealed class KeyboardLayoutPanel : Panel
     {
         var clusterCalibration = KeyboardClusterLayout.Get(GetCluster(key));
         var specialOverride = GetSpecialOverride(key);
-        var width = Math.Max(1d, (key.WidthUnits * KeyUnit) + ((key.WidthUnits - 1) * Gap) + specialOverride.WidthAdjustment);
-        var x = OffsetX + clusterCalibration.OffsetX + key.ColumnIndex * (KeyUnit + Gap);
+        var keyOverride = GetPerKeyOverride(key);
+        var baseWidth = Math.Max(1d, (key.WidthUnits * KeyUnit) + specialOverride.WidthAdjustment + keyOverride.WidthAdjustment);
+        var width = Math.Max(1d, baseWidth * ButtonScale);
+        var x = OffsetX + clusterCalibration.OffsetX + key.ColumnIndex * (KeyUnit + Gap) + keyOverride.OffsetX + ((baseWidth - width) / 2d);
         return x + width;
     }
 
     private static double GetKeyBottomEdge(KeyboardKey key)
     {
         var clusterCalibration = KeyboardClusterLayout.Get(GetCluster(key));
-        var height = Math.Max(1d, key.HeightUnits * KeyUnit + ((key.HeightUnits - 1) * Gap));
-        var y = OffsetY + clusterCalibration.OffsetY + key.RowIndex * (KeyUnit + Gap);
+        var keyOverride = GetPerKeyOverride(key);
+        var baseHeight = Math.Max(1d, (key.HeightUnits * KeyUnit) + keyOverride.HeightAdjustment);
+        var height = Math.Max(1d, baseHeight * ButtonScale);
+        var y = OffsetY + clusterCalibration.OffsetY + key.RowIndex * (KeyUnit + Gap) + keyOverride.OffsetY + ((baseHeight - height) / 2d);
         return y + height;
     }
 
     private readonly record struct SpecialKeyOverride(double WidthAdjustment);
+    private readonly record struct PerKeyOverride(double OffsetX, double OffsetY, double WidthAdjustment, double HeightAdjustment);
 }

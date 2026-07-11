@@ -1,0 +1,142 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="1e8d783f-bd53-4b10-a74f-842a37ac7e21" name="mmaha@MAKAVELI 2026-07-11 00:40:09" runUser="MAKAVELI\mmaha" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-07-11T00:40:09.0454964+02:00" queuing="2026-07-11T00:40:09.0454967+02:00" start="2026-07-11T00:40:00.2548393+02:00" finish="2026-07-11T00:40:48.8040912+02:00" />
+  <TestSettings name="default" id="3ad8ce6d-4c5a-4a94-a553-45236379f67e">
+    <Deployment runDeploymentRoot="mmaha_MAKAVELI_2026-07-11_00_40_09" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="931be5a4-62bc-4d8d-ad16-af59230820cc" testId="ad18676b-3dce-00b9-ac60-719bb9dce76d" testName="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_DialogOpens_WithTitle" computerName="MAKAVELI" duration="00:00:03.5183218" startTime="2026-07-11T00:40:19.9042317+02:00" endTime="2026-07-11T00:40:19.9042320+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="931be5a4-62bc-4d8d-ad16-af59230820cc" />
+    <UnitTestResult executionId="100ec766-0ed5-439e-8204-ca835608cae5" testId="c85e3783-9282-693a-c1bb-d919132e460d" testName="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasSaveAndCancelButtons" computerName="MAKAVELI" duration="00:00:03.6643231" startTime="2026-07-11T00:40:16.3858032+02:00" endTime="2026-07-11T00:40:16.3858034+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="100ec766-0ed5-439e-8204-ca835608cae5" />
+    <UnitTestResult executionId="651cc290-16f8-44c2-960d-2234c3595efe" testId="dff76364-4630-5bc6-0b9e-f1039082bace" testName="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasVolumeSlider" computerName="MAKAVELI" duration="00:00:03.6933555" startTime="2026-07-11T00:40:12.7248047+02:00" endTime="2026-07-11T00:40:12.7248049+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="651cc290-16f8-44c2-960d-2234c3595efe">
+      <Output>
+        <ErrorInfo>
+          <Message>Dialog should have a volume slider</Message>
+          <StackTrace>   at SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasVolumeSlider() in E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\AddSoundDialogTests.cs:line 116&#xD;
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="0573cf4c-d729-450b-9ec5-a5543c074f1f" testId="a6d873ba-7b95-f480-7dac-a2020f433772" testName="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasFavoriteAndLoopCheckboxes" computerName="MAKAVELI" duration="00:00:03.6012886" startTime="2026-07-11T00:40:09.0224932+02:00" endTime="2026-07-11T00:40:09.0225116+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0573cf4c-d729-450b-9ec5-a5543c074f1f" />
+    <UnitTestResult executionId="071c3fae-bd85-4413-9087-6d27397504b3" testId="6c2c5402-4454-2acb-6b28-248209587e84" testName="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasCloseXButton" computerName="MAKAVELI" duration="00:00:03.2106015" startTime="2026-07-11T00:40:43.0691157+02:00" endTime="2026-07-11T00:40:43.0691160+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="071c3fae-bd85-4413-9087-6d27397504b3" />
+    <UnitTestResult executionId="75b0a4de-1b42-4def-a8ba-c9dc87ecc792" testId="56a1d8ad-0e0b-0005-4ce6-b4548e368436" testName="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_CancelClosesDialog" computerName="MAKAVELI" duration="00:00:05.4173964" startTime="2026-07-11T00:40:39.8583894+02:00" endTime="2026-07-11T00:40:39.8583897+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="75b0a4de-1b42-4def-a8ba-c9dc87ecc792" />
+    <UnitTestResult executionId="62ddabad-3d4a-4590-a1b3-e4a9ef2bb9c5" testId="1aa073ca-278b-64bf-34ce-723d409d42e4" testName="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasBrowseButton" computerName="MAKAVELI" duration="00:00:03.6389072" startTime="2026-07-11T00:40:34.4413619+02:00" endTime="2026-07-11T00:40:34.4413621+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="62ddabad-3d4a-4590-a1b3-e4a9ef2bb9c5">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.NotNull() Failure: Value is null</Message>
+          <StackTrace>   at SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasBrowseButton() in E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\AddSoundDialogTests.cs:line 58&#xD;
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="cf3ff3cf-a644-4d4f-9e18-3e0bf610808e" testId="3aef9faa-21ba-8595-f291-aedc6af95e17" testName="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasNameTextBox" computerName="MAKAVELI" duration="00:00:03.6303761" startTime="2026-07-11T00:40:30.8016100+02:00" endTime="2026-07-11T00:40:30.8016103+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cf3ff3cf-a644-4d4f-9e18-3e0bf610808e" />
+    <UnitTestResult executionId="58035f79-518d-4e8f-b2c7-2de677f627bd" testId="a9a7f6c3-99b1-9151-7480-658e35bbaf17" testName="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasImageBrowseButton" computerName="MAKAVELI" duration="00:00:03.6373480" startTime="2026-07-11T00:40:23.5424120+02:00" endTime="2026-07-11T00:40:23.5424121+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="58035f79-518d-4e8f-b2c7-2de677f627bd">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.NotNull() Failure: Value is null</Message>
+          <StackTrace>   at SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasImageBrowseButton() in E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\AddSoundDialogTests.cs:line 128&#xD;
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="d54ba1b8-47a5-4a08-8f18-8bee6da8af0c" testId="0acf62e2-8fed-231d-588e-6be0c0d89766" testName="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasCategoryComboBox" computerName="MAKAVELI" duration="00:00:03.6290219" startTime="2026-07-11T00:40:27.1710715+02:00" endTime="2026-07-11T00:40:27.1710721+02:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d54ba1b8-47a5-4a08-8f18-8bee6da8af0c" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_DialogOpens_WithTitle" storage="e:\projects\soundfx-studio\soundfxstudio.ui.tests\bin\debug\net8.0-windows\soundfxstudio.ui.tests.dll" id="ad18676b-3dce-00b9-ac60-719bb9dce76d">
+      <Execution id="931be5a4-62bc-4d8d-ad16-af59230820cc" />
+      <TestMethod codeBase="E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\bin\Debug\net8.0-windows\SoundFXStudio.UI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="SoundFXStudio.UI.Tests.AddSoundDialogTests" name="AddSound_DialogOpens_WithTitle" />
+    </UnitTest>
+    <UnitTest name="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasNameTextBox" storage="e:\projects\soundfx-studio\soundfxstudio.ui.tests\bin\debug\net8.0-windows\soundfxstudio.ui.tests.dll" id="3aef9faa-21ba-8595-f291-aedc6af95e17">
+      <Execution id="cf3ff3cf-a644-4d4f-9e18-3e0bf610808e" />
+      <TestMethod codeBase="E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\bin\Debug\net8.0-windows\SoundFXStudio.UI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="SoundFXStudio.UI.Tests.AddSoundDialogTests" name="AddSound_HasNameTextBox" />
+    </UnitTest>
+    <UnitTest name="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_CancelClosesDialog" storage="e:\projects\soundfx-studio\soundfxstudio.ui.tests\bin\debug\net8.0-windows\soundfxstudio.ui.tests.dll" id="56a1d8ad-0e0b-0005-4ce6-b4548e368436">
+      <Execution id="75b0a4de-1b42-4def-a8ba-c9dc87ecc792" />
+      <TestMethod codeBase="E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\bin\Debug\net8.0-windows\SoundFXStudio.UI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="SoundFXStudio.UI.Tests.AddSoundDialogTests" name="AddSound_CancelClosesDialog" />
+    </UnitTest>
+    <UnitTest name="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasVolumeSlider" storage="e:\projects\soundfx-studio\soundfxstudio.ui.tests\bin\debug\net8.0-windows\soundfxstudio.ui.tests.dll" id="dff76364-4630-5bc6-0b9e-f1039082bace">
+      <Execution id="651cc290-16f8-44c2-960d-2234c3595efe" />
+      <TestMethod codeBase="E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\bin\Debug\net8.0-windows\SoundFXStudio.UI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="SoundFXStudio.UI.Tests.AddSoundDialogTests" name="AddSound_HasVolumeSlider" />
+    </UnitTest>
+    <UnitTest name="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasCategoryComboBox" storage="e:\projects\soundfx-studio\soundfxstudio.ui.tests\bin\debug\net8.0-windows\soundfxstudio.ui.tests.dll" id="0acf62e2-8fed-231d-588e-6be0c0d89766">
+      <Execution id="d54ba1b8-47a5-4a08-8f18-8bee6da8af0c" />
+      <TestMethod codeBase="E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\bin\Debug\net8.0-windows\SoundFXStudio.UI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="SoundFXStudio.UI.Tests.AddSoundDialogTests" name="AddSound_HasCategoryComboBox" />
+    </UnitTest>
+    <UnitTest name="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasBrowseButton" storage="e:\projects\soundfx-studio\soundfxstudio.ui.tests\bin\debug\net8.0-windows\soundfxstudio.ui.tests.dll" id="1aa073ca-278b-64bf-34ce-723d409d42e4">
+      <Execution id="62ddabad-3d4a-4590-a1b3-e4a9ef2bb9c5" />
+      <TestMethod codeBase="E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\bin\Debug\net8.0-windows\SoundFXStudio.UI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="SoundFXStudio.UI.Tests.AddSoundDialogTests" name="AddSound_HasBrowseButton" />
+    </UnitTest>
+    <UnitTest name="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasImageBrowseButton" storage="e:\projects\soundfx-studio\soundfxstudio.ui.tests\bin\debug\net8.0-windows\soundfxstudio.ui.tests.dll" id="a9a7f6c3-99b1-9151-7480-658e35bbaf17">
+      <Execution id="58035f79-518d-4e8f-b2c7-2de677f627bd" />
+      <TestMethod codeBase="E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\bin\Debug\net8.0-windows\SoundFXStudio.UI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="SoundFXStudio.UI.Tests.AddSoundDialogTests" name="AddSound_HasImageBrowseButton" />
+    </UnitTest>
+    <UnitTest name="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasSaveAndCancelButtons" storage="e:\projects\soundfx-studio\soundfxstudio.ui.tests\bin\debug\net8.0-windows\soundfxstudio.ui.tests.dll" id="c85e3783-9282-693a-c1bb-d919132e460d">
+      <Execution id="100ec766-0ed5-439e-8204-ca835608cae5" />
+      <TestMethod codeBase="E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\bin\Debug\net8.0-windows\SoundFXStudio.UI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="SoundFXStudio.UI.Tests.AddSoundDialogTests" name="AddSound_HasSaveAndCancelButtons" />
+    </UnitTest>
+    <UnitTest name="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasFavoriteAndLoopCheckboxes" storage="e:\projects\soundfx-studio\soundfxstudio.ui.tests\bin\debug\net8.0-windows\soundfxstudio.ui.tests.dll" id="a6d873ba-7b95-f480-7dac-a2020f433772">
+      <Execution id="0573cf4c-d729-450b-9ec5-a5543c074f1f" />
+      <TestMethod codeBase="E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\bin\Debug\net8.0-windows\SoundFXStudio.UI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="SoundFXStudio.UI.Tests.AddSoundDialogTests" name="AddSound_HasFavoriteAndLoopCheckboxes" />
+    </UnitTest>
+    <UnitTest name="SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasCloseXButton" storage="e:\projects\soundfx-studio\soundfxstudio.ui.tests\bin\debug\net8.0-windows\soundfxstudio.ui.tests.dll" id="6c2c5402-4454-2acb-6b28-248209587e84">
+      <Execution id="071c3fae-bd85-4413-9087-6d27397504b3" />
+      <TestMethod codeBase="E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\bin\Debug\net8.0-windows\SoundFXStudio.UI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="SoundFXStudio.UI.Tests.AddSoundDialogTests" name="AddSound_HasCloseXButton" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="ad18676b-3dce-00b9-ac60-719bb9dce76d" executionId="931be5a4-62bc-4d8d-ad16-af59230820cc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c85e3783-9282-693a-c1bb-d919132e460d" executionId="100ec766-0ed5-439e-8204-ca835608cae5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dff76364-4630-5bc6-0b9e-f1039082bace" executionId="651cc290-16f8-44c2-960d-2234c3595efe" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a6d873ba-7b95-f480-7dac-a2020f433772" executionId="0573cf4c-d729-450b-9ec5-a5543c074f1f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6c2c5402-4454-2acb-6b28-248209587e84" executionId="071c3fae-bd85-4413-9087-6d27397504b3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="56a1d8ad-0e0b-0005-4ce6-b4548e368436" executionId="75b0a4de-1b42-4def-a8ba-c9dc87ecc792" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1aa073ca-278b-64bf-34ce-723d409d42e4" executionId="62ddabad-3d4a-4590-a1b3-e4a9ef2bb9c5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3aef9faa-21ba-8595-f291-aedc6af95e17" executionId="cf3ff3cf-a644-4d4f-9e18-3e0bf610808e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a9a7f6c3-99b1-9151-7480-658e35bbaf17" executionId="58035f79-518d-4e8f-b2c7-2de677f627bd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0acf62e2-8fed-231d-588e-6be0c0d89766" executionId="d54ba1b8-47a5-4a08-8f18-8bee6da8af0c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="10" executed="10" passed="7" failed="3" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 8.0.28)&#xD;
+[xUnit.net 00:00:00.75]   Discovering: SoundFXStudio.UI.Tests&#xD;
+[xUnit.net 00:00:00.79]   Discovered:  SoundFXStudio.UI.Tests&#xD;
+[xUnit.net 00:00:00.79]   Starting:    SoundFXStudio.UI.Tests&#xD;
+[xUnit.net 00:00:12.15]       Dialog should have a volume slider&#xD;
+[xUnit.net 00:00:12.15]       Stack Trace:&#xD;
+[xUnit.net 00:00:12.15]         E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\AddSoundDialogTests.cs(116,0): at SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasVolumeSlider()&#xD;
+[xUnit.net 00:00:12.15]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)&#xD;
+[xUnit.net 00:00:12.15]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)&#xD;
+[xUnit.net 00:00:22.97]       Assert.NotNull() Failure: Value is null&#xD;
+[xUnit.net 00:00:22.97]       Stack Trace:&#xD;
+[xUnit.net 00:00:22.97]         E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\AddSoundDialogTests.cs(128,0): at SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasImageBrowseButton()&#xD;
+[xUnit.net 00:00:22.97]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)&#xD;
+[xUnit.net 00:00:22.97]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)&#xD;
+[xUnit.net 00:00:33.86]       Assert.NotNull() Failure: Value is null&#xD;
+[xUnit.net 00:00:33.86]       Stack Trace:&#xD;
+[xUnit.net 00:00:33.86]         E:\Projects\SoundFX-Studio\SoundFXStudio.UI.Tests\AddSoundDialogTests.cs(58,0): at SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasBrowseButton()&#xD;
+[xUnit.net 00:00:33.86]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)&#xD;
+[xUnit.net 00:00:33.86]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)&#xD;
+Application failed to exit&#xD;
+[xUnit.net 00:00:48.19]   Finished:    SoundFXStudio.UI.Tests&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="MAKAVELI" outcome="Error" timestamp="2026-07-11T00:40:12.7234471+02:00">
+        <Text>[xUnit.net 00:00:12.15]     SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasVolumeSlider [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="MAKAVELI" outcome="Error" timestamp="2026-07-11T00:40:23.5423337+02:00">
+        <Text>[xUnit.net 00:00:22.97]     SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasImageBrowseButton [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="MAKAVELI" outcome="Error" timestamp="2026-07-11T00:40:34.4411878+02:00">
+        <Text>[xUnit.net 00:00:33.86]     SoundFXStudio.UI.Tests.AddSoundDialogTests.AddSound_HasBrowseButton [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

@@ -56,6 +56,7 @@
 
                 <Button Grid.Column="1"
                         Content="✕"
+                    AutomationProperties.Name="Close"
                         Width="40"
                         Height="30"
                         VerticalAlignment="Top"
@@ -91,6 +92,7 @@
                                 </Grid.ColumnDefinitions>
                                 
                                 <TextBox x:Name="FilePathBox" 
+                                         AutomationProperties.Name="Sound File Path"
                                          IsReadOnly="True" 
                                          Text="{Binding FilePath, Mode=OneWay}"
                                          Height="34" 
@@ -102,6 +104,7 @@
                                          Margin="0,0,10,0"/>
                                 
                                 <Button x:Name="BrowseButton" 
+                                    AutomationProperties.Name="Browse"
                                         Content="Browse" 
                                         Width="100" 
                                     Height="34"
@@ -121,6 +124,7 @@
                             <TextBlock Text="(label on keyboard button)" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="8,2,0,0" />
                         </StackPanel>
                         <TextBox x:Name="NameBox"
+                                 AutomationProperties.Name="Sound Name"
                                  Text="{Binding Name}"
                                  Height="36"
                                  Padding="10,6"
@@ -134,6 +138,7 @@
                     <StackPanel Margin="0,0,0,12">
                         <TextBlock Text="⌨️ Keyboard Button" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6" />
                         <ComboBox ItemsSource="{Binding AvailableKeys}"
+                                  AutomationProperties.Name="Keyboard Button"
                                   DisplayMemberPath="DisplayLabel"
                                   SelectedValuePath="Id"
                                   SelectedValue="{Binding SelectedKey}"
@@ -149,6 +154,7 @@
                     <StackPanel Margin="0,0,0,12">
                         <TextBlock Text="📂 Sound Group" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6" />
                         <ComboBox ItemsSource="{Binding Categories}"
+                                  AutomationProperties.Name="Sound Group"
                                   SelectedItem="{Binding Category}"
                                   Height="36"
                                   Padding="10,6"
@@ -167,6 +173,7 @@
                                 <ColumnDefinition Width="50" />
                             </Grid.ColumnDefinitions>
                             <Slider Minimum="0"
+                                    AutomationProperties.Name="Volume"
                                     Maximum="100"
                                     Value="{Binding VolumePercent}"
                                     Margin="0,0,10,0"
@@ -184,10 +191,12 @@
                     <StackPanel Margin="0,0,0,12">
                         <TextBlock Text="⚙️ Options" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,10" />
                         <CheckBox Content="Mark as favorite (⭐ icon)"
+                                  AutomationProperties.Name="Favorite"
                                   IsChecked="{Binding IsFavorite}"
                                   Foreground="{StaticResource TextBrush}"
                                   Margin="0,0,0,8" />
                         <CheckBox Content="Loop sound continuously"
+                                  AutomationProperties.Name="Loop"
                                   IsChecked="{Binding Loop}"
                                   Foreground="{StaticResource TextBrush}" />
                     </StackPanel>
@@ -204,6 +213,7 @@
                                 </Grid.ColumnDefinitions>
                                 
                                 <TextBox x:Name="ImagePathBox" 
+                                         AutomationProperties.Name="Image File Path"
                                          IsReadOnly="True" 
                                          Text="{Binding ImagePath, Mode=OneWay}"
                                          Height="34"
@@ -214,6 +224,7 @@
                                          Foreground="{StaticResource TextBrush}" />
                                 
                                 <Button x:Name="ImageBrowseButton" 
+                                    AutomationProperties.Name="Choose"
                                         Content="Choose" 
                                         Width="90" 
                                     Height="34"
@@ -247,12 +258,14 @@
                     HorizontalAlignment="Right"
                 Margin="0,14,0,0">
             <Button Content="Cancel"
+                    AutomationProperties.Name="Cancel"
                     Width="100"
                     Margin="0,0,10,0"
                     Click="CancelButton_Click"
                     Background="#303030"
                     Foreground="{StaticResource TextBrush}" />
             <Button Content="Save"
+                    AutomationProperties.Name="Save"
                     Width="100"
                     Click="SaveButton_Click"
                     Background="#36D1FF"

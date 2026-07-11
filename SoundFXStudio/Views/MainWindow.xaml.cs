@@ -151,6 +151,7 @@ public partial class MainWindow : Window
             Owner = this
         };
 
+        _keyboardCalibrationWindow.CalibrationSaved += (_, _) => ViewModel.RefreshCommand.Execute(null);
         _keyboardCalibrationWindow.Closed += (_, _) => _keyboardCalibrationWindow = null;
         _keyboardCalibrationWindow.Show();
     }

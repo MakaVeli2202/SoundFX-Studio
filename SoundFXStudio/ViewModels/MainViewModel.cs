@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using SoundFXStudio.Controls;
 using SoundFXStudio.Infrastructure;
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
@@ -510,10 +511,68 @@ public sealed class MainViewModel : ObservableObject
         SelectedProfile = active;
         _config.PropertyChanged += Config_PropertyChanged;
         _config.Settings.PropertyChanged += Settings_PropertyChanged;
+        ApplyKeyboardCalibration(Settings.KeyboardCalibration);
         RefreshAssignments();
         UpdateRoutingStatus();
         UpdateStatus();
         RaiseSoundCollectionStats();
+    }
+
+    private static void ApplyKeyboardCalibration(KeyboardCalibrationSettings calibration)
+    {
+        calibration ??= new KeyboardCalibrationSettings();
+
+        KeyboardLayoutPanel.SetLayoutCalibration(
+            calibration.KeyUnit,
+            calibration.Gap,
+            calibration.OffsetX,
+            calibration.OffsetY);
+
+        KeyboardLayoutPanel.ButtonScale = calibration.ButtonScale;
+        KeyboardLayoutPanel.DebugKeyboardCalibration = calibration.DebugCalibration;
+
+        KeyboardClusterLayout.ApplyPreset(
+            calibration.EscOffsetX,
+            calibration.EscOffsetY,
+            calibration.F1ToF4OffsetX,
+            calibration.F1ToF4OffsetY,
+            calibration.F5ToF8OffsetX,
+            calibration.F5ToF8OffsetY,
+            calibration.F9ToF12OffsetX,
+            calibration.F9ToF12OffsetY,
+            calibration.PrintScrollPauseOffsetX,
+            calibration.PrintScrollPauseOffsetY,
+            calibration.MainTypingOffsetX,
+            calibration.MainTypingOffsetY,
+            calibration.NavigationOffsetX,
+            calibration.NavigationOffsetY,
+            calibration.ArrowOffsetX,
+            calibration.ArrowOffsetY,
+            calibration.NumpadOffsetX,
+            calibration.NumpadOffsetY);
+
+        KeyboardLayoutPanel.ClearAllSpecialKeyOverrides();
+        KeyboardLayoutPanel.ConfigureCalibration(builder => builder
+            .Spacebar(calibration.SpacebarWidthAdjustment)
+            .Backspace(calibration.BackspaceWidthAdjustment)
+            .Enter(calibration.EnterWidthAdjustment)
+            .IsoEnter(calibration.IsoEnterWidthAdjustment)
+            .LeftShift(calibration.LeftShiftWidthAdjustment)
+            .RightShift(calibration.RightShiftWidthAdjustment)
+            .NumpadEnter(calibration.NumpadEnterWidthAdjustment)
+            .Tab(calibration.TabWidthAdjustment)
+            .CapsLock(calibration.CapsLockWidthAdjustment));
+
+        KeyboardLayoutPanel.ClearAllPerKeyOverrides();
+        foreach (var entry in calibration.KeyOverrides)
+        {
+            KeyboardLayoutPanel.SetPerKeyOverride(
+                entry.Key,
+                entry.Value.OffsetX,
+                entry.Value.OffsetY,
+                entry.Value.WidthAdjustment,
+                entry.Value.HeightAdjustment);
+        }
     }
 
     private void Config_PropertyChanged(object? sender, PropertyChangedEventArgs e)

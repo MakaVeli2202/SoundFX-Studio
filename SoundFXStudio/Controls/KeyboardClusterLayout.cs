@@ -8,6 +8,7 @@ public enum KeyboardCluster
     F1ToF4Cluster,
     F5ToF8Cluster,
     F9ToF12Cluster,
+    PrintScrollPauseCluster,
     MainTypingCluster,
     NavigationCluster,
     ArrowCluster,
@@ -57,6 +58,8 @@ public static class KeyboardClusterLayout
         double f5ToF8OffsetY,
         double f9ToF12OffsetX,
         double f9ToF12OffsetY,
+        double printScrollPauseOffsetX = 0,
+        double printScrollPauseOffsetY = 0,
         double mainTypingOffsetX = 0,
         double mainTypingOffsetY = 0,
         double navigationOffsetX = 0,
@@ -70,6 +73,7 @@ public static class KeyboardClusterLayout
         ClusterCalibrations[KeyboardCluster.F1ToF4Cluster] = new KeyboardClusterCalibration { OffsetX = f1ToF4OffsetX, OffsetY = f1ToF4OffsetY };
         ClusterCalibrations[KeyboardCluster.F5ToF8Cluster] = new KeyboardClusterCalibration { OffsetX = f5ToF8OffsetX, OffsetY = f5ToF8OffsetY };
         ClusterCalibrations[KeyboardCluster.F9ToF12Cluster] = new KeyboardClusterCalibration { OffsetX = f9ToF12OffsetX, OffsetY = f9ToF12OffsetY };
+        ClusterCalibrations[KeyboardCluster.PrintScrollPauseCluster] = new KeyboardClusterCalibration { OffsetX = printScrollPauseOffsetX, OffsetY = printScrollPauseOffsetY };
         ClusterCalibrations[KeyboardCluster.MainTypingCluster] = new KeyboardClusterCalibration { OffsetX = mainTypingOffsetX, OffsetY = mainTypingOffsetY };
         ClusterCalibrations[KeyboardCluster.NavigationCluster] = new KeyboardClusterCalibration { OffsetX = navigationOffsetX, OffsetY = navigationOffsetY };
         ClusterCalibrations[KeyboardCluster.ArrowCluster] = new KeyboardClusterCalibration { OffsetX = arrowOffsetX, OffsetY = arrowOffsetY };

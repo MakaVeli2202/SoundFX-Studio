@@ -30,13 +30,48 @@ public class KeyboardKey : ObservableObject
     public string KeyName
     {
         get => _keyName;
-        set => SetProperty(ref _keyName, value);
+        set
+        {
+            if (SetProperty(ref _keyName, value))
+            {
+                OnPropertyChanged(nameof(AutomationName));
+            }
+        }
     }
 
     public string DisplayLabel
     {
         get => string.IsNullOrWhiteSpace(_displayLabel) ? _keyName : _displayLabel;
-        set => SetProperty(ref _displayLabel, value);
+        set
+        {
+            if (SetProperty(ref _displayLabel, value))
+            {
+                OnPropertyChanged(nameof(AutomationName));
+            }
+        }
+    }
+
+    public string AutomationName
+    {
+        get
+        {
+            if (string.Equals(KeyName, "ESC", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Escape";
+            }
+
+            if (string.Equals(KeyName, "SPACE", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Space";
+            }
+
+            if (string.Equals(KeyName, "ENTER", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Enter";
+            }
+
+            return string.IsNullOrWhiteSpace(DisplayLabel) ? KeyName : DisplayLabel;
+        }
     }
 
     public double WidthUnits

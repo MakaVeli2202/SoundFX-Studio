@@ -303,15 +303,19 @@
                                           Margin="0,0,0,10" />
 
                                 <Button Content="Auto-configure audio"
+                                    AutomationProperties.Name="Routing Auto Configure"
                                         Command="{Binding AutoConfigureAudioCommand}"
                                         Margin="0,0,0,8" />
                                 <Button Content="Test routing"
+                                    AutomationProperties.Name="Routing Test"
                                     Command="{Binding TestRoutingCommand}"
                                     Margin="0,0,0,8" />
                                 <Button Content="Open setup wizard"
+                                    AutomationProperties.Name="Routing Open Setup Wizard"
                                         Command="{Binding OpenSetupWizardCommand}"
                                         Margin="0,0,0,8" />
                                 <Button Content="Open Windows Sound"
+                                    AutomationProperties.Name="Routing Open Windows Sound"
                                         Click="MainWindow_OpenSoundSettings" />
                             </StackPanel>
                         </Grid>
@@ -332,15 +336,21 @@
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                     <TextBox Width="240"
+                                             x:Name="LibrarySearchBox"
+                                             AutomationProperties.Name="Library Search"
                                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                              ToolTip="Search sounds" />
                                     <ComboBox Width="160"
+                                              x:Name="LibraryCategoryFilter"
+                                              AutomationProperties.Name="Library Category Filter"
                                               Margin="10,0,0,0"
                                               ItemsSource="{Binding Categories}"
                                               DisplayMemberPath="Name"
                                               SelectedValuePath="Name"
                                               SelectedValue="{Binding SelectedCategoryFilter, Mode=TwoWay}" />
                                     <CheckBox Content="Favorites only"
+                                              x:Name="LibraryFavoritesOnly"
+                                              AutomationProperties.Name="Library Favorites Only"
                                               IsChecked="{Binding FavoritesOnly, Mode=TwoWay}"
                                               VerticalAlignment="Center"
                                               Margin="12,0,0,0" />
@@ -350,15 +360,15 @@
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                         <Border Background="#151515" CornerRadius="10" Padding="6">
                                             <StackPanel Orientation="Horizontal">
-                                                <Button Content="➕ Add" Command="{Binding AddSoundCommand}" ToolTip="Add a new sound to the library (Ctrl+N)" />
-                                                <Button Content="📁 Import" Command="{Binding AddMultipleSoundsCommand}" Margin="6,0,0,0" ToolTip="Import multiple sounds at once" />
+                                                <Button x:Name="LibraryAddButton" Content="Add" AutomationProperties.Name="Library Add" Command="{Binding AddSoundCommand}" ToolTip="Add a new sound to the library (Ctrl+N)" />
+                                                <Button x:Name="LibraryImportButton" Content="Import" Command="{Binding AddMultipleSoundsCommand}" Margin="6,0,0,0" ToolTip="Import multiple sounds at once" />
                                             </StackPanel>
                                         </Border>
                                         <Border Background="#151515" CornerRadius="10" Padding="6" Margin="10,0,0,0">
                                             <StackPanel Orientation="Horizontal">
-                                                <Button Content="▶️ Play" Command="{Binding PlaySelectedSoundCommand}" ToolTip="Play selected sound (Space)" />
-                                                <Button Content="❤️ Fav" Command="{Binding ToggleFavoriteCommand}" Margin="6,0,0,0" ToolTip="Toggle favorite status" />
-                                                <Button Content="🗑️ Delete" Command="{Binding DeleteSoundCommand}" Margin="6,0,0,0" ToolTip="Delete sound from library" />
+                                                <Button x:Name="LibraryPlayButton" Content="Play" Command="{Binding PlaySelectedSoundCommand}" ToolTip="Play selected sound (Space)" />
+                                                <Button x:Name="LibraryFavoriteButton" Content="Favorite" Command="{Binding ToggleFavoriteCommand}" Margin="6,0,0,0" ToolTip="Toggle favorite status" />
+                                                <Button x:Name="LibraryDeleteButton" Content="Delete" AutomationProperties.Name="Library Delete" Command="{Binding DeleteSoundCommand}" Margin="6,0,0,0" ToolTip="Delete sound from library" />
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>
@@ -503,9 +513,13 @@
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                     <TextBox Width="220"
+                                             x:Name="PresetsSearchBox"
+                                             AutomationProperties.Name="Presets Search"
                                              Text="{Binding ProfileSearchText, UpdateSourceTrigger=PropertyChanged}"
                                              ToolTip="Search profiles" />
                                     <Button Content="New"
+                                            x:Name="PresetsNewButton"
+                                            AutomationProperties.Name="Presets New"
                                             Command="{Binding CreateProfileCommand}"
                                             Margin="10,0,0,0" />
                                 </StackPanel>

@@ -19,6 +19,7 @@ public class AppSettings : ObservableObject
     private bool _vbcableDetected;
     private bool _defaultSoundsSeeded;
     private bool _setupCompleted;
+    private KeyboardCalibrationSettings _keyboardCalibration = new();
 
     public string InputDeviceId
     {
@@ -108,5 +109,11 @@ public class AppSettings : ObservableObject
     {
         get => _setupCompleted;
         set => SetProperty(ref _setupCompleted, value);
+    }
+
+    public KeyboardCalibrationSettings KeyboardCalibration
+    {
+        get => _keyboardCalibration;
+        set => SetProperty(ref _keyboardCalibration, value ?? new KeyboardCalibrationSettings());
     }
 }

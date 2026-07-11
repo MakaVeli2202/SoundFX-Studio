@@ -134,6 +134,8 @@ public class ConfigService
         config.Profiles ??= new();
         config.Categories ??= new();
         config.Settings ??= new AppSettings();
+        config.Settings.KeyboardCalibration ??= new KeyboardCalibrationSettings();
+        config.Settings.KeyboardCalibration.KeyOverrides ??= new Dictionary<string, KeyCalibrationOverrideSettings>();
 
         migrated |= MigrateLegacySoundAssignments(config);
 
