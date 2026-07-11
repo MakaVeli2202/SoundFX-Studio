@@ -599,7 +599,7 @@
 
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
                     <TextBlock Text="Tune global geometry first. Then move the clusters, not individual letters." Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,16,0" />
-                    <Button Content="Load From JSON"
+                    <Button Content="Load Project JSON"
                         Width="140"
                         Margin="0,0,8,0"
                         Click="LoadFromJsonFile_Click" />

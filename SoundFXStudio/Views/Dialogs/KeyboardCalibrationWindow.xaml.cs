@@ -2,7 +2,6 @@ using SoundFXStudio.Controls;
 using SoundFXStudio.Infrastructure;
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
-using Microsoft.Win32;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
@@ -18,6 +17,12 @@ namespace SoundFXStudio.Views.Dialogs;
 
 public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 {
+    private static readonly JsonSerializerOptions CalibrationSerializerOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true
+    };
+
     private readonly ConfigService _configService = new();
     private readonly AppConfig _config;
     private readonly KeyboardLayoutService _keyboardLayoutService = new();
@@ -400,10 +405,42 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
         _config.Settings.KeyboardCalibration = calibration;
         _configService.Save(_config);
+        SaveProjectCalibrationFile(calibration);
         if (notifyMainViewModel)
         {
             CalibrationSaved?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    private static void SaveProjectCalibrationFile(KeyboardCalibrationSettings calibration)
+    {
+        var filePath = GetProjectCalibrationFilePath();
+        var folder = Path.GetDirectoryName(filePath);
+        if (!string.IsNullOrWhiteSpace(folder))
+        {
+            Directory.CreateDirectory(folder);
+        }
+
+        var json = JsonSerializer.Serialize(calibration, CalibrationSerializerOptions);
+        File.WriteAllText(filePath, json);
+    }
+
+    private static string GetProjectCalibrationFilePath()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (current is not null)
+        {
+            var solutionPath = Path.Combine(current.FullName, "SoundFXStudio.slnx");
+            if (File.Exists(solutionPath))
+            {
+                return Path.Combine(current.FullName, "SoundFXStudio", "keyboard-calibration.json");
+            }
+
+            current = current.Parent;
+        }
+
+        return Path.Combine(AppContext.BaseDirectory, "keyboard-calibration.json");
     }
 
     private void PersistCalibrationLive()
@@ -681,31 +718,21 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
     private void LoadFromJsonFile_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFileDialog
-        {
-            Title = "Load Calibration JSON",
-            Filter = "JSON Files|*.json|All Files|*.*"
-        };
-
-        if (dialog.ShowDialog(this) != true)
-        {
-            return;
-        }
-
         try
         {
-            var json = File.ReadAllText(dialog.FileName);
-            var settings = JsonSerializer.Deserialize<KeyboardCalibrationSettings>(json);
-
-            if (settings is null)
+            var path = GetProjectCalibrationFilePath();
+            if (!File.Exists(path))
             {
-                var config = JsonSerializer.Deserialize<AppConfig>(json);
-                settings = config?.Settings?.KeyboardCalibration;
+                MessageBox.Show(this, $"Calibration file not found:\n{path}", "Keyboard Calibration", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
 
+            var json = File.ReadAllText(path);
+            var settings = JsonSerializer.Deserialize<KeyboardCalibrationSettings>(json, CalibrationSerializerOptions);
+
             if (settings is null)
             {
-                MessageBox.Show(this, "Could not find keyboard calibration settings in the selected file.", "Keyboard Calibration", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(this, "Could not parse keyboard calibration settings from project JSON file.", "Keyboard Calibration", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -714,7 +741,7 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             RefreshPreview();
             SaveCalibration(notifyMainViewModel: true);
 
-            MessageBox.Show(this, "Calibration loaded from JSON and applied.", "Keyboard Calibration", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, $"Calibration loaded from project JSON:\n{path}", "Keyboard Calibration", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
