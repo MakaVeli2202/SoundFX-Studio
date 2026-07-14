@@ -214,10 +214,11 @@
                                     Width="96"
                                     Height="38"
                                         Command="{Binding RefreshCommand}" />
-                                <Button Content="Calibrate"
+                                <Button Content="Recalibrate"
                                         Width="104"
                                         Height="38"
                                         Margin="10,0,0,0"
+                                        Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}"
                                         Click="OpenCalibrationButton_Click" />
                             </StackPanel>
                         </StackPanel>
@@ -548,6 +549,11 @@
 
                                 <TextBlock Text="Storage" FontSize="18" FontWeight="Bold" Margin="0,10,0,6" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}" />
                                 <TextBlock Text="Config, sounds, and images are stored under the app data folder managed by ConfigService." TextWrapping="Wrap" Opacity="0.78" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                <Button Content="Open Calibration"
+                                    Width="170"
+                                    Margin="0,12,0,0"
+                                    Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Click="OpenCalibrationButton_Click" />
                                 <Button Content="Open Audio Setup Wizard"
                                     Width="200"
                                     Margin="0,14,0,0"

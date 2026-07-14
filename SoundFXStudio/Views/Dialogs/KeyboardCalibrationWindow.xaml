@@ -603,7 +603,7 @@
                         Width="140"
                         Margin="0,0,8,0"
                         Click="LoadFromJsonFile_Click" />
-                    <Button Content="Save Permanently"
+                        <Button Content="Save as Default"
                             Width="150"
                             Margin="0,0,8,0"
                             Click="SavePermanently_Click" />
