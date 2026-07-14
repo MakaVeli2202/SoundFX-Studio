@@ -1,0 +1,237 @@
+using SoundFXStudio.Models;
+using SoundFXStudio.ViewModels;
+using SoundFXStudio.Views.Dialogs;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
+
+namespace SoundFXStudio.Views;
+
+public partial class KeyboardWindow : Window, INotifyPropertyChanged
+{
+    private const double BaseKeyboardWidth = 1536;
+    private const double BaseKeyboardHeight = 1024;
+    private const double BaseChamferSize = 52;
+    private const double KeyboardImageWidth = 1521;
+    private const double KeyboardImageHeight = 618;
+
+    private bool _suppressSelectionEvents;
+    private double _selectedWindowScale = 0.85;
+
+    public KeyboardWindow()
+    {
+        InitializeComponent();
+        DataContext = this;
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public IReadOnlyList<ScaleOption> ScaleOptions { get; } = new[]
+    {
+        new ScaleOption("85%", 0.85),
+        new ScaleOption("100%", 1.0),
+        new ScaleOption("115%", 1.15),
+        new ScaleOption("130%", 1.3),
+        new ScaleOption("145%", 1.45)
+    };
+
+    public MainViewModel? ViewModel { get; private set; }
+
+    public double SelectedWindowScale
+    {
+        get => _selectedWindowScale;
+        set
+        {
+            if (Math.Abs(_selectedWindowScale - value) < double.Epsilon)
+            {
+                return;
+            }
+
+            _selectedWindowScale = value;
+            OnPropertyChanged();
+
+            if (!_suppressSelectionEvents)
+            {
+                PersistWindowScale();
+            }
+        }
+    }
+
+    public void Initialize(MainViewModel viewModel)
+    {
+        ViewModel = viewModel;
+        OnPropertyChanged(nameof(ViewModel));
+        ReloadWindowScale();
+    }
+
+    private void KeyboardWindow_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Escape)
+        {
+            return;
+        }
+
+        Close();
+    }
+
+    private void KeyboardWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        if (e.OriginalSource is DependencyObject source && IsInteractiveElement(source))
+        {
+            return;
+        }
+
+        DragMove();
+    }
+
+    private void SettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        SettingsPanel.Visibility = SettingsPanel.Visibility == Visibility.Visible
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+    }
+
+    private void CloseSettingsPanelButton_Click(object sender, RoutedEventArgs e)
+    {
+        SettingsPanel.Visibility = Visibility.Collapsed;
+    }
+
+    private void CalibrateKeyboardButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        var window = new KeyboardCalibrationWindow
+        {
+            Owner = this
+        };
+
+        window.ShowDialog();
+        ViewModel.RefreshCommand.Execute(null);
+        ReloadWindowScale();
+    }
+
+    private void ReloadWindowScale()
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        var calibration = ViewModel.Settings.KeyboardCalibration;
+
+        _suppressSelectionEvents = true;
+        try
+        {
+            SelectedWindowScale = calibration.KeyboardWindowScale > 0 ? calibration.KeyboardWindowScale : 0.85;
+        }
+        finally
+        {
+            _suppressSelectionEvents = false;
+        }
+
+        ApplyWindowScale(SelectedWindowScale);
+    }
+
+    private void PersistWindowScale()
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        var calibration = ViewModel.Settings.KeyboardCalibration;
+        calibration.KeyboardWindowScale = SelectedWindowScale;
+        ViewModel.SaveKeyboardCalibrationSettings();
+        ApplyWindowScale(SelectedWindowScale);
+    }
+
+    private void ApplyWindowScale(double scale)
+    {
+        var clampedScale = Math.Clamp(scale, 0.5, 2.0);
+        Width = BaseKeyboardWidth * clampedScale;
+        Height = BaseKeyboardHeight * clampedScale;
+
+        var workArea = SystemParameters.WorkArea;
+        Left = workArea.Left + ((workArea.Width - Width) / 2);
+        Top = workArea.Top + ((workArea.Height - Height) / 2);
+        UpdateSettingsHostMargin();
+        UpdateWindowClip();
+    }
+
+    private void RootSurface_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateWindowClip();
+    }
+
+    private void UpdateWindowClip()
+    {
+        if (RootSurface.ActualWidth <= 0 || RootSurface.ActualHeight <= 0)
+        {
+            return;
+        }
+
+        var chamfer = Math.Min(RootSurface.ActualWidth, RootSurface.ActualHeight) * (BaseChamferSize / BaseKeyboardHeight);
+        var width = RootSurface.ActualWidth;
+        var height = RootSurface.ActualHeight;
+
+        var geometry = new StreamGeometry();
+        using (var context = geometry.Open())
+        {
+            context.BeginFigure(new Point(chamfer, 0), true, true);
+            context.LineTo(new Point(width - chamfer, 0), true, false);
+            context.LineTo(new Point(width, chamfer), true, false);
+            context.LineTo(new Point(width, height - chamfer), true, false);
+            context.LineTo(new Point(width - chamfer, height), true, false);
+            context.LineTo(new Point(chamfer, height), true, false);
+            context.LineTo(new Point(0, height - chamfer), true, false);
+            context.LineTo(new Point(0, chamfer), true, false);
+        }
+
+        geometry.Freeze();
+        RootSurface.Clip = geometry;
+    }
+
+    private void UpdateSettingsHostMargin()
+    {
+        var scale = Math.Min(Width / BaseKeyboardWidth, Height / BaseKeyboardHeight);
+        var fittedImageHeight = KeyboardImageHeight * (BaseKeyboardWidth / KeyboardImageWidth) * scale;
+        var topInset = Math.Max(18, ((Height - fittedImageHeight) / 2) + (20 * scale));
+        var rightInset = Math.Max(18, 28 * scale);
+
+        SettingsHost.Margin = new Thickness(18, topInset, rightInset, 18);
+    }
+
+    private static bool IsInteractiveElement(DependencyObject? current)
+    {
+        while (current is not null)
+        {
+            if (current is ButtonBase || current is TextBoxBase || current is ComboBox || current is ListBox || current is ListView || current is MenuItem || current is CheckBox || current is TabItem || current is Slider || current is PasswordBox || current is ScrollBar || current is Thumb)
+            {
+                return true;
+            }
+
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        return false;
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    public sealed record ScaleOption(string Label, double Value);
+}

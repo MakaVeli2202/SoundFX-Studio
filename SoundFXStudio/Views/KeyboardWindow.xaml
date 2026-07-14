@@ -1,0 +1,67 @@
+<Window x:Class="SoundFXStudio.Views.KeyboardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:SoundFXStudio.Controls"
+        Title="Keyboard"
+        Width="1536"
+        Height="1024"
+        Background="Transparent"
+        AllowsTransparency="True"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterScreen"
+        KeyDown="KeyboardWindow_KeyDown"
+        MouseLeftButtonDown="KeyboardWindow_MouseLeftButtonDown">
+        <Grid x:Name="RootSurface" Background="Transparent" SizeChanged="RootSurface_SizeChanged">
+    <Viewbox Stretch="Fill">
+        <controls:KeyboardControl ItemsSource="{Binding ViewModel.KeyboardKeys, RelativeSource={RelativeSource AncestorType=Window}}"
+                      DataContext="{Binding ViewModel, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  KeyClickedCommand="{Binding ViewModel.KeyClickedCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+    </Viewbox>
+
+        <StackPanel x:Name="SettingsHost"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Margin="18">
+        <Button Width="42"
+            Height="42"
+            FontSize="20"
+            FontWeight="Bold"
+            Content="⚙"
+            Click="SettingsButton_Click" />
+
+        <Border x:Name="SettingsPanel"
+            Margin="0,10,0,0"
+            Padding="14"
+            Background="#CC0C0C0C"
+            BorderBrush="#4436D1FF"
+            BorderThickness="1"
+            CornerRadius="14"
+            Visibility="Collapsed">
+        <StackPanel Width="240">
+            <TextBlock Text="Keyboard Settings"
+                   Foreground="White"
+                   FontSize="18"
+                   FontWeight="Bold"
+                   Margin="0,0,0,10" />
+
+            <TextBlock Text="Window Size"
+                   Foreground="#CFCFCF"
+                   Margin="0,0,0,4" />
+            <ComboBox ItemsSource="{Binding ScaleOptions}"
+                  DisplayMemberPath="Label"
+                  SelectedValuePath="Value"
+                  SelectedValue="{Binding SelectedWindowScale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                  Margin="0,0,0,12" />
+
+            <Button Content="Calibrate Keyboard"
+                Margin="0,0,0,8"
+                Click="CalibrateKeyboardButton_Click" />
+            <Button Content="Close Panel"
+                Click="CloseSettingsPanelButton_Click" />
+        </StackPanel>
+        </Border>
+    </StackPanel>
+    </Grid>
+</Window>

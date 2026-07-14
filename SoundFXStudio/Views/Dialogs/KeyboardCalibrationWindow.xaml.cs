@@ -370,7 +370,6 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private void SaveCalibration(bool notifyMainViewModel = true)
     {
         var calibration = _config.Settings.KeyboardCalibration ?? new KeyboardCalibrationSettings();
-
         calibration.KeyUnit = PreviewKeyUnit;
         calibration.Gap = PreviewGap;
         calibration.OffsetX = PreviewOffsetX;

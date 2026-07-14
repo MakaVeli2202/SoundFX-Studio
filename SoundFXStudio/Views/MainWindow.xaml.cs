@@ -1,5 +1,6 @@
 ﻿using SoundFXStudio.ViewModels;
 using SoundFXStudio.Services;
+using SoundFXStudio.Views;
 using SoundFXStudio.Views.Dialogs;
 using System.Diagnostics;
 using System.Windows;
@@ -15,6 +16,7 @@ public partial class MainWindow : Window
 {
     private MainViewModel ViewModel => (MainViewModel)DataContext;
     private KeyboardCalibrationWindow? _keyboardCalibrationWindow;
+    private KeyboardWindow? _keyboardWindow;
 
     public MainWindow(ILogService? logService = null)
     {
@@ -101,6 +103,11 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
+        if (_keyboardWindow is { IsLoaded: true })
+        {
+            _keyboardWindow.Close();
+        }
+
         if (DataContext is IDisposable disposable)
         {
             disposable.Dispose();
@@ -195,5 +202,29 @@ public partial class MainWindow : Window
         _keyboardCalibrationWindow.CalibrationSaved += (_, _) => ViewModel.RefreshCommand.Execute(null);
         _keyboardCalibrationWindow.Closed += (_, _) => _keyboardCalibrationWindow = null;
         _keyboardCalibrationWindow.Show();
+    }
+
+    private void OpenKeyboardWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_keyboardWindow is { IsLoaded: true })
+        {
+            if (_keyboardWindow.WindowState == WindowState.Minimized)
+            {
+                _keyboardWindow.WindowState = WindowState.Normal;
+            }
+
+            _keyboardWindow.Activate();
+            return;
+        }
+
+        _keyboardWindow = new KeyboardWindow
+        {
+            Owner = this
+        };
+
+        _keyboardWindow.Initialize(ViewModel);
+        _keyboardWindow.Closed += (_, _) => _keyboardWindow = null;
+        _keyboardWindow.Show();
+        _keyboardWindow.Activate();
     }
 }

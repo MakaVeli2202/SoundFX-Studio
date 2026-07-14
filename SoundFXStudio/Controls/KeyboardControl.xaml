@@ -12,6 +12,7 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <converters:KeyboardLabelForegroundConverter x:Key="KeyboardLabelForegroundConverter" />
 
         <Style TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
@@ -102,9 +103,9 @@
             Padding="0">
         <Grid Width="1536" Height="1024">
             <Image Source="/Assets/Keyboards/SoundFXKeyBoard.png"
-                   Stretch="Fill"
-                   HorizontalAlignment="Stretch"
-                   VerticalAlignment="Stretch"
+                 Stretch="Uniform"
+                 HorizontalAlignment="Center"
+                 VerticalAlignment="Center"
                    IsHitTestVisible="False" />
 
             <ItemsControl ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -204,7 +205,9 @@
                                             ClipToBounds="True">
                                         <Grid>
                                             <Image Source="{Binding ImagePath}"
-                                                   Stretch="Fill"
+                                                  Stretch="Uniform"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
                                                    Opacity="0.9"
                                                    SnapsToDevicePixels="True" />
                                             <Border>
@@ -221,7 +224,6 @@
 
                                 <Grid Grid.RowSpan="3" Margin="6,4,6,4">
                                     <TextBlock Text="{Binding DisplayLabel}"
-                                               Foreground="#FFFFFF"
                                                FontSize="11"
                                                FontWeight="SemiBold"
                                                HorizontalAlignment="Center"
@@ -230,6 +232,13 @@
                                                TextWrapping="NoWrap"
                                                TextTrimming="CharacterEllipsis"
                                                Opacity="1">
+                                        <TextBlock.Foreground>
+                                            <MultiBinding Converter="{StaticResource KeyboardLabelForegroundConverter}">
+                                                <Binding Path="State" />
+                                                <Binding Path="DataContext.Settings.KeyboardPressedTextColor"
+                                                         RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                            </MultiBinding>
+                                        </TextBlock.Foreground>
                                         <TextBlock.Effect>
                                             <DropShadowEffect Color="#000000" BlurRadius="3" ShadowDepth="0" Opacity="0.85" />
                                         </TextBlock.Effect>

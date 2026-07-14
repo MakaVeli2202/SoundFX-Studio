@@ -7,6 +7,7 @@ public class KeyboardCalibrationSettings
     public double OffsetX { get; set; } = 65;
     public double OffsetY { get; set; } = 72;
     public double ButtonScale { get; set; } = 1.0;
+    public double KeyboardWindowScale { get; set; } = 0.85;
     public bool DebugCalibration { get; set; }
 
     public double EscOffsetX { get; set; }
@@ -47,4 +48,15 @@ public class KeyCalibrationOverrideSettings
     public double OffsetY { get; set; }
     public double WidthAdjustment { get; set; }
     public double HeightAdjustment { get; set; }
+
+    public KeyCalibrationOverrideSettings Clone()
+    {
+        return new KeyCalibrationOverrideSettings
+        {
+            OffsetX = OffsetX,
+            OffsetY = OffsetY,
+            WidthAdjustment = WidthAdjustment,
+            HeightAdjustment = HeightAdjustment
+        };
+    }
 }

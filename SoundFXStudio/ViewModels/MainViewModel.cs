@@ -638,6 +638,18 @@ public sealed class MainViewModel : ObservableObject
         Save();
     }
 
+    public void ApplyKeyboardCalibrationFromSettings()
+    {
+        ApplyKeyboardCalibration(Settings.KeyboardCalibration);
+        _keyboardViewModel.RefreshAssignments();
+    }
+
+    public void SaveKeyboardCalibrationSettings()
+    {
+        ApplyKeyboardCalibrationFromSettings();
+        Save();
+    }
+
     private void Load()
     {
         _isLoading = true;
@@ -783,7 +795,8 @@ public sealed class MainViewModel : ObservableObject
         if (e.PropertyName is nameof(AppSettings.OutputDeviceId)
             or nameof(AppSettings.InputDeviceId)
             or nameof(AppSettings.VirtualCableDeviceId)
-            or nameof(AppSettings.VBCableDetected))
+            or nameof(AppSettings.VBCableDetected)
+            or nameof(AppSettings.KeyboardPressedTextColor))
         {
             _routingViewModel.UpdateRoutingStatus();
             Save();
@@ -1297,10 +1310,21 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        if (SelectedSound is null)
+        var soundToAssign = SelectedSound;
+        if (soundToAssign is null)
         {
-            StatusText = $"Select a sound first for {key.DisplayLabel}";
-            return;
+            var picker = new AssignSoundToKeyDialog(Sounds)
+            {
+                Owner = GetDialogOwner()
+            };
+
+            if (picker.ShowDialog() != true || picker.SelectedSound is null)
+            {
+                return;
+            }
+
+            soundToAssign = picker.SelectedSound;
+            SelectedSound = soundToAssign;
         }
 
         var profile = ActiveProfile;
@@ -1312,20 +1336,20 @@ public sealed class MainViewModel : ObservableObject
         var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
         if (assignment is null)
         {
-            assignment = new KeyAssignment { KeyId = key.Id, SoundId = SelectedSound.Id, ActionId = EnsureSoundAction(SelectedSound).Id };
+            assignment = new KeyAssignment { KeyId = key.Id, SoundId = soundToAssign.Id, ActionId = EnsureSoundAction(soundToAssign).Id };
             profile.Assignments.Add(assignment);
         }
         else
         {
-            assignment.SoundId = SelectedSound.Id;
-            assignment.ActionId = EnsureSoundAction(SelectedSound).Id;
+            assignment.SoundId = soundToAssign.Id;
+            assignment.ActionId = EnsureSoundAction(soundToAssign).Id;
         }
 
-        SelectedSound.AssignedKeyId = key.Id;
-        SelectedSound.AssignedKeyLabel = key.DisplayLabel;
+        soundToAssign.AssignedKeyId = key.Id;
+        soundToAssign.AssignedKeyLabel = key.DisplayLabel;
         RefreshAssignments();
         Save();
-        StatusText = $"Assigned {SelectedSound.Name} to {key.DisplayLabel}";
+        StatusText = $"Assigned {soundToAssign.Name} to {key.DisplayLabel}";
         SelectedKey = key;
         UpdateBindingPanelState();
     }
@@ -1424,14 +1448,17 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        var current = Math.Clamp(assignment.VolumeOverride, 0f, 1f);
-        var input = Microsoft.VisualBasic.Interaction.InputBox("Volume 0.0 - 1.0", "Key Volume", current.ToString("0.00"));
-        if (!float.TryParse(input, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var volume))
+        var dialog = new VolumeDialog(Math.Clamp(assignment.VolumeOverride, 0f, 1f) * 100)
+        {
+            Owner = GetDialogOwner()
+        };
+
+        if (dialog.ShowDialog() != true)
         {
             return;
         }
 
-        assignment.VolumeOverride = Math.Clamp(volume, 0f, 1f);
+        assignment.VolumeOverride = (float)Math.Clamp(dialog.VolumePercent / 100.0, 0.0, 1.0);
         Save();
         SelectedKey = key;
         StatusText = $"Volume set for {key.DisplayLabel}";
@@ -1583,8 +1610,12 @@ public sealed class MainViewModel : ObservableObject
         }
 
         var current = profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase))?.BindingName ?? key.DisplayLabel;
-        var input = Microsoft.VisualBasic.Interaction.InputBox("Binding name", "Rename Binding", current);
-        if (string.IsNullOrWhiteSpace(input))
+        var dialog = new TextEntryDialog("Rename Binding", "Set a custom label for this key. Use Clear to remove the custom name and fall back to the default key label.", current, allowClear: true)
+        {
+            Owner = GetDialogOwner()
+        };
+
+        if (dialog.ShowDialog() != true)
         {
             return;
         }
@@ -1596,14 +1627,39 @@ public sealed class MainViewModel : ObservableObject
             profile.Assignments.Add(assignment);
         }
 
-        assignment.BindingName = input.Trim();
+        assignment.BindingName = dialog.ClearRequested ? null : dialog.Value.Trim();
+        RemoveAssignmentIfEmpty(profile, assignment);
         RefreshAssignments();
         Save();
         SelectedKey = key;
-        StatusText = $"Renamed binding on {key.DisplayLabel}";
+        StatusText = dialog.ClearRequested
+            ? $"Removed custom binding name from {key.DisplayLabel}"
+            : $"Renamed binding on {key.DisplayLabel}";
     }
 
     private KeyboardKey? ResolveKey(object? parameter) => parameter as KeyboardKey ?? SelectedKey;
+
+    private Window? GetDialogOwner()
+    {
+        return Application.Current.Windows.OfType<Window>().FirstOrDefault(window => window.IsActive)
+            ?? _window;
+    }
+
+    private static void RemoveAssignmentIfEmpty(Profile profile, KeyAssignment assignment)
+    {
+        if (!string.IsNullOrWhiteSpace(assignment.SoundId)
+            || !string.IsNullOrWhiteSpace(assignment.ImagePath)
+            || !string.IsNullOrWhiteSpace(assignment.BindingName)
+            || Math.Abs(assignment.VolumeOverride - 1f) > float.Epsilon
+            || assignment.Loop
+            || !string.IsNullOrWhiteSpace(assignment.HotkeyText)
+            || assignment.ActionId is not null)
+        {
+            return;
+        }
+
+        profile.Assignments.Remove(assignment);
+    }
 
     internal KeyAssignment? GetAssignmentForKey(KeyboardKey key)
     {

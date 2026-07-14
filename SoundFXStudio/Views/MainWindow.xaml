@@ -218,7 +218,6 @@
                                         Width="104"
                                         Height="38"
                                         Margin="10,0,0,0"
-                                        Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}"
                                         Click="OpenCalibrationButton_Click" />
                             </StackPanel>
                         </StackPanel>
@@ -236,20 +235,31 @@
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
                                 CornerRadius="0"
-                                Padding="0"
+                                Padding="24"
                                 Margin="0">
-                            <Viewbox Stretch="Uniform"
-                                     StretchDirection="Both"
-                                     Margin="0"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center">
-                                <controls:KeyboardControl ItemsSource="{Binding KeyboardKeys}"
-                                                          KeyClickedCommand="{Binding KeyClickedCommand}" />
-                            </Viewbox>
+                            <StackPanel HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        MaxWidth="420">
+                                <TextBlock Text="Keyboard In Floating Window"
+                                           FontSize="28"
+                                           FontWeight="Bold"
+                                           TextAlignment="Center"
+                                           Margin="0,0,0,10" />
+                                <TextBlock Text="Open the keyboard in its own borderless window so it floats separately from the main studio UI. Press Escape in that window to close it."
+                                           Foreground="{StaticResource SecondaryTextBrush}"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"
+                                           Margin="0,0,0,18" />
+                                <Button Content="Open Keyboard"
+                                        Width="180"
+                                        Height="46"
+                                        HorizontalAlignment="Center"
+                                        Click="OpenKeyboardWindowButton_Click" />
+                            </StackPanel>
                         </Border>
                     </TabItem>
 
-                    <TabItem Header="Routing" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TabItem Header="Routing">
                         <Grid Margin="6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="1.1*" />
@@ -510,6 +520,19 @@
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
                                 </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <TextBlock Text="Pressed key text" Width="160" VerticalAlignment="Center" />
+                                    <TextBox Width="180"
+                                             Text="{Binding Settings.KeyboardPressedTextColor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Hex color like #22D3FF or #FF4D8D" />
+                                    <Border Width="26"
+                                            Height="26"
+                                            Margin="10,0,0,0"
+                                            CornerRadius="6"
+                                            BorderBrush="#303030"
+                                            BorderThickness="1"
+                                            Background="{Binding Settings.KeyboardPressedTextColor}" />
+                                </StackPanel>
 
                                 <TextBlock Text="Audio Devices" FontSize="18" FontWeight="Bold" Margin="0,10,0,6" />
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
@@ -534,25 +557,24 @@
                                     HorizontalAlignment="Left"
                                     Command="{Binding AutoConfigureAudioCommand}" />
 
-                                <TextBlock Text="Keyboard Shortcuts" FontSize="18" FontWeight="Bold" Margin="0,10,0,6" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                <TextBlock Text="Press F1-F12 to trigger sounds from anywhere. Right-click keyboard buttons to customize shortcuts." TextWrapping="Wrap" Opacity="0.78" Margin="0,0,0,6" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                <TextBlock Text="Keyboard Shortcuts" FontSize="18" FontWeight="Bold" Margin="0,10,0,6" />
+                                <TextBlock Text="Press F1-F12 to trigger sounds from anywhere. Right-click keyboard buttons to customize shortcuts." TextWrapping="Wrap" Opacity="0.78" Margin="0,0,0,6" />
 
                                 <CheckBox Content="Advanced mode"
                                           IsChecked="{Binding Settings.AdvancedMode, Mode=TwoWay}"
                                           Margin="0,0,0,6" />
 
-                                <TextBlock Text="Presets" FontSize="18" FontWeight="Bold" Margin="0,10,0,6" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                <TextBlock Text="Create multiple setups and switch between them instantly. Each preset saves different sounds and assignments." TextWrapping="Wrap" Opacity="0.78" Margin="0,0,0,6" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                <TextBlock Text="Presets" FontSize="18" FontWeight="Bold" Margin="0,10,0,6" />
+                                <TextBlock Text="Create multiple setups and switch between them instantly. Each preset saves different sounds and assignments." TextWrapping="Wrap" Opacity="0.78" Margin="0,0,0,6" />
 
-                                <TextBlock Text="Advanced" FontSize="18" FontWeight="Bold" Margin="0,10,0,6" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                <TextBlock Text="Storage is file-based under AppData. Future effects, voice tools, and cloud sync can hook into the same model and config services." TextWrapping="Wrap" Opacity="0.78" Margin="0,0,0,6" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                <TextBlock Text="Advanced" FontSize="18" FontWeight="Bold" Margin="0,10,0,6" />
+                                <TextBlock Text="Storage is file-based under AppData. Future effects, voice tools, and cloud sync can hook into the same model and config services." TextWrapping="Wrap" Opacity="0.78" Margin="0,0,0,6" />
 
-                                <TextBlock Text="Storage" FontSize="18" FontWeight="Bold" Margin="0,10,0,6" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                <TextBlock Text="Config, sounds, and images are stored under the app data folder managed by ConfigService." TextWrapping="Wrap" Opacity="0.78" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                <TextBlock Text="Storage" FontSize="18" FontWeight="Bold" Margin="0,10,0,6" />
+                                <TextBlock Text="Config, sounds, and images are stored under the app data folder managed by ConfigService." TextWrapping="Wrap" Opacity="0.78" />
                                 <Button Content="Open Calibration"
                                     Width="170"
                                     Margin="0,12,0,0"
-                                    Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}"
                                     Click="OpenCalibrationButton_Click" />
                                 <Button Content="Open Audio Setup Wizard"
                                     Width="200"
@@ -562,7 +584,7 @@
                         </ScrollViewer>
                     </TabItem>
 
-                    <TabItem Header="Presets" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TabItem Header="Presets">
                         <Grid Margin="6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="360" />
@@ -617,7 +639,7 @@
                         </Grid>
                     </TabItem>
 
-                    <TabItem Header="Statistics" Visibility="{Binding Settings.AdvancedMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TabItem Header="Statistics">
                         <Grid Margin="6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />

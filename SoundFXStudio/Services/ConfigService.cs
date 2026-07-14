@@ -163,6 +163,11 @@ public class ConfigService
         config.Settings ??= new AppSettings();
         config.Settings.KeyboardCalibration ??= new KeyboardCalibrationSettings();
         config.Settings.KeyboardCalibration.KeyOverrides ??= new Dictionary<string, KeyCalibrationOverrideSettings>();
+        if (config.Settings.KeyboardCalibration.KeyboardWindowScale <= 0)
+        {
+            config.Settings.KeyboardCalibration.KeyboardWindowScale = 0.85;
+            migrated = true;
+        }
 
         migrated |= MigrateLegacySoundAssignments(config);
 
@@ -196,6 +201,11 @@ public class ConfigService
             var calibration = JsonSerializer.Deserialize<KeyboardCalibrationSettings>(json, SerializerOptions);
             if (calibration is not null)
             {
+                calibration.KeyOverrides ??= new Dictionary<string, KeyCalibrationOverrideSettings>();
+                if (calibration.KeyboardWindowScale <= 0)
+                {
+                    calibration.KeyboardWindowScale = 0.85;
+                }
                 config.Settings.KeyboardCalibration = calibration;
             }
         }
