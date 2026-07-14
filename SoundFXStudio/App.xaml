@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:media="clr-namespace:System.Windows.Media.Imaging;assembly=PresentationCore"
              xmlns:converters="clr-namespace:SoundFXStudio.Converters"
-             Startup="App_Startup">
+             Startup="App_Startup"
+             ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <converters:EmptyToVisibilityConverter x:Key="EmptyToVisibilityConverter" />
         <converters:NonEmptyToVisibilityConverter x:Key="NonEmptyToVisibilityConverter" />

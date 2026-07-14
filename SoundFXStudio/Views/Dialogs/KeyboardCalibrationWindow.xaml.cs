@@ -229,10 +229,27 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private void BuildKeyboard()
     {
         KeyboardKeys.Clear();
-        foreach (var key in _keyboardLayoutService.CreateKeyboard(KeyboardLayoutMode.English))
+        foreach (var key in _keyboardLayoutService.CreateKeyboard(GetPreviewLayoutMode()))
         {
             KeyboardKeys.Add(key);
         }
+    }
+
+    private KeyboardLayoutMode GetPreviewLayoutMode()
+    {
+        var layoutMode = _config.Settings.KeyboardLayout;
+        if (layoutMode != KeyboardLayoutMode.Automatic)
+        {
+            return layoutMode;
+        }
+
+        var language = System.Windows.Input.InputLanguageManager.Current.CurrentInputLanguage?.Name;
+        return language switch
+        {
+            "de-DE" => KeyboardLayoutMode.German,
+            "en-GB" => KeyboardLayoutMode.EnglishUK,
+            _ => KeyboardLayoutMode.EnglishUS
+        };
     }
 
     private void BuildClusterItems()

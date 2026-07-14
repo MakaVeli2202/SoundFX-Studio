@@ -2,6 +2,7 @@ using SoundFXStudio.Models;
 using SoundFXStudio.Services;
 using System.Diagnostics;
 using System.Windows;
+using NAudio.CoreAudioApi;
 
 namespace SoundFXStudio.Views.Dialogs;
 
@@ -36,8 +37,11 @@ public partial class SetupWizardWindow : Window
         OutputCombo.ItemsSource = _audioDeviceService.GetOutputDevices();
         InputCombo.ItemsSource = _audioDeviceService.GetInputDevices();
 
-        SelectBest(OutputCombo);
-        SelectBest(InputCombo);
+        OutputDefaultText.Text = BuildDefaultLabel(_audioDeviceService.GetDefaultDeviceName(DataFlow.Render));
+        InputDefaultText.Text = BuildDefaultLabel(_audioDeviceService.GetDefaultDeviceName(DataFlow.Capture));
+
+        SelectSavedOrDefault(OutputCombo, _config.Settings.OutputDeviceId);
+        SelectSavedOrDefault(InputCombo, _config.Settings.InputDeviceId);
         UpdateStatus();
     }
 
@@ -50,6 +54,11 @@ public partial class SetupWizardWindow : Window
     private void Finish_Click(object sender, RoutedEventArgs e)
     {
         ApplySelection();
+        if (DontShowAgainCheckBox.IsChecked == true)
+        {
+            _config.Settings.ShowSetupWizardOnStartup = false;
+        }
+
         _config.Settings.SetupCompleted = true;
         _config.Settings.LastConfigurationDate = DateTime.UtcNow;
         _configService.Save(_config);
@@ -100,8 +109,20 @@ public partial class SetupWizardWindow : Window
         }
     }
 
-    private void SelectBest(System.Windows.Controls.ComboBox combo)
+    private void SelectSavedOrDefault(System.Windows.Controls.ComboBox combo, string? savedId)
     {
+        if (!string.IsNullOrWhiteSpace(savedId))
+        {
+            foreach (var item in combo.Items.OfType<AudioDeviceInfo>())
+            {
+                if (string.Equals(item.Id, savedId, StringComparison.OrdinalIgnoreCase))
+                {
+                    combo.SelectedItem = item;
+                    return;
+                }
+            }
+        }
+
         foreach (var item in combo.Items.OfType<AudioDeviceInfo>())
         {
             if (item.IsDefaultCommunication || item.IsDefault)
@@ -116,6 +137,9 @@ public partial class SetupWizardWindow : Window
             combo.SelectedIndex = 0;
         }
     }
+
+    private static string BuildDefaultLabel(string? deviceName)
+        => string.IsNullOrWhiteSpace(deviceName) ? "Current Windows Default: not detected" : $"Current Windows Default: {deviceName}";
 
     private void UpdateStatus()
     {

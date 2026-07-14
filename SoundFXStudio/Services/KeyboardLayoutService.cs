@@ -7,6 +7,15 @@ public sealed class KeyboardLayoutService
 {
     public IReadOnlyList<KeyboardKey> CreateKeyboard(KeyboardLayoutMode layoutMode)
     {
+        if (layoutMode == KeyboardLayoutMode.Automatic)
+        {
+            layoutMode = KeyboardLayoutMode.EnglishUS;
+        }
+
+        var isGerman = layoutMode == KeyboardLayoutMode.German;
+        var isEnglishUk = layoutMode == KeyboardLayoutMode.EnglishUK;
+        var isIso = isGerman || isEnglishUk;
+
         var keys = new List<KeyboardKey>();
 
         AddRow(keys, 0, new[]
@@ -17,11 +26,11 @@ public sealed class KeyboardLayoutService
 
         AddRow(keys, 1, new[]
         {
-            Key("`", displayLabel: layoutMode == KeyboardLayoutMode.German ? "^" : "`"),
+            Key("`", displayLabel: isGerman ? "^" : isEnglishUk ? "¬" : "`"),
             Key("1", displayLabel: "1"), Key("2", displayLabel: "2"), Key("3", displayLabel: "3"), Key("4", displayLabel: "4"), Key("5", displayLabel: "5"), Key("6", displayLabel: "6"), Key("7", displayLabel: "7"), Key("8", displayLabel: "8"), Key("9", displayLabel: "9"), Key("0", displayLabel: "0"),
-            Key("-", displayLabel: layoutMode == KeyboardLayoutMode.German ? "ß" : "-"),
-            Key("=", displayLabel: layoutMode == KeyboardLayoutMode.German ? "´" : "="),
-            Key("BACKSPACE", displayLabel: layoutMode == KeyboardLayoutMode.German ? "Rück" : "Backspace", widthUnits: 2.0)
+            Key("-", displayLabel: isGerman ? "ß" : "-"),
+            Key("=", displayLabel: isGerman ? "´" : "="),
+            Key("BACKSPACE", displayLabel: isGerman ? "Backspace" : "Backspace", widthUnits: 2.0)
         });
 
         AddRow(keys, 2, new[]
@@ -32,19 +41,19 @@ public sealed class KeyboardLayoutService
             Key("E", displayLabel: "E"),
             Key("R", displayLabel: "R"),
             Key("T", displayLabel: "T"),
-            layoutMode == KeyboardLayoutMode.German ? Key("Y", displayLabel: "Z") : Key("Y", displayLabel: "Y"),
+            isGerman ? Key("Y", displayLabel: "Z") : Key("Y", displayLabel: "Y"),
             Key("U", displayLabel: "U"), Key("I", displayLabel: "I"), Key("O", displayLabel: "O"), Key("P", displayLabel: "P"),
-            Key("[", displayLabel: layoutMode == KeyboardLayoutMode.German ? "Ü" : "{"),
-            Key("]", displayLabel: layoutMode == KeyboardLayoutMode.German ? "+" : "}"),
-            Key("\\", displayLabel: layoutMode == KeyboardLayoutMode.German ? "#" : "|", widthUnits: 1.5)
+            Key("[", displayLabel: isGerman ? "Ü" : "{"),
+            Key("]", displayLabel: isGerman ? "+" : "}"),
+            Key("\\", displayLabel: isGerman ? "#" : isEnglishUk ? "#" : "\\", widthUnits: isIso ? 1.25 : 1.5)
         });
 
         AddRow(keys, 3, new[]
         {
-            Key("CAPS LOCK", displayLabel: layoutMode == KeyboardLayoutMode.German ? "Feststell" : "Caps Lock", widthUnits: 1.75), Key("A"), Key("S"), Key("D"), Key("F"), Key("G"), Key("H"), Key("J"), Key("K"), Key("L"),
-            Key(";", displayLabel: layoutMode == KeyboardLayoutMode.German ? "Ö" : ";"),
-            Key("'", displayLabel: layoutMode == KeyboardLayoutMode.German ? "Ä" : "'"),
-            Key("ENTER", displayLabel: "Enter", widthUnits: 2.25)
+            Key("CAPS LOCK", displayLabel: isGerman ? "Feststell" : "Caps", widthUnits: 1.75), Key("A"), Key("S"), Key("D"), Key("F"), Key("G"), Key("H"), Key("J"), Key("K"), Key("L"),
+            Key(";", displayLabel: isGerman ? "Ö" : ";"),
+            Key("'", displayLabel: isGerman ? "Ä" : "'"),
+            Key("ENTER", displayLabel: "↵", widthUnits: 2.25)
         });
 
         var bottomRow = new List<KeyboardKey>
@@ -52,10 +61,10 @@ public sealed class KeyboardLayoutService
             Key("SHIFT", displayLabel: "Shift", widthUnits: 2.25)
         };
 
-        if (layoutMode == KeyboardLayoutMode.German)
+        if (isIso)
         {
-            bottomRow.Add(Key("OEM102", displayLabel: "<", widthUnits: 1.25));
-            bottomRow.Add(Key("Z", displayLabel: "Y"));
+            bottomRow.Add(Key("OEM102", displayLabel: isGerman ? "<" : "\\", widthUnits: 1.25));
+            bottomRow.Add(Key("Z", displayLabel: isGerman ? "Y" : "Z"));
         }
         else
         {
@@ -65,7 +74,7 @@ public sealed class KeyboardLayoutService
         bottomRow.AddRange(new[]
         {
             Key("X"), Key("C"), Key("V"), Key("B"), Key("N"), Key("M"),
-            Key(",", displayLabel: ","), Key(".", displayLabel: "."), Key("/", displayLabel: layoutMode == KeyboardLayoutMode.German ? "-" : "/"),
+            Key(",", displayLabel: ","), Key(".", displayLabel: "."), Key("/", displayLabel: isGerman ? "-" : "/"),
             Key("SHIFT", displayLabel: "Shift", widthUnits: 2.75)
         });
 
@@ -73,27 +82,27 @@ public sealed class KeyboardLayoutService
 
         AddRow(keys, 5, new[]
         {
-            Key("CTRL", displayLabel: layoutMode == KeyboardLayoutMode.German ? "Strg" : "Ctrl", widthUnits: 1.25),
-            Key("WIN", displayLabel: "Win", widthUnits: 1.25),
-            Key("ALT", displayLabel: layoutMode == KeyboardLayoutMode.German ? "Alt" : "Alt", widthUnits: 1.25),
-            Key("SPACE", displayLabel: layoutMode == KeyboardLayoutMode.German ? "Leertaste" : "Space", widthUnits: 6.25),
-            Key("ALT", displayLabel: layoutMode == KeyboardLayoutMode.German ? "AltGr" : "Alt", widthUnits: 1.25),
-            Key("WIN", displayLabel: "Win", widthUnits: 1.25),
-            Key("MENU", displayLabel: layoutMode == KeyboardLayoutMode.German ? "Menü" : "Menu", widthUnits: 1.25),
-            Key("CTRL", displayLabel: layoutMode == KeyboardLayoutMode.German ? "Strg" : "Ctrl", widthUnits: 1.25)
+            Key("CTRL", displayLabel: isGerman ? "Strg" : "Ctrl", widthUnits: 1.25),
+            Key("WIN", displayLabel: "⊞", widthUnits: 1.25),
+            Key("ALT", displayLabel: "Alt", widthUnits: 1.25),
+            Key("SPACE", displayLabel: isGerman ? "Leertaste" : "Space", widthUnits: 6.25),
+            Key("ALT", displayLabel: isGerman ? "AltGr" : "Alt", widthUnits: 1.25),
+            Key("WIN", displayLabel: "⊞", widthUnits: 1.25),
+            Key("MENU", displayLabel: isGerman ? "☰" : "☰", widthUnits: 1.25),
+            Key("CTRL", displayLabel: isGerman ? "Strg" : "Ctrl", widthUnits: 1.25)
         });
 
-        AddKey(keys, "INSERT", 1, 16.25, displayLabel: layoutMode == KeyboardLayoutMode.German ? "Einfg" : "Insert");
-        AddKey(keys, "HOME", 1, 17.25, displayLabel: layoutMode == KeyboardLayoutMode.German ? "Pos1" : "Home");
-        AddKey(keys, "PAGE UP", 1, 18.25, displayLabel: layoutMode == KeyboardLayoutMode.German ? "Bild↑" : "Page Up");
-        AddKey(keys, "PRINT SCREEN", 0, 16.25, displayLabel: layoutMode == KeyboardLayoutMode.German ? "Druck" : "Print Scrn");
-        AddKey(keys, "SCROLL LOCK", 0, 17.25, displayLabel: layoutMode == KeyboardLayoutMode.German ? "Rollen" : "Scroll Lock");
-        AddKey(keys, "PAUSE", 0, 18.25, displayLabel: layoutMode == KeyboardLayoutMode.German ? "Pause" : "Pause");
-        AddKey(keys, "DELETE", 2, 16.25, displayLabel: layoutMode == KeyboardLayoutMode.German ? "Entf" : "Delete");
-        AddKey(keys, "END", 2, 17.25, displayLabel: layoutMode == KeyboardLayoutMode.German ? "Ende" : "End");
-        AddKey(keys, "PAGE DOWN", 2, 18.25, displayLabel: layoutMode == KeyboardLayoutMode.German ? "Bild↓" : "Page Down");
+        AddKey(keys, "INSERT", 1, 16.25, displayLabel: isGerman ? "Einfg" : "Insert");
+        AddKey(keys, "HOME", 1, 17.25, displayLabel: isGerman ? "Pos1" : "Home");
+        AddKey(keys, "PAGE UP", 1, 18.25, displayLabel: isGerman ? "Bild ↑" : "Page ↑");
+        AddKey(keys, "PRINT SCREEN", 0, 16.25, displayLabel: isGerman ? "Druck" : "Print");
+        AddKey(keys, "SCROLL LOCK", 0, 17.25, displayLabel: isGerman ? "Rollen" : "Scroll");
+        AddKey(keys, "PAUSE", 0, 18.25, displayLabel: "Pause");
+        AddKey(keys, "DELETE", 2, 16.25, displayLabel: isGerman ? "Entf" : "Delete");
+        AddKey(keys, "END", 2, 17.25, displayLabel: isGerman ? "Ende" : "End");
+        AddKey(keys, "PAGE DOWN", 2, 18.25, displayLabel: isGerman ? "Bild ↓" : "Page ↓");
 
-        AddKey(keys, "NUM LOCK", 1, 20.25, displayLabel: layoutMode == KeyboardLayoutMode.German ? "Num" : "Num Lock");
+        AddKey(keys, "NUM LOCK", 1, 20.25, displayLabel: "Num");
         AddKey(keys, "/", 1, 21.25, displayLabel: "/");
         AddKey(keys, "*", 1, 22.25, displayLabel: "*");
         AddKey(keys, "-", 1, 23.25, displayLabel: "-");
@@ -107,8 +116,8 @@ public sealed class KeyboardLayoutService
         AddKey(keys, "2", 4, 21.25, displayLabel: "2");
         AddKey(keys, "3", 4, 22.25, displayLabel: "3");
         AddKey(keys, "0", 5, 20.25, displayLabel: "0", widthUnits: 2.0);
-        AddKey(keys, ".", 5, 22.25, displayLabel: layoutMode == KeyboardLayoutMode.German ? "," : ".");
-        AddKey(keys, "ENTER", 4, 23.25, displayLabel: "Enter", widthUnits: 1.0, heightUnits: 2.0);
+        AddKey(keys, ".", 5, 22.25, displayLabel: isGerman ? "," : ".");
+        AddKey(keys, "ENTER", 4, 23.25, displayLabel: "↵", widthUnits: 1.0, heightUnits: 2.0);
         AddKey(keys, "+", 2, 23.25, displayLabel: "+", widthUnits: 1.0, heightUnits: 2.0);
 
         AddKey(keys, "LEFT", 5, 16.75, displayLabel: "←");

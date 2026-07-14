@@ -10,9 +10,12 @@ public class AppSettings : ObservableObject
     private string _microphoneDeviceId = string.Empty;
     private string _virtualCableDeviceId = string.Empty;
     private string _theme = "Dark Neon";
-    private KeyboardLayoutMode _keyboardLayout = KeyboardLayoutMode.English;
+    private KeyboardLayoutMode _keyboardLayout = KeyboardLayoutMode.Automatic;
     private float _masterVolume = 1f;
     private bool _enableGlobalHotkeys = true;
+    private bool _enableLogging = true;
+    private bool _advancedMode;
+    private bool _showSetupWizardOnStartup = true;
     private bool _startMinimized;
     private bool _allowMultipleInstances;
     private DateTime? _lastConfigurationDate;
@@ -73,6 +76,24 @@ public class AppSettings : ObservableObject
     {
         get => _enableGlobalHotkeys;
         set => SetProperty(ref _enableGlobalHotkeys, value);
+    }
+
+    public bool EnableLogging
+    {
+        get => _enableLogging;
+        set => SetProperty(ref _enableLogging, value);
+    }
+
+    public bool AdvancedMode
+    {
+        get => _advancedMode;
+        set => SetProperty(ref _advancedMode, value);
+    }
+
+    public bool ShowSetupWizardOnStartup
+    {
+        get => _showSetupWizardOnStartup;
+        set => SetProperty(ref _showSetupWizardOnStartup, value);
     }
 
     public bool StartMinimized

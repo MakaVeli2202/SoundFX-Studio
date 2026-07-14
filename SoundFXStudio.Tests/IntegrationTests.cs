@@ -69,7 +69,7 @@ public class IntegrationTests
     {
         // Arrange & Act
         var service = new KeyboardLayoutService();
-        var layout = service.CreateKeyboard(KeyboardLayoutMode.English);
+        var layout = service.CreateKeyboard(KeyboardLayoutMode.EnglishUS);
 
         // Assert
         Assert.NotNull(layout);

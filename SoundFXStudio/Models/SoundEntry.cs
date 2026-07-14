@@ -18,6 +18,7 @@ public class SoundEntry : ObservableObject
     private int _playCount;
     private DateTime? _lastPlayedUtc;
     private string? _assignedKeyId;
+    private string? _assignedKeyLabel;
     private bool _isMarkedForDelete;
 
     public string Id
@@ -96,6 +97,12 @@ public class SoundEntry : ObservableObject
     {
         get => _assignedKeyId;
         set => SetProperty(ref _assignedKeyId, value);
+    }
+
+    public string? AssignedKeyLabel
+    {
+        get => _assignedKeyLabel;
+        set => SetProperty(ref _assignedKeyLabel, value);
     }
 
     public bool IsMarkedForDelete

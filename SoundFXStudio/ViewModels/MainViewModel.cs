@@ -7,6 +7,7 @@ using SoundFXStudio.Views.Dialogs;
 using NAudio.Wave;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Windows;
@@ -17,20 +18,22 @@ using Key = System.Windows.Input.Key;
 namespace SoundFXStudio.ViewModels;
 
 public sealed class MainViewModel : ObservableObject
+    , IDisposable
 {
-    private readonly ConfigService _configService = new();
+    private readonly ILogService? _logService;
+    private readonly ConfigService _configService;
     private readonly KeyboardLayoutService _keyboardLayoutService = new();
-    private readonly AudioPlayer _audioPlayer = new();
+    private readonly AudioPlayer _audioPlayer;
     private readonly ActionExecutor _actionExecutor;
-    private readonly HotkeyService _hotkeyService = new();
-    private readonly KeyboardHookService _keyboardHookService = new();
     private readonly AudioDeviceService _audioDeviceService = new();
     private readonly HttpClient _httpClient = new();
     private readonly HashSet<Key> _pressedKeys = new();
-    private readonly HashSet<string> _pressedTriggerTokens = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _unhighlightTokens = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, CancellationTokenSource> _unhighlightTimers = new(); // Auto-unhighlight fallback
-    private readonly Dictionary<string, (Guid? ActionId, string? SoundId, KeyPlaybackMode KeyPlaybackMode, CancellationTokenSource? CancellationTokenSource)> _activeTriggers = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ChordRuntimeService _chordRuntimeService;
+    private readonly TriggerService _triggerService;
+    private readonly SoundLibraryViewModel _soundLibraryViewModel;
+    private readonly KeyboardViewModel _keyboardViewModel;
+    private readonly RoutingViewModel _routingViewModel;
     private AppConfig _config = new();
     private Window? _window;
     private KeyboardKey? _selectedKey;
@@ -48,9 +51,23 @@ public sealed class MainViewModel : ObservableObject
     private string _currentInputDevice = "System Default";
     private string _currentPreset = "Default";
     private string _routingStatus = "Not configured";
+    private string _selectedSoundBindingStatusText = "Select a sound to see its binding.";
+    private string _selectedSoundBindingPromptText = string.Empty;
+    private string _bindingHintText = "Drag a sound onto a key to assign it.";
+    private string _selectedSoundBindingKeyLabel = "None";
+    private string _selectedSoundBindingShortcut = "None";
+    private bool _disposed;
+    private bool _isLoading;
+    private bool _isAssignMode;
+    private KeyboardLayoutMode _detectedKeyboardLayout = KeyboardLayoutMode.EnglishUS;
+    private bool _inputLanguageHookAttached;
 
-    public MainViewModel()
+    public MainViewModel(ILogService? logService = null)
     {
+        _logService = logService;
+        _configService = new ConfigService(_logService);
+        _audioPlayer = new AudioPlayer(_logService);
+
         KeyboardKeys = new ObservableCollection<KeyboardKey>();
         Sounds = new ObservableCollection<SoundEntry>();
         Profiles = new ObservableCollection<Profile>();
@@ -58,16 +75,100 @@ public sealed class MainViewModel : ObservableObject
         OutputDevices = new ObservableCollection<AudioDeviceInfo>();
         InputDevices = new ObservableCollection<AudioDeviceInfo>();
 
-        AddSoundCommand = new RelayCommand(_ => AddSound());
-        AddMultipleSoundsCommand = new RelayCommand(_ => AddMultipleSounds());
-        AddSoundFromUrlCommand = new AsyncRelayCommand(_ => AddSoundFromUrlAsync());
-        DeleteMarkedSoundsCommand = new RelayCommand(_ => DeleteMarkedSounds());
+        _detectedKeyboardLayout = ResolveWindowsKeyboardLayout(System.Windows.Input.InputLanguageManager.Current.CurrentInputLanguage);
+
+        _actionExecutor = new ActionExecutor(_config, _configService, _audioPlayer, ResolveOutputDeviceIndex);
+
+        ConfigureViews();
+
+        _triggerService = new TriggerService(
+            new HotkeyService(),
+            new KeyboardHookService(),
+            _actionExecutor,
+            _audioPlayer,
+            () => _config,
+            GetAssignmentForKey,
+            token => ActiveProfile?.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, token, StringComparison.OrdinalIgnoreCase)),
+            ResolveSound,
+            EnsureSoundAction,
+            () => SelectedKey,
+            UpdateKeyVisualState,
+            value => StatusText = value,
+            UpdateTitle,
+            RaiseSoundCollectionStats,
+            PlaySound,
+            RunOnUiThread,
+            _logService);
+
+        _keyboardViewModel = new KeyboardViewModel(
+            () => _config,
+            () => Settings,
+            ResolveKeyboardLayoutMode,
+            _keyboardLayoutService,
+            actionId => _actionExecutor.ExecuteAsync(actionId),
+            _audioPlayer,
+            KeyboardKeys,
+            Sounds,
+            Categories,
+            Profiles,
+            OutputDevices,
+            () => SelectedKey,
+            value => SelectedKey = value,
+            value => StatusText = value,
+            RunOnUiThread,
+            UpdateTitle,
+            RaiseSoundCollectionStats);
+
+        _soundLibraryViewModel = new SoundLibraryViewModel(
+            _configService,
+            _audioPlayer,
+            _httpClient,
+            Sounds,
+            Profiles,
+            KeyboardKeys,
+            OutputDevices,
+            SoundsView,
+            () => _config,
+            () => Settings,
+            () => _window,
+            () => SelectedSound,
+            value => SelectedSound = value,
+            () => SelectedKey,
+            value => SelectedKey = value,
+            value => StatusText = value ?? string.Empty,
+            Save,
+            UpdateStatus,
+            UpdateTitle,
+            RaiseSoundCollectionStats,
+            () => _keyboardViewModel.RefreshAssignments(),
+            RunOnUiThread,
+            ImportImage);
+
+        _routingViewModel = new RoutingViewModel(
+            () => _config,
+            () => Settings,
+            _configService,
+            _audioPlayer,
+            OutputDevices,
+            InputDevices,
+            value => CurrentOutputDevice = value,
+            value => CurrentInputDevice = value,
+            value => RoutingStatus = value,
+            value => StatusText = value ?? string.Empty,
+            Save);
+
+        _keyboardViewModel.AttachChordRuntimeService(_triggerService.ChordRuntimeService);
+
+        AddSoundCommand = new RelayCommand(_ => _soundLibraryViewModel.AddSound());
+        AddMultipleSoundsCommand = new RelayCommand(_ => _soundLibraryViewModel.AddMultipleSounds());
+        AddSoundFromUrlCommand = new AsyncRelayCommand(_ => _soundLibraryViewModel.AddSoundFromUrlAsync());
+        DeleteMarkedSoundsCommand = new RelayCommand(_ => _soundLibraryViewModel.DeleteMarkedSounds());
         StopAllCommand = new RelayCommand(_ => StopAll());
         KeyClickedCommand = new RelayCommand(parameter => HandleKeyClicked(parameter));
-        DuplicateSoundCommand = new RelayCommand(_ => DuplicateSelectedSound(), _ => SelectedSound is not null);
-        DeleteSoundCommand = new RelayCommand(_ => DeleteSelectedSound(), _ => SelectedSound is not null);
-        PlaySelectedSoundCommand = new RelayCommand(_ => PlaySelectedSound(), _ => SelectedSound is not null);
-        PlaySoundCommand = new RelayCommand(parameter => PlaySoundFromLibrary(parameter), parameter => ResolveSound(parameter) is not null);
+        DuplicateSoundCommand = new RelayCommand(_ => _soundLibraryViewModel.DuplicateSelectedSound(), _ => SelectedSound is not null);
+        DeleteSoundCommand = new RelayCommand(_ => _soundLibraryViewModel.DeleteSelectedSound(), _ => SelectedSound is not null);
+        PlaySelectedSoundCommand = new RelayCommand(_ => _soundLibraryViewModel.PlaySelectedSound(), _ => SelectedSound is not null);
+        PlaySoundCommand = new RelayCommand(parameter => _soundLibraryViewModel.PlaySoundFromLibrary(parameter), parameter => ResolveSound(parameter) is not null);
         EditSoundCommand = new RelayCommand(parameter => EditSound(parameter), parameter => ResolveSound(parameter) is not null);
         AssignSelectedSoundToKeyCommand = new RelayCommand(parameter => AssignSelectedSoundToSelectedKey(parameter), parameter => ResolveKey(parameter) is not null);
         RemoveSoundFromKeyCommand = new RelayCommand(parameter => RemoveSoundFromKey(parameter), parameter => ResolveKey(parameter) is not null);
@@ -82,33 +183,22 @@ public sealed class MainViewModel : ObservableObject
         ToggleFavoriteCommand = new RelayCommand(_ => ToggleFavorite(), _ => SelectedSound is not null);
         SaveCommand = new RelayCommand(_ => Save());
         RefreshCommand = new RelayCommand(_ => Refresh());
-        AutoConfigureAudioCommand = new RelayCommand(_ => AutoConfigureAudio());
-        TestRoutingCommand = new RelayCommand(_ => TestRouting());
+        AutoConfigureAudioCommand = new RelayCommand(_ => _routingViewModel.AutoConfigureAudio());
+        TestRoutingCommand = new RelayCommand(_ => _routingViewModel.TestRouting());
         OpenSetupWizardCommand = new RelayCommand(_ => OpenSetupWizard());
         CreateProfileCommand = new RelayCommand(_ => CreateProfile());
         DeleteProfileCommand = new RelayCommand(_ => DeleteSelectedProfile(), _ => SelectedProfile is not null && Profiles.Count > 1);
         SetGlobalHotkeyCommand = new RelayCommand(_ => SetSelectedSoundHotkey());
         RenameSoundCommand = new RelayCommand(parameter => RenameSelectedSound(parameter), parameter => ResolveSound(parameter) is not null);
         ChooseSoundImageCommand = new RelayCommand(parameter => ChooseSelectedSoundImage(parameter), parameter => ResolveSound(parameter) is not null);
+        ToggleAssignModeCommand = new RelayCommand(_ => ToggleAssignMode(), _ => SelectedSound is not null);
+        ClearSelectedSoundBindingCommand = new RelayCommand(_ => ClearSelectedSoundBinding(), _ => SelectedSound is not null);
         SetSoundHotkeyCommand = new RelayCommand(parameter => SetSoundHotkey(parameter), parameter => ResolveSound(parameter) is not null);
-        HotkeyService = _hotkeyService;
-
         Load();
-        RebuildKeyboard();
-        ConfigureViews();
         UpdateTitle();
-        _actionExecutor = new ActionExecutor(_config, _configService, _audioPlayer, ResolveOutputDeviceIndex);
-        _chordRuntimeService = new ChordRuntimeService(
-            _config,
-            GetAssignmentForKeyToken,
-            assignment =>
-            {
-                ExecuteAssignmentOnce(assignment);
-                return Task.CompletedTask;
-            },
-            actionId => _actionExecutor.ExecuteAsync(actionId));
-    }
 
+        _keyboardViewModel.RebuildKeyboard();
+    }
     public ObservableCollection<KeyboardKey> KeyboardKeys { get; }
 
     public ObservableCollection<SoundEntry> Sounds { get; }
@@ -127,7 +217,15 @@ public sealed class MainViewModel : ObservableObject
 
     public ConfigService ConfigService => _configService;
 
-    public HotkeyService HotkeyService { get; }
+    internal AppConfig Config => _config;
+
+    internal Window? HostWindow => _window;
+
+    internal KeyboardLayoutService KeyboardLayoutService => _keyboardLayoutService;
+
+    internal AudioPlayer AudioPlayer => _audioPlayer;
+
+    internal HttpClient HttpClient => _httpClient;
 
     public ICommand AddSoundCommand { get; }
 
@@ -194,7 +292,19 @@ public sealed class MainViewModel : ObservableObject
 
     public ICommand SetSoundHotkeyCommand { get; }
 
-    public IReadOnlyList<KeyboardLayoutMode> KeyboardLayoutOptions { get; } = Enum.GetValues<KeyboardLayoutMode>();
+    public ICommand ToggleAssignModeCommand { get; }
+
+    public ICommand ClearSelectedSoundBindingCommand { get; }
+
+    public IReadOnlyList<KeyboardLayoutMode> KeyboardLayoutOptions { get; } = new[]
+    {
+        KeyboardLayoutMode.Automatic,
+        KeyboardLayoutMode.EnglishUK,
+        KeyboardLayoutMode.EnglishUS,
+        KeyboardLayoutMode.German
+    };
+
+    public KeyboardLayoutMode EffectiveKeyboardLayout => ResolveKeyboardLayoutMode();
 
     public IReadOnlyList<string> ThemeOptions { get; } = new[] { "Dark", "Light" };
 
@@ -231,7 +341,8 @@ public sealed class MainViewModel : ObservableObject
             }
 
             Settings.KeyboardLayout = value;
-            RebuildKeyboard();
+            OnPropertyChanged(nameof(EffectiveKeyboardLayout));
+            _keyboardViewModel.RebuildKeyboard();
             Save();
             OnPropertyChanged(nameof(KeyboardLayout));
         }
@@ -255,16 +366,17 @@ public sealed class MainViewModel : ObservableObject
                 if (previous is not null)
                 {
                     previous.IsSelected = false;
-                    UpdateKeyVisualState(previous);
+                    _keyboardViewModel.UpdateKeyVisualState(previous);
                 }
 
                 if (_selectedKey is not null)
                 {
                     _selectedKey.IsSelected = true;
-                    UpdateKeyVisualState(_selectedKey);
+                    _keyboardViewModel.UpdateKeyVisualState(_selectedKey);
                 }
 
                 UpdateStatus();
+                UpdateBindingPanelState();
                 RaiseCommandState();
             }
         }
@@ -278,6 +390,7 @@ public sealed class MainViewModel : ObservableObject
             if (SetProperty(ref _selectedSound, value))
             {
                 UpdateStatus();
+                UpdateBindingPanelState();
                 RaiseCommandState();
             }
         }
@@ -288,13 +401,21 @@ public sealed class MainViewModel : ObservableObject
         get => _selectedProfile;
         set
         {
+            if (_isLoading)
+            {
+                SetProperty(ref _selectedProfile, value);
+                return;
+            }
+
             if (SetProperty(ref _selectedProfile, value) && value is not null)
             {
                 _config.ActiveProfileId = value.Id;
-                RefreshAssignments();
+                _keyboardViewModel.RefreshAssignments();
                 Save();
                 UpdateTitle();
+                UpdateBindingPanelState();
                 RaiseCommandState();
+                _logService?.Info($"Profile Switched: {value.Name}");
             }
         }
     }
@@ -392,48 +513,101 @@ public sealed class MainViewModel : ObservableObject
         set => SetProperty(ref _routingStatus, value);
     }
 
+    public string SelectedSoundBindingStatusText
+    {
+        get => _selectedSoundBindingStatusText;
+        private set => SetProperty(ref _selectedSoundBindingStatusText, value);
+    }
+
+    public string SelectedSoundBindingPromptText
+    {
+        get => _selectedSoundBindingPromptText;
+        private set => SetProperty(ref _selectedSoundBindingPromptText, value);
+    }
+
+    public string BindingHintText
+    {
+        get => _bindingHintText;
+        private set => SetProperty(ref _bindingHintText, value);
+    }
+
+    public string SelectedSoundBindingKeyLabel
+    {
+        get => _selectedSoundBindingKeyLabel;
+        private set => SetProperty(ref _selectedSoundBindingKeyLabel, value);
+    }
+
+    public string SelectedSoundBindingShortcut
+    {
+        get => _selectedSoundBindingShortcut;
+        private set => SetProperty(ref _selectedSoundBindingShortcut, value);
+    }
+
+    public bool IsAssignMode
+    {
+        get => _isAssignMode;
+        private set
+        {
+            if (SetProperty(ref _isAssignMode, value))
+            {
+                UpdateBindingPanelState();
+            }
+        }
+    }
+
     public AppSettings Settings => _config.Settings;
+
+    internal Profile? ActiveProfile => Profiles.FirstOrDefault(item => string.Equals(item.Id, _config.ActiveProfileId, StringComparison.OrdinalIgnoreCase)) ?? Profiles.FirstOrDefault();
+
+    internal string? SelectedKeyIdCache => _selectedKeyId;
 
     public void AttachWindow(Window window)
     {
         _window = window;
-        _hotkeyService.Attach(window);
-        _hotkeyService.HotkeyPressed += (_, args) =>
+        if (!_inputLanguageHookAttached)
         {
-            var assignment = ActiveProfile?.Assignments.FirstOrDefault(item => string.Equals(item.Id, args.OwnerId, StringComparison.OrdinalIgnoreCase));
-            if (assignment is null)
-            {
-                return;
-            }
+            System.Windows.Input.InputLanguageManager.Current.InputLanguageChanged += InputLanguageManager_CurrentInputLanguageChanged;
+            _inputLanguageHookAttached = true;
+        }
+        _triggerService.AttachWindow(window, _keyboardViewModel.HandlePhysicalKey);
+    }
 
-            ExecuteAssignmentOnce(assignment);
-        };
-
-        _keyboardHookService.KeyDown += (_, args) =>
+    public void Dispose()
+    {
+        if (_disposed)
         {
-            if (_window?.IsActive == true)
-            {
-                return;
-            }
+            return;
+        }
 
-            HandlePhysicalKey(args.Key);
-        };
-        _keyboardHookService.KeyUp += (_, args) =>
+        _disposed = true;
+        _logService?.Info("Disposing MainViewModel");
+        if (_inputLanguageHookAttached)
         {
-            if (_window?.IsActive == true)
-            {
-                return;
-            }
-
-            HandlePhysicalKey(args.Key, isKeyDown: false);
-        };
-        _keyboardHookService.Attach();
-
-        RegisterGlobalHotkeys();
+            System.Windows.Input.InputLanguageManager.Current.InputLanguageChanged -= InputLanguageManager_CurrentInputLanguageChanged;
+            _inputLanguageHookAttached = false;
+        }
+        _triggerService.Dispose();
+        _logService?.Info("Disposing AudioPlayer");
+        _logService?.Info("Disposing HttpClient");
+        _audioPlayer.Dispose();
+        _httpClient.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     public void HandlePreviewKeyDown(System.Windows.Input.KeyEventArgs e)
     {
+        if (IsAssignMode)
+        {
+            if (TryResolveKeyboardKeyFromPhysicalKey(e.Key) is { } assignKey)
+            {
+                AssignSoundToKey(SelectedSound, assignKey);
+                IsAssignMode = false;
+            }
+
+            e.Handled = true;
+            return;
+        }
+
         HandlePhysicalKey(e.Key, isKeyDown: true);
     }
 
@@ -464,58 +638,65 @@ public sealed class MainViewModel : ObservableObject
         Save();
     }
 
-    private Profile? ActiveProfile => Profiles.FirstOrDefault(item => string.Equals(item.Id, _config.ActiveProfileId, StringComparison.OrdinalIgnoreCase)) ?? Profiles.FirstOrDefault();
-
     private void Load()
     {
-        _config.PropertyChanged -= Config_PropertyChanged;
-        _config.Settings.PropertyChanged -= Settings_PropertyChanged;
-        _config = _configService.Load();
-
-        Sounds.Clear();
-        foreach (var sound in _config.Sounds)
+        _isLoading = true;
+        try
         {
-            Sounds.Add(sound);
-        }
+            _config.PropertyChanged -= Config_PropertyChanged;
+            _config.Settings.PropertyChanged -= Settings_PropertyChanged;
+            _config = _configService.Load();
 
-        Profiles.Clear();
-        foreach (var profile in _config.Profiles)
+            Sounds.Clear();
+            foreach (var sound in _config.Sounds)
+            {
+                Sounds.Add(sound);
+            }
+
+            Profiles.Clear();
+            foreach (var profile in _config.Profiles)
+            {
+                    _keyboardViewModel.RefreshAssignments();
+            }
+
+            Categories.Clear();
+            foreach (var category in _config.Categories)
+            {
+                Categories.Add(category);
+            }
+
+            OutputDevices.Clear();
+            foreach (var device in _audioDeviceService.GetOutputDevices())
+            {
+                OutputDevices.Add(device);
+            }
+
+            InputDevices.Clear();
+            foreach (var device in _audioDeviceService.GetInputDevices())
+            {
+                InputDevices.Add(device);
+            }
+
+            if (Profiles.Count == 0)
+            {
+                Profiles.Add(new Profile { Name = "Default", Description = "Fallback profile", IsDefault = true });
+            }
+
+            var active = ActiveProfile ?? Profiles.First();
+            SelectedProfile = active;
+            _config.PropertyChanged += Config_PropertyChanged;
+            _config.Settings.PropertyChanged += Settings_PropertyChanged;
+            ApplyKeyboardCalibration(Settings.KeyboardCalibration);
+            _keyboardViewModel.RefreshAssignments();
+            _routingViewModel.UpdateRoutingStatus();
+            UpdateStatus();
+            RaiseSoundCollectionStats();
+            _logService?.Info($"Profile Loaded: {active.Name}");
+        }
+        finally
         {
-            Profiles.Add(profile);
+            _isLoading = false;
         }
-
-        Categories.Clear();
-        foreach (var category in _config.Categories)
-        {
-            Categories.Add(category);
-        }
-
-        OutputDevices.Clear();
-        foreach (var device in _audioDeviceService.GetOutputDevices())
-        {
-            OutputDevices.Add(device);
-        }
-
-        InputDevices.Clear();
-        foreach (var device in _audioDeviceService.GetInputDevices())
-        {
-            InputDevices.Add(device);
-        }
-
-        if (Profiles.Count == 0)
-        {
-            Profiles.Add(new Profile { Name = "Default", Description = "Fallback profile", IsDefault = true });
-        }
-
-        var active = ActiveProfile ?? Profiles.First();
-        SelectedProfile = active;
-        _config.PropertyChanged += Config_PropertyChanged;
-        _config.Settings.PropertyChanged += Settings_PropertyChanged;
-        ApplyKeyboardCalibration(Settings.KeyboardCalibration);
-        RefreshAssignments();
-        UpdateRoutingStatus();
-        UpdateStatus();
-        RaiseSoundCollectionStats();
     }
 
     private static void ApplyKeyboardCalibration(KeyboardCalibrationSettings calibration)
@@ -594,7 +775,6 @@ public sealed class MainViewModel : ObservableObject
         }
 
         SelectedProfile = activeProfile;
-        RefreshAssignments();
         UpdateTitle();
     }
 
@@ -605,23 +785,9 @@ public sealed class MainViewModel : ObservableObject
             or nameof(AppSettings.VirtualCableDeviceId)
             or nameof(AppSettings.VBCableDetected))
         {
-            UpdateRoutingStatus();
+            _routingViewModel.UpdateRoutingStatus();
             Save();
         }
-    }
-
-    private void RebuildKeyboard()
-    {
-        var selectedKeyId = SelectedKey?.Id ?? _selectedKeyId;
-        var keys = _keyboardLayoutService.CreateKeyboard(Settings.KeyboardLayout);
-        KeyboardKeys.Clear();
-        foreach (var key in keys)
-        {
-            KeyboardKeys.Add(key);
-        }
-
-        SelectedKey = selectedKeyId is null ? null : KeyboardKeys.FirstOrDefault(item => string.Equals(item.Id, selectedKeyId, StringComparison.OrdinalIgnoreCase));
-        RefreshAssignments();
     }
 
     private void ConfigureViews()
@@ -650,12 +816,12 @@ public sealed class MainViewModel : ObservableObject
 
                  var matchesFavorites = !FavoritesOnly || sound.IsFavorite;
 
-                 return matchesSearch && matchesCategory && matchesFavorites;
+                return matchesSearch && matchesCategory && matchesFavorites;
         };
 
         ProfilesView = CollectionViewSource.GetDefaultView(Profiles);
-        ProfilesView.Filter = item =>
-        {
+            ProfilesView.Filter = item =>
+            {
             if (item is not Profile profile)
             {
                 return false;
@@ -672,95 +838,9 @@ public sealed class MainViewModel : ObservableObject
         };
     }
 
-    private void RefreshAssignments()
-    {
-        var profile = ActiveProfile;
-        if (profile is null)
-        {
-            return;
-        }
+    internal void RefreshAssignments() => _keyboardViewModel.RefreshAssignments();
 
-        var selectedKeyId = SelectedKey?.Id;
-
-        foreach (var key in KeyboardKeys)
-        {
-            var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
-            var sound = assignment is null ? null : Sounds.FirstOrDefault(item => string.Equals(item.Id, assignment.SoundId, StringComparison.OrdinalIgnoreCase));
-            var category = sound is null ? null : Categories.FirstOrDefault(item => string.Equals(item.Name, sound.Category, StringComparison.OrdinalIgnoreCase));
-
-            key.ImagePath = assignment?.ImagePath ?? sound?.ImagePath;
-            key.AssignedSoundId = assignment?.SoundId;
-            key.AssignedSoundName = sound?.Name;
-            key.AssignmentName = assignment?.BindingName;
-            key.CategoryAccentColor = string.IsNullOrWhiteSpace(category?.AccentColor) ? "#00000000" : category.AccentColor;
-            key.IsSelected = string.Equals(key.Id, selectedKeyId, StringComparison.OrdinalIgnoreCase);
-            UpdateKeyVisualState(key);
-            key.IsEnabled = true;
-        }
-    }
-
-    private void HandlePhysicalKey(Key key, bool isKeyDown = true)
-    {
-        var token = NormalizeTokenForLayout(ToKeyToken(key, ModifierKeys.None));
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            return;
-        }
-
-        var keyboardKey = KeyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, token, StringComparison.OrdinalIgnoreCase));
-        if (keyboardKey is null)
-        {
-            return;
-        }
-
-        RunOnUiThread(() =>
-        {
-            if (isKeyDown)
-            {
-                // Cancel existing unhighlight timer for this key (user is pressing again)
-                if (_unhighlightTimers.TryGetValue(token, out var cts))
-                {
-                    cts.Cancel();
-                    _unhighlightTimers.Remove(token);
-                }
-
-                // Track multi-key presses
-                _pressedKeys.Add(key);
-                keyboardKey.IsSelected = true; // Show visual feedback
-                FlashKey(keyboardKey);
-                _ = _chordRuntimeService.HandleKeyDownAsync(token);
-
-                // Start auto-unhighlight timer (fallback in case KeyUp doesn't fire)
-                var unhighlightCts = new CancellationTokenSource();
-                _unhighlightTimers[token] = unhighlightCts;
-
-                Task.Delay(300, unhighlightCts.Token).ContinueWith(_ =>
-                {
-                    if (!unhighlightCts.Token.IsCancellationRequested)
-                    {
-                        RunOnUiThread(() =>
-                        {
-                            keyboardKey.IsSelected = false;
-                            _unhighlightTimers.Remove(token);
-                        });
-                    }
-                });
-            }
-            else
-            {
-                // Release key - cancel timer and deselect immediately
-                if (_unhighlightTimers.TryGetValue(token, out var cts))
-                {
-                    cts.Cancel();
-                    _unhighlightTimers.Remove(token);
-                }
-
-                _pressedKeys.Remove(key);
-                keyboardKey.IsSelected = false;
-                _ = _chordRuntimeService.HandleKeyUpAsync(token);
-            }
-        });
-    }
+    private void HandlePhysicalKey(Key key, bool isKeyDown = true) => _keyboardViewModel.HandlePhysicalKey(key, isKeyDown);
 
     private static ModifierKeys GetModifierState()
         => (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) ? ModifierKeys.Control : ModifierKeys.None)
@@ -776,10 +856,10 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        ExecuteAssignmentOnce(assignment);
+        _triggerService.ExecuteAssignmentOnce(assignment);
     }
 
-    private void PlaySound(SoundEntry sound, KeyAssignment? assignment = null)
+    internal void PlaySound(SoundEntry sound, KeyAssignment? assignment = null)
     {
         if (!File.Exists(sound.FilePath))
         {
@@ -818,103 +898,29 @@ public sealed class MainViewModel : ObservableObject
 
     private void HandleKeyClicked(object? parameter)
     {
-        if (parameter is not KeyboardKey key)
+        if (IsAssignMode && parameter is KeyboardKey key)
         {
+            AssignSoundToKey(SelectedSound, key);
+            IsAssignMode = false;
             return;
         }
 
-        SelectedKey = key;
-
-        if (key.AssignedSoundId is null)
-        {
-            StatusText = $"Selected {key.DisplayLabel}";
-            return;
-        }
-
-        PlayKey(key);
+        _keyboardViewModel.HandleKeyClicked(parameter);
     }
 
-    private void FlashKey(KeyboardKey key)
-    {
-        key.State = KeyState.Pressed;
-        Task.Delay(120).ContinueWith(_ =>
-        {
-            RunOnUiThread(() => UpdateKeyVisualState(key));
-        });
-    }
+    private void FlashKey(KeyboardKey key) => _keyboardViewModel.FlashKey(key);
 
-    private void AddSound()
-    {
-        var dialog = new OpenFileDialog
-        {
-            Title = "Add Sound",
-            Filter = "Audio Files|*.mp3;*.wav;*.flac;*.ogg;*.m4a|All Files|*.*",
-            Multiselect = true
-        };
+    private void AddSound() => _soundLibraryViewModel.AddSound();
 
-        if (dialog.ShowDialog() != true)
-        {
-            return;
-        }
+    private void AddMultipleSounds() => _soundLibraryViewModel.AddMultipleSounds();
 
-        foreach (var fileName in dialog.FileNames)
-        {
-            if (!TryGetSoundDetails(fileName, null, out var details))
-            {
-                continue;
-            }
+    private Task AddSoundFromUrlAsync() => _soundLibraryViewModel.AddSoundFromUrlAsync();
 
-            AddSoundFromDetails(details);
-        }
-
-        Save();
-        UpdateStatus();
-        RaiseSoundCollectionStats();
-    }
-
-    private void AddMultipleSounds() => AddSound();
-
-    private Task AddSoundFromUrlAsync()
-    {
-        var input = Microsoft.VisualBasic.Interaction.InputBox("Paste an audio URL", "Add Sound From URL", string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(input))
-        {
-            return Task.CompletedTask;
-        }
-
-        if (!Uri.TryCreate(input, UriKind.Absolute, out var uri) || (uri.Scheme is not "http" and not "https"))
-        {
-            StatusText = "Enter a valid http or https audio URL";
-            return Task.CompletedTask;
-        }
-
-        return ImportSoundFromUrlAsync(uri);
-    }
-
-    private void DeleteMarkedSounds()
-    {
-        var marked = Sounds.Where(item => item.IsMarkedForDelete).ToList();
-        if (marked.Count == 0)
-        {
-            return;
-        }
-
-        foreach (var sound in marked)
-        {
-            Sounds.Remove(sound);
-            _config.Sounds.Remove(sound);
-        }
-
-        RefreshAssignments();
-        Save();
-        UpdateStatus();
-        SoundsView.Refresh();
-        RaiseSoundCollectionStats();
-    }
+    private void DeleteMarkedSounds() => _soundLibraryViewModel.DeleteMarkedSounds();
 
     private SoundEntry? ResolveSound(object? parameter) => parameter as SoundEntry ?? SelectedSound;
 
-    private bool TryGetSoundDetails(string? initialFilePath, SoundEntry? existingSound, out SoundAssignmentViewModel details)
+    internal bool TryGetSoundDetails(string? initialFilePath, SoundEntry? existingSound, out SoundAssignmentViewModel details)
     {
         details = new SoundAssignmentViewModel(KeyboardKeys);
 
@@ -948,7 +954,7 @@ public sealed class MainViewModel : ObservableObject
         return result;
     }
 
-    private string? GetAssignedKeyIdForSound(SoundEntry sound)
+    internal string? GetAssignedKeyIdForSound(SoundEntry sound)
     {
         var profile = ActiveProfile;
         if (profile is null)
@@ -959,7 +965,7 @@ public sealed class MainViewModel : ObservableObject
         return profile.Assignments.FirstOrDefault(item => string.Equals(item.SoundId, sound.Id, StringComparison.OrdinalIgnoreCase))?.KeyId;
     }
 
-    private void AddSoundFromDetails(SoundAssignmentViewModel details)
+    internal void AddSoundFromDetails(SoundAssignmentViewModel details)
     {
         if (string.IsNullOrWhiteSpace(details.FilePath) || !File.Exists(details.FilePath))
         {
@@ -999,10 +1005,11 @@ public sealed class MainViewModel : ObservableObject
         SelectedSound = sound;
         Save();
         StatusText = $"Added {sound.Name}";
+        UpdateBindingPanelState();
         RaiseSoundCollectionStats();
     }
 
-    private void AssignSoundToKeyIfSelected(SoundEntry sound, string? keyId)
+    internal void AssignSoundToKeyIfSelected(SoundEntry sound, string? keyId)
     {
         if (string.IsNullOrWhiteSpace(keyId))
         {
@@ -1034,6 +1041,7 @@ public sealed class MainViewModel : ObservableObject
         }
 
         sound.AssignedKeyId = key.Id;
+        sound.AssignedKeyLabel = key.DisplayLabel;
     }
 
     private void EditSound(object? parameter)
@@ -1078,14 +1086,14 @@ public sealed class MainViewModel : ObservableObject
 
         UpdateSoundKeyAssignment(sound, details.SelectedKey);
 
-        RefreshAssignments();
         Save();
         SelectedSound = sound;
         StatusText = $"Updated {sound.Name}";
+        UpdateBindingPanelState();
         RaiseSoundCollectionStats();
     }
 
-    private void UpdateSoundKeyAssignment(SoundEntry sound, string? keyId)
+    internal void UpdateSoundKeyAssignment(SoundEntry sound, string? keyId)
     {
         var profile = ActiveProfile;
         if (profile is null)
@@ -1130,11 +1138,58 @@ public sealed class MainViewModel : ObservableObject
         }
 
         sound.AssignedKeyId = key.Id;
-            if (assignment?.ActionId is Guid actionId)
-            {
-                _ = _actionExecutor.ExecuteAsync(actionId);
-                return;
-            }
+        sound.AssignedKeyLabel = key.DisplayLabel;
+    }
+
+    internal void AssignSoundToKeyFromUi(SoundEntry sound, KeyboardKey key) => AssignSoundToKey(sound, key);
+
+    private void AssignSoundToKey(SoundEntry? sound, KeyboardKey key)
+    {
+        if (sound is null)
+        {
+            StatusText = $"Select a sound first for {key.DisplayLabel}";
+            return;
+        }
+
+        var profile = ActiveProfile;
+        if (profile is null)
+        {
+            return;
+        }
+
+        var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
+        if (assignment is null)
+        {
+            assignment = new KeyAssignment { KeyId = key.Id, SoundId = sound.Id, ActionId = EnsureSoundAction(sound).Id };
+            profile.Assignments.Add(assignment);
+        }
+        else
+        {
+            assignment.SoundId = sound.Id;
+            assignment.ActionId = EnsureSoundAction(sound).Id;
+        }
+
+        sound.AssignedKeyId = key.Id;
+        RefreshAssignments();
+        Save();
+        SelectedKey = key;
+        StatusText = $"Assigned {sound.Name} to {key.DisplayLabel}";
+    }
+
+    private void ToggleAssignMode()
+    {
+        IsAssignMode = !IsAssignMode;
+        StatusText = IsAssignMode
+            ? SelectedSound is null
+                ? "Assign mode: select a sound first"
+                : $"Assign mode: choose a key for {SelectedSound.Name}"
+            : "Assign mode off";
+    }
+
+    private KeyboardKey? TryResolveKeyboardKeyFromPhysicalKey(Key key)
+    {
+        var token = NormalizeTokenForLayout(ToKeyToken(key, GetModifierState()));
+        return KeyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, token, StringComparison.OrdinalIgnoreCase));
     }
 
     private void RenameSelectedSound(object? parameter)
@@ -1151,36 +1206,13 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        sound.Name = input.Trim();
         Save();
         SelectedSound = sound;
         StatusText = $"Renamed sound to {sound.Name}";
+        UpdateBindingPanelState();
     }
 
-    private void ChooseSelectedSoundImage(object? parameter)
-    {
-        var sound = ResolveSound(parameter);
-        if (sound is null)
-        {
-            return;
-        }
-
-        var dialog = new OpenFileDialog
-        {
-            Title = "Choose Sound Image",
-            Filter = "Image Files|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp|All Files|*.*"
-        };
-
-        if (dialog.ShowDialog() != true)
-        {
-            return;
-        }
-
-        sound.ImagePath = ImportImage(dialog.FileName);
-        Save();
-        SelectedSound = sound;
-        StatusText = $"Updated image for {sound.Name}";
-    }
+    private void ChooseSelectedSoundImage(object? parameter) => _soundLibraryViewModel.ChooseSelectedSoundImage(parameter);
 
     private void SetSoundHotkey(object? parameter)
     {
@@ -1190,88 +1222,31 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        var current = string.IsNullOrWhiteSpace(sound.Hotkey) ? "F1" : sound.Hotkey;
-        var input = Microsoft.VisualBasic.Interaction.InputBox("Enter a hotkey like CTRL+SHIFT+F1 or NUMPAD1", "Hotkey Editor", current).Trim();
-        if (string.IsNullOrWhiteSpace(input))
+        var dialog = new HotkeyCaptureDialog(sound.Hotkey)
+        {
+            Owner = _window
+        };
+
+        if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.CapturedHotkey))
         {
             return;
         }
 
-        sound.Hotkey = input;
+        sound.Hotkey = dialog.CapturedHotkey;
         if (SelectedSound is not null && string.Equals(SelectedSound.Id, sound.Id, StringComparison.OrdinalIgnoreCase))
         {
             SelectedSound = sound;
         }
 
-        RegisterGlobalHotkeys();
+        _triggerService.RegisterGlobalHotkeys();
         Save();
         StatusText = $"Shortcut set for {sound.Name}";
+        UpdateBindingPanelState();
     }
 
-    private void ImportSound(string fileName)
-    {
-        var destinationFolder = _configService.GetSoundsFolder();
-        var destinationFile = Path.Combine(destinationFolder, GetUniqueFileName(destinationFolder, Path.GetFileName(fileName)));
-        if (!string.Equals(Path.GetFullPath(fileName), Path.GetFullPath(destinationFile), StringComparison.OrdinalIgnoreCase))
-        {
-            File.Copy(fileName, destinationFile, true);
-        }
+    private void ImportSound(string fileName) => _soundLibraryViewModel.ImportSound(fileName);
 
-        var sound = new SoundEntry
-        {
-            Name = Path.GetFileNameWithoutExtension(fileName),
-            FilePath = destinationFile,
-            Category = "Custom"
-        };
-
-        Sounds.Add(sound);
-        _config.Sounds.Add(sound);
-        SoundsView.Refresh();
-        StatusText = $"Imported {sound.Name}";
-        RaiseSoundCollectionStats();
-    }
-
-    private async Task ImportSoundFromUrlAsync(Uri uri)
-    {
-        try
-        {
-            using var response = await _httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-
-            var destinationFolder = _configService.GetSoundsFolder();
-            var fileName = ResolveFileNameFromUrl(uri, response);
-            var destinationFile = Path.Combine(destinationFolder, GetUniqueFileName(destinationFolder, fileName));
-
-            await using (var sourceStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
-            await using (var destinationStream = File.Create(destinationFile))
-            {
-                await sourceStream.CopyToAsync(destinationStream).ConfigureAwait(false);
-            }
-
-            var sound = new SoundEntry
-            {
-                Name = Path.GetFileNameWithoutExtension(destinationFile),
-                FilePath = destinationFile,
-                Category = "Custom"
-            };
-
-            RunOnUiThread(() =>
-            {
-                Sounds.Add(sound);
-                _config.Sounds.Add(sound);
-                SoundsView.Refresh();
-                StatusText = $"Imported {sound.Name} from URL";
-                RaiseSoundCollectionStats();
-                Save();
-            });
-        }
-        catch (Exception ex)
-        {
-            RunOnUiThread(() => StatusText = $"URL import failed: {ex.Message}");
-        }
-    }
-
-    private static string ResolveFileNameFromUrl(Uri uri, HttpResponseMessage response)
+    internal static string ResolveFileNameFromUrl(Uri uri, HttpResponseMessage response)
     {
         var contentDisposition = response.Content.Headers.ContentDisposition;
         var fromHeader = contentDisposition?.FileNameStar ?? contentDisposition?.FileName;
@@ -1294,7 +1269,7 @@ public sealed class MainViewModel : ObservableObject
         return fileName;
     }
 
-    private string ImportImage(string fileName)
+    internal string ImportImage(string fileName)
     {
         var destinationFolder = _configService.GetImagesFolder();
         var destinationFile = Path.Combine(destinationFolder, GetUniqueFileName(destinationFolder, Path.GetFileName(fileName)));
@@ -1306,80 +1281,13 @@ public sealed class MainViewModel : ObservableObject
         return destinationFile;
     }
 
-    private void DuplicateSelectedSound()
-    {
-        if (SelectedSound is null)
-        {
-            return;
-        }
+    private void DuplicateSelectedSound() => _soundLibraryViewModel.DuplicateSelectedSound();
 
-        var original = SelectedSound;
-        var duplicate = new SoundEntry
-        {
-            Name = $"{original.Name} Copy",
-            FilePath = original.FilePath,
-            Volume = original.Volume,
-            ImagePath = original.ImagePath,
-            Category = original.Category,
-            Loop = original.Loop,
-            IsFavorite = original.IsFavorite,
-            Hotkey = string.Empty
-        };
+    private void DeleteSelectedSound() => _soundLibraryViewModel.DeleteSelectedSound();
 
-        Sounds.Add(duplicate);
-        _config.Sounds.Add(duplicate);
-        SelectedSound = duplicate;
-        Save();
-    }
+    private void PlaySelectedSound() => _soundLibraryViewModel.PlaySelectedSound();
 
-    private void DeleteSelectedSound()
-    {
-        if (SelectedSound is null)
-        {
-            return;
-        }
-
-        var sound = SelectedSound;
-        if (System.Windows.MessageBox.Show($"Delete '{sound.Name}'?", "Delete Sound", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question) != System.Windows.MessageBoxResult.Yes)
-        {
-            return;
-        }
-
-        Sounds.Remove(sound);
-        _config.Sounds.Remove(sound);
-
-        foreach (var profile in Profiles)
-        {
-            var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.SoundId, sound.Id, StringComparison.OrdinalIgnoreCase));
-            if (assignment is not null)
-            {
-                profile.Assignments.Remove(assignment);
-            }
-        }
-
-        SelectedSound = null;
-        RefreshAssignments();
-        Save();
-    }
-
-    private void PlaySelectedSound()
-    {
-        if (SelectedSound is not null)
-        {
-            PlaySound(SelectedSound);
-        }
-    }
-
-    private void PlaySoundFromLibrary(object? parameter)
-    {
-        var sound = ResolveSound(parameter);
-        if (sound is null)
-        {
-            return;
-        }
-
-        PlaySound(sound);
-    }
+    private void PlaySoundFromLibrary(object? parameter) => _soundLibraryViewModel.PlaySoundFromLibrary(parameter);
 
     private void AssignSelectedSoundToSelectedKey(object? parameter)
     {
@@ -1414,10 +1322,38 @@ public sealed class MainViewModel : ObservableObject
         }
 
         SelectedSound.AssignedKeyId = key.Id;
+        SelectedSound.AssignedKeyLabel = key.DisplayLabel;
         RefreshAssignments();
         Save();
         StatusText = $"Assigned {SelectedSound.Name} to {key.DisplayLabel}";
         SelectedKey = key;
+        UpdateBindingPanelState();
+    }
+
+    private void ClearSelectedSoundBinding()
+    {
+        if (SelectedSound is null)
+        {
+            return;
+        }
+
+        var profile = ActiveProfile;
+        if (profile is not null)
+        {
+            var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.SoundId, SelectedSound.Id, StringComparison.OrdinalIgnoreCase));
+            if (assignment is not null)
+            {
+                profile.Assignments.Remove(assignment);
+            }
+        }
+
+        SelectedSound.AssignedKeyId = null;
+        SelectedSound.AssignedKeyLabel = null;
+        SelectedSound.Hotkey = string.Empty;
+        RefreshAssignments();
+        Save();
+        StatusText = $"Cleared binding for {SelectedSound.Name}";
+        UpdateBindingPanelState();
     }
 
     private void RemoveSoundFromKey(object? parameter)
@@ -1535,7 +1471,7 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        StopAssignmentPlayback(assignment);
+        _triggerService.StopAssignmentPlayback(assignment);
         UpdateKeyVisualState(key);
         StatusText = $"Stopped {key.DisplayLabel}";
     }
@@ -1588,7 +1524,6 @@ public sealed class MainViewModel : ObservableObject
         };
 
         profile.Assignments.Add(clone);
-        RefreshAssignments();
         Save();
         SelectedKey = targetKey;
         StatusText = $"Duplicated binding to {targetKey.DisplayLabel}";
@@ -1670,7 +1605,7 @@ public sealed class MainViewModel : ObservableObject
 
     private KeyboardKey? ResolveKey(object? parameter) => parameter as KeyboardKey ?? SelectedKey;
 
-    private KeyAssignment? GetAssignmentForKey(KeyboardKey key)
+    internal KeyAssignment? GetAssignmentForKey(KeyboardKey key)
     {
         var profile = ActiveProfile;
         if (profile is null)
@@ -1679,17 +1614,6 @@ public sealed class MainViewModel : ObservableObject
         }
 
         return profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private KeyAssignment? GetAssignmentForKeyToken(string token)
-    {
-        var profile = ActiveProfile;
-        if (profile is null)
-        {
-            return null;
-        }
-
-        return profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, token, StringComparison.OrdinalIgnoreCase));
     }
 
     private void ClearSelectedKeyAssignment()
@@ -1736,14 +1660,17 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        var current = string.IsNullOrWhiteSpace(SelectedSound.Hotkey) ? "F1" : SelectedSound.Hotkey;
-        var input = Microsoft.VisualBasic.Interaction.InputBox("Enter a hotkey like CTRL+SHIFT+F1 or NUMPAD1", "Hotkey Editor", current);
-        if (string.IsNullOrWhiteSpace(input))
+        var dialog = new HotkeyCaptureDialog(SelectedSound.Hotkey)
+        {
+            Owner = _window
+        };
+
+        if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.CapturedHotkey))
         {
             return;
         }
 
-        SelectedSound.Hotkey = input;
+        SelectedSound.Hotkey = dialog.CapturedHotkey;
         var assignment = ActiveProfile?.Assignments.FirstOrDefault(item => string.Equals(item.SoundId, SelectedSound.Id, StringComparison.OrdinalIgnoreCase));
         if (assignment is null && SelectedKey is not null)
         {
@@ -1757,8 +1684,9 @@ public sealed class MainViewModel : ObservableObject
             assignment.ActionId = EnsureSoundAction(SelectedSound).Id;
         }
 
-        RegisterGlobalHotkeys();
+        _triggerService.RegisterGlobalHotkeys();
         Save();
+        UpdateBindingPanelState();
     }
 
     private void CreateProfile()
@@ -1781,6 +1709,7 @@ public sealed class MainViewModel : ObservableObject
         SelectedProfile = profile;
 
         Save();
+        _logService?.Info($"Profile Created: {profile.Name}");
     }
 
     private void DeleteSelectedProfile()
@@ -1806,6 +1735,7 @@ public sealed class MainViewModel : ObservableObject
         SelectedProfile = Profiles.FirstOrDefault();
         RefreshAssignments();
         Save();
+        _logService?.Info($"Profile Deleted: {profile.Name}");
     }
 
     private void StopAll()
@@ -1817,7 +1747,7 @@ public sealed class MainViewModel : ObservableObject
     private void Refresh()
     {
         Load();
-        RegisterGlobalHotkeys();
+        _triggerService.RegisterGlobalHotkeys();
     }
 
     private void OpenSetupWizard()
@@ -1881,7 +1811,7 @@ public sealed class MainViewModel : ObservableObject
         UpdateRoutingStatus();
     }
 
-    private void Save()
+    internal void Save()
     {
         _config.Sounds = new ObservableCollection<SoundEntry>(Sounds);
         _config.Profiles = new ObservableCollection<Profile>(Profiles);
@@ -1891,27 +1821,6 @@ public sealed class MainViewModel : ObservableObject
         _configService.Save(_config);
         UpdateTitle();
         UpdateRoutingStatus();
-    }
-
-    private void RegisterGlobalHotkeys()
-    {
-        _hotkeyService.Clear();
-
-        if (!Settings.EnableGlobalHotkeys)
-        {
-            return;
-        }
-
-        var profile = ActiveProfile;
-        if (profile is null)
-        {
-            return;
-        }
-
-        foreach (var assignment in profile.Assignments.Where(item => !string.IsNullOrWhiteSpace(item.HotkeyText)))
-        {
-            _hotkeyService.Register(assignment.Id, assignment.HotkeyText);
-        }
     }
 
     private void RaiseCommandState()
@@ -1924,38 +1833,27 @@ public sealed class MainViewModel : ObservableObject
         (ChooseKeyImageCommand as RelayCommand)?.RaiseCanExecuteChanged();
         (RenameBindingCommand as RelayCommand)?.RaiseCanExecuteChanged();
         (ClearKeyAssignmentCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (ClearSelectedSoundBindingCommand as RelayCommand)?.RaiseCanExecuteChanged();
         (ToggleFavoriteCommand as RelayCommand)?.RaiseCanExecuteChanged();
         (DeleteProfileCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }
 
-    private void UpdateStatus()
+    internal void UpdateStatus()
     {
         StatusText = $"{Sounds.Count} sounds · {Profiles.Count} profiles · {KeyboardKeys.Count} keys";
 
         UpdateRoutingStatus();
+        UpdateBindingPanelState();
     }
 
-    private void UpdateTitle()
+    internal void UpdateTitle()
     {
         var presetName = SelectedProfile?.Name ?? ActiveProfile?.Name ?? "Default";
         WindowTitle = $"SoundFX Studio · {presetName}";
         CurrentPreset = presetName;
     }
 
-    private void UpdateRoutingStatus()
-    {
-        CurrentOutputDevice = ResolveDeviceName(OutputDevices, Settings.OutputDeviceId);
-        CurrentInputDevice = ResolveDeviceName(InputDevices, Settings.InputDeviceId);
-        var routingParts = new List<string>
-        {
-            $"Output: {CurrentOutputDevice}",
-            $"Input: {CurrentInputDevice}"
-        };
-
-        RoutingStatus = Settings.VBCableDetected
-            ? $"Ready · {string.Join(" · ", routingParts)}"
-            : $"Needs setup · {string.Join(" · ", routingParts)}";
-    }
+    internal void UpdateRoutingStatus() => _routingViewModel.UpdateRoutingStatus();
 
     private static string ResolveDeviceName(IEnumerable<AudioDeviceInfo> devices, string deviceId, string fallback = "System Default")
     {
@@ -1968,14 +1866,54 @@ public sealed class MainViewModel : ObservableObject
         return device?.Name ?? fallback;
     }
 
-    private void RaiseSoundCollectionStats()
+    internal void RaiseSoundCollectionStats()
     {
         OnPropertyChanged(nameof(MostPlayedSounds));
         OnPropertyChanged(nameof(RecentSounds));
         OnPropertyChanged(nameof(FavoriteSounds));
     }
 
-    private static string GetUniqueFileName(string folder, string fileName)
+    private void UpdateBindingPanelState()
+    {
+        if (SelectedSound is null)
+        {
+            SelectedSoundBindingStatusText = "Select a sound to see its binding.";
+            SelectedSoundBindingPromptText = string.Empty;
+            SelectedSoundBindingKeyLabel = "None";
+            SelectedSoundBindingShortcut = "None";
+            BindingHintText = "Drag a sound onto a key to assign it.";
+            return;
+        }
+
+        var assignedKey = string.IsNullOrWhiteSpace(SelectedSound.AssignedKeyId)
+            ? null
+            : KeyboardKeys.FirstOrDefault(item => string.Equals(item.Id, SelectedSound.AssignedKeyId, StringComparison.OrdinalIgnoreCase));
+
+        SelectedSoundBindingKeyLabel = assignedKey?.DisplayLabel ?? "None";
+        SelectedSoundBindingShortcut = string.IsNullOrWhiteSpace(SelectedSound.Hotkey) ? "None" : SelectedSound.Hotkey;
+
+        if (IsAssignMode)
+        {
+            SelectedSoundBindingStatusText = "Assign Mode Active";
+            SelectedSoundBindingPromptText = $"Press a key to bind: {SelectedSound.Name}";
+            BindingHintText = $"Assign Mode Active - Press a key to bind: {SelectedSound.Name}";
+            return;
+        }
+
+        BindingHintText = "Drag a sound onto a key to assign it.";
+
+        if (assignedKey is null)
+        {
+            SelectedSoundBindingStatusText = "No key assigned";
+            SelectedSoundBindingPromptText = string.Empty;
+            return;
+        }
+
+        SelectedSoundBindingStatusText = $"Assigned: {SelectedSound.Name} → {assignedKey.DisplayLabel}";
+        SelectedSoundBindingPromptText = string.Empty;
+    }
+
+    internal static string GetUniqueFileName(string folder, string fileName)
     {
         var candidate = fileName;
         var baseName = Path.GetFileNameWithoutExtension(fileName);
@@ -2141,7 +2079,7 @@ public sealed class MainViewModel : ObservableObject
 
     private string NormalizeTokenForLayout(string token)
     {
-        if (Settings.KeyboardLayout != KeyboardLayoutMode.German)
+        if (ResolveKeyboardLayoutMode() != KeyboardLayoutMode.German)
         {
             return token;
         }
@@ -2163,17 +2101,48 @@ public sealed class MainViewModel : ObservableObject
         return string.Join("+", parts);
     }
 
-    private void UpdateKeyVisualState(KeyboardKey key)
+    private void InputLanguageManager_CurrentInputLanguageChanged(object sender, System.Windows.Input.InputLanguageEventArgs e)
     {
-        var isPlaying = !string.IsNullOrWhiteSpace(key.AssignedSoundId) && _audioPlayer.IsPlaying(key.AssignedSoundId);
-        if (isPlaying)
+        if (Settings.KeyboardLayout != KeyboardLayoutMode.Automatic)
         {
-            key.State = KeyState.Playing;
             return;
         }
 
-        key.State = key.HasAssignment ? KeyState.Assigned : KeyState.Empty;
+        _detectedKeyboardLayout = ResolveWindowsKeyboardLayout(e.NewLanguage);
+        OnPropertyChanged(nameof(EffectiveKeyboardLayout));
+        _keyboardViewModel.RebuildKeyboard();
     }
+
+    private KeyboardLayoutMode ResolveKeyboardLayoutMode()
+        => Settings.KeyboardLayout == KeyboardLayoutMode.Automatic ? _detectedKeyboardLayout : Settings.KeyboardLayout;
+
+    private static KeyboardLayoutMode ResolveWindowsKeyboardLayout(CultureInfo? culture)
+    {
+        if (culture is null)
+        {
+            return KeyboardLayoutMode.EnglishUS;
+        }
+
+        if (string.Equals(culture.Name, "de-DE", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(culture.TwoLetterISOLanguageName, "de", StringComparison.OrdinalIgnoreCase))
+        {
+            return KeyboardLayoutMode.German;
+        }
+
+        if (string.Equals(culture.Name, "en-GB", StringComparison.OrdinalIgnoreCase))
+        {
+            return KeyboardLayoutMode.EnglishUK;
+        }
+
+        if (string.Equals(culture.Name, "en-US", StringComparison.OrdinalIgnoreCase))
+        {
+            return KeyboardLayoutMode.EnglishUS;
+        }
+
+        return KeyboardLayoutMode.EnglishUS;
+    }
+
+    internal void UpdateKeyVisualState(KeyboardKey key) => _keyboardViewModel.UpdateKeyVisualState(key);
 
     private async Task TrackPlaybackAsync(string soundId, string? keyId)
     {
@@ -2197,7 +2166,7 @@ public sealed class MainViewModel : ObservableObject
         });
     }
 
-    private void RunOnUiThread(Action action)
+    internal void RunOnUiThread(Action action)
     {
         if (_window?.Dispatcher.CheckAccess() == true)
         {
@@ -2245,188 +2214,6 @@ public sealed class MainViewModel : ObservableObject
 
         return OutputDevices.ToList().FindIndex(device => string.Equals(device.Id, deviceId, StringComparison.OrdinalIgnoreCase));
     }
-
-    private void HandleKeyTrigger(KeyboardKey key, string triggerToken, bool isKeyDown)
-    {
-        var assignment = GetAssignmentForKey(key);
-        if (assignment is null)
-        {
-            return;
-        }
-
-        HandleAssignmentTrigger(key, assignment, triggerToken, isKeyDown);
-    }
-
-    private void HandleAssignmentTrigger(KeyAssignment assignment, string triggerToken, bool isKeyDown)
-        => HandleAssignmentTrigger(null, assignment, triggerToken, isKeyDown);
-
-    private void HandleAssignmentTrigger(KeyboardKey? keyboardKey, KeyAssignment assignment, string triggerToken, bool isKeyDown)
-    {
-        var action = ResolveActionForAssignment(assignment);
-        var sound = action is null ? ResolveSound(assignment.SoundId) : null;
-
-        if (isKeyDown)
-        {
-            if (action is null && sound is null)
-            {
-                return;
-            }
-
-            if (_pressedTriggerTokens.Contains(triggerToken))
-            {
-                return;
-            }
-
-            _pressedTriggerTokens.Add(triggerToken);
-
-            if (action is not null && action.KeyPlaybackMode == KeyPlaybackMode.Toggle && TryStopActiveTrigger(triggerToken, keyboardKey))
-            {
-                return;
-            }
-
-            if (action is not null)
-            {
-                StartActionTrigger(triggerToken, action, assignment);
-                return;
-            }
-
-            if (sound is not null)
-            {
-                PlaySound(sound, assignment);
-            }
-
-            return;
-        }
-
-        _pressedTriggerTokens.Remove(triggerToken);
-
-        if (action is not null && action.KeyPlaybackMode == KeyPlaybackMode.Toggle)
-        {
-            return;
-        }
-
-        if (TryStopActiveTrigger(triggerToken, keyboardKey))
-        {
-            return;
-        }
-    }
-
-    private void ExecuteAssignmentOnce(KeyAssignment assignment)
-    {
-        var action = ResolveActionForAssignment(assignment);
-        if (action is not null)
-        {
-            _ = _actionExecutor.ExecuteAsync(action.Id);
-            return;
-        }
-
-        var sound = ResolveSound(assignment.SoundId);
-        if (sound is not null)
-        {
-            PlaySound(sound, assignment);
-        }
-    }
-
-    private void StopAssignmentPlayback(KeyAssignment assignment)
-    {
-        var action = ResolveActionForAssignment(assignment);
-        if (action is not null && action.Type == ActionType.Sound && !string.IsNullOrWhiteSpace(action.Payload))
-        {
-            _audioPlayer.Stop(action.Payload);
-            return;
-        }
-
-        if (!string.IsNullOrWhiteSpace(assignment.SoundId))
-        {
-            _audioPlayer.Stop(assignment.SoundId);
-        }
-    }
-
-    private ActionDefinition? ResolveActionForAssignment(KeyAssignment assignment)
-    {
-        if (assignment.ActionId is Guid actionId)
-        {
-            return _config.Actions.FirstOrDefault(item => item.Id == actionId)
-                   ?? _config.Profiles.SelectMany(profile => profile.Actions).FirstOrDefault(item => item.Id == actionId);
-        }
-
-        var sound = ResolveSound(assignment.SoundId);
-        return sound is null ? null : EnsureSoundAction(sound);
-    }
-
-    private SoundEntry? ResolveSound(string soundId)
-        => Sounds.FirstOrDefault(item => string.Equals(item.Id, soundId, StringComparison.OrdinalIgnoreCase));
-
-    private void StartActionTrigger(string triggerToken, ActionDefinition action, KeyAssignment assignment)
-    {
-        var shouldTrack = action.KeyPlaybackMode is KeyPlaybackMode.HoldToPlay or KeyPlaybackMode.ReleaseToStop or KeyPlaybackMode.Toggle
-                          || (action.Type == ActionType.Playlist && string.Equals(action.PlaylistMode, "Repeat", StringComparison.OrdinalIgnoreCase));
-
-        CancellationTokenSource? cancellationTokenSource = null;
-        if (shouldTrack)
-        {
-            cancellationTokenSource = new CancellationTokenSource();
-            _activeTriggers[triggerToken] = (action.Id, ResolveSoundIdForAction(action), action.KeyPlaybackMode, cancellationTokenSource);
-        }
-
-        _ = _actionExecutor.ExecuteAsync(action.Id, cancellationTokenSource?.Token ?? CancellationToken.None);
-
-        if (action.Type == ActionType.Sound)
-        {
-            RunOnUiThread(() =>
-            {
-                var sound = ResolveSoundIdForAction(action) is { } soundId ? ResolveSound(soundId) : null;
-                if (sound is not null)
-                {
-                    sound.PlayCount++;
-                    sound.LastPlayedUtc = DateTime.UtcNow;
-                    RaiseSoundCollectionStats();
-                    StatusText = $"Playing {sound.Name}";
-                    UpdateTitle();
-                    if (SelectedKey is not null && string.Equals(SelectedKey.Id, assignment.KeyId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        SelectedKey.State = KeyState.Playing;
-                    }
-                }
-            });
-        }
-    }
-
-    private bool TryStopActiveTrigger(string triggerToken, KeyboardKey? keyboardKey)
-    {
-        if (!_activeTriggers.TryGetValue(triggerToken, out var active))
-        {
-            return false;
-        }
-
-        active.CancellationTokenSource?.Cancel();
-        _activeTriggers.Remove(triggerToken);
-
-        if (active.ActionId is Guid actionId)
-        {
-            var action = _config.Actions.FirstOrDefault(item => item.Id == actionId)
-                         ?? _config.Profiles.SelectMany(profile => profile.Actions).FirstOrDefault(item => item.Id == actionId);
-
-            if (action is not null && action.Type == ActionType.Sound)
-            {
-                var soundId = ResolveSoundIdForAction(action);
-                if (!string.IsNullOrWhiteSpace(soundId))
-                {
-                    _audioPlayer.Stop(soundId);
-                }
-            }
-        }
-
-        if (keyboardKey is not null)
-        {
-            UpdateKeyVisualState(keyboardKey);
-        }
-
-        return true;
-    }
-
-    private string? ResolveSoundIdForAction(ActionDefinition action)
-        => action.Type == ActionType.Sound ? action.Payload : null;
 
     private void RaiseCommandStateIfNeeded() => RaiseCommandState();
 }

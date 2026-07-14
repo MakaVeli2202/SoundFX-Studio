@@ -2,6 +2,8 @@ using System.Collections;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using SoundFXStudio.Models;
+using SoundFXStudio.ViewModels;
 
 namespace SoundFXStudio.Controls;
 
@@ -28,6 +30,33 @@ public partial class KeyboardControl : UserControl
     public KeyboardControl()
     {
         InitializeComponent();
+    }
+
+    private void KeyButton_DragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(typeof(SoundEntry)) ? DragDropEffects.Move : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void KeyButton_Drop(object sender, DragEventArgs e)
+    {
+        if (sender is not FrameworkElement element || element.DataContext is not KeyboardKey key)
+        {
+            return;
+        }
+
+        if (DataContext is not MainViewModel viewModel)
+        {
+            return;
+        }
+
+        if (e.Data.GetData(typeof(SoundEntry)) is not SoundEntry sound)
+        {
+            return;
+        }
+
+        viewModel.AssignSoundToKeyFromUi(sound, key);
+        e.Handled = true;
     }
 
     public IEnumerable? ItemsSource

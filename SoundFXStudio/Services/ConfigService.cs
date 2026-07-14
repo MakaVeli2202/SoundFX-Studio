@@ -9,6 +9,7 @@ public class ConfigService
 {
     private readonly string _configPath;
     private readonly string _backupPath;
+    private readonly ILogService? _logService;
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
@@ -16,8 +17,9 @@ public class ConfigService
         Converters = { new JsonStringEnumConverter() }
     };
 
-    public ConfigService()
+    public ConfigService(ILogService? logService = null)
     {
+        _logService = logService;
         var appFolder = GetAppFolder();
         _configPath = Path.Combine(appFolder, "config.json");
         _backupPath = Path.Combine(appFolder, "config.backup.json");
@@ -27,7 +29,10 @@ public class ConfigService
     {
         if (!File.Exists(_configPath))
         {
-            return CreateDefaultConfig();
+            var defaultConfig = CreateDefaultConfig();
+            ApplyProjectCalibrationIfAvailable(defaultConfig);
+            _logService?.Info("Config Loaded");
+            return defaultConfig;
         }
 
         try
@@ -35,15 +40,20 @@ public class ConfigService
             var json = File.ReadAllText(_configPath);
             var config = JsonSerializer.Deserialize<AppConfig>(json, SerializerOptions);
             var normalized = Normalize(config ?? CreateDefaultConfig(), out var migrated);
+            ApplyProjectCalibrationIfAvailable(normalized);
             if (migrated)
             {
+                _logService?.Info("Config Migration Executed");
                 Save(normalized);
             }
 
+            _logService?.Info("Config Loaded");
             return normalized;
         }
-        catch
+        catch (Exception ex)
         {
+            _logService?.Error("Config Load Failed", ex);
+
             if (File.Exists(_backupPath))
             {
                 try
@@ -51,35 +61,52 @@ public class ConfigService
                     var backupJson = File.ReadAllText(_backupPath);
                     var backup = JsonSerializer.Deserialize<AppConfig>(backupJson, SerializerOptions);
                     var normalized = Normalize(backup ?? CreateDefaultConfig(), out var migrated);
+                    ApplyProjectCalibrationIfAvailable(normalized);
                     if (migrated)
                     {
+                        _logService?.Info("Config Migration Executed");
                         Save(normalized);
                     }
 
+                    _logService?.Warning("Config Restored From Backup");
+                    _logService?.Info("Config Loaded");
                     return normalized;
                 }
-                catch
+                catch (Exception backupEx)
                 {
-                    // fall through to fresh config
+                    _logService?.Error("Config Load Failed", backupEx);
                 }
             }
 
-            return CreateDefaultConfig();
+            var defaultConfig = CreateDefaultConfig();
+            ApplyProjectCalibrationIfAvailable(defaultConfig);
+            _logService?.Warning("Config Loaded");
+            return defaultConfig;
         }
     }
 
     public void Save(AppConfig config)
     {
-        Directory.CreateDirectory(GetAppFolder());
-
-        var json = JsonSerializer.Serialize(config, SerializerOptions);
-
-        if (File.Exists(_configPath))
+        try
         {
-            File.Copy(_configPath, _backupPath, true);
-        }
+            Directory.CreateDirectory(GetAppFolder());
 
-        File.WriteAllText(_configPath, json);
+            var json = JsonSerializer.Serialize(config, SerializerOptions);
+
+            if (File.Exists(_configPath))
+            {
+                File.Copy(_configPath, _backupPath, true);
+                _logService?.Info("Config Backup Created");
+            }
+
+            File.WriteAllText(_configPath, json);
+            _logService?.Info("Config Saved");
+        }
+        catch (Exception ex)
+        {
+            _logService?.Error("Config Save Failed", ex);
+            throw;
+        }
     }
 
     public string GetAppFolder()
@@ -115,7 +142,7 @@ public class ConfigService
         config.Profiles.Add(new Profile { Name = "Discord", Description = "General voice chat", AccentColor = "#8A6CFF" });
         config.Profiles.Add(new Profile { Name = "Streaming", Description = "On-air soundboard", AccentColor = "#FF4D8D" });
         config.Profiles.Add(new Profile { Name = "Meetings", Description = "Clean and quiet", AccentColor = "#22C55E" });
-        config.Settings.KeyboardLayout = KeyboardLayoutMode.English;
+        config.Settings.KeyboardLayout = KeyboardLayoutMode.Automatic;
         config.ActiveProfileId = config.Profiles.First().Id;
 
         return config;
@@ -153,6 +180,47 @@ public class ConfigService
         }
 
         return config;
+    }
+
+    private static void ApplyProjectCalibrationIfAvailable(AppConfig config)
+    {
+        var calibrationPath = GetProjectCalibrationFilePath();
+        if (!File.Exists(calibrationPath))
+        {
+            return;
+        }
+
+        try
+        {
+            var json = File.ReadAllText(calibrationPath);
+            var calibration = JsonSerializer.Deserialize<KeyboardCalibrationSettings>(json, SerializerOptions);
+            if (calibration is not null)
+            {
+                config.Settings.KeyboardCalibration = calibration;
+            }
+        }
+        catch
+        {
+            // Ignore project calibration load failures and keep the persisted config.
+        }
+    }
+
+    private static string GetProjectCalibrationFilePath()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (current is not null)
+        {
+            var solutionPath = Path.Combine(current.FullName, "SoundFXStudio.slnx");
+            if (File.Exists(solutionPath))
+            {
+                return Path.Combine(current.FullName, "SoundFXStudio", "keyboard-calibration.json");
+            }
+
+            current = current.Parent;
+        }
+
+        return Path.Combine(AppContext.BaseDirectory, "keyboard-calibration.json");
     }
 
     private static bool MigrateLegacySoundAssignments(AppConfig config)

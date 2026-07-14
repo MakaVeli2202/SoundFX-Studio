@@ -121,6 +121,9 @@
                                 CommandParameter="{Binding}"
                                 AutomationProperties.AutomationId="{Binding Id}"
                             AutomationProperties.Name="{Binding AutomationName}"
+                                AllowDrop="True"
+                                Drop="KeyButton_Drop"
+                                DragOver="KeyButton_DragOver"
                                 Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
                             <Button.ContextMenu>
                                 <ContextMenu>

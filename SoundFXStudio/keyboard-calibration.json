@@ -40,13 +40,13 @@
       "HeightAdjustment": 0
     },
     "F2-0-2_25": {
-      "OffsetX": -2,
+      "OffsetX": -1,
       "OffsetY": 0,
       "WidthAdjustment": 0,
       "HeightAdjustment": 0
     },
     "F3-0-3_25": {
-      "OffsetX": -2,
+      "OffsetX": -1,
       "OffsetY": 0,
       "WidthAdjustment": 0,
       "HeightAdjustment": 0
@@ -64,7 +64,7 @@
       "HeightAdjustment": 0
     },
     "F7-0-7_25": {
-      "OffsetX": -6,
+      "OffsetX": -7,
       "OffsetY": 0,
       "WidthAdjustment": 0,
       "HeightAdjustment": 0
@@ -76,7 +76,7 @@
       "HeightAdjustment": 0
     },
     "F9-0-9_25": {
-      "OffsetX": -12,
+      "OffsetX": -11,
       "OffsetY": 0,
       "WidthAdjustment": 0,
       "HeightAdjustment": 0
@@ -88,7 +88,7 @@
       "HeightAdjustment": 0
     },
     "F11-0-11_25": {
-      "OffsetX": -15,
+      "OffsetX": -14,
       "OffsetY": 0,
       "WidthAdjustment": 0,
       "HeightAdjustment": 0
@@ -118,19 +118,13 @@
       "HeightAdjustment": 0
     },
     "\u0060-1-0": {
-      "OffsetX": 2,
+      "OffsetX": 3,
       "OffsetY": 0,
       "WidthAdjustment": 0,
       "HeightAdjustment": 0
     },
     "1-1-1": {
       "OffsetX": 2,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
-    },
-    "2-1-2": {
-      "OffsetX": 1,
       "OffsetY": 0,
       "WidthAdjustment": 0,
       "HeightAdjustment": 0
@@ -214,7 +208,7 @@
       "HeightAdjustment": 0
     },
     "PAGEUP-1-18_25": {
-      "OffsetX": -14,
+      "OffsetX": -12,
       "OffsetY": 0,
       "WidthAdjustment": 0,
       "HeightAdjustment": 0
@@ -246,6 +240,372 @@
     "TAB-2-0": {
       "OffsetX": 9,
       "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "Q-2-1_5": {
+      "OffsetX": -1,
+      "OffsetY": 1,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "W-2-2_5": {
+      "OffsetX": -2,
+      "OffsetY": 1,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "E-2-3_5": {
+      "OffsetX": -4,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "R-2-4_5": {
+      "OffsetX": -6,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "T-2-5_5": {
+      "OffsetX": -8,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "Y-2-6_5": {
+      "OffsetX": -9,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "U-2-7_5": {
+      "OffsetX": -11,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "I-2-8_5": {
+      "OffsetX": -12,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "O-2-9_5": {
+      "OffsetX": -14,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "P-2-10_5": {
+      "OffsetX": -16,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "[-2-11_5": {
+      "OffsetX": -18,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "]-2-12_5": {
+      "OffsetX": -20,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "BACKSLASH-2-13_5": {
+      "OffsetX": -80,
+      "OffsetY": 65,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "END-2-17_25": {
+      "OffsetX": -6,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "PAGEDOWN-2-18_25": {
+      "OffsetX": -12,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "7-2-20_25": {
+      "OffsetX": 1,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "8-2-21_25": {
+      "OffsetX": -1,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "9-2-22_25": {
+      "OffsetX": -4,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "\u002B-2-23_25": {
+      "OffsetX": -4,
+      "OffsetY": 14,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "CAPSLOCK-3-0": {
+      "OffsetX": 14,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "A-3-1_75": {
+      "OffsetX": -1,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "S-3-2_75": {
+      "OffsetX": -3,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "D-3-3_75": {
+      "OffsetX": -5,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "F-3-4_75": {
+      "OffsetX": -6,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "G-3-5_75": {
+      "OffsetX": -8,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "H-3-6_75": {
+      "OffsetX": -10,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "J-3-7_75": {
+      "OffsetX": -11,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "K-3-8_75": {
+      "OffsetX": -13,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "L-3-9_75": {
+      "OffsetX": -15,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    ";-3-10_75": {
+      "OffsetX": -18,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "\u0027-3-11_75": {
+      "OffsetX": -20,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "ENTER-3-12_75": {
+      "OffsetX": 30,
+      "OffsetY": -50,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "SHIFT-4-0": {
+      "OffsetX": -9,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "Z-4-2_25": {
+      "OffsetX": -3,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "X-4-3_25": {
+      "OffsetX": -5,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "C-4-4_25": {
+      "OffsetX": -7,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "V-4-5_25": {
+      "OffsetX": -9,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "B-4-6_25": {
+      "OffsetX": -10,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "N-4-7_25": {
+      "OffsetX": -12,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "M-4-8_25": {
+      "OffsetX": -13,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    ",-4-9_25": {
+      "OffsetX": -15,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    ".-4-10_25": {
+      "OffsetX": -18,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "SLASH-4-11_25": {
+      "OffsetX": -20,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "UP-4-17_75": {
+      "OffsetX": 1,
+      "OffsetY": -8,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "1-4-20_25": {
+      "OffsetX": 1,
+      "OffsetY": 0,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "2-4-21_25": {
+      "OffsetX": -1,
+      "OffsetY": -1,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "3-4-22_25": {
+      "OffsetX": -4,
+      "OffsetY": -1,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "ENTER-4-23_25": {
+      "OffsetX": -4,
+      "OffsetY": 12,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "CTRL-5-0": {
+      "OffsetX": 14,
+      "OffsetY": -2,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "WIN-5-1_25": {
+      "OffsetX": 17,
+      "OffsetY": -1,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "ALT-5-2_5": {
+      "OffsetX": 12,
+      "OffsetY": -2,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "SPACE-5-3_75": {
+      "OffsetX": 73,
+      "OffsetY": -4,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "ALT-5-10": {
+      "OffsetX": -15,
+      "OffsetY": -4,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "WIN-5-11_25": {
+      "OffsetX": -17,
+      "OffsetY": -4,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "MENU-5-12_5": {
+      "OffsetX": -22,
+      "OffsetY": -3,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "CTRL-5-13_75": {
+      "OffsetX": -22,
+      "OffsetY": -3,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "LEFT-5-16_75": {
+      "OffsetX": 10,
+      "OffsetY": -8,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "DOWN-5-17_75": {
+      "OffsetX": 3,
+      "OffsetY": -6,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "RIGHT-5-18_75": {
+      "OffsetX": -5,
+      "OffsetY": -9,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    "0-5-20_25": {
+      "OffsetX": 15,
+      "OffsetY": -3,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 0
+    },
+    ".-5-22_25": {
+      "OffsetX": -4,
+      "OffsetY": -4,
       "WidthAdjustment": 0,
       "HeightAdjustment": 0
     }

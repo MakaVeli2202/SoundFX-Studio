@@ -94,9 +94,11 @@
 
                             <TextBlock Text="🔊 Speakers (where you hear sounds)" Foreground="{StaticResource MutedBrush}" />
                             <ComboBox x:Name="OutputCombo" Margin="0,6,0,14" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
+                            <TextBlock x:Name="OutputDefaultText" Foreground="{StaticResource MutedBrush}" Margin="0,-6,0,12" TextWrapping="Wrap" FontSize="12" />
 
                             <TextBlock Text="🎙️ Microphone (your voice)" Foreground="{StaticResource MutedBrush}" />
                             <ComboBox x:Name="InputCombo" Margin="0,6,0,14" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
+                            <TextBlock x:Name="InputDefaultText" Foreground="{StaticResource MutedBrush}" Margin="0,-6,0,12" TextWrapping="Wrap" FontSize="12" />
 
                             <TextBlock x:Name="StatusText" Margin="0,16,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                         </StackPanel>
@@ -118,6 +120,11 @@
                 </Grid>
 
                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+                    <CheckBox x:Name="DontShowAgainCheckBox"
+                              Content="Don't show this again"
+                              Foreground="{StaticResource TextBrush}"
+                              VerticalAlignment="Center"
+                              Margin="0,0,14,0" />
                     <Button Content="Open Windows Sound" Width="170" Margin="0,0,10,0" Click="OpenSound_Click" />
                     <Button Content="Auto-configure" Width="150" Margin="0,0,10,0" Click="AutoConfigure_Click" />
                     <Button Content="Finish" Width="110" IsDefault="True" Click="Finish_Click" />

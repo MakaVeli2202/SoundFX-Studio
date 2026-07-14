@@ -28,11 +28,26 @@ public sealed class AudioDeviceService
         }
     }
 
+    public string? GetDefaultDeviceName(DataFlow flow)
+    {
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            return enumerator.GetDefaultAudioEndpoint(flow, Role.Multimedia)?.FriendlyName;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static IReadOnlyList<AudioDeviceInfo> GetDevices(DataFlow flow)
     {
         try
         {
             using var enumerator = new MMDeviceEnumerator();
+            var defaultDeviceId = enumerator.GetDefaultAudioEndpoint(flow, Role.Multimedia)?.ID;
+            var defaultCommunicationDeviceId = enumerator.GetDefaultAudioEndpoint(flow, Role.Communications)?.ID;
             var deviceStates = DeviceState.Active;
 
             var devices = enumerator.EnumerateAudioEndPoints(flow, deviceStates)
@@ -43,19 +58,13 @@ public sealed class AudioDeviceService
                     Name = device.FriendlyName,
                     DeviceType = flow == DataFlow.Render ? "Playback" : "Recording",
                     Availability = DescribeState(device.State),
-                    IsDefault = false,
-                    IsDefaultCommunication = false,
+                    IsDefault = string.Equals(device.ID, defaultDeviceId, StringComparison.OrdinalIgnoreCase),
+                    IsDefaultCommunication = string.Equals(device.ID, defaultCommunicationDeviceId, StringComparison.OrdinalIgnoreCase),
                     IsInput = flow == DataFlow.Capture,
                     IsVirtual = false,
                     State = device.State
                 })
                 .ToList();
-
-            if (devices.Count > 0)
-            {
-                devices[0].IsDefault = true;
-                devices[0].IsDefaultCommunication = true;
-            }
 
             return devices;
         }

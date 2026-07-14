@@ -8,64 +8,81 @@ public sealed class AudioPlayer : IDisposable
 {
     private readonly object _gate = new();
     private readonly Dictionary<string, List<PlaybackSession>> _sessions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ILogService? _logService;
+
+    public AudioPlayer(ILogService? logService = null)
+    {
+        _logService = logService;
+    }
 
     public void Play(string soundId, string filePath, float volume = 1f, bool loop = false, PlaybackMode playbackMode = PlaybackMode.Restart, int outputDeviceNumber = -1)
     {
-        if (!File.Exists(filePath))
+        try
         {
-            return;
-        }
-
-        var existingSessions = GetSessions(soundId);
-
-        if (playbackMode == PlaybackMode.Ignore && existingSessions.Count > 0)
-        {
-            return;
-        }
-
-        if (playbackMode == PlaybackMode.Toggle)
-        {
-            if (existingSessions.Count > 0)
+            if (!File.Exists(filePath))
             {
-                Stop(soundId);
+                _logService?.Warning($"Missing Audio File: {Path.GetFileName(filePath)}");
                 return;
             }
-        }
 
-        if (playbackMode == PlaybackMode.Restart)
-        {
-            Stop(soundId);
-        }
+            var existingSessions = GetSessions(soundId);
 
-        var reader = new AudioFileReader(filePath)
-        {
-            Volume = Math.Clamp(volume, 0f, 1f)
-        };
-
-        IWaveProvider provider = loop ? new LoopStream(reader) : reader;
-        var output = new WaveOutEvent
-        {
-            DeviceNumber = outputDeviceNumber
-        };
-
-        output.Init(provider);
-
-        var session = new PlaybackSession(reader, output);
-
-        output.PlaybackStopped += (_, _) => RemoveSession(soundId, session);
-
-        lock (_gate)
-        {
-            if (!_sessions.TryGetValue(soundId, out var sessions))
+            if (playbackMode == PlaybackMode.Ignore && existingSessions.Count > 0)
             {
-                sessions = new List<PlaybackSession>();
-                _sessions[soundId] = sessions;
+                return;
             }
 
-            sessions.Add(session);
-        }
+            if (playbackMode == PlaybackMode.Toggle)
+            {
+                if (existingSessions.Count > 0)
+                {
+                    Stop(soundId);
+                    _logService?.Info($"Playback Stopped: {soundId}");
+                    return;
+                }
+            }
 
-        output.Play();
+            if (playbackMode == PlaybackMode.Restart)
+            {
+                Stop(soundId);
+                _logService?.Info($"Playback Stopped: {soundId}");
+            }
+
+            var reader = new AudioFileReader(filePath)
+            {
+                Volume = Math.Clamp(volume, 0f, 1f)
+            };
+
+            IWaveProvider provider = loop ? new LoopStream(reader) : reader;
+            var output = new WaveOutEvent
+            {
+                DeviceNumber = outputDeviceNumber
+            };
+
+            output.Init(provider);
+
+            var session = new PlaybackSession(reader, output);
+
+            output.PlaybackStopped += (_, _) => RemoveSession(soundId, session);
+
+            lock (_gate)
+            {
+                if (!_sessions.TryGetValue(soundId, out var sessions))
+                {
+                    sessions = new List<PlaybackSession>();
+                    _sessions[soundId] = sessions;
+                }
+
+                sessions.Add(session);
+            }
+
+            output.Play();
+            _logService?.Info($"Playback Started: {soundId}");
+        }
+        catch (Exception ex)
+        {
+            _logService?.Error($"Playback Failed: {soundId}", ex);
+        }
     }
 
     public void Stop(string soundId)
@@ -76,6 +93,11 @@ public sealed class AudioPlayer : IDisposable
         {
             session.Stop();
             RemoveSession(soundId, session);
+        }
+
+        if (sessions.Count > 0)
+        {
+            _logService?.Info($"Playback Stopped: {soundId}");
         }
     }
 
@@ -88,6 +110,7 @@ public sealed class AudioPlayer : IDisposable
         }
 
         var steps = Math.Max(1, milliseconds / 20);
+        _logService?.Info($"FadeOut Started: {soundId}");
 
         foreach (var session in sessions)
         {
@@ -102,6 +125,8 @@ public sealed class AudioPlayer : IDisposable
             session.Stop();
             RemoveSession(soundId, session);
         }
+
+        _logService?.Info($"FadeOut Completed: {soundId}");
     }
 
     public void StopAll()
@@ -116,6 +141,11 @@ public sealed class AudioPlayer : IDisposable
         foreach (var session in sessions)
         {
             session.Stop();
+        }
+
+        if (sessions.Count > 0)
+        {
+            _logService?.Info("Playback Stopped");
         }
     }
 

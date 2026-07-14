@@ -2,6 +2,8 @@ namespace SoundFXStudio.Models;
 
 public enum KeyboardLayoutMode
 {
-    English,
+    Automatic,
+    EnglishUK,
+    EnglishUS,
     German
 }
