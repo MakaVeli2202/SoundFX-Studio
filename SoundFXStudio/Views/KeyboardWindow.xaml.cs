@@ -21,6 +21,7 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
 
     private bool _suppressSelectionEvents;
     private double _selectedWindowScale = 0.85;
+    private double _previewButtonScale = 1.0;
 
     public KeyboardWindow()
     {
@@ -57,6 +58,27 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
             if (!_suppressSelectionEvents)
             {
                 PersistWindowScale();
+            }
+        }
+    }
+
+    public double PreviewButtonScale
+    {
+        get => _previewButtonScale;
+        set
+        {
+            var clamped = Math.Clamp(value, 0.1, 3.0);
+            if (Math.Abs(_previewButtonScale - clamped) < double.Epsilon)
+            {
+                return;
+            }
+
+            _previewButtonScale = clamped;
+            OnPropertyChanged();
+
+            if (!_suppressSelectionEvents)
+            {
+                PersistButtonScale();
             }
         }
     }
@@ -135,6 +157,7 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         try
         {
             SelectedWindowScale = calibration.KeyboardWindowScale > 0 ? calibration.KeyboardWindowScale : 0.85;
+            PreviewButtonScale = calibration.ButtonScale > 0 ? calibration.ButtonScale : 1.0;
         }
         finally
         {
@@ -155,6 +178,30 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         calibration.KeyboardWindowScale = SelectedWindowScale;
         ViewModel.SaveKeyboardCalibrationSettings();
         ApplyWindowScale(SelectedWindowScale);
+    }
+
+    private void PersistButtonScale()
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        var calibration = ViewModel.Settings.KeyboardCalibration;
+        calibration.ButtonScale = PreviewButtonScale;
+        ViewModel.SaveKeyboardCalibrationSettings();
+    }
+
+    private void NudgeButtonScale_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is string tag)
+        {
+            var parts = tag.Split(':');
+            if (parts.Length == 2 && double.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var delta))
+            {
+                PreviewButtonScale += delta;
+            }
+        }
     }
 
     private void ApplyWindowScale(double scale)

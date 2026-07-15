@@ -14,9 +14,10 @@
         KeyDown="KeyboardWindow_KeyDown"
         MouseLeftButtonDown="KeyboardWindow_MouseLeftButtonDown">
         <Grid x:Name="RootSurface" Background="Transparent" SizeChanged="RootSurface_SizeChanged">
-    <Viewbox Stretch="Fill">
+    <Viewbox Stretch="Uniform">
         <controls:KeyboardControl ItemsSource="{Binding ViewModel.KeyboardKeys, RelativeSource={RelativeSource AncestorType=Window}}"
                       DataContext="{Binding ViewModel, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  ButtonScale="{Binding PreviewButtonScale, RelativeSource={RelativeSource AncestorType=Window}}"
                                   KeyClickedCommand="{Binding ViewModel.KeyClickedCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
     </Viewbox>
 
@@ -50,10 +51,39 @@
                    Foreground="#CFCFCF"
                    Margin="0,0,0,4" />
             <ComboBox ItemsSource="{Binding ScaleOptions}"
-                  DisplayMemberPath="Label"
                   SelectedValuePath="Value"
                   SelectedValue="{Binding SelectedWindowScale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                  Margin="0,0,0,12" />
+                  HorizontalContentAlignment="Center"
+                  Margin="0,0,0,12">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <TextBlock Text="Button Scale"
+                   Foreground="#CFCFCF"
+                   Margin="0,0,0,4" />
+            <DockPanel Margin="0,0,0,12">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Width="28" Height="28" Padding="0" FontSize="12" FontWeight="Bold"
+                            Content="◀"
+                            Tag="PreviewButtonScale:-0.05"
+                            Click="NudgeButtonScale_Click" />
+                    <TextBox Width="60" Margin="4,0"
+                             Text="{Binding PreviewButtonScale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Width="28" Height="28" Padding="0" FontSize="12" FontWeight="Bold"
+                            Content="▶"
+                            Tag="PreviewButtonScale:0.05"
+                            Click="NudgeButtonScale_Click" />
+                </StackPanel>
+                <Slider Minimum="0.4"
+                        Maximum="1.6"
+                        Value="{Binding PreviewButtonScale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        TickFrequency="0.01"
+                        Margin="0,0,8,0" />
+            </DockPanel>
 
             <Button Content="Calibrate Keyboard"
                 Margin="0,0,0,8"
