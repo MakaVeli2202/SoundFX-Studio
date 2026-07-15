@@ -205,11 +205,11 @@
                                             ClipToBounds="True">
                                         <Grid>
                                             <Image Source="{Binding ImagePath}"
-                                                  Stretch="Uniform"
-                                                  HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"
-                                                   Opacity="0.9"
-                                                   SnapsToDevicePixels="True" />
+                                                   Stretch="Uniform"
+                                                   HorizontalAlignment="Stretch"
+                                                   VerticalAlignment="Stretch"
+                                                    Opacity="0.9"
+                                                    SnapsToDevicePixels="True" />
                                             <Border>
                                                 <Border.Background>
                                                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
