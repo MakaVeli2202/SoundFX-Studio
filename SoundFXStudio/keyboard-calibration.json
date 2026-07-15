@@ -34,161 +34,179 @@
   "TabWidthAdjustment": 0,
   "CapsLockWidthAdjustment": 0,
   "KeyOverrides": {
+    "ESC-0-0": {
+      "OffsetX": 4,
+      "OffsetY": -2,
+      "WidthAdjustment": -10.499999999999998,
+      "HeightAdjustment": 1.8998000000000006
+    },
     "F1-0-1_25": {
-      "OffsetX": -2,
-      "OffsetY": 0,
+      "OffsetX": -3,
+      "OffsetY": -2,
       "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "HeightAdjustment": 1.3
     },
     "F2-0-2_25": {
-      "OffsetX": -1,
-      "OffsetY": 0,
+      "OffsetX": -2,
+      "OffsetY": -3,
       "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "HeightAdjustment": 1.3000000000000003
     },
     "F3-0-3_25": {
-      "OffsetX": -1,
-      "OffsetY": 0,
+      "OffsetX": 0,
+      "OffsetY": -2,
       "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "HeightAdjustment": 1.3000000000000003
+    },
+    "F4-0-4_25": {
+      "OffsetX": 2,
+      "OffsetY": -2,
+      "WidthAdjustment": 0,
+      "HeightAdjustment": 1.3000000000000003
     },
     "F5-0-5_25": {
-      "OffsetX": -6,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetX": -3,
+      "OffsetY": -2,
+      "WidthAdjustment": -1.9000000000000006,
+      "HeightAdjustment": 1.3000000000000003
     },
     "F6-0-6_25": {
-      "OffsetX": -7,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetX": -3,
+      "OffsetY": -2,
+      "WidthAdjustment": -1.8000000000000005,
+      "HeightAdjustment": 1.3
     },
     "F7-0-7_25": {
-      "OffsetX": -7,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetX": -3,
+      "OffsetY": -2,
+      "WidthAdjustment": -1.4000000000000001,
+      "HeightAdjustment": 1.3
     },
     "F8-0-8_25": {
-      "OffsetX": -9,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetX": -4,
+      "OffsetY": -2,
+      "WidthAdjustment": -3.1000000000000014,
+      "HeightAdjustment": 1.3
     },
     "F9-0-9_25": {
-      "OffsetX": -11,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetX": -5,
+      "OffsetY": -2,
+      "WidthAdjustment": -2.800000000000001,
+      "HeightAdjustment": 1.3
     },
     "F10-0-10_25": {
-      "OffsetX": -12,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetX": -6,
+      "OffsetY": -2,
+      "WidthAdjustment": -2.500000000000001,
+      "HeightAdjustment": 1.2
     },
     "F11-0-11_25": {
-      "OffsetX": -14,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetX": -7,
+      "OffsetY": -2,
+      "WidthAdjustment": -2.3000000000000007,
+      "HeightAdjustment": 1.0999999999999999
     },
     "F12-0-12_25": {
-      "OffsetX": -18,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetX": -10,
+      "OffsetY": -2,
+      "WidthAdjustment": -4.100000000000001,
+      "HeightAdjustment": 0.8999999999999999
     },
     "PRINTSCREEN-0-16_25": {
-      "OffsetX": 5,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetX": 7,
+      "OffsetY": -1,
+      "WidthAdjustment": -4.3,
+      "HeightAdjustment": 2.700000000000001
     },
     "SCROLLLOCK-0-17_25": {
-      "OffsetX": -2,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetX": 1,
+      "OffsetY": -1,
+      "WidthAdjustment": -4.300000000000001,
+      "HeightAdjustment": 1.3
     },
     "PAUSE-0-18_25": {
-      "OffsetX": -9,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
+      "OffsetX": -7,
+      "OffsetY": -1,
+      "WidthAdjustment": -2.7999999999999985,
       "HeightAdjustment": 0
     },
     "\u0060-1-0": {
-      "OffsetX": 3,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
+      "OffsetX": 2,
+      "OffsetY": -1,
+      "WidthAdjustment": -3.4000000000000017,
       "HeightAdjustment": 0
     },
     "1-1-1": {
-      "OffsetX": 2,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetX": 0,
+      "OffsetY": -2,
+      "WidthAdjustment": -2.0000000000000004,
+      "HeightAdjustment": 0.8
+    },
+    "2-1-2": {
+      "OffsetX": 0,
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "3-1-3": {
       "OffsetX": -1,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "4-1-4": {
       "OffsetX": -4,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "5-1-5": {
       "OffsetX": -6,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "6-1-6": {
       "OffsetX": -8,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "7-1-7": {
       "OffsetX": -9,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "8-1-8": {
       "OffsetX": -11,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "9-1-9": {
       "OffsetX": -13,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "0-1-10": {
       "OffsetX": -15,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "--1-11": {
       "OffsetX": -17,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "=-1-12": {
       "OffsetX": -20,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "BACKSPACE-1-13": {
       "OffsetX": -5,
@@ -246,63 +264,63 @@
     },
     "Q-2-1_5": {
       "OffsetX": -1,
-      "OffsetY": 1,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "W-2-2_5": {
       "OffsetX": -2,
-      "OffsetY": 1,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "E-2-3_5": {
       "OffsetX": -4,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "R-2-4_5": {
       "OffsetX": -6,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "T-2-5_5": {
       "OffsetX": -8,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "Y-2-6_5": {
       "OffsetX": -9,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "U-2-7_5": {
       "OffsetX": -11,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "I-2-8_5": {
       "OffsetX": -12,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "O-2-9_5": {
       "OffsetX": -14,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "P-2-10_5": {
       "OffsetX": -16,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "[-2-11_5": {
       "OffsetX": -18,
@@ -366,57 +384,57 @@
     },
     "A-3-1_75": {
       "OffsetX": -1,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "S-3-2_75": {
       "OffsetX": -3,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "D-3-3_75": {
       "OffsetX": -5,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "F-3-4_75": {
       "OffsetX": -6,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "G-3-5_75": {
       "OffsetX": -8,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "H-3-6_75": {
       "OffsetX": -10,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "J-3-7_75": {
       "OffsetX": -11,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "K-3-8_75": {
       "OffsetX": -13,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "L-3-9_75": {
       "OffsetX": -15,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     ";-3-10_75": {
       "OffsetX": -18,
@@ -444,45 +462,45 @@
     },
     "Z-4-2_25": {
       "OffsetX": -67,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "X-4-3_25": {
       "OffsetX": -69,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "C-4-4_25": {
       "OffsetX": -71,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "V-4-5_25": {
       "OffsetX": -73,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "B-4-6_25": {
       "OffsetX": -75,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "N-4-7_25": {
       "OffsetX": -77,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     "M-4-8_25": {
       "OffsetX": -78,
-      "OffsetY": 0,
-      "WidthAdjustment": 0,
-      "HeightAdjustment": 0
+      "OffsetY": -2,
+      "WidthAdjustment": -2,
+      "HeightAdjustment": 0.8
     },
     ",-4-9_25": {
       "OffsetX": -79,
