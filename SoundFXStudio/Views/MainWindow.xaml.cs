@@ -126,19 +126,6 @@ public partial class MainWindow : Window
         ViewModel.HandlePreviewKeyUp(e);
     }
 
-    private void KeyboardLayoutSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (sender is not ComboBox comboBox || comboBox.SelectedItem is not KeyboardLayoutMode layoutMode)
-        {
-            return;
-        }
-
-        if (ViewModel.KeyboardLayout != layoutMode)
-        {
-            ViewModel.KeyboardLayout = layoutMode;
-        }
-    }
-
     private void MainWindow_Drop(object sender, DragEventArgs e)
     {
         if (!e.Data.GetDataPresent(DataFormats.FileDrop))

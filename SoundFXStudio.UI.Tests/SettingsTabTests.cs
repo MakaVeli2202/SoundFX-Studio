@@ -27,10 +27,11 @@ public class SettingsTabTests
     {
         NavigateToSettings();
         var win = _app.GetMainWindow();
-        var texts = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Text));
-        var generalText = texts.FirstOrDefault(t =>
-            t.Name.Contains("General", StringComparison.OrdinalIgnoreCase));
-        Assert.NotNull(generalText);
+        var general = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Text).And(cf.ByAutomationId("SettingsGeneralHeader")))
+            ?? win.FindAllDescendants(cf => cf.ByControlType(ControlType.Text))
+                .FirstOrDefault(t => t.Name.Contains("General", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(general);
     }
 
     [Fact]
@@ -49,10 +50,11 @@ public class SettingsTabTests
     {
         NavigateToSettings();
         var win = _app.GetMainWindow();
-        var texts = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Text));
-        var appearanceText = texts.FirstOrDefault(t =>
-            t.Name.Contains("Appearance", StringComparison.OrdinalIgnoreCase));
-        Assert.NotNull(appearanceText);
+        var appearance = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Text).And(cf.ByAutomationId("SettingsAppearanceHeader")))
+            ?? win.FindAllDescendants(cf => cf.ByControlType(ControlType.Text))
+                .FirstOrDefault(t => t.Name.Contains("Appearance", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(appearance);
     }
 
     [Fact]

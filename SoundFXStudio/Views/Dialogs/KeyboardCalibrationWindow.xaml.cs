@@ -49,7 +49,7 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
         _config = _configService.Load();
 
-        _noopCommand = new RelayCommand(_ => { });
+        _noopCommand = new RelayCommand(SelectPreviewKey);
         KeyboardLayoutPanel.DebugKeyboardCalibration = false;
 
         BuildKeyboard();
@@ -72,6 +72,16 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     public ObservableCollection<KeyCalibrationItem> KeyItems => _keyItems;
 
     public ICommand KeyClickedCommand => _noopCommand;
+
+    private void SelectPreviewKey(object? parameter)
+    {
+        if (parameter is not KeyboardKey key)
+        {
+            return;
+        }
+
+        SelectedKeyItem = _keyItems.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
+    }
 
     public KeyCalibrationItem? SelectedKeyItem
     {

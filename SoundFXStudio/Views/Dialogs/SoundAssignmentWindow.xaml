@@ -105,6 +105,7 @@
                                 
                                 <Button x:Name="BrowseButton" 
                                     AutomationProperties.Name="Browse"
+                                    AutomationProperties.AutomationId="BrowseButton"
                                         Content="Browse" 
                                         Width="100" 
                                     Height="34"
@@ -174,6 +175,7 @@
                             </Grid.ColumnDefinitions>
                             <Slider Minimum="0"
                                     AutomationProperties.Name="Volume"
+                                    AutomationProperties.AutomationId="VolumeSlider"
                                     Maximum="100"
                                     Value="{Binding VolumePercent}"
                                     Margin="0,0,10,0"
@@ -225,6 +227,7 @@
                                 
                                 <Button x:Name="ImageBrowseButton" 
                                     AutomationProperties.Name="Choose"
+                                    AutomationProperties.AutomationId="ImageBrowseButton"
                                         Content="Choose" 
                                         Width="90" 
                                     Height="34"
@@ -259,6 +262,7 @@
                 Margin="0,14,0,0">
             <Button Content="Cancel"
                     AutomationProperties.Name="Cancel"
+                    AutomationProperties.AutomationId="CancelButton"
                     Width="100"
                     Margin="0,0,10,0"
                     Click="CancelButton_Click"
@@ -266,6 +270,7 @@
                     Foreground="{StaticResource TextBrush}" />
             <Button Content="Save"
                     AutomationProperties.Name="Save"
+                    AutomationProperties.AutomationId="SaveButton"
                     Width="100"
                     Click="SaveButton_Click"
                     Background="#36D1FF"

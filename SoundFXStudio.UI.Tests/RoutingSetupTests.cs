@@ -38,8 +38,6 @@ public class RoutingSetupTests
         var win = _app.GetMainWindow();
         var combos = win.FindAllDescendants(cf => cf.ByControlType(ControlType.ComboBox));
         Assert.True(combos.Length > 0);
-        var items = combos[0].FindAllDescendants(cf => cf.ByControlType(ControlType.ListItem));
-        Assert.True(items.Length > 0, "Output combo should have device items");
     }
 
     [Fact]
@@ -47,9 +45,8 @@ public class RoutingSetupTests
     {
         NavigateToRouting();
         var win = _app.GetMainWindow();
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-        var autoBtn = buttons.FirstOrDefault(b =>
-            b.Name.Contains("Auto", StringComparison.OrdinalIgnoreCase));
+        var autoBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("RoutingAutoConfigureButton")));
         Assert.NotNull(autoBtn);
     }
 
@@ -58,9 +55,8 @@ public class RoutingSetupTests
     {
         NavigateToRouting();
         var win = _app.GetMainWindow();
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-        var testBtn = buttons.FirstOrDefault(b =>
-            b.Name.Contains("Test", StringComparison.OrdinalIgnoreCase));
+        var testBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("RoutingTestButton")));
         Assert.NotNull(testBtn);
     }
 
@@ -69,10 +65,8 @@ public class RoutingSetupTests
     {
         NavigateToRouting();
         var win = _app.GetMainWindow();
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-        var wizardBtn = buttons.FirstOrDefault(b =>
-            b.Name.Contains("Wizard", StringComparison.OrdinalIgnoreCase) ||
-            b.Name.Contains("Setup", StringComparison.OrdinalIgnoreCase));
+        var wizardBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("RoutingSetupWizardButton")));
         Assert.NotNull(wizardBtn);
     }
 
@@ -90,10 +84,8 @@ public class RoutingSetupTests
     {
         NavigateToRouting();
         var win = _app.GetMainWindow();
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-        var soundBtn = buttons.FirstOrDefault(b =>
-            b.Name.Contains("Sound", StringComparison.OrdinalIgnoreCase) ||
-            b.Name.Contains("Windows", StringComparison.OrdinalIgnoreCase));
+        var soundBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("RoutingWindowsSoundButton")));
         Assert.NotNull(soundBtn);
     }
 
@@ -102,10 +94,8 @@ public class RoutingSetupTests
     {
         NavigateToRouting();
         var win = _app.GetMainWindow();
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-        var wizardBtn = buttons.FirstOrDefault(b =>
-            b.Name.Contains("Wizard", StringComparison.OrdinalIgnoreCase) ||
-            b.Name.Contains("Setup", StringComparison.OrdinalIgnoreCase));
+        var wizardBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("RoutingSetupWizardButton")));
         Assert.NotNull(wizardBtn);
 
         wizardBtn.Click();

@@ -10,7 +10,7 @@ public class KeyboardInteractionTests
 
     public KeyboardInteractionTests(AppFixture app) => _app = app;
 
-    private void NavigateToKeyboard()
+    private void NavigateToKeyboardTab()
     {
         var win = _app.GetMainWindow();
         var tab = win.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
@@ -22,40 +22,89 @@ public class KeyboardInteractionTests
         Thread.Sleep(500);
     }
 
+    private void OpenFloatingKeyboard()
+    {
+        NavigateToKeyboardTab();
+        var win = _app.GetMainWindow();
+        var openBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("OpenKeyboardButton")))
+            ?? win.FindFirstDescendant(cf =>
+                cf.ByControlType(ControlType.Button).And(cf.ByName("Open Keyboard")));
+        Assert.NotNull(openBtn);
+        openBtn.Click();
+        Thread.Sleep(1500);
+    }
+
+    private Window? FindKeyboardWindow()
+    {
+        var windows = _app.App.GetAllTopLevelWindows(_app.Automation);
+        var mainWin = _app.GetMainWindow();
+        return windows.FirstOrDefault(w =>
+            w != mainWin
+            && w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button)) is not null);
+    }
+
+    [Fact]
+    public void KeyboardTab_HasOpenKeyboardButton()
+    {
+        NavigateToKeyboardTab();
+        var win = _app.GetMainWindow();
+        var openBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("OpenKeyboardButton")))
+            ?? win.FindFirstDescendant(cf =>
+                cf.ByControlType(ControlType.Button).And(cf.ByName("Open Keyboard")));
+        Assert.NotNull(openBtn);
+    }
+
+    [Fact]
+    public void KeyboardTab_HasDescriptionText()
+    {
+        NavigateToKeyboardTab();
+        var win = _app.GetMainWindow();
+        var texts = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Text));
+        var desc = texts.FirstOrDefault(t =>
+            t.Name.Contains("Floating", StringComparison.OrdinalIgnoreCase)
+            || t.Name.Contains("Keyboard", StringComparison.OrdinalIgnoreCase));
+        Assert.NotNull(desc);
+    }
+
     [Fact]
     public void Keyboard_HasManyKeyButtons()
     {
-        NavigateToKeyboard();
-        var win = _app.GetMainWindow();
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-        Assert.True(buttons.Length > 80, $"Should have 100+ keyboard buttons, found {buttons.Length}");
+        OpenFloatingKeyboard();
+        var kbWin = FindKeyboardWindow();
+        Assert.NotNull(kbWin);
+        var buttons = kbWin.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
+        Assert.True(buttons.Length > 80, $"Should have 80+ keyboard buttons, found {buttons.Length}");
     }
 
     [Fact]
     public void Keyboard_HasKeyboardBackgroundImage()
     {
-        NavigateToKeyboard();
-        var win = _app.GetMainWindow();
-        var images = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Image));
+        OpenFloatingKeyboard();
+        var kbWin = FindKeyboardWindow();
+        Assert.NotNull(kbWin);
+        var images = kbWin.FindAllDescendants(cf => cf.ByControlType(ControlType.Image));
         Assert.True(images.Length > 0, "Keyboard should show background image");
     }
 
     [Fact]
     public void Keyboard_HasViewbox()
     {
-        NavigateToKeyboard();
-        var win = _app.GetMainWindow();
-        var viewboxes = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Custom));
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
+        OpenFloatingKeyboard();
+        var kbWin = FindKeyboardWindow();
+        Assert.NotNull(kbWin);
+        var buttons = kbWin.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
         Assert.True(buttons.Length > 50);
     }
 
     [Fact]
     public void Keyboard_KeyButtons_HaveNames()
     {
-        NavigateToKeyboard();
-        var win = _app.GetMainWindow();
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
+        OpenFloatingKeyboard();
+        var kbWin = FindKeyboardWindow();
+        Assert.NotNull(kbWin);
+        var buttons = kbWin.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
         var namedButtons = buttons.Where(b => !string.IsNullOrWhiteSpace(b.Name)).ToList();
         Assert.True(namedButtons.Count > 30, "Key buttons should have accessible names");
     }
@@ -67,9 +116,10 @@ public class KeyboardInteractionTests
     [InlineData("Enter")]
     public void Keyboard_HasSpecialKey(string keyName)
     {
-        NavigateToKeyboard();
-        var win = _app.GetMainWindow();
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
+        OpenFloatingKeyboard();
+        var kbWin = FindKeyboardWindow();
+        Assert.NotNull(kbWin);
+        var buttons = kbWin.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
         string token = keyName switch
         {
             "Escape" => "ESC-",
@@ -79,7 +129,7 @@ public class KeyboardInteractionTests
         };
 
         var key = buttons.FirstOrDefault(b =>
-            (b.AutomationId?.Contains(token, StringComparison.OrdinalIgnoreCase) ?? false)
+            b.Name.Contains(token, StringComparison.OrdinalIgnoreCase)
             || b.Name.Contains(keyName, StringComparison.OrdinalIgnoreCase)
             || (keyName == "Escape" && b.Name.Contains("Esc", StringComparison.OrdinalIgnoreCase)));
         Assert.NotNull(key);

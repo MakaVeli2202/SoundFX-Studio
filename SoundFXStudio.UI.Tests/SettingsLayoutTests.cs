@@ -36,9 +36,10 @@ public class SettingsLayoutTests
     {
         NavigateToSettings();
         var win = _app.GetMainWindow();
-        var texts = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Text));
-        var general = texts.FirstOrDefault(t =>
-            t.Name.Contains("General", StringComparison.OrdinalIgnoreCase));
+        var general = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Text).And(cf.ByAutomationId("SettingsGeneralHeader")))
+            ?? win.FindAllDescendants(cf => cf.ByControlType(ControlType.Text))
+                .FirstOrDefault(t => t.Name.Contains("General", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(general);
     }
 
@@ -47,9 +48,10 @@ public class SettingsLayoutTests
     {
         NavigateToSettings();
         var win = _app.GetMainWindow();
-        var texts = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Text));
-        var appearance = texts.FirstOrDefault(t =>
-            t.Name.Contains("Appearance", StringComparison.OrdinalIgnoreCase));
+        var appearance = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Text).And(cf.ByAutomationId("SettingsAppearanceHeader")))
+            ?? win.FindAllDescendants(cf => cf.ByControlType(ControlType.Text))
+                .FirstOrDefault(t => t.Name.Contains("Appearance", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(appearance);
     }
 
@@ -99,10 +101,8 @@ public class SettingsLayoutTests
     {
         NavigateToSettings();
         var win = _app.GetMainWindow();
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-        var wizardBtn = buttons.FirstOrDefault(b =>
-            b.Name.Contains("Wizard", StringComparison.OrdinalIgnoreCase) ||
-            b.Name.Contains("Setup", StringComparison.OrdinalIgnoreCase));
+        var wizardBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("SettingsOpenAudioSetupWizardButton")));
         Assert.NotNull(wizardBtn);
     }
 }

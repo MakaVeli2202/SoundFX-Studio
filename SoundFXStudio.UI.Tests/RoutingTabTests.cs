@@ -36,10 +36,8 @@ public class RoutingTabTests
     {
         NavigateToRouting();
         var win = _app.GetMainWindow();
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-        var wizardBtn = buttons.FirstOrDefault(b =>
-            b.Name.Contains("Wizard", StringComparison.OrdinalIgnoreCase) ||
-            b.Name.Contains("Setup", StringComparison.OrdinalIgnoreCase));
+        var wizardBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("RoutingSetupWizardButton")));
         Assert.NotNull(wizardBtn);
     }
 

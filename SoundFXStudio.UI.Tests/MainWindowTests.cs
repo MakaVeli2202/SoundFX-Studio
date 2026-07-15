@@ -19,14 +19,14 @@ public class MainWindowTests
     }
 
     [Fact]
-    public void MainWindow_HasTabControl_With5Tabs()
+    public void MainWindow_HasTabControl_With6Tabs()
     {
         var win = _app.GetMainWindow();
         var tab = win.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
         Assert.NotNull(tab);
 
         var tabs = tab.FindAllDescendants(cf => cf.ByControlType(ControlType.TabItem));
-        Assert.Equal(5, tabs.Length);
+        Assert.Equal(6, tabs.Length);
     }
 
     [Fact]
@@ -43,6 +43,7 @@ public class MainWindowTests
         Assert.Contains("Library", headers);
         Assert.Contains("Settings", headers);
         Assert.Contains("Presets", headers);
+        Assert.Contains("Statistics", headers);
     }
 
     [Theory]
@@ -51,6 +52,7 @@ public class MainWindowTests
     [InlineData("Library")]
     [InlineData("Settings")]
     [InlineData("Presets")]
+    [InlineData("Statistics")]
     public void MainWindow_CanSwitchToTab(string tabName)
     {
         var win = _app.GetMainWindow();

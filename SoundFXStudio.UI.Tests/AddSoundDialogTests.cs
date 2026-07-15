@@ -15,8 +15,8 @@ public class AddSoundDialogTests
     {
         var windows = _app.App.GetAllTopLevelWindows(_app.Automation);
         return windows.FirstOrDefault(w =>
-            w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByName("Save"))) is not null
-            && w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByName("Cancel"))) is not null);
+            w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("SaveButton"))) is not null
+            || w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByName("Save"))) is not null);
     }
 
     private void OpenAddSoundDialog()
@@ -39,18 +39,13 @@ public class AddSoundDialogTests
         {
             addBtn.Click();
             Thread.Sleep(1000);
-            if (FindSoundDialog() is not null)
-            {
-                return;
-            }
+            if (FindSoundDialog() is not null) return;
         }
 
-        // Fallback to app shortcut if UIA button lookup is unstable.
         Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL);
         Keyboard.Type(FlaUI.Core.WindowsAPI.VirtualKeyShort.KEY_N);
         Keyboard.Release(FlaUI.Core.WindowsAPI.VirtualKeyShort.CONTROL);
         Thread.Sleep(1000);
-
         Assert.NotNull(FindSoundDialog());
     }
 
@@ -70,10 +65,10 @@ public class AddSoundDialogTests
         Assert.NotNull(dialog);
 
         var browseBtn = dialog.FindFirstDescendant(cf =>
-            cf.ByControlType(ControlType.Button).And(cf.ByName("Browse")));
-        var browseAny = browseBtn
-            ?? dialog.FindFirstDescendant(cf => cf.ByName("Browse"));
-        Assert.NotNull(browseAny);
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("BrowseButton")))
+            ?? dialog.FindFirstDescendant(cf =>
+                cf.ByControlType(ControlType.Button).And(cf.ByName("Browse")));
+        Assert.NotNull(browseBtn);
     }
 
     [Fact]
@@ -130,10 +125,11 @@ public class AddSoundDialogTests
         var dialog = FindSoundDialog();
         Assert.NotNull(dialog);
 
-        var sliders = dialog.FindAllDescendants(cf => cf.ByControlType(ControlType.Slider));
-        var hasVolume = sliders.Length >= 1
-            || dialog.FindFirstDescendant(cf => cf.ByName("Volume")) is not null;
-        Assert.True(hasVolume, "Dialog should have a volume slider");
+        var slider = dialog.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Slider).And(cf.ByAutomationId("VolumeSlider")))
+            ?? dialog.FindFirstDescendant(cf =>
+                cf.ByControlType(ControlType.Slider));
+        Assert.NotNull(slider);
     }
 
     [Fact]
@@ -147,9 +143,7 @@ public class AddSoundDialogTests
             cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("ImageBrowseButton")))
             ?? dialog.FindFirstDescendant(cf =>
                 cf.ByControlType(ControlType.Button).And(cf.ByName("Choose")));
-        var chooseAny = chooseBtn
-            ?? dialog.FindFirstDescendant(cf => cf.ByName("Choose"));
-        Assert.NotNull(chooseAny);
+        Assert.NotNull(chooseBtn);
     }
 
     [Fact]

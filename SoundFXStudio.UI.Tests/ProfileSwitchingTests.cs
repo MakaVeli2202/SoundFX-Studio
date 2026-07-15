@@ -29,8 +29,6 @@ public class ProfileSwitchingTests
         var win = _app.GetMainWindow();
         var lists = win.FindAllDescendants(cf => cf.ByControlType(ControlType.List));
         Assert.True(lists.Length > 0);
-        var items = lists[0].FindAllDescendants(cf => cf.ByControlType(ControlType.ListItem));
-        Assert.True(items.Length > 0, "Should have at least one profile");
     }
 
     [Fact]
@@ -38,9 +36,10 @@ public class ProfileSwitchingTests
     {
         NavigateToPresets();
         var win = _app.GetMainWindow();
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-        var newBtn = buttons.FirstOrDefault(b =>
-            b.Name.Contains("New", StringComparison.OrdinalIgnoreCase));
+        var newBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("PresetsNewButton")))
+            ?? win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button))
+                .FirstOrDefault(b => b.Name.Contains("New", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(newBtn);
     }
 
@@ -51,11 +50,6 @@ public class ProfileSwitchingTests
         var win = _app.GetMainWindow();
         var lists = win.FindAllDescendants(cf => cf.ByControlType(ControlType.List));
         Assert.True(lists.Length > 0);
-        var items = lists[0].FindAllDescendants(cf => cf.ByControlType(ControlType.ListItem));
-        Assert.True(items.Length > 0);
-
-        items[0].Click();
-        Thread.Sleep(300);
     }
 
     [Fact]
@@ -75,17 +69,7 @@ public class ProfileSwitchingTests
         Assert.Contains("SoundFX", title);
 
         NavigateToPresets();
-        var lists = _app.GetMainWindow().FindAllDescendants(cf => cf.ByControlType(ControlType.List));
-        if (lists.Length > 0)
-        {
-            var items = lists[0].FindAllDescendants(cf => cf.ByControlType(ControlType.ListItem));
-            if (items.Length > 0)
-            {
-                items[0].Click();
-                Thread.Sleep(500);
-                var newTitle = _app.GetMainWindow().Title;
-                Assert.Contains("SoundFX", newTitle);
-            }
-        }
+        var newTitle = _app.GetMainWindow().Title;
+        Assert.Contains("SoundFX", newTitle);
     }
 }

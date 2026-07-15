@@ -36,9 +36,10 @@ public class PresetsTabTests
     {
         NavigateToPresets();
         var win = _app.GetMainWindow();
-        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
-        var newBtn = buttons.FirstOrDefault(b =>
-            b.Name.Contains("New", StringComparison.OrdinalIgnoreCase));
+        var newBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("PresetsNewButton")))
+            ?? win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button))
+                .FirstOrDefault(b => b.Name.Contains("New", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(newBtn);
     }
 
