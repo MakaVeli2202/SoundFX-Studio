@@ -20,7 +20,7 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
     private const double KeyboardImageHeight = 618;
 
     private bool _suppressSelectionEvents;
-    private double _selectedWindowScale = 0.85;
+    private double _selectedWindowScale = 1.0;
     private double _previewButtonScale = 1.0;
 
     public KeyboardWindow()
@@ -35,7 +35,9 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
     {
         new ScaleOption("85%", 0.85),
         new ScaleOption("100%", 1.0),
+        new ScaleOption("110%", 1.1),
         new ScaleOption("115%", 1.15),
+        new ScaleOption("125%", 1.25),
         new ScaleOption("130%", 1.3),
         new ScaleOption("145%", 1.45)
     };
@@ -156,7 +158,7 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         _suppressSelectionEvents = true;
         try
         {
-            SelectedWindowScale = calibration.KeyboardWindowScale > 0 ? calibration.KeyboardWindowScale : 0.85;
+            SelectedWindowScale = calibration.KeyboardWindowScale > 0 ? calibration.KeyboardWindowScale : 1.0;
             PreviewButtonScale = calibration.ButtonScale > 0 ? calibration.ButtonScale : 1.0;
         }
         finally

@@ -94,7 +94,27 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             }
 
             _selectedKeyItem = value;
+            UpdateSelectedKeyboardKey();
             OnPropertyChanged();
+        }
+    }
+
+    private void UpdateSelectedKeyboardKey()
+    {
+        foreach (var key in KeyboardKeys)
+        {
+            key.IsSelected = false;
+        }
+
+        if (_selectedKeyItem is null)
+        {
+            return;
+        }
+
+        var selectedKeyboardKey = KeyboardKeys.FirstOrDefault(item => string.Equals(item.Id, _selectedKeyItem.KeyId, StringComparison.OrdinalIgnoreCase));
+        if (selectedKeyboardKey is not null)
+        {
+            selectedKeyboardKey.IsSelected = true;
         }
     }
 
@@ -302,7 +322,7 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             _keyItems.Add(item);
         }
 
-        SelectedKeyItem = _keyItems.FirstOrDefault();
+        SelectedKeyItem = null;
     }
 
     private void LoadFromSettings()

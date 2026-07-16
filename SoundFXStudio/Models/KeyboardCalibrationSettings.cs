@@ -7,7 +7,7 @@ public class KeyboardCalibrationSettings
     public double OffsetX { get; set; } = 65;
     public double OffsetY { get; set; } = 72;
     public double ButtonScale { get; set; } = 1.0;
-    public double KeyboardWindowScale { get; set; } = 0.85;
+    public double KeyboardWindowScale { get; set; } = 1.0;
     public bool DebugCalibration { get; set; }
 
     public double EscOffsetX { get; set; }
