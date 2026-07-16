@@ -10,14 +10,20 @@
         <converters:NonEmptyToVisibilityConverter x:Key="NonEmptyToVisibilityConverter" />
         <media:BitmapImage x:Key="SoundFXLogo" UriSource="pack://application:,,,/Assets/SoundFXStudioLogo.png" />
 
-        <SolidColorBrush x:Key="BrandCyan" Color="#22D3FF" />
-        <SolidColorBrush x:Key="BrandMagenta" Color="#FF4D8D" />
-        <SolidColorBrush x:Key="BrandPurple" Color="#8857FF" />
+        <SolidColorBrush x:Key="BrandCyan" Color="#5AD8FF" />
+        <SolidColorBrush x:Key="BrandMagenta" Color="#FF6B8E" />
+        <SolidColorBrush x:Key="BrandPurple" Color="#6C8CFF" />
+        <SolidColorBrush x:Key="UiWindowBrush" Color="#0A1220" />
+        <SolidColorBrush x:Key="UiPanelBrush" Color="#111B2E" />
+        <SolidColorBrush x:Key="UiPanelAltBrush" Color="#0D1626" />
+        <SolidColorBrush x:Key="UiBorderBrush" Color="#2F466A" />
+        <SolidColorBrush x:Key="UiTextBrush" Color="#EAF1FF" />
+        <SolidColorBrush x:Key="UiMutedTextBrush" Color="#A2B0C9" />
 
         <Style TargetType="ComboBox">
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="#141414" />
-            <Setter Property="BorderBrush" Value="#355275" />
+            <Setter Property="Foreground" Value="{StaticResource UiTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource UiPanelAltBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource UiBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="7,4" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -55,8 +61,8 @@
                                    AllowsTransparency="True"
                                    Focusable="False"
                                    PopupAnimation="Slide">
-                                <Border Background="#141414"
-                                        BorderBrush="#355275"
+                                <Border Background="{StaticResource UiPanelAltBrush}"
+                                    BorderBrush="{StaticResource UiBorderBrush}"
                                         BorderThickness="1"
                                         CornerRadius="4"
                                         MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
@@ -80,26 +86,26 @@
         </Style>
 
         <Style TargetType="ComboBoxItem">
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="#141414" />
+            <Setter Property="Foreground" Value="{StaticResource UiTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource UiPanelAltBrush}" />
             <Setter Property="Padding" Value="7,4" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Style.Triggers>
                 <Trigger Property="IsHighlighted" Value="True">
-                    <Setter Property="Background" Value="#22D3FF" />
-                    <Setter Property="Foreground" Value="#050505" />
+                    <Setter Property="Background" Value="#5AD8FF" />
+                    <Setter Property="Foreground" Value="#05101C" />
                 </Trigger>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#FF4D8D" />
-                    <Setter Property="Foreground" Value="White" />
+                    <Setter Property="Background" Value="#FF6B8E" />
+                    <Setter Property="Foreground" Value="#101825" />
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <Style TargetType="Button">
-            <Setter Property="Background" Value="#1A2438" />
-            <Setter Property="Foreground" Value="#F5F7FB" />
-            <Setter Property="BorderBrush" Value="#355275" />
+            <Setter Property="Background" Value="{StaticResource UiPanelBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource UiTextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource UiBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="12,8" />
             <Setter Property="Cursor" Value="Hand" />
@@ -111,12 +117,12 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#233350" />
-                    <Setter Property="BorderBrush" Value="#5B7EA7" />
+                    <Setter Property="Background" Value="#1B2A43" />
+                    <Setter Property="BorderBrush" Value="#6E95C9" />
                 </Trigger>
                 <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#335A8C" />
-                    <Setter Property="BorderBrush" Value="#8BC4FF" />
+                    <Setter Property="Background" Value="#3D5F8A" />
+                    <Setter Property="BorderBrush" Value="#8FCFFF" />
                     <Setter Property="RenderTransform">
                         <Setter.Value>
                             <ScaleTransform ScaleX="0.98" ScaleY="0.98" />
@@ -130,29 +136,29 @@
         </Style>
 
         <Style TargetType="TextBox">
-            <Setter Property="Foreground" Value="#F5F7FB" />
-            <Setter Property="Background" Value="#131313" />
-            <Setter Property="BorderBrush" Value="#303030" />
+            <Setter Property="Foreground" Value="{StaticResource UiTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource UiPanelAltBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource UiBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="8,5" />
         </Style>
 
         <Style TargetType="ListViewItem">
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="#101010" />
+            <Setter Property="Foreground" Value="{StaticResource UiTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource UiPanelAltBrush}" />
             <Setter Property="Padding" Value="2" />
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#22D3FF" />
-                    <Setter Property="Foreground" Value="#050505" />
+                    <Setter Property="Background" Value="#5AD8FF" />
+                    <Setter Property="Foreground" Value="#05101C" />
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <Style TargetType="TabItem">
-            <Setter Property="Foreground" Value="#F5F7FB" />
-            <Setter Property="Background" Value="#101010" />
-            <Setter Property="BorderBrush" Value="#2C2C2C" />
+            <Setter Property="Foreground" Value="{StaticResource UiTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource UiPanelAltBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource UiBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="18,10" />
             <Setter Property="Margin" Value="0,0,10,0" />
@@ -161,14 +167,14 @@
                     <Setter Property="Background">
                         <Setter.Value>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#FF4D8D" Offset="0" />
-                                <GradientStop Color="#8857FF" Offset="0.5" />
-                                <GradientStop Color="#22D3FF" Offset="1" />
+                                <GradientStop Color="#FF6B8E" Offset="0" />
+                                <GradientStop Color="#6C8CFF" Offset="0.5" />
+                                <GradientStop Color="#5AD8FF" Offset="1" />
                             </LinearGradientBrush>
                         </Setter.Value>
                     </Setter>
-                    <Setter Property="BorderBrush" Value="#22D3FF" />
-                    <Setter Property="Foreground" Value="#050505" />
+                    <Setter Property="BorderBrush" Value="#5AD8FF" />
+                    <Setter Property="Foreground" Value="#05101C" />
                 </Trigger>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#171717" />

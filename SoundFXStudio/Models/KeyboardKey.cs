@@ -20,6 +20,11 @@ public class KeyboardKey : ObservableObject
     private bool _isEnabled = true;
     private bool _isSelected;
     private bool _isHovered;
+    private double _innerInsetAdjustmentPercent;
+    private double _innerInsetXAdjustmentPercent;
+    private double _innerInsetYAdjustmentPercent;
+    private double _innerOffsetXAdjustmentPercent;
+    private double _innerOffsetYAdjustmentPercent;
 
     public string Id
     {
@@ -174,6 +179,36 @@ public class KeyboardKey : ObservableObject
     {
         get => _isHovered;
         set => SetProperty(ref _isHovered, value);
+    }
+
+    public double InnerInsetAdjustmentPercent
+    {
+        get => _innerInsetAdjustmentPercent;
+        set => SetProperty(ref _innerInsetAdjustmentPercent, value);
+    }
+
+    public double InnerInsetXAdjustmentPercent
+    {
+        get => _innerInsetXAdjustmentPercent;
+        set => SetProperty(ref _innerInsetXAdjustmentPercent, value);
+    }
+
+    public double InnerInsetYAdjustmentPercent
+    {
+        get => _innerInsetYAdjustmentPercent;
+        set => SetProperty(ref _innerInsetYAdjustmentPercent, value);
+    }
+
+    public double InnerOffsetXAdjustmentPercent
+    {
+        get => _innerOffsetXAdjustmentPercent;
+        set => SetProperty(ref _innerOffsetXAdjustmentPercent, value);
+    }
+
+    public double InnerOffsetYAdjustmentPercent
+    {
+        get => _innerOffsetYAdjustmentPercent;
+        set => SetProperty(ref _innerOffsetYAdjustmentPercent, value);
     }
 
     public bool HasAssignment => !string.IsNullOrWhiteSpace(AssignedSoundId)

@@ -5,17 +5,17 @@
         Width="920"
         Height="620"
         WindowStartupLocation="CenterScreen"
-        Background="#050505"
+        Background="#08101D"
         ResizeMode="NoResize"
         WindowStyle="None"
         Icon="/Assets/SoundFXStudioLogo.png">
 
     <Window.Resources>
-        <SolidColorBrush x:Key="PanelBrush" Color="#0D0D0D" />
-        <SolidColorBrush x:Key="SecondaryPanelBrush" Color="#141414" />
-        <SolidColorBrush x:Key="BorderBrushTheme" Color="#2B2B2B" />
-        <SolidColorBrush x:Key="TextBrush" Color="#F5F7FB" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#A0A7B4" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#101A2D" />
+        <SolidColorBrush x:Key="SecondaryPanelBrush" Color="#0E1728" />
+        <SolidColorBrush x:Key="BorderBrushTheme" Color="#2E4568" />
+        <SolidColorBrush x:Key="TextBrush" Color="#EAF1FF" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#A4B2C9" />
     </Window.Resources>
 
     <Grid Margin="20">
@@ -33,7 +33,7 @@
 
                 <Border Background="{StaticResource SecondaryPanelBrush}"
                     CornerRadius="16"
-                        BorderBrush="#252525"
+                        BorderBrush="#2E4568"
                         BorderThickness="1"
                     Padding="12"
                     Margin="0,0,0,14">
@@ -65,8 +65,8 @@
                             Width="40"
                             Height="30"
                                 VerticalAlignment="Top"
-                                Background="#2A1118"
-                                BorderBrush="#5F2336"
+                                Background="#3C1B2A"
+                                BorderBrush="#7B3C57"
                                 Click="CloseButton_Click" />
                     </Grid>
                 </Border>
@@ -92,11 +92,11 @@
                         <StackPanel>
                             <TextBlock Text="Pick Your Devices" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,14" />
 
-                            <TextBlock Text="🔊 Speakers (where you hear sounds)" Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock Text="Speakers (playback output)" Foreground="{StaticResource MutedBrush}" />
                             <ComboBox x:Name="OutputCombo" Margin="0,6,0,14" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
                             <TextBlock x:Name="OutputDefaultText" Foreground="{StaticResource MutedBrush}" Margin="0,-6,0,12" TextWrapping="Wrap" FontSize="12" />
 
-                            <TextBlock Text="🎙️ Microphone (your voice)" Foreground="{StaticResource MutedBrush}" />
+                            <TextBlock Text="Microphone (voice input)" Foreground="{StaticResource MutedBrush}" />
                             <ComboBox x:Name="InputCombo" Margin="0,6,0,14" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
                             <TextBlock x:Name="InputDefaultText" Foreground="{StaticResource MutedBrush}" Margin="0,-6,0,12" TextWrapping="Wrap" FontSize="12" />
 
@@ -112,9 +112,9 @@
                             Padding="16">
                         <StackPanel>
                             <TextBlock Text="How It Works" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,14" />
-                            <TextBlock Text="✓ Sounds play through your speakers" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
-                            <TextBlock Text="✓ Your microphone is ready to use" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
-                            <TextBlock Text="✓ Click keyboard buttons (or press F1-F12) to play sounds" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16" />
+                            <TextBlock Text="Ready audio output routing" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                            <TextBlock Text="Ready microphone input routing" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
+                            <TextBlock Text="Keyboard triggers mapped to playback" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16" />
                         </StackPanel>
                     </Border>
                 </Grid>

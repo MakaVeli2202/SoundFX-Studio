@@ -18,6 +18,10 @@
         <controls:KeyboardControl ItemsSource="{Binding ViewModel.KeyboardKeys, RelativeSource={RelativeSource AncestorType=Window}}"
                       DataContext="{Binding ViewModel, RelativeSource={RelativeSource AncestorType=Window}}"
                                   ButtonScale="{Binding PreviewButtonScale, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  InnerInsetXPercent="{Binding PreviewInnerInsetXPercent, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  InnerInsetYPercent="{Binding PreviewInnerInsetYPercent, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  InnerOffsetXPercent="{Binding PreviewInnerOffsetXPercent, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  InnerOffsetYPercent="{Binding PreviewInnerOffsetYPercent, RelativeSource={RelativeSource AncestorType=Window}}"
                                   KeyClickedCommand="{Binding ViewModel.KeyClickedCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
     </Viewbox>
 

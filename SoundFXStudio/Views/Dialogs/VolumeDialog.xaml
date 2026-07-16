@@ -6,15 +6,15 @@
         Height="280"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="#050505"
+        Background="#08101D"
         WindowStyle="None"
         Icon="/Assets/SoundFXStudioLogo.png">
     <Window.Resources>
-        <SolidColorBrush x:Key="PanelBrush" Color="#0D0D0D" />
-        <SolidColorBrush x:Key="SecondaryPanelBrush" Color="#141414" />
-        <SolidColorBrush x:Key="BorderBrushTheme" Color="#2B2B2B" />
-        <SolidColorBrush x:Key="TextBrush" Color="#F5F7FB" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#A0A7B4" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#101A2D" />
+        <SolidColorBrush x:Key="SecondaryPanelBrush" Color="#0E1728" />
+        <SolidColorBrush x:Key="BorderBrushTheme" Color="#2E4568" />
+        <SolidColorBrush x:Key="TextBrush" Color="#EAF1FF" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#A4B2C9" />
     </Window.Resources>
 
     <Grid Margin="20">
@@ -24,7 +24,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Border Background="{StaticResource SecondaryPanelBrush}" BorderBrush="#252525" BorderThickness="1" CornerRadius="16" Padding="12" Margin="0,0,0,14">
+        <Border Background="{StaticResource SecondaryPanelBrush}" BorderBrush="#2E4568" BorderThickness="1" CornerRadius="16" Padding="12" Margin="0,0,0,14">
             <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -39,7 +39,7 @@
                         <TextBlock Text="Key Volume" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
                     </StackPanel>
                 </StackPanel>
-                <Button Grid.Column="1" Content="✕" Width="40" Height="30" VerticalAlignment="Top" Background="#2A1118" BorderBrush="#5F2336" Click="CloseButton_Click" />
+                <Button Grid.Column="1" Content="✕" Width="40" Height="30" VerticalAlignment="Top" Background="#3C1B2A" BorderBrush="#7B3C57" Click="CloseButton_Click" />
             </Grid>
         </Border>
 
@@ -52,8 +52,8 @@
         </Border>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button Content="Cancel" Width="100" Margin="0,0,10,0" Click="CancelButton_Click" Background="#303030" Foreground="{StaticResource TextBrush}" />
-            <Button Content="Save" Width="100" Click="SaveButton_Click" Background="#36D1FF" Foreground="Black" FontWeight="Bold" />
+            <Button Content="Cancel" Width="100" Margin="0,0,10,0" Click="CancelButton_Click" Background="#2A3D5D" Foreground="{StaticResource TextBrush}" />
+            <Button Content="Save" Width="100" Click="SaveButton_Click" Background="#5AD8FF" Foreground="#08101D" FontWeight="Bold" />
         </StackPanel>
     </Grid>
 </Window>

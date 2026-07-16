@@ -704,46 +704,18 @@ public sealed class MainViewModel : ObservableObject
     {
         calibration ??= new KeyboardCalibrationSettings();
 
+        var gapX = Math.Abs(calibration.GapX) > double.Epsilon ? calibration.GapX : calibration.Gap;
+        var gapY = Math.Abs(calibration.GapY) > double.Epsilon ? calibration.GapY : calibration.Gap;
+
         KeyboardLayoutPanel.SetLayoutCalibration(
             calibration.KeyUnit,
-            calibration.Gap,
+            gapX,
+            gapY,
             calibration.OffsetX,
             calibration.OffsetY);
 
         KeyboardLayoutPanel.ButtonScale = calibration.ButtonScale;
         KeyboardLayoutPanel.DebugKeyboardCalibration = calibration.DebugCalibration;
-
-        KeyboardClusterLayout.ApplyPreset(
-            calibration.EscOffsetX,
-            calibration.EscOffsetY,
-            calibration.F1ToF4OffsetX,
-            calibration.F1ToF4OffsetY,
-            calibration.F5ToF8OffsetX,
-            calibration.F5ToF8OffsetY,
-            calibration.F9ToF12OffsetX,
-            calibration.F9ToF12OffsetY,
-            calibration.PrintScrollPauseOffsetX,
-            calibration.PrintScrollPauseOffsetY,
-            calibration.MainTypingOffsetX,
-            calibration.MainTypingOffsetY,
-            calibration.NavigationOffsetX,
-            calibration.NavigationOffsetY,
-            calibration.ArrowOffsetX,
-            calibration.ArrowOffsetY,
-            calibration.NumpadOffsetX,
-            calibration.NumpadOffsetY);
-
-        KeyboardLayoutPanel.ClearAllSpecialKeyOverrides();
-        KeyboardLayoutPanel.ConfigureCalibration(builder => builder
-            .Spacebar(calibration.SpacebarWidthAdjustment)
-            .Backspace(calibration.BackspaceWidthAdjustment)
-            .Enter(calibration.EnterWidthAdjustment)
-            .IsoEnter(calibration.IsoEnterWidthAdjustment)
-            .LeftShift(calibration.LeftShiftWidthAdjustment)
-            .RightShift(calibration.RightShiftWidthAdjustment)
-            .NumpadEnter(calibration.NumpadEnterWidthAdjustment)
-            .Tab(calibration.TabWidthAdjustment)
-            .CapsLock(calibration.CapsLockWidthAdjustment));
 
         KeyboardLayoutPanel.ClearAllPerKeyOverrides();
         foreach (var entry in calibration.KeyOverrides)

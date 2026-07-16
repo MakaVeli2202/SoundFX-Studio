@@ -2,11 +2,13 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:SoundFXStudio.Controls"
-        Title="Keyboard Cluster Calibration"
-        Width="1440"
-        Height="980"
-        WindowStartupLocation="CenterScreen"
-        Background="#050505"
+        Title="Keyboard Calibration"
+        Width="1240"
+        Height="860"
+        MinWidth="1080"
+        MinHeight="700"
+        WindowStartupLocation="CenterOwner"
+        Background="#08101D"
         WindowStyle="None"
         ResizeMode="CanResize"
         UseLayoutRounding="True"
@@ -14,135 +16,61 @@
         Icon="/Assets/SoundFXStudioLogo.png">
 
     <Window.Resources>
-        <SolidColorBrush x:Key="PanelBrush" Color="#0D0D0D" />
-        <SolidColorBrush x:Key="SecondaryPanelBrush" Color="#141414" />
-        <SolidColorBrush x:Key="BorderBrushTheme" Color="#252525" />
-        <SolidColorBrush x:Key="TextBrush" Color="#FFFFFF" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#9D9D9D" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#101A2D" />
+        <SolidColorBrush x:Key="BorderBrushTheme" Color="#2E4568" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#A4B2C9" />
 
         <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Foreground" Value="#EAF1FF" />
             <Setter Property="FontFamily" Value="Segoe UI" />
         </Style>
 
-        <Style TargetType="Button">
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-            <Setter Property="Background" Value="#191919" />
-            <Setter Property="BorderBrush" Value="#303030" />
+        <Style TargetType="TextBox">
+            <Setter Property="Foreground" Value="#EAF1FF" />
+            <Setter Property="Background" Value="#0E1728" />
+            <Setter Property="BorderBrush" Value="#2E4568" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="12,7" />
+            <Setter Property="Padding" Value="8,5" />
+        </Style>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Foreground" Value="#EAF1FF" />
+            <Setter Property="Background" Value="#0E1728" />
+            <Setter Property="BorderBrush" Value="#2E4568" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="8,5" />
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="Foreground" Value="#EAF1FF" />
+            <Setter Property="Background" Value="#16243B" />
+            <Setter Property="BorderBrush" Value="#35527A" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="10,6" />
             <Setter Property="Cursor" Value="Hand" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#252525" />
-                    <Setter Property="BorderBrush" Value="#22D3FF" />
-                </Trigger>
-                <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="#22D3FF" />
-                    <Setter Property="Foreground" Value="#050505" />
-                    <Setter Property="BorderBrush" Value="#22D3FF" />
+                    <Setter Property="BorderBrush" Value="#5AD8FF" />
+                    <Setter Property="Background" Value="#1D2F4A" />
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <Style TargetType="TextBox">
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-            <Setter Property="Background" Value="#131313" />
-            <Setter Property="BorderBrush" Value="#303030" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="8,5" />
-        </Style>
-
         <Style x:Key="StepperButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="30" />
-            <Setter Property="Height" Value="30" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
             <Setter Property="Padding" Value="0" />
-            <Setter Property="Margin" Value="0" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontWeight" Value="Bold" />
-        </Style>
-
-        <Style TargetType="ComboBox">
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="#141414" />
-            <Setter Property="BorderBrush" Value="#303030" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="8,5" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <ToggleButton Name="PART_ToggleButton"
-                                          Background="{TemplateBinding Background}"
-                                          BorderBrush="{TemplateBinding BorderBrush}"
-                                          BorderThickness="{TemplateBinding BorderThickness}"
-                                          Focusable="False"
-                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                          ClickMode="Press">
-                                <Grid>
-                                    <TextBlock Text="&#x25BC;"
-                                               FontSize="10"
-                                               Foreground="White"
-                                               VerticalAlignment="Center"
-                                               HorizontalAlignment="Right"
-                                               Margin="0,0,8,0"
-                                               IsHitTestVisible="False" />
-                                </Grid>
-                            </ToggleButton>
-                            <ContentPresenter Name="PART_ContentPresenter"
-                                              IsHitTestVisible="False"
-                                              Content="{TemplateBinding SelectionBoxItem}"
-                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                              Margin="0,0,24,0" />
-                            <Popup Name="PART_Popup"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   Placement="Bottom"
-                                   AllowsTransparency="True"
-                                   Focusable="False"
-                                   PopupAnimation="Slide">
-                                <Border Background="#141414"
-                                        BorderBrush="#303030"
-                                        BorderThickness="1"
-                                        CornerRadius="4"
-                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
-                                        MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                                        Margin="0,2,0,0">
-                                    <ScrollViewer Margin="0,4,0,4">
-                                        <StackPanel IsItemsHost="True"
-                                                    KeyboardNavigation.DirectionalNavigation="Contained" />
-                                    </ScrollViewer>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style TargetType="ToolTip">
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="Background" Value="#121212" />
-            <Setter Property="BorderBrush" Value="#3A3A3A" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="8,5" />
             <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Bold" />
         </Style>
     </Window.Resources>
 
-    <Grid Margin="18">
-        <Border Background="{StaticResource PanelBrush}"
+    <Grid Margin="14">
+        <Border Background="#0C1424"
                 BorderBrush="{StaticResource BorderBrushTheme}"
                 BorderThickness="1"
-                CornerRadius="20"
-                Padding="18">
+                CornerRadius="16"
+                Padding="14">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -155,518 +83,250 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="46"
-                                Height="46"
-                                CornerRadius="12"
-                                Background="#0A0A0A"
-                                BorderBrush="#303030"
-                                BorderThickness="1"
-                                Padding="4"
-                                Margin="0,0,12,0">
-                            <Image Source="/Assets/SoundFXStudioLogo.png" Stretch="Uniform" />
-                        </Border>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="SoundFX Studio" Foreground="{StaticResource MutedBrush}" FontSize="13" FontWeight="Bold" />
-                            <TextBlock Text="Cluster Calibration" FontSize="26" FontWeight="Bold" />
-                        </StackPanel>
+                        <TextBlock Text="Keyboard Calibration" FontSize="24" FontWeight="Bold" />
+                        <TextBlock Text="  general + per-key" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Bottom" Margin="8,0,0,2" />
                     </StackPanel>
-
-                    <Button Grid.Column="1"
-                            Content="✕"
-                            Width="40"
-                            Height="30"
-                            VerticalAlignment="Top"
-                            Background="#2A1118"
-                            BorderBrush="#5F2336"
-                            Click="CloseButton_Click" />
+                    <Button Grid.Column="1" Width="38" Height="28" Padding="0" Content="✕" Background="#3C1B2A" BorderBrush="#7B3C57" Click="CloseButton_Click" />
                 </Grid>
 
-                <Grid Grid.Row="1" Margin="0,18,0,0">
+                <Grid Grid.Row="1" Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="440" />
-                        <ColumnDefinition Width="18" />
+                        <ColumnDefinition Width="390" />
+                        <ColumnDefinition Width="10" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
                     <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <Border Background="{StaticResource SecondaryPanelBrush}"
-                                    BorderBrush="{StaticResource BorderBrushTheme}"
-                                    BorderThickness="1"
-                                    CornerRadius="18"
-                                    Padding="16"
-                                    Margin="0,0,0,12">
+                            <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="14" Margin="0,0,0,10">
                                 <StackPanel>
-                                    <TextBlock Text="Global Alignment" FontSize="18" FontWeight="Bold" Margin="0,0,0,12" />
+                                    <TextBlock Text="General" FontSize="18" FontWeight="Bold" Margin="0,0,0,10" />
 
-                                    <TextBlock Text="Quick Presets" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,6" />
-                                    <WrapPanel Margin="0,0,0,12">
-                                    <Button Content="Factory"
-                                        Margin="0,0,8,8"
-                                        Click="PresetFactory_Click" />
-                                    <Button Content="Centered"
-                                        Margin="0,0,8,8"
-                                        Click="PresetCentered_Click" />
-                                    <Button Content="Tight"
-                                        Margin="0,0,8,8"
-                                        Click="PresetTight_Click" />
-                                    </WrapPanel>
+                                    <TextBlock Text="Move All Left/Right (X)" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                    <DockPanel Margin="0,0,0,8">
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="PreviewOffsetX:-1" Click="NudgeValue_Click" />
+                                            <TextBox Width="72" Margin="6,0" Text="{Binding PreviewOffsetX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="PreviewOffsetX:1" Click="NudgeValue_Click" />
+                                        </StackPanel>
+                                        <Slider Minimum="-250" Maximum="250" Value="{Binding PreviewOffsetX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="1" Margin="0,0,8,0" />
+                                    </DockPanel>
+
+                                    <TextBlock Text="Move All Up/Down (Y)" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                    <DockPanel Margin="0,0,0,8">
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="PreviewOffsetY:-1" Click="NudgeValue_Click" />
+                                            <TextBox Width="72" Margin="6,0" Text="{Binding PreviewOffsetY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="PreviewOffsetY:1" Click="NudgeValue_Click" />
+                                        </StackPanel>
+                                        <Slider Minimum="-250" Maximum="250" Value="{Binding PreviewOffsetY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="1" Margin="0,0,8,0" />
+                                    </DockPanel>
+
+                                    <TextBlock Text="Gap Between Buttons (Horizontal)" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                    <DockPanel Margin="0,0,0,8">
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="PreviewGapX:-0.25" Click="NudgeValue_Click" />
+                                            <TextBox Width="72" Margin="6,0" Text="{Binding PreviewGapX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="PreviewGapX:0.25" Click="NudgeValue_Click" />
+                                        </StackPanel>
+                                        <Slider Minimum="-10" Maximum="20" Value="{Binding PreviewGapX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="0.25" Margin="0,0,8,0" />
+                                    </DockPanel>
+
+                                    <TextBlock Text="Gap Between Rows (Vertical)" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                    <DockPanel Margin="0,0,0,8">
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="PreviewGapY:-0.25" Click="NudgeValue_Click" />
+                                            <TextBox Width="72" Margin="6,0" Text="{Binding PreviewGapY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="PreviewGapY:0.25" Click="NudgeValue_Click" />
+                                        </StackPanel>
+                                        <Slider Minimum="-10" Maximum="20" Value="{Binding PreviewGapY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="0.25" Margin="0,0,8,0" />
+                                    </DockPanel>
 
                                     <TextBlock Text="Key Unit" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
-                                    <DockPanel Margin="0,0,0,10">
+                                    <DockPanel Margin="0,0,0,8">
                                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="≪"
-                                                Tag="PreviewKeyUnit:-5"
-                                                Click="NudgeValue_Click" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="◀"
-                                                Tag="PreviewKeyUnit:-1"
-                                                Click="NudgeValue_Click" />
-                                            <TextBox Width="88"
-                                                 Margin="6,0"
-                                                 Text="{Binding PreviewKeyUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="▶"
-                                                Tag="PreviewKeyUnit:1"
-                                                Click="NudgeValue_Click" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="≫"
-                                                Tag="PreviewKeyUnit:5"
-                                                Click="NudgeValue_Click" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="PreviewKeyUnit:-0.5" Click="NudgeValue_Click" />
+                                            <TextBox Width="72" Margin="6,0" Text="{Binding PreviewKeyUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="PreviewKeyUnit:0.5" Click="NudgeValue_Click" />
                                         </StackPanel>
-                                        <Slider Minimum="-120"
-                                                Maximum="120"
-                                                Value="{Binding PreviewKeyUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                TickFrequency="1"
-                                                Margin="0,0,10,0" />
+                                        <Slider Minimum="20" Maximum="80" Value="{Binding PreviewKeyUnit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="0.5" Margin="0,0,8,0" />
                                     </DockPanel>
 
-                                    <TextBlock Text="Gap" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
-                                    <DockPanel Margin="0,0,0,10">
+                                    <TextBlock Text="Inner Width Inset %" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                    <DockPanel Margin="0,0,0,8">
                                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="≪"
-                                                Tag="PreviewGap:-2"
-                                                Click="NudgeValue_Click" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="◀"
-                                                Tag="PreviewGap:-0.5"
-                                                Click="NudgeValue_Click" />
-                                            <TextBox Width="88"
-                                                 Margin="6,0"
-                                                 Text="{Binding PreviewGap, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="▶"
-                                                Tag="PreviewGap:0.5"
-                                                Click="NudgeValue_Click" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="≫"
-                                                Tag="PreviewGap:2"
-                                                Click="NudgeValue_Click" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="PreviewInnerInsetXPercent:-1" Click="NudgeValue_Click" />
+                                            <TextBox Width="72" Margin="6,0" Text="{Binding PreviewInnerInsetXPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="PreviewInnerInsetXPercent:1" Click="NudgeValue_Click" />
                                         </StackPanel>
-                                        <Slider Minimum="-80"
-                                                Maximum="80"
-                                                Value="{Binding PreviewGap, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                TickFrequency="0.5"
-                                                Margin="0,0,10,0" />
+                                        <Slider Minimum="0" Maximum="45" Value="{Binding PreviewInnerInsetXPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="1" Margin="0,0,8,0" />
                                     </DockPanel>
 
-                                    <TextBlock Text="Offset X" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
-                                    <DockPanel Margin="0,0,0,10">
+                                    <TextBlock Text="Inner Height Inset %" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                    <DockPanel Margin="0,0,0,8">
                                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="≪"
-                                                Tag="PreviewOffsetX:-10"
-                                                Click="NudgeValue_Click" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="◀"
-                                                Tag="PreviewOffsetX:-1"
-                                                Click="NudgeValue_Click" />
-                                            <TextBox Width="88"
-                                                 Margin="6,0"
-                                                 Text="{Binding PreviewOffsetX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="▶"
-                                                Tag="PreviewOffsetX:1"
-                                                Click="NudgeValue_Click" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="≫"
-                                                Tag="PreviewOffsetX:10"
-                                                Click="NudgeValue_Click" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="PreviewInnerInsetYPercent:-1" Click="NudgeValue_Click" />
+                                            <TextBox Width="72" Margin="6,0" Text="{Binding PreviewInnerInsetYPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="PreviewInnerInsetYPercent:1" Click="NudgeValue_Click" />
                                         </StackPanel>
-                                        <Slider Minimum="-500"
-                                            Maximum="500"
-                                                Value="{Binding PreviewOffsetX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                TickFrequency="1"
-                                                Margin="0,0,10,0" />
+                                        <Slider Minimum="0" Maximum="45" Value="{Binding PreviewInnerInsetYPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="1" Margin="0,0,8,0" />
                                     </DockPanel>
 
-                                    <TextBlock Text="Offset Y" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                    <TextBlock Text="Inner Push X %" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                    <DockPanel Margin="0,0,0,8">
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="PreviewInnerOffsetXPercent:-1" Click="NudgeValue_Click" />
+                                            <TextBox Width="72" Margin="6,0" Text="{Binding PreviewInnerOffsetXPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="PreviewInnerOffsetXPercent:1" Click="NudgeValue_Click" />
+                                        </StackPanel>
+                                        <Slider Minimum="-30" Maximum="30" Value="{Binding PreviewInnerOffsetXPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="1" Margin="0,0,8,0" />
+                                    </DockPanel>
+
+                                    <TextBlock Text="Inner Push Y %" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
                                     <DockPanel>
                                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="≪"
-                                                Tag="PreviewOffsetY:-10"
-                                                Click="NudgeValue_Click" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="◀"
-                                                Tag="PreviewOffsetY:-1"
-                                                Click="NudgeValue_Click" />
-                                            <TextBox Width="88"
-                                                 Margin="6,0"
-                                                 Text="{Binding PreviewOffsetY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="▶"
-                                                Tag="PreviewOffsetY:1"
-                                                Click="NudgeValue_Click" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="≫"
-                                                Tag="PreviewOffsetY:10"
-                                                Click="NudgeValue_Click" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="PreviewInnerOffsetYPercent:-1" Click="NudgeValue_Click" />
+                                            <TextBox Width="72" Margin="6,0" Text="{Binding PreviewInnerOffsetYPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="PreviewInnerOffsetYPercent:1" Click="NudgeValue_Click" />
                                         </StackPanel>
-                                        <Slider Minimum="-500"
-                                                Maximum="500"
-                                                Value="{Binding PreviewOffsetY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                TickFrequency="1"
-                                                Margin="0,0,10,0" />
-                                    </DockPanel>
-
-                                    <TextBlock Text="Button Scale" Foreground="{StaticResource MutedBrush}" Margin="0,12,0,4" />
-                                    <DockPanel>
-                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="≪"
-                                                Tag="PreviewButtonScale:-0.1"
-                                                Click="NudgeValue_Click" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="◀"
-                                                Tag="PreviewButtonScale:-0.01"
-                                                Click="NudgeValue_Click" />
-                                            <TextBox Width="88"
-                                                 Margin="6,0"
-                                                 Text="{Binding PreviewButtonScale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="▶"
-                                                Tag="PreviewButtonScale:0.01"
-                                                Click="NudgeValue_Click" />
-                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                Content="≫"
-                                                Tag="PreviewButtonScale:0.1"
-                                                Click="NudgeValue_Click" />
-                                        </StackPanel>
-                                        <Slider Minimum="-2"
-                                                Maximum="2"
-                                                Value="{Binding PreviewButtonScale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                TickFrequency="0.01"
-                                                Margin="0,0,10,0" />
+                                        <Slider Minimum="-30" Maximum="30" Value="{Binding PreviewInnerOffsetYPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="1" Margin="0,0,8,0" />
                                     </DockPanel>
                                 </StackPanel>
                             </Border>
 
-                            <Border Background="{StaticResource SecondaryPanelBrush}"
-                                    BorderBrush="{StaticResource BorderBrushTheme}"
-                                    BorderThickness="1"
-                                    CornerRadius="18"
-                                    Padding="16">
+                            <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="14">
                                 <StackPanel>
-                                    <TextBlock Text="Cluster Offsets" FontSize="18" FontWeight="Bold" Margin="0,0,0,8" />
-                                    <TextBlock Text="If a normal key looks wrong, fix the cluster offset instead." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,12" />
+                                    <TextBlock Text="Per Key" FontSize="18" FontWeight="Bold" Margin="0,0,0,10" />
+                                    <TextBlock Text="Click a key in preview, then edit values." Foreground="{StaticResource MutedBrush}" Margin="0,0,0,8" />
+                                    <TextBlock Text="{Binding SelectedKeyItem.Name, TargetNullValue=No key selected}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8" />
 
-                                    <ItemsControl ItemsSource="{Binding ClusterItems}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border BorderBrush="#2B2B2B"
-                                                        BorderThickness="1"
-                                                        CornerRadius="12"
-                                                        Padding="10"
-                                                        Margin="0,0,0,10">
-                                                    <StackPanel>
-                                                        <TextBlock Text="{Binding Name}"
-                                                                   FontWeight="SemiBold"
-                                                                   Margin="0,0,0,8" />
-
-                                                        <Grid Margin="0,0,0,6">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="22" />
-                                                                <ColumnDefinition Width="30" />
-                                                            <ColumnDefinition Width="30" />
-                                                                <ColumnDefinition Width="70" />
-                                                                <ColumnDefinition Width="30" />
-                                                            <ColumnDefinition Width="30" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock Text="X"
-                                                                       VerticalAlignment="Center"
-                                                                       Foreground="{StaticResource MutedBrush}" />
-                                                            <Button Grid.Column="1"
-                                                                    Style="{StaticResource StepperButtonStyle}"
-                                                                Content="≪"
-                                                                Tag="OffsetX:-5"
-                                                                Click="NudgeValue_Click" />
-                                                            <Button Grid.Column="2"
-                                                                Style="{StaticResource StepperButtonStyle}"
-                                                                    Content="◀"
-                                                                    Tag="OffsetX:-1"
-                                                                    Click="NudgeValue_Click" />
-                                                            <TextBox Grid.Column="3"
-                                                                     Margin="6,0"
-                                                                     Text="{Binding OffsetX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                            <Button Grid.Column="4"
-                                                                    Style="{StaticResource StepperButtonStyle}"
-                                                                    Content="▶"
-                                                                    Tag="OffsetX:1"
-                                                                    Click="NudgeValue_Click" />
-                                                            <Button Grid.Column="5"
-                                                                Style="{StaticResource StepperButtonStyle}"
-                                                                Content="≫"
-                                                                Tag="OffsetX:5"
-                                                                Click="NudgeValue_Click" />
-                                                        </Grid>
-
-                                                        <Grid>
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="22" />
-                                                                <ColumnDefinition Width="30" />
-                                                            <ColumnDefinition Width="30" />
-                                                                <ColumnDefinition Width="70" />
-                                                                <ColumnDefinition Width="30" />
-                                                            <ColumnDefinition Width="30" />
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBlock Text="Y"
-                                                                       VerticalAlignment="Center"
-                                                                       Foreground="{StaticResource MutedBrush}" />
-                                                            <Button Grid.Column="1"
-                                                                    Style="{StaticResource StepperButtonStyle}"
-                                                                Content="≪"
-                                                                Tag="OffsetY:-5"
-                                                                Click="NudgeValue_Click" />
-                                                            <Button Grid.Column="2"
-                                                                Style="{StaticResource StepperButtonStyle}"
-                                                                Content="◀"
-                                                                    Tag="OffsetY:-1"
-                                                                    Click="NudgeValue_Click" />
-                                                            <TextBox Grid.Column="3"
-                                                                     Margin="6,0"
-                                                                     Text="{Binding OffsetY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                            <Button Grid.Column="4"
-                                                                    Style="{StaticResource StepperButtonStyle}"
-                                                                Content="▶"
-                                                                    Tag="OffsetY:1"
-                                                                Click="NudgeValue_Click" />
-                                                            <Button Grid.Column="5"
-                                                                Style="{StaticResource StepperButtonStyle}"
-                                                                Content="≫"
-                                                                Tag="OffsetY:5"
-                                                                    Click="NudgeValue_Click" />
-                                                        </Grid>
-                                                    </StackPanel>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Background="{StaticResource SecondaryPanelBrush}"
-                                    BorderBrush="{StaticResource BorderBrushTheme}"
-                                    BorderThickness="1"
-                                    CornerRadius="18"
-                                    Padding="16"
-                                    Margin="0,12,0,0">
-                                <StackPanel>
-                                    <TextBlock Text="Special Keys" FontSize="18" FontWeight="Bold" Margin="0,0,0,8" />
-                                    <TextBlock Text="Width overrides only. No normal-key coordinates." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
-                                    <CheckBox Content="Show debug borders"
-                                              IsChecked="{Binding DebugCalibration, Mode=TwoWay}"
-                                              Margin="0,12,0,0" />
-
-                                    <ItemsControl ItemsSource="{Binding SpecialItems}" Margin="0,12,0,0">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border BorderBrush="#2B2B2B"
-                                                        BorderThickness="1"
-                                                        CornerRadius="12"
-                                                        Padding="10"
-                                                        Margin="0,0,0,10">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="180" />
-                                                            <ColumnDefinition Width="*" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="{Binding Name}"
-                                                                   FontWeight="SemiBold"
-                                                                   VerticalAlignment="Center" />
-                                                        <StackPanel Grid.Column="1" Margin="8,0,0,0" Orientation="Horizontal">
-                                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                                Content="≪"
-                                                                Tag="WidthAdjustment:-0.25"
-                                                                Click="NudgeValue_Click" />
-                                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                                    Content="◀"
-                                                                    Tag="WidthAdjustment:-0.1"
-                                                                    Click="NudgeValue_Click" />
-                                                            <TextBox Width="88"
-                                                                     Margin="6,0"
-                                                                     Text="{Binding WidthAdjustment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                                    Content="▶"
-                                                                    Tag="WidthAdjustment:0.1"
-                                                                    Click="NudgeValue_Click" />
-                                                            <Button Style="{StaticResource StepperButtonStyle}"
-                                                                Content="≫"
-                                                                Tag="WidthAdjustment:0.25"
-                                                                Click="NudgeValue_Click" />
-                                                        </StackPanel>
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-
-                                    <Button Content="Reset All"
-                                            Margin="0,4,0,0"
-                                            Click="ResetAll_Click" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border Background="{StaticResource SecondaryPanelBrush}"
-                                    BorderBrush="{StaticResource BorderBrushTheme}"
-                                    BorderThickness="1"
-                                    CornerRadius="18"
-                                    Padding="16"
-                                    Margin="0,12,0,0">
-                                <StackPanel>
-                                    <TextBlock Text="Per-Key Overrides" FontSize="18" FontWeight="Bold" Margin="0,0,0,8" />
-                                    <TextBlock Text="Click a key in the live preview to edit it here." Foreground="{StaticResource MutedBrush}" Margin="0,0,0,10" />
-
-                                    <TextBlock Text="Selected Key" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
-                                    <TextBlock Text="{Binding SelectedKeyItem.Name, TargetNullValue=No key selected yet. Click the preview keyboard.}"
-                                               FontSize="16"
-                                               FontWeight="SemiBold"
-                                               Margin="0,0,0,8"
-                                               TextWrapping="Wrap" />
-
-                                    <StackPanel DataContext="{Binding SelectedKeyItem}" Margin="0,10,0,0">
+                                    <StackPanel DataContext="{Binding SelectedKeyItem}">
                                         <TextBlock Text="Offset X" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
-                                        <DockPanel Margin="0,0,0,8">
+                                        <DockPanel Margin="0,0,0,6">
                                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                                 <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="OffsetX:-1" Click="NudgeValue_Click" />
-                                                <TextBox Width="88" Margin="6,0" Text="{Binding OffsetX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding OffsetX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                 <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="OffsetX:1" Click="NudgeValue_Click" />
                                             </StackPanel>
                                         </DockPanel>
 
                                         <TextBlock Text="Offset Y" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
-                                        <DockPanel Margin="0,0,0,8">
+                                        <DockPanel Margin="0,0,0,6">
                                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                                 <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="OffsetY:-1" Click="NudgeValue_Click" />
-                                                <TextBox Width="88" Margin="6,0" Text="{Binding OffsetY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding OffsetY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                 <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="OffsetY:1" Click="NudgeValue_Click" />
                                             </StackPanel>
                                         </DockPanel>
 
-                                        <TextBlock Text="Width Adjustment" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
-                                        <DockPanel Margin="0,0,0,8">
+                                        <TextBlock Text="Width Adj" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                        <DockPanel Margin="0,0,0,6">
                                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                                 <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="WidthAdjustment:-0.1" Click="NudgeValue_Click" />
-                                                <TextBox Width="88" Margin="6,0" Text="{Binding WidthAdjustment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding WidthAdjustment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                 <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="WidthAdjustment:0.1" Click="NudgeValue_Click" />
                                             </StackPanel>
                                         </DockPanel>
 
-                                        <TextBlock Text="Height Adjustment" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
-                                        <DockPanel>
+                                        <TextBlock Text="Height Adj" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                        <DockPanel Margin="0,0,0,6">
                                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                                 <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="HeightAdjustment:-0.1" Click="NudgeValue_Click" />
-                                                <TextBox Width="88" Margin="6,0" Text="{Binding HeightAdjustment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding HeightAdjustment, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                                 <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="HeightAdjustment:0.1" Click="NudgeValue_Click" />
                                             </StackPanel>
                                         </DockPanel>
 
-                                        <Button Content="Reset Selected Key"
-                                                Margin="0,10,0,0"
-                                                Click="ResetSelectedKey_Click" />
+                                        <TextBlock Text="Inner Width Adj %" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                        <DockPanel Margin="0,0,0,6">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="InnerInsetXAdjustmentPercent:-1" Click="NudgeValue_Click" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding InnerInsetXAdjustmentPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="InnerInsetXAdjustmentPercent:1" Click="NudgeValue_Click" />
+                                            </StackPanel>
+                                        </DockPanel>
+
+                                        <TextBlock Text="Inner Height Adj %" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                        <DockPanel Margin="0,0,0,6">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="InnerInsetYAdjustmentPercent:-1" Click="NudgeValue_Click" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding InnerInsetYAdjustmentPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="InnerInsetYAdjustmentPercent:1" Click="NudgeValue_Click" />
+                                            </StackPanel>
+                                        </DockPanel>
+
+                                        <TextBlock Text="Inner Push X Adj %" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                        <DockPanel Margin="0,0,0,6">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="InnerOffsetXAdjustmentPercent:-1" Click="NudgeValue_Click" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding InnerOffsetXAdjustmentPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="InnerOffsetXAdjustmentPercent:1" Click="NudgeValue_Click" />
+                                            </StackPanel>
+                                        </DockPanel>
+
+                                        <TextBlock Text="Inner Push Y Adj %" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,4" />
+                                        <DockPanel>
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="InnerOffsetYAdjustmentPercent:-1" Click="NudgeValue_Click" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding InnerOffsetYAdjustmentPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="InnerOffsetYAdjustmentPercent:1" Click="NudgeValue_Click" />
+                                            </StackPanel>
+                                        </DockPanel>
+
+                                        <Button Content="Reset Selected Key" Margin="0,10,0,0" Click="ResetSelectedKey_Click" />
                                     </StackPanel>
-
-                                        <TextBlock Text="Per-Key JSON (Code)"
-                                               FontWeight="SemiBold"
-                                               Margin="0,12,0,6" />
-                                        <TextBlock Text="Format: keyId -> offsetX, offsetY, widthAdjustment, heightAdjustment"
-                                               Foreground="{StaticResource MutedBrush}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,0,0,6" />
-                                        <TextBox Height="180"
-                                             AcceptsReturn="True"
-                                             VerticalScrollBarVisibility="Auto"
-                                             HorizontalScrollBarVisibility="Auto"
-                                             FontFamily="Consolas"
-                                             Text="{Binding PerKeyOverridesJson, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                        <Button Content="Apply JSON"
-                                            Margin="0,0,8,0"
-                                            Click="ApplyPerKeyJson_Click" />
-                                        <Button Content="Revert JSON"
-                                            Click="RevertPerKeyJson_Click" />
-                                        </StackPanel>
-
-                                        <TextBlock Text="{Binding JsonEditorStatus}"
-                                               Foreground="{StaticResource MutedBrush}"
-                                               Margin="0,6,0,0" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
 
-                    <Border Grid.Column="2"
-                            Background="{StaticResource SecondaryPanelBrush}"
-                            BorderBrush="{StaticResource BorderBrushTheme}"
-                            BorderThickness="1"
-                            CornerRadius="18"
-                            Padding="16">
+                    <Border Grid.Column="2" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="12">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <TextBlock Text="Live Preview" FontSize="18" FontWeight="Bold" />
-                                <TextBlock Text="  Changes redraw immediately" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-                            </StackPanel>
+                            <TextBlock Text="Live Preview" FontSize="18" FontWeight="Bold" />
 
-                            <Border Grid.Row="1"
-                                    Background="#090909"
-                                    BorderBrush="#202020"
-                                    BorderThickness="1"
-                                    CornerRadius="16"
-                                    Padding="12">
-                                <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                                              VerticalScrollBarVisibility="Auto">
+                            <Border Grid.Row="1" Margin="0,8,0,8" Background="#0B1424" BorderBrush="#2E4568" BorderThickness="1" CornerRadius="12" Padding="8">
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                                     <Viewbox Stretch="Uniform">
                                         <controls:KeyboardControl x:Name="PreviewKeyboard"
                                                                   ItemsSource="{Binding KeyboardKeys}"
                                                                   ButtonScale="{Binding PreviewButtonScale}"
+                                                                  InnerInsetXPercent="{Binding PreviewInnerInsetXPercent}"
+                                                                  InnerInsetYPercent="{Binding PreviewInnerInsetYPercent}"
+                                                                  InnerOffsetXPercent="{Binding PreviewInnerOffsetXPercent}"
+                                                                  InnerOffsetYPercent="{Binding PreviewInnerOffsetYPercent}"
                                                                   KeyClickedCommand="{Binding KeyClickedCommand}" />
                                     </Viewbox>
                                 </ScrollViewer>
                             </Border>
+
+                            <StackPanel Grid.Row="2">
+                                <TextBlock Text="Per-Key JSON" FontWeight="SemiBold" Margin="0,0,0,4" />
+                                <TextBox Height="130"
+                                         AcceptsReturn="True"
+                                         VerticalScrollBarVisibility="Auto"
+                                         HorizontalScrollBarVisibility="Auto"
+                                         FontFamily="Consolas"
+                                         Text="{Binding PerKeyOverridesJson, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Button Content="Apply JSON" Margin="0,0,8,0" Click="ApplyPerKeyJson_Click" />
+                                    <Button Content="Revert" Click="RevertPerKeyJson_Click" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding JsonEditorStatus}" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" />
+                            </StackPanel>
                         </Grid>
                     </Border>
                 </Grid>
 
-                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
-                    <TextBlock Text="Tune global geometry first. Then move the clusters, not individual letters." Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,16,0" />
-                    <Button Content="Load Project JSON"
-                        Width="140"
-                        Margin="0,0,8,0"
-                        Click="LoadFromJsonFile_Click" />
-                        <Button Content="Save as Default"
-                            Width="150"
-                            Margin="0,0,8,0"
-                            Click="SavePermanently_Click" />
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                    <Button Content="Reset All" Width="110" Margin="0,0,8,0" Click="ResetAll_Click" />
+                    <Button Content="Save" Width="110" Margin="0,0,8,0" Click="SavePermanently_Click" />
                     <Button Content="Close" Width="110" Click="CloseButton_Click" />
                 </StackPanel>
             </Grid>

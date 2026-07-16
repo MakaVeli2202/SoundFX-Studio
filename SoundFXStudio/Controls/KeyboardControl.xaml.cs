@@ -27,6 +27,30 @@ public partial class KeyboardControl : UserControl
         typeof(KeyboardControl),
         new PropertyMetadata(null));
 
+    public static readonly DependencyProperty InnerInsetXPercentProperty = DependencyProperty.Register(
+        nameof(InnerInsetXPercent),
+        typeof(double),
+        typeof(KeyboardControl),
+        new PropertyMetadata(20d));
+
+    public static readonly DependencyProperty InnerInsetYPercentProperty = DependencyProperty.Register(
+        nameof(InnerInsetYPercent),
+        typeof(double),
+        typeof(KeyboardControl),
+        new PropertyMetadata(20d));
+
+    public static readonly DependencyProperty InnerOffsetXPercentProperty = DependencyProperty.Register(
+        nameof(InnerOffsetXPercent),
+        typeof(double),
+        typeof(KeyboardControl),
+        new PropertyMetadata(0d));
+
+    public static readonly DependencyProperty InnerOffsetYPercentProperty = DependencyProperty.Register(
+        nameof(InnerOffsetYPercent),
+        typeof(double),
+        typeof(KeyboardControl),
+        new PropertyMetadata(0d));
+
     public KeyboardControl()
     {
         InitializeComponent();
@@ -75,5 +99,29 @@ public partial class KeyboardControl : UserControl
     {
         get => (ICommand?)GetValue(KeyClickedCommandProperty);
         set => SetValue(KeyClickedCommandProperty, value);
+    }
+
+    public double InnerInsetXPercent
+    {
+        get => (double)GetValue(InnerInsetXPercentProperty);
+        set => SetValue(InnerInsetXPercentProperty, value);
+    }
+
+    public double InnerInsetYPercent
+    {
+        get => (double)GetValue(InnerInsetYPercentProperty);
+        set => SetValue(InnerInsetYPercentProperty, value);
+    }
+
+    public double InnerOffsetXPercent
+    {
+        get => (double)GetValue(InnerOffsetXPercentProperty);
+        set => SetValue(InnerOffsetXPercentProperty, value);
+    }
+
+    public double InnerOffsetYPercent
+    {
+        get => (double)GetValue(InnerOffsetYPercentProperty);
+        set => SetValue(InnerOffsetYPercentProperty, value);
     }
 }

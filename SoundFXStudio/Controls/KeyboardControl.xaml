@@ -13,6 +13,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <converters:KeyboardLabelForegroundConverter x:Key="KeyboardLabelForegroundConverter" />
+        <converters:InnerSectionMarginConverter x:Key="InnerSectionMarginConverter" />
 
         <Style TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
@@ -197,20 +198,41 @@
                                         Opacity="0.85"
                                         Visibility="{Binding HasAssignment, Converter={StaticResource BoolToVisibilityConverter}}" />
 
-                                <Grid Grid.Row="1"
-                                      Margin="4,1,4,1"
-                                      Visibility="{Binding HasAssignment, Converter={StaticResource BoolToVisibilityConverter}}">
-                                    <Border CornerRadius="8"
-                                            Background="#12000000"
+                                <Grid Grid.Row="1" Margin="1">
+                                    <Border CornerRadius="7"
+                                            Background="#10000000"
+                                            BorderBrush="#3AFFFFFF"
+                                            BorderThickness="1"
                                             ClipToBounds="True">
+                                        <Border.Margin>
+                                            <MultiBinding Converter="{StaticResource InnerSectionMarginConverter}">
+                                                <Binding RelativeSource="{RelativeSource AncestorType=Button}" Path="ActualWidth" />
+                                                <Binding RelativeSource="{RelativeSource AncestorType=Button}" Path="ActualHeight" />
+                                                <Binding RelativeSource="{RelativeSource AncestorType=UserControl}" Path="InnerInsetXPercent" />
+                                                <Binding RelativeSource="{RelativeSource AncestorType=UserControl}" Path="InnerInsetYPercent" />
+                                                <Binding RelativeSource="{RelativeSource AncestorType=UserControl}" Path="InnerOffsetXPercent" />
+                                                <Binding RelativeSource="{RelativeSource AncestorType=UserControl}" Path="InnerOffsetYPercent" />
+                                                <Binding Path="InnerInsetAdjustmentPercent" />
+                                                <Binding Path="InnerInsetXAdjustmentPercent" />
+                                                <Binding Path="InnerInsetYAdjustmentPercent" />
+                                                <Binding Path="InnerOffsetXAdjustmentPercent" />
+                                                <Binding Path="InnerOffsetYAdjustmentPercent" />
+                                            </MultiBinding>
+                                        </Border.Margin>
+
                                         <Grid>
-                                            <Image Source="{Binding ImagePath}"
-                                                   Stretch="Fill"
-                                                   HorizontalAlignment="Stretch"
-                                                   VerticalAlignment="Stretch"
-                                                    Opacity="0.9"
-                                                    SnapsToDevicePixels="True" />
-                                            <Border>
+                                            <Border Opacity="0.95"
+                                                    SnapsToDevicePixels="True"
+                                                    Visibility="{Binding HasAssignment, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <Border.Background>
+                                                    <ImageBrush ImageSource="{Binding ImagePath}"
+                                                                Stretch="UniformToFill"
+                                                                AlignmentX="Center"
+                                                                AlignmentY="Center" />
+                                                </Border.Background>
+                                            </Border>
+
+                                            <Border Visibility="{Binding HasAssignment, Converter={StaticResource BoolToVisibilityConverter}}">
                                                 <Border.Background>
                                                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                                         <GradientStop Color="#18000000" Offset="0" />

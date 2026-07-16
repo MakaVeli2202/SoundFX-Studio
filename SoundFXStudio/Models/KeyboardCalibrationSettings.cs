@@ -4,12 +4,20 @@ public class KeyboardCalibrationSettings
 {
     public double KeyUnit { get; set; } = 43;
     public double Gap { get; set; } = 3;
+    public double GapX { get; set; }
+    public double GapY { get; set; }
     public double OffsetX { get; set; } = 65;
     public double OffsetY { get; set; } = 72;
     public double ButtonScale { get; set; } = 1.0;
+    public double InnerSectionInsetPercent { get; set; } = 20;
+    public double InnerSectionInsetXPercent { get; set; }
+    public double InnerSectionInsetYPercent { get; set; }
+    public double InnerSectionOffsetXPercent { get; set; }
+    public double InnerSectionOffsetYPercent { get; set; }
     public double KeyboardWindowScale { get; set; } = 1.0;
     public bool DebugCalibration { get; set; }
 
+    // Legacy cluster offsets kept for migration compatibility.
     public double EscOffsetX { get; set; }
     public double EscOffsetY { get; set; }
     public double F1ToF4OffsetX { get; set; }
@@ -29,6 +37,7 @@ public class KeyboardCalibrationSettings
     public double NumpadOffsetX { get; set; }
     public double NumpadOffsetY { get; set; }
 
+    // Legacy special-key width adjustments kept for migration compatibility.
     public double SpacebarWidthAdjustment { get; set; }
     public double BackspaceWidthAdjustment { get; set; }
     public double EnterWidthAdjustment { get; set; }
@@ -48,6 +57,11 @@ public class KeyCalibrationOverrideSettings
     public double OffsetY { get; set; }
     public double WidthAdjustment { get; set; }
     public double HeightAdjustment { get; set; }
+    public double InnerInsetAdjustmentPercent { get; set; }
+    public double InnerInsetXAdjustmentPercent { get; set; }
+    public double InnerInsetYAdjustmentPercent { get; set; }
+    public double InnerOffsetXAdjustmentPercent { get; set; }
+    public double InnerOffsetYAdjustmentPercent { get; set; }
 
     public KeyCalibrationOverrideSettings Clone()
     {
@@ -56,7 +70,12 @@ public class KeyCalibrationOverrideSettings
             OffsetX = OffsetX,
             OffsetY = OffsetY,
             WidthAdjustment = WidthAdjustment,
-            HeightAdjustment = HeightAdjustment
+            HeightAdjustment = HeightAdjustment,
+            InnerInsetAdjustmentPercent = InnerInsetAdjustmentPercent,
+            InnerInsetXAdjustmentPercent = InnerInsetXAdjustmentPercent,
+            InnerInsetYAdjustmentPercent = InnerInsetYAdjustmentPercent,
+            InnerOffsetXAdjustmentPercent = InnerOffsetXAdjustmentPercent,
+            InnerOffsetYAdjustmentPercent = InnerOffsetYAdjustmentPercent
         };
     }
 }

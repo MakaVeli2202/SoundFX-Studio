@@ -15,8 +15,13 @@ public class AddSoundDialogTests
     {
         var windows = _app.App.GetAllTopLevelWindows(_app.Automation);
         return windows.FirstOrDefault(w =>
+            // Main window also has a "Save" button. Require dialog-specific controls.
             w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("SaveButton"))) is not null
-            || w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByName("Save"))) is not null);
+            && (
+                w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("BrowseButton"))) is not null
+                || w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("ImageBrowseButton"))) is not null
+                || w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Slider).And(cf.ByAutomationId("VolumeSlider"))) is not null
+            ));
     }
 
     private void OpenAddSoundDialog()

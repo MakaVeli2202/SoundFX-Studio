@@ -11,15 +11,15 @@
         AllowsTransparency="True"
         Loaded="Window_Loaded"
         PreviewKeyDown="Window_PreviewKeyDown">
-    <Border Background="#111827" CornerRadius="18" BorderBrush="#2E3A52" BorderThickness="1" Padding="18">
+    <Border Background="#0E1728" CornerRadius="18" BorderBrush="#2E4568" BorderThickness="1" Padding="18">
         <StackPanel>
-            <TextBlock Text="Record a shortcut" FontSize="22" FontWeight="Bold" />
-            <TextBlock Text="Click Record, press the keys you want, then press Enter to save." TextWrapping="Wrap" Opacity="0.78" Margin="0,6,0,16" />
+            <TextBlock Text="Record Shortcut" FontSize="22" FontWeight="Bold" Foreground="#EAF1FF" />
+            <TextBlock Text="Press Record, type your key combination, then confirm with Enter." TextWrapping="Wrap" Opacity="0.78" Margin="0,6,0,16" Foreground="#A4B2C9" />
 
-            <Border Background="#0B1220" CornerRadius="14" Padding="14" Margin="0,0,0,14">
+            <Border Background="#101A2D" CornerRadius="14" Padding="14" Margin="0,0,0,14" BorderBrush="#2E4568" BorderThickness="1">
                 <StackPanel>
-                    <TextBlock Text="Current shortcut" Opacity="0.72" />
-                    <TextBlock Text="{Binding CapturedHotkey}" FontSize="24" FontWeight="Bold" Margin="0,4,0,0" />
+                    <TextBlock Text="Current Shortcut" Opacity="0.72" Foreground="#A4B2C9" />
+                    <TextBlock Text="{Binding CapturedHotkey}" FontSize="24" FontWeight="Bold" Margin="0,4,0,0" Foreground="#EAF1FF" />
                 </StackPanel>
             </Border>
 

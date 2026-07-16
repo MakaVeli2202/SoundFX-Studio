@@ -22,6 +22,10 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
     private bool _suppressSelectionEvents;
     private double _selectedWindowScale = 1.0;
     private double _previewButtonScale = 1.0;
+    private double _previewInnerInsetXPercent = 20;
+    private double _previewInnerInsetYPercent = 20;
+    private double _previewInnerOffsetXPercent;
+    private double _previewInnerOffsetYPercent;
 
     public KeyboardWindow()
     {
@@ -81,6 +85,90 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
             if (!_suppressSelectionEvents)
             {
                 PersistButtonScale();
+            }
+        }
+    }
+
+    public double PreviewInnerInsetXPercent
+    {
+        get => _previewInnerInsetXPercent;
+        set
+        {
+            var clamped = Math.Clamp(value, 0.0, 45.0);
+            if (Math.Abs(_previewInnerInsetXPercent - clamped) < double.Epsilon)
+            {
+                return;
+            }
+
+            _previewInnerInsetXPercent = clamped;
+            OnPropertyChanged();
+
+            if (!_suppressSelectionEvents)
+            {
+                PersistInnerSectionCalibration();
+            }
+        }
+    }
+
+    public double PreviewInnerInsetYPercent
+    {
+        get => _previewInnerInsetYPercent;
+        set
+        {
+            var clamped = Math.Clamp(value, 0.0, 45.0);
+            if (Math.Abs(_previewInnerInsetYPercent - clamped) < double.Epsilon)
+            {
+                return;
+            }
+
+            _previewInnerInsetYPercent = clamped;
+            OnPropertyChanged();
+
+            if (!_suppressSelectionEvents)
+            {
+                PersistInnerSectionCalibration();
+            }
+        }
+    }
+
+    public double PreviewInnerOffsetXPercent
+    {
+        get => _previewInnerOffsetXPercent;
+        set
+        {
+            var clamped = Math.Clamp(value, -30.0, 30.0);
+            if (Math.Abs(_previewInnerOffsetXPercent - clamped) < double.Epsilon)
+            {
+                return;
+            }
+
+            _previewInnerOffsetXPercent = clamped;
+            OnPropertyChanged();
+
+            if (!_suppressSelectionEvents)
+            {
+                PersistInnerSectionCalibration();
+            }
+        }
+    }
+
+    public double PreviewInnerOffsetYPercent
+    {
+        get => _previewInnerOffsetYPercent;
+        set
+        {
+            var clamped = Math.Clamp(value, -30.0, 30.0);
+            if (Math.Abs(_previewInnerOffsetYPercent - clamped) < double.Epsilon)
+            {
+                return;
+            }
+
+            _previewInnerOffsetYPercent = clamped;
+            OnPropertyChanged();
+
+            if (!_suppressSelectionEvents)
+            {
+                PersistInnerSectionCalibration();
             }
         }
     }
@@ -160,6 +248,10 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         {
             SelectedWindowScale = calibration.KeyboardWindowScale > 0 ? calibration.KeyboardWindowScale : 1.0;
             PreviewButtonScale = calibration.ButtonScale > 0 ? calibration.ButtonScale : 1.0;
+            PreviewInnerInsetXPercent = Math.Abs(calibration.InnerSectionInsetXPercent) > double.Epsilon ? calibration.InnerSectionInsetXPercent : calibration.InnerSectionInsetPercent;
+            PreviewInnerInsetYPercent = Math.Abs(calibration.InnerSectionInsetYPercent) > double.Epsilon ? calibration.InnerSectionInsetYPercent : calibration.InnerSectionInsetPercent;
+            PreviewInnerOffsetXPercent = calibration.InnerSectionOffsetXPercent;
+            PreviewInnerOffsetYPercent = calibration.InnerSectionOffsetYPercent;
         }
         finally
         {
@@ -191,6 +283,22 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
 
         var calibration = ViewModel.Settings.KeyboardCalibration;
         calibration.ButtonScale = PreviewButtonScale;
+        ViewModel.SaveKeyboardCalibrationSettings();
+    }
+
+    private void PersistInnerSectionCalibration()
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        var calibration = ViewModel.Settings.KeyboardCalibration;
+        calibration.InnerSectionInsetXPercent = PreviewInnerInsetXPercent;
+        calibration.InnerSectionInsetYPercent = PreviewInnerInsetYPercent;
+        calibration.InnerSectionInsetPercent = (PreviewInnerInsetXPercent + PreviewInnerInsetYPercent) / 2d;
+        calibration.InnerSectionOffsetXPercent = PreviewInnerOffsetXPercent;
+        calibration.InnerSectionOffsetYPercent = PreviewInnerOffsetYPercent;
         ViewModel.SaveKeyboardCalibrationSettings();
     }
 

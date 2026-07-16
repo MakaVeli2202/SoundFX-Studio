@@ -15,13 +15,13 @@
         Icon="/Assets/SoundFXStudioLogo.png">
 
     <Window.Resources>
-        <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#050505" />
-        <SolidColorBrush x:Key="PanelBrush" Color="#0D0D0D" />
-        <SolidColorBrush x:Key="SecondaryPanelBrush" Color="#141414" />
-        <SolidColorBrush x:Key="KeyboardSurfaceBrush" Color="#090909" />
-        <SolidColorBrush x:Key="BorderBrushTheme" Color="#252525" />
-        <SolidColorBrush x:Key="TextBrush" Color="#FFFFFF" />
-        <SolidColorBrush x:Key="SecondaryTextBrush" Color="#9D9D9D" />
+        <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#08101D" />
+        <SolidColorBrush x:Key="PanelBrush" Color="#101A2D" />
+        <SolidColorBrush x:Key="SecondaryPanelBrush" Color="#0E1728" />
+        <SolidColorBrush x:Key="KeyboardSurfaceBrush" Color="#0B1424" />
+        <SolidColorBrush x:Key="BorderBrushTheme" Color="#2E4568" />
+        <SolidColorBrush x:Key="TextBrush" Color="#EAF1FF" />
+        <SolidColorBrush x:Key="SecondaryTextBrush" Color="#A4B2C9" />
         <converters:KeyboardLayoutDisplayConverter x:Key="KeyboardLayoutDisplayConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
@@ -211,11 +211,11 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Border Width="54"
+                                <Border Width="54"
                                     Height="54"
                                     CornerRadius="14"
-                                    Background="#0A0A0A"
-                                    BorderBrush="#303030"
+                                    Background="#0A1424"
+                                    BorderBrush="#35527A"
                                     BorderThickness="1"
                                     Padding="5"
                                     Margin="0,0,14,0">
@@ -231,7 +231,7 @@
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
                                 <Button Content="_" Width="40" Height="30" Margin="0,0,8,0" Click="MinimizeButton_Click" />
                                 <Button Content="☐" Width="40" Height="30" Margin="0,0,8,0" Click="MaximizeRestoreButton_Click" />
-                                <Button Content="✕" Width="40" Height="30" Background="#2A1118" BorderBrush="#5F2336" Click="CloseButton_Click" />
+                                <Button Content="✕" Width="40" Height="30" Background="#3C1B2A" BorderBrush="#7B3C57" Click="CloseButton_Click" />
                             </StackPanel>
 
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -242,7 +242,7 @@
                                         Padding="10,6"
                                         Margin="0,0,12,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Language" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource SecondaryTextBrush}" />
+                                        <TextBlock Text="Keyboard Layout" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource SecondaryTextBrush}" />
                                         <ComboBox Width="150"
                                                   SelectedItem="{Binding KeyboardLayout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                   ItemsSource="{Binding KeyboardLayoutOptions}">
@@ -270,7 +270,7 @@
                                             Width="96"
                                             Height="38"
                                             Command="{Binding RefreshCommand}" />
-                                    <Button Content="Recalibrate"
+                                        <Button Content="Calibration"
                                             Width="104"
                                             Height="38"
                                             Margin="10,0,0,0"

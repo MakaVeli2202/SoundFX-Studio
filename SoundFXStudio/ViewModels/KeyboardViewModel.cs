@@ -98,18 +98,28 @@ public sealed class KeyboardViewModel
         }
 
         var selectedKeyId = _getSelectedKey()?.Id;
+        var calibration = _getSettings().KeyboardCalibration;
+        var keyOverrides = calibration?.KeyOverrides;
 
         foreach (var key in _keyboardKeys)
         {
             var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
             var sound = assignment is null ? null : _sounds.FirstOrDefault(item => string.Equals(item.Id, assignment.SoundId, StringComparison.OrdinalIgnoreCase));
             var category = sound is null ? null : _categories.FirstOrDefault(item => string.Equals(item.Name, sound.Category, StringComparison.OrdinalIgnoreCase));
+            var keyOverride = keyOverrides is not null && keyOverrides.TryGetValue(key.Id, out var value)
+                ? value
+                : null;
 
             key.ImagePath = assignment?.ImagePath ?? sound?.ImagePath;
             key.AssignedSoundId = assignment?.SoundId;
             key.AssignedSoundName = sound?.Name;
             key.AssignmentName = assignment?.BindingName;
             key.CategoryAccentColor = string.IsNullOrWhiteSpace(category?.AccentColor) ? "#00000000" : category.AccentColor;
+            key.InnerInsetAdjustmentPercent = keyOverride?.InnerInsetAdjustmentPercent ?? 0;
+            key.InnerInsetXAdjustmentPercent = keyOverride?.InnerInsetXAdjustmentPercent ?? 0;
+            key.InnerInsetYAdjustmentPercent = keyOverride?.InnerInsetYAdjustmentPercent ?? 0;
+            key.InnerOffsetXAdjustmentPercent = keyOverride?.InnerOffsetXAdjustmentPercent ?? 0;
+            key.InnerOffsetYAdjustmentPercent = keyOverride?.InnerOffsetYAdjustmentPercent ?? 0;
             key.IsSelected = string.Equals(key.Id, selectedKeyId, StringComparison.OrdinalIgnoreCase);
             UpdateKeyVisualState(key);
             key.IsEnabled = true;

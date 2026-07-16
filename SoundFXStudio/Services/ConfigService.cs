@@ -163,6 +163,7 @@ public class ConfigService
         config.Settings ??= new AppSettings();
         config.Settings.KeyboardCalibration ??= new KeyboardCalibrationSettings();
         config.Settings.KeyboardCalibration.KeyOverrides ??= new Dictionary<string, KeyCalibrationOverrideSettings>();
+        migrated |= MigrateLegacyKeyboardCalibration(config.Settings.KeyboardCalibration, config.Settings.KeyboardLayout);
         if (config.Settings.KeyboardCalibration.KeyboardWindowScale <= 0)
         {
             config.Settings.KeyboardCalibration.KeyboardWindowScale = 0.85;
@@ -202,6 +203,7 @@ public class ConfigService
             if (calibration is not null)
             {
                 calibration.KeyOverrides ??= new Dictionary<string, KeyCalibrationOverrideSettings>();
+                MigrateLegacyKeyboardCalibration(calibration, config.Settings.KeyboardLayout);
                 if (calibration.KeyboardWindowScale <= 0)
                 {
                     calibration.KeyboardWindowScale = 0.85;
@@ -295,5 +297,216 @@ public class ConfigService
         }
 
         return changed;
+    }
+
+    private static bool MigrateLegacyKeyboardCalibration(KeyboardCalibrationSettings calibration, KeyboardLayoutMode layoutMode)
+    {
+        calibration.KeyOverrides ??= new Dictionary<string, KeyCalibrationOverrideSettings>(StringComparer.OrdinalIgnoreCase);
+
+        var hasLegacyClusterOffsets = HasAnyNonZero(
+            calibration.EscOffsetX, calibration.EscOffsetY,
+            calibration.F1ToF4OffsetX, calibration.F1ToF4OffsetY,
+            calibration.F5ToF8OffsetX, calibration.F5ToF8OffsetY,
+            calibration.F9ToF12OffsetX, calibration.F9ToF12OffsetY,
+            calibration.PrintScrollPauseOffsetX, calibration.PrintScrollPauseOffsetY,
+            calibration.MainTypingOffsetX, calibration.MainTypingOffsetY,
+            calibration.NavigationOffsetX, calibration.NavigationOffsetY,
+            calibration.ArrowOffsetX, calibration.ArrowOffsetY,
+            calibration.NumpadOffsetX, calibration.NumpadOffsetY);
+
+        var hasLegacySpecialWidths = HasAnyNonZero(
+            calibration.SpacebarWidthAdjustment,
+            calibration.BackspaceWidthAdjustment,
+            calibration.EnterWidthAdjustment,
+            calibration.IsoEnterWidthAdjustment,
+            calibration.LeftShiftWidthAdjustment,
+            calibration.RightShiftWidthAdjustment,
+            calibration.NumpadEnterWidthAdjustment,
+            calibration.TabWidthAdjustment,
+            calibration.CapsLockWidthAdjustment);
+
+        if (!hasLegacyClusterOffsets && !hasLegacySpecialWidths)
+        {
+            return false;
+        }
+
+        var layoutService = new KeyboardLayoutService();
+        var effectiveLayout = layoutMode == KeyboardLayoutMode.Automatic ? KeyboardLayoutMode.EnglishUS : layoutMode;
+        var keys = layoutService.CreateKeyboard(effectiveLayout);
+
+        foreach (var key in keys)
+        {
+            var keyOverride = GetOrCreateOverride(calibration.KeyOverrides, key.Id);
+
+            if (hasLegacyClusterOffsets)
+            {
+                var (clusterOffsetX, clusterOffsetY) = GetLegacyClusterOffset(calibration, key);
+                keyOverride.OffsetX += clusterOffsetX;
+                keyOverride.OffsetY += clusterOffsetY;
+            }
+
+            if (hasLegacySpecialWidths)
+            {
+                keyOverride.WidthAdjustment += GetLegacySpecialWidthAdjustment(calibration, key);
+            }
+        }
+
+        ZeroLegacyCalibration(calibration);
+        return true;
+    }
+
+    private static KeyCalibrationOverrideSettings GetOrCreateOverride(
+        Dictionary<string, KeyCalibrationOverrideSettings> keyOverrides,
+        string keyId)
+    {
+        if (!keyOverrides.TryGetValue(keyId, out var existing))
+        {
+            existing = new KeyCalibrationOverrideSettings();
+            keyOverrides[keyId] = existing;
+        }
+
+        return existing;
+    }
+
+    private static (double OffsetX, double OffsetY) GetLegacyClusterOffset(KeyboardCalibrationSettings calibration, KeyboardKey key)
+    {
+        if (string.Equals(key.KeyName, "ESC", StringComparison.OrdinalIgnoreCase))
+        {
+            return (calibration.EscOffsetX, calibration.EscOffsetY);
+        }
+
+        if (IsFunctionKey(key.KeyName, 1, 4))
+        {
+            return (calibration.F1ToF4OffsetX, calibration.F1ToF4OffsetY);
+        }
+
+        if (IsFunctionKey(key.KeyName, 5, 8))
+        {
+            return (calibration.F5ToF8OffsetX, calibration.F5ToF8OffsetY);
+        }
+
+        if (IsFunctionKey(key.KeyName, 9, 12))
+        {
+            return (calibration.F9ToF12OffsetX, calibration.F9ToF12OffsetY);
+        }
+
+        if (IsPrintScrollPauseKey(key.KeyName))
+        {
+            return (calibration.PrintScrollPauseOffsetX, calibration.PrintScrollPauseOffsetY);
+        }
+
+        if (IsNavigationKey(key.KeyName))
+        {
+            return (calibration.NavigationOffsetX, calibration.NavigationOffsetY);
+        }
+
+        if (IsArrowKey(key.KeyName))
+        {
+            return (calibration.ArrowOffsetX, calibration.ArrowOffsetY);
+        }
+
+        if (IsNumpadKey(key))
+        {
+            return (calibration.NumpadOffsetX, calibration.NumpadOffsetY);
+        }
+
+        return (calibration.MainTypingOffsetX, calibration.MainTypingOffsetY);
+    }
+
+    private static double GetLegacySpecialWidthAdjustment(KeyboardCalibrationSettings calibration, KeyboardKey key)
+    {
+        if (string.Equals(key.KeyName, "SPACE", StringComparison.OrdinalIgnoreCase))
+        {
+            return calibration.SpacebarWidthAdjustment;
+        }
+
+        if (string.Equals(key.KeyName, "BACKSPACE", StringComparison.OrdinalIgnoreCase))
+        {
+            return calibration.BackspaceWidthAdjustment;
+        }
+
+        if (string.Equals(key.KeyName, "TAB", StringComparison.OrdinalIgnoreCase))
+        {
+            return calibration.TabWidthAdjustment;
+        }
+
+        if (string.Equals(key.KeyName, "CAPS LOCK", StringComparison.OrdinalIgnoreCase))
+        {
+            return calibration.CapsLockWidthAdjustment;
+        }
+
+        if (string.Equals(key.KeyName, "OEM102", StringComparison.OrdinalIgnoreCase))
+        {
+            return calibration.IsoEnterWidthAdjustment;
+        }
+
+        if (string.Equals(key.KeyName, "ENTER", StringComparison.OrdinalIgnoreCase))
+        {
+            return key.RowIndex == 4 ? calibration.NumpadEnterWidthAdjustment : calibration.EnterWidthAdjustment;
+        }
+
+        if (string.Equals(key.KeyName, "SHIFT", StringComparison.OrdinalIgnoreCase))
+        {
+            return key.ColumnIndex < 5 ? calibration.LeftShiftWidthAdjustment : calibration.RightShiftWidthAdjustment;
+        }
+
+        return 0;
+    }
+
+    private static bool IsFunctionKey(string keyName, int first, int last)
+    {
+        if (!keyName.StartsWith('F'))
+        {
+            return false;
+        }
+
+        return int.TryParse(keyName[1..], out var number) && number >= first && number <= last;
+    }
+
+    private static bool IsNavigationKey(string keyName)
+        => keyName is "INSERT" or "HOME" or "PAGE UP" or "DELETE" or "END" or "PAGE DOWN";
+
+    private static bool IsPrintScrollPauseKey(string keyName)
+        => keyName is "PRINT SCREEN" or "SCROLL LOCK" or "PAUSE";
+
+    private static bool IsArrowKey(string keyName)
+        => keyName is "LEFT" or "DOWN" or "RIGHT" or "UP";
+
+    private static bool IsNumpadKey(KeyboardKey key)
+        => key.RowIndex >= 1 && key.ColumnIndex >= 16.25;
+
+    private static bool HasAnyNonZero(params double[] values)
+        => values.Any(value => Math.Abs(value) > double.Epsilon);
+
+    private static void ZeroLegacyCalibration(KeyboardCalibrationSettings calibration)
+    {
+        calibration.EscOffsetX = 0;
+        calibration.EscOffsetY = 0;
+        calibration.F1ToF4OffsetX = 0;
+        calibration.F1ToF4OffsetY = 0;
+        calibration.F5ToF8OffsetX = 0;
+        calibration.F5ToF8OffsetY = 0;
+        calibration.F9ToF12OffsetX = 0;
+        calibration.F9ToF12OffsetY = 0;
+        calibration.PrintScrollPauseOffsetX = 0;
+        calibration.PrintScrollPauseOffsetY = 0;
+        calibration.MainTypingOffsetX = 0;
+        calibration.MainTypingOffsetY = 0;
+        calibration.NavigationOffsetX = 0;
+        calibration.NavigationOffsetY = 0;
+        calibration.ArrowOffsetX = 0;
+        calibration.ArrowOffsetY = 0;
+        calibration.NumpadOffsetX = 0;
+        calibration.NumpadOffsetY = 0;
+
+        calibration.SpacebarWidthAdjustment = 0;
+        calibration.BackspaceWidthAdjustment = 0;
+        calibration.EnterWidthAdjustment = 0;
+        calibration.IsoEnterWidthAdjustment = 0;
+        calibration.LeftShiftWidthAdjustment = 0;
+        calibration.RightShiftWidthAdjustment = 0;
+        calibration.NumpadEnterWidthAdjustment = 0;
+        calibration.TabWidthAdjustment = 0;
+        calibration.CapsLockWidthAdjustment = 0;
     }
 }
