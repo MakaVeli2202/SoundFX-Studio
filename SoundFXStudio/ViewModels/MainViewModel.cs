@@ -60,7 +60,6 @@ public sealed class MainViewModel : ObservableObject
     private bool _isLoading;
     private bool _isAssignMode;
     private KeyboardLayoutMode _detectedKeyboardLayout = KeyboardLayoutMode.EnglishUS;
-    private bool _inputLanguageHookAttached;
 
     public MainViewModel(ILogService? logService = null)
     {
@@ -564,11 +563,6 @@ public sealed class MainViewModel : ObservableObject
     public void AttachWindow(Window window)
     {
         _window = window;
-        if (!_inputLanguageHookAttached)
-        {
-            System.Windows.Input.InputLanguageManager.Current.InputLanguageChanged += InputLanguageManager_CurrentInputLanguageChanged;
-            _inputLanguageHookAttached = true;
-        }
         _triggerService.AttachWindow(window, _keyboardViewModel.HandlePhysicalKey);
     }
 
@@ -581,11 +575,6 @@ public sealed class MainViewModel : ObservableObject
 
         _disposed = true;
         _logService?.Info("Disposing MainViewModel");
-        if (_inputLanguageHookAttached)
-        {
-            System.Windows.Input.InputLanguageManager.Current.InputLanguageChanged -= InputLanguageManager_CurrentInputLanguageChanged;
-            _inputLanguageHookAttached = false;
-        }
         _triggerService.Dispose();
         _logService?.Info("Disposing AudioPlayer");
         _logService?.Info("Disposing HttpClient");
@@ -2157,20 +2146,8 @@ public sealed class MainViewModel : ObservableObject
         return string.Join("+", parts);
     }
 
-    private void InputLanguageManager_CurrentInputLanguageChanged(object sender, System.Windows.Input.InputLanguageEventArgs e)
-    {
-        if (Settings.KeyboardLayout != KeyboardLayoutMode.Automatic)
-        {
-            return;
-        }
-
-        _detectedKeyboardLayout = ResolveWindowsKeyboardLayout(e.NewLanguage);
-        OnPropertyChanged(nameof(EffectiveKeyboardLayout));
-        _keyboardViewModel.RebuildKeyboard();
-    }
-
     private KeyboardLayoutMode ResolveKeyboardLayoutMode()
-        => Settings.KeyboardLayout == KeyboardLayoutMode.Automatic ? _detectedKeyboardLayout : Settings.KeyboardLayout;
+        => KeyboardLayoutMode.EnglishUS;
 
     private static KeyboardLayoutMode ResolveWindowsKeyboardLayout(CultureInfo? culture)
     {
