@@ -214,4 +214,40 @@ public partial class MainWindow : Window
         _keyboardWindow.Show();
         _keyboardWindow.Activate();
     }
+
+    private void NavigateHome_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CurrentPage = "Home";
+    }
+
+    private void NavigateKeyboard_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CurrentPage = "Keyboard";
+        OpenKeyboardWindowButton_Click(sender, e);
+    }
+
+    private void NavigateMixer_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CurrentPage = "Mixer";
+    }
+
+    private void NavigateSoundLibrary_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CurrentPage = "SoundLibrary";
+    }
+
+    private void NavigateEffects_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CurrentPage = "Effects";
+    }
+
+    private void NavigateAnalytics_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CurrentPage = "Analytics";
+    }
+
+    private void NavigateSettings_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CurrentPage = "Settings";
+    }
 }

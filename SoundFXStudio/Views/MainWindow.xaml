@@ -428,12 +428,21 @@ Height="1024"
             <!-- Dashboard Hero Section -->
             <!-- HERO PANEL -->
 
-            <Border Style="{StaticResource GlassPanel}"
-                    Width="1100"
+            <Border Width="1100"
                     Height="600"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
                     Margin="370,180,0,0">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="Home">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
 
                 <Grid>
 
@@ -454,6 +463,310 @@ Height="1024"
 
                 </Grid>
 
+            </Border>
+
+            <!-- Sound Library Page -->
+            <Border Width="1100"
+                    Height="600"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Margin="370,180,0,0">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="SoundLibrary">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid Margin="24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="SOUND LIBRARY"
+                               Foreground="#00D8FF"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Margin="0,0,0,16"/>
+
+                    <Grid Grid.Row="1" Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,0,12,0"/>
+
+                        <Button Grid.Column="1"
+                                Content="Add Sound"
+                                Command="{Binding AddSoundCommand}"
+                                Width="120"
+                                Height="36"
+                                Margin="0,0,12,0"/>
+
+                        <Button Grid.Column="2"
+                                Content="Delete"
+                                Command="{Binding DeleteMarkedSoundsCommand}"
+                                Width="90"
+                                Height="36"/>
+                    </Grid>
+
+                    <ListView Grid.Row="2"
+                              ItemsSource="{Binding SoundsView}"
+                              Background="Transparent"
+                              BorderThickness="0">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="280"/>
+                                <GridViewColumn Header="Category" DisplayMemberBinding="{Binding Category}" Width="160"/>
+                                <GridViewColumn Header="Plays" DisplayMemberBinding="{Binding PlayCount}" Width="80"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Grid>
+            </Border>
+
+            <!-- Mixer Page -->
+            <Border Width="1100"
+                    Height="600"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Margin="370,180,0,0">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="Mixer">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="30">
+
+                        <TextBlock Text="MIXER"
+                                   Foreground="#00D8FF"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,20"/>
+
+                        <TextBlock Text="Output Device"
+                                   Foreground="#A1B2D2"
+                                   FontSize="14"
+                                   Margin="0,0,0,6"/>
+
+                        <TextBlock Text="{Binding CurrentOutputDevice}"
+                                   Foreground="#DDEAFF"
+                                   FontSize="16"
+                                   Margin="0,0,0,20"/>
+
+                        <TextBlock Text="Input Device"
+                                   Foreground="#A1B2D2"
+                                   FontSize="14"
+                                   Margin="0,0,0,6"/>
+
+                        <TextBlock Text="{Binding CurrentInputDevice}"
+                                   Foreground="#DDEAFF"
+                                   FontSize="16"
+                                   Margin="0,0,0,20"/>
+
+                        <TextBlock Text="{Binding RoutingStatus}"
+                                   Foreground="#A1B2D2"
+                                   FontSize="13"
+                                   Margin="0,0,0,24"/>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Auto Configure"
+                                    Command="{Binding AutoConfigureAudioCommand}"
+                                    Width="150"
+                                    Height="40"
+                                    Margin="0,0,12,0"/>
+
+                            <Button Content="Test Routing"
+                                    Command="{Binding TestRoutingCommand}"
+                                    Width="150"
+                                    Height="40"/>
+                        </StackPanel>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Effects Page -->
+            <Border Width="1100"
+                    Height="600"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Margin="370,180,0,0">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="Effects">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <TextBlock Text="EFFECTS"
+                               Foreground="#00D8FF"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="0,-40,0,0"/>
+                    <TextBlock Text="Coming Soon"
+                               Foreground="#A1B2D2"
+                               FontSize="16"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="0,20,0,0"/>
+                </Grid>
+            </Border>
+
+            <!-- Analytics Page -->
+            <Border Width="1100"
+                    Height="600"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Margin="370,180,0,0">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="Analytics">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="30">
+
+                        <TextBlock Text="ANALYTICS"
+                                   Foreground="#00D8FF"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,20"/>
+
+                        <TextBlock Text="Most Played"
+                                   Foreground="#DDEAFF"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"/>
+
+                        <ItemsControl ItemsSource="{Binding MostPlayedSounds}"
+                                      Margin="0,0,0,24">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}"
+                                               Foreground="#A1B2D2"
+                                               Padding="4,3"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Recent"
+                                   Foreground="#DDEAFF"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"/>
+
+                        <ItemsControl ItemsSource="{Binding RecentSounds}"
+                                      Margin="0,0,0,24">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}"
+                                               Foreground="#A1B2D2"
+                                               Padding="4,3"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Favorites"
+                                   Foreground="#DDEAFF"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,8"/>
+
+                        <ItemsControl ItemsSource="{Binding FavoriteSounds}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}"
+                                               Foreground="#A1B2D2"
+                                               Padding="4,3"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Settings Page -->
+            <Border Width="1100"
+                    Height="600"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Margin="370,180,0,0">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="Settings">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="30">
+
+                        <TextBlock Text="SETTINGS"
+                                   Foreground="#00D8FF"
+                                   FontSize="24"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,20"/>
+
+                        <TextBlock Text="Theme"
+                                   Foreground="#A1B2D2"
+                                   FontSize="14"
+                                   Margin="0,0,0,6"/>
+
+                        <ComboBox ItemsSource="{Binding ThemeOptions}"
+                                  SelectedItem="{Binding SelectedTheme}"
+                                  Width="200"
+                                  HorizontalAlignment="Left"
+                                  Margin="0,0,0,20"/>
+
+                        <TextBlock Text="Keyboard Layout"
+                                   Foreground="#A1B2D2"
+                                   FontSize="14"
+                                   Margin="0,0,0,6"/>
+
+                        <ComboBox ItemsSource="{Binding KeyboardLayoutOptions}"
+                                  SelectedItem="{Binding KeyboardLayout}"
+                                  Width="200"
+                                  HorizontalAlignment="Left"
+                                  Margin="0,0,0,20"/>
+
+                        <TextBlock Text="{Binding StatusText}"
+                                   Foreground="#A1B2D2"
+                                   FontSize="13"
+                                   Margin="0,20,0,0"/>
+
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
 
 
@@ -543,21 +856,28 @@ Height="1024"
 
                 <StackPanel Margin="20">
 
-                    <Button Style="{StaticResource SidebarButton}">
+                    <Button Style="{StaticResource SidebarButton}" Click="NavigateHome_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🏠" Foreground="#00D8FF" Margin="0,0,12,0"/>
+                            <TextBlock Text="Home"  Foreground="#DDEAFF"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource SidebarButton}" Click="NavigateKeyboard_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="⌨" Foreground="#00D8FF" Margin="0,0,12,0"/>
                             <TextBlock Text="Keyboard"  Foreground="#DDEAFF"/>
                         </StackPanel>
                     </Button>
 
-                    <Button Style="{StaticResource SidebarButton}">
+                    <Button Style="{StaticResource SidebarButton}" Click="NavigateMixer_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🎛" Foreground="#00D8FF" Margin="0,0,12,0"/>
                             <TextBlock Text="Mixer"  Foreground="#DDEAFF"/>
                         </StackPanel>
                     </Button>
 
-                    <Button Style="{StaticResource SidebarButton}">
+                    <Button Style="{StaticResource SidebarButton}" Click="NavigateSoundLibrary_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🎵" Foreground="#00D8FF" Margin="0,0,12,0"/>
                             <TextBlock Text="Sound Library"  Foreground="#DDEAFF"/>
@@ -565,14 +885,14 @@ Height="1024"
                     </Button>
 
 
-                    <Button Style="{StaticResource SidebarButton}">
+                    <Button Style="{StaticResource SidebarButton}" Click="NavigateEffects_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🎚" Foreground="#00D8FF" Margin="0,0,12,0"/>
                             <TextBlock Text="Effects"  Foreground="#DDEAFF"/>
                         </StackPanel>
                     </Button>
 
-                    <Button Style="{StaticResource SidebarButton}">
+                    <Button Style="{StaticResource SidebarButton}" Click="NavigateAnalytics_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="📊" Foreground="#00D8FF" Margin="0,0,12,0"/>
                             <TextBlock Text="Analytics"  Foreground="#DDEAFF"/>
@@ -580,7 +900,7 @@ Height="1024"
                     </Button>
 
 
-                    <Button Style="{StaticResource SidebarButton}">
+                    <Button Style="{StaticResource SidebarButton}" Click="NavigateSettings_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="⚙" Foreground="#00D8FF" Margin="0,0,12,0"/>
                             <TextBlock Text="Settings"  Foreground="#DDEAFF"/>

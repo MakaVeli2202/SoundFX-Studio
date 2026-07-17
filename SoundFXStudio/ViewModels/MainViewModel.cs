@@ -59,6 +59,7 @@ public sealed class MainViewModel : ObservableObject
     private bool _disposed;
     private bool _isLoading;
     private bool _isAssignMode;
+    private string _currentPage = "Home";
     private KeyboardLayoutMode _detectedKeyboardLayout = KeyboardLayoutMode.EnglishUS;
 
     public MainViewModel(ILogService? logService = null)
@@ -552,6 +553,12 @@ public sealed class MainViewModel : ObservableObject
                 UpdateBindingPanelState();
             }
         }
+    }
+
+    public string CurrentPage
+    {
+        get => _currentPage;
+        set => SetProperty(ref _currentPage, value);
     }
 
     public AppSettings Settings => _config.Settings;
