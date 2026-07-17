@@ -222,7 +222,6 @@ public partial class MainWindow : Window
 
     private void NavigateKeyboard_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.CurrentPage = "Keyboard";
         OpenKeyboardWindowButton_Click(sender, e);
     }
 

@@ -423,7 +423,18 @@ Height="1024"
                    Height="110"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Top"
-                   Margin="55,45,0,0"/>
+                   Margin="55,45,0,0">
+                <Image.Style>
+                    <Style TargetType="Image">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="Home">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Image.Style>
+            </Image>
 
             <!-- Dashboard Hero Section -->
             <!-- HERO PANEL -->
@@ -772,23 +783,43 @@ Height="1024"
 
             <!-- Top Header Controls -->
 
-            <ComboBox Style="{StaticResource GlassComboBox}"
-                      Width="180"
+            <ComboBox Width="180"
                       Height="40"
                       HorizontalAlignment="Left"
                       VerticalAlignment="Top"
                       Margin="810,50,0,0"
                       ItemsSource="{Binding KeyboardLayoutOptions}"
-                      SelectedItem="{Binding KeyboardLayout}"/>
+                      SelectedItem="{Binding KeyboardLayout}">
+                <ComboBox.Style>
+                    <Style TargetType="ComboBox" BasedOn="{StaticResource GlassComboBox}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="Home">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ComboBox.Style>
+            </ComboBox>
 
-            <ComboBox Style="{StaticResource GlassComboBox}"
-                      Width="180"
+            <ComboBox Width="180"
                       Height="40"
                       HorizontalAlignment="Left"
                       VerticalAlignment="Top"
                       Margin="1010,50,0,0"
                       ItemsSource="{Binding ThemeOptions}"
-                      SelectedItem="{Binding SelectedTheme}"/>
+                      SelectedItem="{Binding SelectedTheme}">
+                <ComboBox.Style>
+                    <Style TargetType="ComboBox" BasedOn="{StaticResource GlassComboBox}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="Home">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ComboBox.Style>
+            </ComboBox>
 
             <Button Width="130"
                     Height="40"
@@ -796,7 +827,18 @@ Height="1024"
                     VerticalAlignment="Top"
                     Margin="1180,50,0,0"
                     Content="Calibration"
-                    Click="OpenCalibrationButton_Click"/>
+                    Click="OpenCalibrationButton_Click">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="Home">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
 
             <!-- Window Buttons -->
 
@@ -856,54 +898,122 @@ Height="1024"
 
                 <StackPanel Margin="20">
 
-                    <Button Style="{StaticResource SidebarButton}" Click="NavigateHome_Click">
+                    <Button Click="NavigateHome_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentPage}" Value="Home">
+                                        <Setter Property="Background" Value="#3300D8FF"/>
+                                        <Setter Property="BorderBrush" Value="#00D8FF"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🏠" Foreground="#00D8FF" Margin="0,0,12,0"/>
-                            <TextBlock Text="Home"  Foreground="#DDEAFF"/>
+                            <TextBlock Text="Home" Foreground="#DDEAFF"/>
                         </StackPanel>
                     </Button>
 
-                    <Button Style="{StaticResource SidebarButton}" Click="NavigateKeyboard_Click">
+                    <Button Click="NavigateKeyboard_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentPage}" Value="Keyboard">
+                                        <Setter Property="Background" Value="#3300D8FF"/>
+                                        <Setter Property="BorderBrush" Value="#00D8FF"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="⌨" Foreground="#00D8FF" Margin="0,0,12,0"/>
-                            <TextBlock Text="Keyboard"  Foreground="#DDEAFF"/>
+                            <TextBlock Text="Keyboard" Foreground="#DDEAFF"/>
                         </StackPanel>
                     </Button>
 
-                    <Button Style="{StaticResource SidebarButton}" Click="NavigateMixer_Click">
+                    <Button Click="NavigateMixer_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentPage}" Value="Mixer">
+                                        <Setter Property="Background" Value="#3300D8FF"/>
+                                        <Setter Property="BorderBrush" Value="#00D8FF"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🎛" Foreground="#00D8FF" Margin="0,0,12,0"/>
-                            <TextBlock Text="Mixer"  Foreground="#DDEAFF"/>
+                            <TextBlock Text="Mixer" Foreground="#DDEAFF"/>
                         </StackPanel>
                     </Button>
 
-                    <Button Style="{StaticResource SidebarButton}" Click="NavigateSoundLibrary_Click">
+                    <Button Click="NavigateSoundLibrary_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentPage}" Value="SoundLibrary">
+                                        <Setter Property="Background" Value="#3300D8FF"/>
+                                        <Setter Property="BorderBrush" Value="#00D8FF"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🎵" Foreground="#00D8FF" Margin="0,0,12,0"/>
-                            <TextBlock Text="Sound Library"  Foreground="#DDEAFF"/>
+                            <TextBlock Text="Sound Library" Foreground="#DDEAFF"/>
                         </StackPanel>
                     </Button>
 
-
-                    <Button Style="{StaticResource SidebarButton}" Click="NavigateEffects_Click">
+                    <Button Click="NavigateEffects_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentPage}" Value="Effects">
+                                        <Setter Property="Background" Value="#3300D8FF"/>
+                                        <Setter Property="BorderBrush" Value="#00D8FF"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="🎚" Foreground="#00D8FF" Margin="0,0,12,0"/>
-                            <TextBlock Text="Effects"  Foreground="#DDEAFF"/>
+                            <TextBlock Text="Effects" Foreground="#DDEAFF"/>
                         </StackPanel>
                     </Button>
 
-                    <Button Style="{StaticResource SidebarButton}" Click="NavigateAnalytics_Click">
+                    <Button Click="NavigateAnalytics_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentPage}" Value="Analytics">
+                                        <Setter Property="Background" Value="#3300D8FF"/>
+                                        <Setter Property="BorderBrush" Value="#00D8FF"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="📊" Foreground="#00D8FF" Margin="0,0,12,0"/>
-                            <TextBlock Text="Analytics"  Foreground="#DDEAFF"/>
+                            <TextBlock Text="Analytics" Foreground="#DDEAFF"/>
                         </StackPanel>
                     </Button>
 
-
-                    <Button Style="{StaticResource SidebarButton}" Click="NavigateSettings_Click">
+                    <Button Click="NavigateSettings_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SidebarButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentPage}" Value="Settings">
+                                        <Setter Property="Background" Value="#3300D8FF"/>
+                                        <Setter Property="BorderBrush" Value="#00D8FF"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="⚙" Foreground="#00D8FF" Margin="0,0,12,0"/>
-                            <TextBlock Text="Settings"  Foreground="#DDEAFF"/>
+                            <TextBlock Text="Settings" Foreground="#DDEAFF"/>
                         </StackPanel>
                     </Button>
 
