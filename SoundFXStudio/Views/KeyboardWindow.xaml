@@ -132,6 +132,9 @@
                     <Button Content="Calibrate Keyboard" Style="{StaticResource SettingsButtonStyle}"
                 Margin="0,0,0,8"
                 Click="CalibrateKeyboardButton_Click" />
+            <Button Content="Close Keyboard" Style="{StaticResource SettingsButtonStyle}"
+                Margin="0,0,0,8"
+                Click="CloseKeyboardButton_Click" />
             <Button Content="Close Panel" Style="{StaticResource SettingsButtonStyle}"
                 Click="CloseSettingsPanelButton_Click" />
         </StackPanel>

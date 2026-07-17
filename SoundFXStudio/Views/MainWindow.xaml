@@ -58,7 +58,7 @@ Height="1024"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}">
 
-                            <Grid>
+        <Grid PreviewMouseLeftButtonDown="WindowShell_PreviewMouseLeftButtonDown">
 
                                 <Rectangle Fill="#08FFFFFF"
                                    RadiusX="14"
@@ -840,19 +840,16 @@ Height="1024"
                 </Button.Style>
             </Button>
 
-            <!-- Window Buttons -->
+            <!-- Title Bar -->
 
-
-            <Border Width="1569"
-                    Height="64"
-                    HorizontalAlignment="Left"
+            <Border HorizontalAlignment="Stretch"
+                    Height="56"
                     VerticalAlignment="Top"
-                    Margin="-20,-18,0,0"
-                    CornerRadius="28,28,0,0"
+                    Margin="0,-18,0,0"
+                    CornerRadius="20,20,0,0"
                     Background="#22081428"
                     BorderBrush="#5500D8FF"
                     BorderThickness="0,0,0,1">
-
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="18"
                           ShadowDepth="0"
@@ -860,30 +857,24 @@ Height="1024"
                           Opacity="0.25"/>
                 </Border.Effect>
 
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="0,8,12,0">
+                    <Button Style="{StaticResource WindowControlButtonStyle}"
+                            Width="36"
+                            Height="36"
+                            Content="−"
+                            FontSize="18"
+                            Click="MinimizeButton_Click"
+                            Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource CloseWindowButton}"
+                            Width="40"
+                            Height="40"
+                            Content="✕"
+                            Click="CloseButton_Click"/>
+                </StackPanel>
             </Border>
-
-            <Button Style="{StaticResource WindowControlButtonStyle}"
-                    Width="36"
-                    Height="36"
-                    Margin="1367,0,113,968"
-                    Content="−"
-                    FontSize="18"
-                    Click="MinimizeButton_Click"/>
-
-            <Button Style="{StaticResource WindowControlButtonStyle}"
-                    Width="36"
-                    Height="36"
-                    Margin="1407,0,73,968"
-                    Content="▢"
-                    FontSize="16"
-                    Click="MaximizeRestoreButton_Click"/>
-
-            <Button Style="{StaticResource CloseWindowButton}"
-                    Width="40"
-                    Height="40"
-                    Margin="1447,0,29,964"
-                    Content="✕"
-                    Click="CloseButton_Click"/>
 
 
 

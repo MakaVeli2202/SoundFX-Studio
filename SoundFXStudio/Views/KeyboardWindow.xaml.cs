@@ -217,6 +217,11 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         SettingsPanel.Visibility = Visibility.Collapsed;
     }
 
+    private void CloseKeyboardButton_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
     private void CalibrateKeyboardButton_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel is null)
