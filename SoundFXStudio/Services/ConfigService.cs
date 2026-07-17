@@ -40,7 +40,6 @@ public class ConfigService
             var json = File.ReadAllText(_configPath);
             var config = JsonSerializer.Deserialize<AppConfig>(json, SerializerOptions);
             var normalized = Normalize(config ?? CreateDefaultConfig(), out var migrated);
-            ApplyProjectCalibrationIfAvailable(normalized);
             if (migrated)
             {
                 _logService?.Info("Config Migration Executed");
@@ -61,7 +60,6 @@ public class ConfigService
                     var backupJson = File.ReadAllText(_backupPath);
                     var backup = JsonSerializer.Deserialize<AppConfig>(backupJson, SerializerOptions);
                     var normalized = Normalize(backup ?? CreateDefaultConfig(), out var migrated);
-                    ApplyProjectCalibrationIfAvailable(normalized);
                     if (migrated)
                     {
                         _logService?.Info("Config Migration Executed");

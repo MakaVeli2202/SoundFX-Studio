@@ -5,55 +5,266 @@
         Width="460"
         Height="250"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
-        Background="#08101D"
         WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent"
         Icon="/Assets/SoundFXStudioLogo.png">
+
     <Window.Resources>
-        <SolidColorBrush x:Key="PanelBrush" Color="#101A2D" />
-        <SolidColorBrush x:Key="SecondaryPanelBrush" Color="#0E1728" />
-        <SolidColorBrush x:Key="BorderBrushTheme" Color="#2E4568" />
-        <SolidColorBrush x:Key="TextBrush" Color="#EAF1FF" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#A4B2C9" />
+
+        <SolidColorBrush x:Key="TextBrush"
+                         Color="#EAF1FF"/>
+
+        <SolidColorBrush x:Key="MutedBrush"
+                         Color="#A1B2D2"/>
+
+        <Style x:Key="GlassPanel"
+               TargetType="Border">
+
+            <Setter Property="CornerRadius"
+                    Value="24"/>
+
+            <Setter Property="Background"
+                    Value="#66081428"/>
+
+            <Setter Property="BorderBrush"
+                    Value="#5580CFFF"/>
+
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+
+        </Style>
+
+        <Style x:Key="CyberButton"
+               TargetType="Button">
+
+            <Setter Property="Foreground"
+                    Value="White"/>
+
+            <Setter Property="Background"
+                    Value="#22112233"/>
+
+            <Setter Property="BorderBrush"
+                    Value="#3370AFFF"/>
+
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+
+            <Setter Property="Cursor"
+                    Value="Hand"/>
+
+            <Setter Property="Height"
+                    Value="40"/>
+
+            <Setter Property="Template">
+
+                <Setter.Value>
+
+                    <ControlTemplate TargetType="Button">
+
+                        <Border x:Name="ButtonBorder"
+                                CornerRadius="14"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+
+                            <Trigger Property="IsMouseOver"
+                                     Value="True">
+
+                                <Setter TargetName="ButtonBorder"
+                                        Property="BorderBrush"
+                                        Value="#00D8FF"/>
+
+                                <Setter TargetName="ButtonBorder"
+                                        Property="Background"
+                                        Value="#2200D8FF"/>
+
+                            </Trigger>
+
+                            <Trigger Property="IsPressed"
+                                     Value="True">
+
+                                <Setter TargetName="ButtonBorder"
+                                        Property="Background"
+                                        Value="#33FF44CC"/>
+
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+
+                </Setter.Value>
+
+            </Setter>
+
+        </Style>
+
     </Window.Resources>
 
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Border Background="#081428"
+            CornerRadius="28">
 
-        <Border Background="{StaticResource SecondaryPanelBrush}" BorderBrush="#2E4568" BorderThickness="1" CornerRadius="16" Padding="12" Margin="0,0,0,14">
-            <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="42" Height="42" CornerRadius="12" Background="#0A0A0A" BorderBrush="#303030" BorderThickness="1" Padding="4" Margin="0,0,12,0">
-                        <Image Source="/Assets/SoundFXStudioLogo.png" Stretch="Uniform" />
-                    </Border>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="SoundFX Studio" FontSize="13" FontWeight="Bold" Foreground="{StaticResource MutedBrush}" />
-                        <TextBlock Text="{Binding DialogTitle}" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+        <Border.BorderBrush>
+
+            <LinearGradientBrush StartPoint="0,0"
+                                 EndPoint="1,0">
+
+                <GradientStop Color="#00D8FF"
+                              Offset="0"/>
+
+                <GradientStop Color="#FF44CC"
+                              Offset="1"/>
+
+            </LinearGradientBrush>
+
+        </Border.BorderBrush>
+
+        <Border.BorderThickness>2</Border.BorderThickness>
+
+        <Grid Margin="18">
+
+            <Grid.RowDefinitions>
+
+                <RowDefinition Height="80"/>
+
+                <RowDefinition Height="*"/>
+
+                <RowDefinition Height="70"/>
+
+            </Grid.RowDefinitions>
+
+            <!-- HEADER -->
+
+            <Border Grid.Row="0"
+                    Style="{StaticResource GlassPanel}">
+
+                <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+
+                    <Grid.ColumnDefinitions>
+
+                        <ColumnDefinition Width="*"/>
+
+                        <ColumnDefinition Width="Auto"/>
+
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="16,0">
+
+                        <Image Source="/Assets/UI/MainDashboardLogo.png"
+                               Height="50"
+                               Stretch="Uniform"/>
+
+                        <StackPanel Margin="14,0,0,0">
+
+                            <TextBlock Text="SOUNDFX STUDIO"
+                                       Foreground="#00D8FF"
+                                       FontWeight="Bold"/>
+
+                            <TextBlock Text="{Binding DialogTitle}"
+                                       FontSize="22"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource TextBrush}"/>
+
+                        </StackPanel>
+
                     </StackPanel>
+
+                    <Button Grid.Column="1"
+                            Width="40"
+                            Height="40"
+                            Margin="0,10,10,10"
+                            Content="✕"
+                            Background="#55203030"
+                            BorderBrush="#FF5A7A"
+                            Foreground="White"
+                            Click="CloseButton_Click"/>
+
+                </Grid>
+
+            </Border>
+
+            <!-- CONTENT -->
+
+            <Border Grid.Row="1"
+                    Style="{StaticResource GlassPanel}"
+                    Margin="0,14,0,14">
+
+                <StackPanel Margin="16">
+
+                    <TextBlock Text="{Binding PromptText}"
+                               Foreground="{StaticResource MutedBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,12"/>
+
+                    <TextBox x:Name="ValueTextBox"
+                             Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                             Height="40"
+                             VerticalContentAlignment="Center"
+                             Padding="10,0"
+                             Background="#22112233"
+                             BorderBrush="#3370AFFF"
+                             BorderThickness="1"
+                             Foreground="{StaticResource TextBrush}"/>
+
                 </StackPanel>
-                <Button Grid.Column="1" Content="✕" Width="40" Height="30" VerticalAlignment="Top" Background="#3C1B2A" BorderBrush="#7B3C57" Click="CloseButton_Click" />
-            </Grid>
-        </Border>
 
-        <Border Grid.Row="1" Background="{StaticResource SecondaryPanelBrush}" BorderBrush="{StaticResource BorderBrushTheme}" BorderThickness="1" CornerRadius="14" Padding="16">
-            <StackPanel>
-                <TextBlock Text="{Binding PromptText}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,12" />
-                <TextBox x:Name="ValueTextBox" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Height="38" VerticalContentAlignment="Center" />
+            </Border>
+
+            <!-- FOOTER -->
+
+            <StackPanel Grid.Row="2"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+
+                <Button Content="Clear"
+                        Width="100"
+                        Margin="0,0,10,0"
+                        Style="{StaticResource CyberButton}"
+                        Visibility="{Binding ClearButtonVisibility}"
+                        Click="ClearButton_Click"/>
+
+                <Button Content="Cancel"
+                        Width="100"
+                        Margin="0,0,10,0"
+                        Style="{StaticResource CyberButton}"
+                        Click="CancelButton_Click"/>
+
+                <Button Content="Save"
+                        Width="110"
+                        FontWeight="Bold"
+                        Foreground="#081428"
+                        Click="SaveButton_Click">
+
+                    <Button.Background>
+
+                        <LinearGradientBrush StartPoint="0,0"
+                                             EndPoint="1,0">
+
+                            <GradientStop Color="#00D8FF"/>
+
+                            <GradientStop Color="#FF44CC"/>
+
+                        </LinearGradientBrush>
+
+                    </Button.Background>
+
+                </Button>
+
             </StackPanel>
-        </Border>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button Content="Clear" Width="100" Margin="0,0,10,0" Click="ClearButton_Click" Visibility="{Binding ClearButtonVisibility}" Background="#2A3D5D" Foreground="{StaticResource TextBrush}" />
-            <Button Content="Cancel" Width="100" Margin="0,0,10,0" Click="CancelButton_Click" Background="#2A3D5D" Foreground="{StaticResource TextBrush}" />
-            <Button Content="Save" Width="100" Click="SaveButton_Click" Background="#5AD8FF" Foreground="#08101D" FontWeight="Bold" />
-        </StackPanel>
-    </Grid>
+        </Grid>
+
+    </Border>
+
 </Window>

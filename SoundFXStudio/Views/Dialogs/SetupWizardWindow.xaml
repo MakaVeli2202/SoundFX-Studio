@@ -5,131 +5,299 @@
         Width="920"
         Height="620"
         WindowStartupLocation="CenterScreen"
-        Background="#08101D"
-        ResizeMode="NoResize"
         WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent"
         Icon="/Assets/SoundFXStudioLogo.png">
 
     <Window.Resources>
-        <SolidColorBrush x:Key="PanelBrush" Color="#101A2D" />
-        <SolidColorBrush x:Key="SecondaryPanelBrush" Color="#0E1728" />
-        <SolidColorBrush x:Key="BorderBrushTheme" Color="#2E4568" />
-        <SolidColorBrush x:Key="TextBrush" Color="#EAF1FF" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#A4B2C9" />
+
+        <SolidColorBrush x:Key="TextBrush" Color="#EAF1FF"/>
+        <SolidColorBrush x:Key="MutedBrush" Color="#A1B2D2"/>
+
+        <Style x:Key="GlassPanel"
+               TargetType="Border">
+
+            <Setter Property="CornerRadius"
+                    Value="24"/>
+
+            <Setter Property="Background"
+                    Value="#66081428"/>
+
+            <Setter Property="BorderBrush"
+                    Value="#5580CFFF"/>
+
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+
+        </Style>
+
+        <Style x:Key="CyberButton"
+               TargetType="Button">
+
+            <Setter Property="Foreground"
+                    Value="White"/>
+
+            <Setter Property="Background"
+                    Value="#22112233"/>
+
+            <Setter Property="BorderBrush"
+                    Value="#3370AFFF"/>
+
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+
+            <Setter Property="Cursor"
+                    Value="Hand"/>
+
+            <Setter Property="Height"
+                    Value="42"/>
+
+        </Style>
+
     </Window.Resources>
 
-    <Grid Margin="20">
-        <Border Background="{StaticResource PanelBrush}"
-                BorderBrush="{StaticResource BorderBrushTheme}"
-                BorderThickness="1"
-                CornerRadius="20"
-                Padding="18">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+    <Border Background="#081428"
+            CornerRadius="28">
 
-                <Border Background="{StaticResource SecondaryPanelBrush}"
-                    CornerRadius="16"
-                        BorderBrush="#2E4568"
-                        BorderThickness="1"
-                    Padding="12"
-                    Margin="0,0,0,14">
-                    <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+        <Border.BorderBrush>
 
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Border Width="44"
-                                    Height="44"
-                                    CornerRadius="12"
-                                    Background="#0A0A0A"
-                                    BorderBrush="#303030"
-                                    BorderThickness="1"
-                                    Padding="4"
-                                    Margin="0,0,12,0">
-                                <Image Source="/Assets/SoundFXStudioLogo.png" Stretch="Uniform" />
-                            </Border>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="SoundFX Studio" FontSize="13" FontWeight="Bold" Foreground="{StaticResource MutedBrush}" />
-                                <TextBlock Text="Audio setup wizard" FontSize="26" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
-                            </StackPanel>
-                        </StackPanel>
+            <LinearGradientBrush StartPoint="0,0"
+                                 EndPoint="1,0">
 
-                        <Button Grid.Column="1"
-                                Content="✕"
-                            Width="40"
-                            Height="30"
-                                VerticalAlignment="Top"
-                                Background="#3C1B2A"
-                                BorderBrush="#7B3C57"
-                                Click="CloseButton_Click" />
-                    </Grid>
-                </Border>
+                <GradientStop Color="#00D8FF"
+                              Offset="0"/>
 
-                <TextBlock Grid.Row="0"
-                           Text="Pick the speakers and microphone you use, and we'll get SoundFX Studio ready to go."
-                           Foreground="{StaticResource MutedBrush}"
-                           Margin="0,54,0,14"
-                           TextWrapping="Wrap" />
+                <GradientStop Color="#FF44CC"
+                              Offset="1"/>
 
-                <Grid Grid.Row="1">
+            </LinearGradientBrush>
+
+        </Border.BorderBrush>
+
+        <Border.BorderThickness>2</Border.BorderThickness>
+
+        <Grid Margin="18">
+
+            <Grid.RowDefinitions>
+
+                <RowDefinition Height="80"/>
+
+                <RowDefinition Height="Auto"/>
+
+                <RowDefinition Height="*"/>
+
+                <RowDefinition Height="70"/>
+
+            </Grid.RowDefinitions>
+
+            <!-- HEADER -->
+
+            <Border Grid.Row="0"
+                    Style="{StaticResource GlassPanel}">
+
+                <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.25*" />
-                        <ColumnDefinition Width="0.95*" />
+
+                        <ColumnDefinition Width="*"/>
+
+                        <ColumnDefinition Width="Auto"/>
+
                     </Grid.ColumnDefinitions>
 
-                    <Border Background="{StaticResource SecondaryPanelBrush}"
-                            BorderBrush="{StaticResource BorderBrushTheme}"
-                            BorderThickness="1"
-                            CornerRadius="18"
-                            Padding="16"
-                            Margin="0,0,12,0">
-                        <StackPanel>
-                            <TextBlock Text="Pick Your Devices" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,14" />
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="20,0">
 
-                            <TextBlock Text="Speakers (playback output)" Foreground="{StaticResource MutedBrush}" />
-                            <ComboBox x:Name="OutputCombo" Margin="0,6,0,14" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
-                            <TextBlock x:Name="OutputDefaultText" Foreground="{StaticResource MutedBrush}" Margin="0,-6,0,12" TextWrapping="Wrap" FontSize="12" />
+                        <Image Source="/Assets/UI/MainDashboardLogo.png"
+                               Height="50"
+                               Stretch="Uniform"/>
 
-                            <TextBlock Text="Microphone (voice input)" Foreground="{StaticResource MutedBrush}" />
-                            <ComboBox x:Name="InputCombo" Margin="0,6,0,14" Height="34" DisplayMemberPath="Name" SelectedValuePath="Id" />
-                            <TextBlock x:Name="InputDefaultText" Foreground="{StaticResource MutedBrush}" Margin="0,-6,0,12" TextWrapping="Wrap" FontSize="12" />
+                        <StackPanel Margin="16,0,0,0">
 
-                            <TextBlock x:Name="StatusText" Margin="0,16,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                            <TextBlock Text="AUDIO SETUP WIZARD"
+                                       Foreground="#00D8FF"
+                                       FontSize="22"
+                                       FontWeight="Bold"/>
+
+                            <TextBlock Text="Configure playback and recording devices"
+                                       Foreground="{StaticResource MutedBrush}"/>
+
                         </StackPanel>
-                    </Border>
 
-                    <Border Grid.Column="1"
-                            Background="{StaticResource SecondaryPanelBrush}"
-                            BorderBrush="{StaticResource BorderBrushTheme}"
-                            BorderThickness="1"
-                            CornerRadius="18"
-                            Padding="16">
-                        <StackPanel>
-                            <TextBlock Text="How It Works" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,14" />
-                            <TextBlock Text="Ready audio output routing" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
-                            <TextBlock Text="Ready microphone input routing" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
-                            <TextBlock Text="Keyboard triggers mapped to playback" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,16" />
-                        </StackPanel>
-                    </Border>
+                    </StackPanel>
+
+                    <Button Grid.Column="1"
+                            Width="40"
+                            Height="40"
+                            Margin="0,10,10,10"
+                            Content="✕"
+                            Background="#55203030"
+                            BorderBrush="#FF5A7A"
+                            Foreground="White"
+                            Click="CloseButton_Click"/>
+
                 </Grid>
 
-                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
-                    <CheckBox x:Name="DontShowAgainCheckBox"
-                              Content="Don't show this again"
-                              Foreground="{StaticResource TextBrush}"
-                              VerticalAlignment="Center"
-                              Margin="0,0,14,0" />
-                    <Button Content="Open Windows Sound" Width="170" Margin="0,0,10,0" Click="OpenSound_Click" />
-                    <Button Content="Auto-configure" Width="150" Margin="0,0,10,0" Click="AutoConfigure_Click" />
-                    <Button Content="Finish" Width="110" IsDefault="True" Click="Finish_Click" />
-                </StackPanel>
+            </Border>
+
+            <!-- DESCRIPTION -->
+
+            <TextBlock Grid.Row="1"
+                       Margin="5,15,5,15"
+                       Foreground="{StaticResource MutedBrush}"
+                       FontSize="14"
+                       TextWrapping="Wrap"
+                       Text="Choose your playback and recording devices and SoundFX Studio will automatically configure your audio routing."/>
+
+            <!-- MAIN CONTENT -->
+
+            <Grid Grid.Row="2">
+
+                <Grid.ColumnDefinitions>
+
+                    <ColumnDefinition Width="1.3*"/>
+
+                    <ColumnDefinition Width="1*"/>
+
+                </Grid.ColumnDefinitions>
+
+                <!-- DEVICE SETTINGS -->
+
+                <Border Style="{StaticResource GlassPanel}"
+                        Margin="0,0,12,0">
+
+                    <StackPanel Margin="16">
+
+                        <TextBlock Text="AUDIO DEVICES"
+                                   Foreground="#00D8FF"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,16"/>
+
+                        <TextBlock Text="Speakers (playback output)"
+                                   Foreground="{StaticResource MutedBrush}"/>
+
+                        <ComboBox x:Name="OutputCombo"
+                                  Margin="0,6,0,12"
+                                  Height="36"
+                                  DisplayMemberPath="Name"
+                                  SelectedValuePath="Id"/>
+
+                        <TextBlock x:Name="OutputDefaultText"
+                                   Foreground="{StaticResource MutedBrush}"
+                                   FontSize="12"
+                                   Margin="0,0,0,12"/>
+
+                        <TextBlock Text="Microphone (voice input)"
+                                   Foreground="{StaticResource MutedBrush}"/>
+
+                        <ComboBox x:Name="InputCombo"
+                                  Margin="0,6,0,12"
+                                  Height="36"
+                                  DisplayMemberPath="Name"
+                                  SelectedValuePath="Id"/>
+
+                        <TextBlock x:Name="InputDefaultText"
+                                   Foreground="{StaticResource MutedBrush}"
+                                   FontSize="12"/>
+
+                        <TextBlock x:Name="StatusText"
+                                   Margin="0,20,0,0"
+                                   Foreground="#00D8FF"
+                                   TextWrapping="Wrap"/>
+
+                    </StackPanel>
+
+                </Border>
+
+                <!-- INFO -->
+
+                <Border Grid.Column="1"
+                        Style="{StaticResource GlassPanel}">
+
+                    <StackPanel Margin="16">
+
+                        <TextBlock Text="WHAT HAPPENS NEXT"
+                                   Foreground="#00D8FF"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Margin="0,0,0,16"/>
+
+                        <TextBlock Text="✓ Configure playback routing"
+                                   Foreground="{StaticResource TextBrush}"
+                                   Margin="0,0,0,12"/>
+
+                        <TextBlock Text="✓ Configure microphone capture"
+                                   Foreground="{StaticResource TextBrush}"
+                                   Margin="0,0,0,12"/>
+
+                        <TextBlock Text="✓ Prepare keyboard sound triggers"
+                                   Foreground="{StaticResource TextBrush}"
+                                   Margin="0,0,0,12"/>
+
+                        <TextBlock Text="✓ Save recommended settings"
+                                   Foreground="{StaticResource TextBrush}"
+                                   Margin="0,0,0,12"/>
+
+                    </StackPanel>
+
+                </Border>
+
             </Grid>
-        </Border>
-    </Grid>
+
+            <!-- FOOTER -->
+
+            <StackPanel Grid.Row="3"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center">
+
+                <CheckBox x:Name="DontShowAgainCheckBox"
+                          Content="Don't show this again"
+                          Foreground="{StaticResource TextBrush}"
+                          Margin="0,0,20,0"
+                          VerticalAlignment="Center"/>
+
+                <Button Content="Open Windows Sound"
+                        Width="180"
+                        Margin="0,0,10,0"
+                        Style="{StaticResource CyberButton}"
+                        Click="OpenSound_Click"/>
+
+                <Button Content="Auto Configure"
+                        Width="160"
+                        Margin="0,0,10,0"
+                        Style="{StaticResource CyberButton}"
+                        Click="AutoConfigure_Click"/>
+
+                <Button Content="Finish"
+                        Width="130"
+                        FontWeight="Bold"
+                        Foreground="#081428"
+                        Click="Finish_Click">
+
+                    <Button.Background>
+
+                        <LinearGradientBrush StartPoint="0,0"
+                                             EndPoint="1,0">
+
+                            <GradientStop Color="#00D8FF"/>
+
+                            <GradientStop Color="#FF44CC"/>
+
+                        </LinearGradientBrush>
+
+                    </Button.Background>
+
+                </Button>
+
+            </StackPanel>
+
+        </Grid>
+
+    </Border>
+
 </Window>

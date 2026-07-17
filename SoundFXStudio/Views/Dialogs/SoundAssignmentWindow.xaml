@@ -6,9 +6,11 @@
         Width="600"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="#08101D"
         WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
         Icon="/Assets/SoundFXStudioLogo.png">
+
 
     <Window.Resources>
         <SolidColorBrush x:Key="PanelBrush" Color="#101A2D" />

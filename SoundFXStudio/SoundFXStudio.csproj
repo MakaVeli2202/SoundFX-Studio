@@ -9,7 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Assets\" />
+    <None Remove="Assets\UI\HeroSection.png" />
+    <None Remove="Assets\UI\MainDashboardBackground.png" />
+    <None Remove="Assets\UI\MainDashboardLogo.png" />
+    <None Remove="Assets\UI\MainWindowBackground.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Assets\Keyboards\" />
     <Folder Include="Controls\" />
     <Folder Include="Views\Dialogs\" />
@@ -18,6 +24,16 @@
   <ItemGroup>
     <Resource Include="Assets\SoundFXStudioLogo.png" />
     <Resource Include="Assets\Keyboards\SoundFXKeyBoard.png" />
+    <Resource Include="Assets\UI\HeroSection.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\UI\MainDashboardBackground.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\UI\MainDashboardLogo.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Assets\UI\MainWindowBackground.png" />
   </ItemGroup>
 
   <ItemGroup>

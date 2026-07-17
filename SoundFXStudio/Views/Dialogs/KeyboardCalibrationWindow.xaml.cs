@@ -20,6 +20,8 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private readonly AppConfig _config;
     private readonly KeyboardLayoutService _keyboardLayoutService = new();
     private readonly RelayCommand _noopCommand;
+    private readonly ObservableCollection<ClusterCalibrationItem> _clusterItems = new();
+    private readonly ObservableCollection<SpecialKeyOverrideItem> _specialItems = new();
     private readonly ObservableCollection<KeyCalibrationItem> _keyItems = new();
 
     private bool _suppressUpdates;
@@ -50,6 +52,8 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         _noopCommand = new RelayCommand(SelectPreviewKey);
 
         BuildKeyboard();
+        BuildClusterItems();
+        BuildSpecialItems();
         BuildKeyItems();
         LoadFromSettings();
         ApplyAllCalibration();
@@ -60,6 +64,8 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     public event EventHandler? CalibrationSaved;
 
     public ObservableCollection<KeyboardKey> KeyboardKeys { get; } = new();
+    public ObservableCollection<ClusterCalibrationItem> ClusterItems => _clusterItems;
+    public ObservableCollection<SpecialKeyOverrideItem> SpecialItems => _specialItems;
     public ObservableCollection<KeyCalibrationItem> KeyItems => _keyItems;
     public ICommand KeyClickedCommand => _noopCommand;
 
@@ -178,6 +184,34 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         }
     }
 
+    private void BuildClusterItems()
+    {
+        _clusterItems.Clear();
+        AddClusterItem("Esc key", KeyboardCluster.EscCluster);
+        AddClusterItem("F1 to F4 keys", KeyboardCluster.F1ToF4Cluster);
+        AddClusterItem("F5-F8", KeyboardCluster.F5ToF8Cluster);
+        AddClusterItem("F9-F12", KeyboardCluster.F9ToF12Cluster);
+        AddClusterItem("Print/Scroll/Pause", KeyboardCluster.PrintScrollPauseCluster);
+        AddClusterItem("Main Typing", KeyboardCluster.MainTypingCluster);
+        AddClusterItem("Navigation (Ins/Home/PgUp/PgDn/Del/End)", KeyboardCluster.NavigationCluster);
+        AddClusterItem("Arrows", KeyboardCluster.ArrowCluster);
+        AddClusterItem("Numpad", KeyboardCluster.NumpadCluster);
+    }
+
+    private void BuildSpecialItems()
+    {
+        _specialItems.Clear();
+        AddSpecialItem("Spacebar", "SPACE");
+        AddSpecialItem("Backspace", "BACKSPACE");
+        AddSpecialItem("Enter", "ENTER");
+        AddSpecialItem("ISO Enter", "OEM102");
+        AddSpecialItem("Left Shift", "SHIFT-L");
+        AddSpecialItem("Right Shift", "SHIFT-R");
+        AddSpecialItem("Numpad Enter", "ENTER-NUMPAD");
+        AddSpecialItem("Tab", "TAB");
+        AddSpecialItem("Caps Lock", "CAPS LOCK");
+    }
+
     private KeyboardLayoutMode GetPreviewLayoutMode()
     {
         var layoutMode = _config.Settings.KeyboardLayout;
@@ -211,6 +245,12 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     {
         var settings = _config.Settings.KeyboardCalibration ?? new KeyboardCalibrationSettings();
 
+        LoadFromCalibration(settings);
+    }
+
+    private void LoadFromCalibration(KeyboardCalibrationSettings settings)
+    {
+
         _suppressUpdates = true;
         try
         {
@@ -225,6 +265,35 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             _previewInnerInsetYPercent = Math.Abs(settings.InnerSectionInsetYPercent) > double.Epsilon ? settings.InnerSectionInsetYPercent : settings.InnerSectionInsetPercent;
             _previewInnerOffsetXPercent = settings.InnerSectionOffsetXPercent;
             _previewInnerOffsetYPercent = settings.InnerSectionOffsetYPercent;
+
+            GetClusterItem(KeyboardCluster.EscCluster).OffsetX = settings.EscOffsetX;
+            GetClusterItem(KeyboardCluster.EscCluster).OffsetY = settings.EscOffsetY;
+            GetClusterItem(KeyboardCluster.F1ToF4Cluster).OffsetX = settings.F1ToF4OffsetX;
+            GetClusterItem(KeyboardCluster.F1ToF4Cluster).OffsetY = settings.F1ToF4OffsetY;
+            GetClusterItem(KeyboardCluster.F5ToF8Cluster).OffsetX = settings.F5ToF8OffsetX;
+            GetClusterItem(KeyboardCluster.F5ToF8Cluster).OffsetY = settings.F5ToF8OffsetY;
+            GetClusterItem(KeyboardCluster.F9ToF12Cluster).OffsetX = settings.F9ToF12OffsetX;
+            GetClusterItem(KeyboardCluster.F9ToF12Cluster).OffsetY = settings.F9ToF12OffsetY;
+            GetClusterItem(KeyboardCluster.PrintScrollPauseCluster).OffsetX = settings.PrintScrollPauseOffsetX;
+            GetClusterItem(KeyboardCluster.PrintScrollPauseCluster).OffsetY = settings.PrintScrollPauseOffsetY;
+            GetClusterItem(KeyboardCluster.MainTypingCluster).OffsetX = settings.MainTypingOffsetX;
+            GetClusterItem(KeyboardCluster.MainTypingCluster).OffsetY = settings.MainTypingOffsetY;
+            GetClusterItem(KeyboardCluster.NavigationCluster).OffsetX = settings.NavigationOffsetX;
+            GetClusterItem(KeyboardCluster.NavigationCluster).OffsetY = settings.NavigationOffsetY;
+            GetClusterItem(KeyboardCluster.ArrowCluster).OffsetX = settings.ArrowOffsetX;
+            GetClusterItem(KeyboardCluster.ArrowCluster).OffsetY = settings.ArrowOffsetY;
+            GetClusterItem(KeyboardCluster.NumpadCluster).OffsetX = settings.NumpadOffsetX;
+            GetClusterItem(KeyboardCluster.NumpadCluster).OffsetY = settings.NumpadOffsetY;
+
+            SetSpecialValue("SPACE", settings.SpacebarWidthAdjustment);
+            SetSpecialValue("BACKSPACE", settings.BackspaceWidthAdjustment);
+            SetSpecialValue("ENTER", settings.EnterWidthAdjustment);
+            SetSpecialValue("OEM102", settings.IsoEnterWidthAdjustment);
+            SetSpecialValue("SHIFT-L", settings.LeftShiftWidthAdjustment);
+            SetSpecialValue("SHIFT-R", settings.RightShiftWidthAdjustment);
+            SetSpecialValue("ENTER-NUMPAD", settings.NumpadEnterWidthAdjustment);
+            SetSpecialValue("TAB", settings.TabWidthAdjustment);
+            SetSpecialValue("CAPS LOCK", settings.CapsLockWidthAdjustment);
 
             foreach (var entry in settings.KeyOverrides)
             {
@@ -265,6 +334,20 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         RefreshPerKeyOverridesJsonFromItems();
     }
 
+    private void AddClusterItem(string name, KeyboardCluster cluster)
+    {
+        var item = new ClusterCalibrationItem(name, cluster);
+        item.Changed += OnClusterItemChanged;
+        _clusterItems.Add(item);
+    }
+
+    private void AddSpecialItem(string name, string keyId)
+    {
+        var item = new SpecialKeyOverrideItem(name, keyId);
+        item.Changed += OnSpecialItemChanged;
+        _specialItems.Add(item);
+    }
+
     private void SetAndApply(ref double field, double value, [CallerMemberName] string? propertyName = null)
     {
         if (Math.Abs(field - value) < double.Epsilon)
@@ -301,7 +384,42 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     {
         KeyboardLayoutPanel.SetLayoutCalibration(PreviewKeyUnit, PreviewGapX, PreviewGapY, PreviewOffsetX, PreviewOffsetY);
         KeyboardLayoutPanel.ButtonScale = PreviewButtonScale;
+        ApplyClusterCalibration();
+        ApplySpecialOverrides();
         ApplyPerKeyOverrides();
+    }
+
+    private void ApplyClusterCalibration()
+    {
+        KeyboardClusterLayout.ApplyPreset(
+            GetClusterItem(KeyboardCluster.EscCluster).OffsetX,
+            GetClusterItem(KeyboardCluster.EscCluster).OffsetY,
+            GetClusterItem(KeyboardCluster.F1ToF4Cluster).OffsetX,
+            GetClusterItem(KeyboardCluster.F1ToF4Cluster).OffsetY,
+            GetClusterItem(KeyboardCluster.F5ToF8Cluster).OffsetX,
+            GetClusterItem(KeyboardCluster.F5ToF8Cluster).OffsetY,
+            GetClusterItem(KeyboardCluster.F9ToF12Cluster).OffsetX,
+            GetClusterItem(KeyboardCluster.F9ToF12Cluster).OffsetY,
+            GetClusterItem(KeyboardCluster.PrintScrollPauseCluster).OffsetX,
+            GetClusterItem(KeyboardCluster.PrintScrollPauseCluster).OffsetY,
+            GetClusterItem(KeyboardCluster.MainTypingCluster).OffsetX,
+            GetClusterItem(KeyboardCluster.MainTypingCluster).OffsetY,
+            GetClusterItem(KeyboardCluster.NavigationCluster).OffsetX,
+            GetClusterItem(KeyboardCluster.NavigationCluster).OffsetY,
+            GetClusterItem(KeyboardCluster.ArrowCluster).OffsetX,
+            GetClusterItem(KeyboardCluster.ArrowCluster).OffsetY,
+            GetClusterItem(KeyboardCluster.NumpadCluster).OffsetX,
+            GetClusterItem(KeyboardCluster.NumpadCluster).OffsetY);
+    }
+
+    private void ApplySpecialOverrides()
+    {
+        KeyboardLayoutPanel.ClearAllSpecialKeyOverrides();
+
+        foreach (var item in _specialItems)
+        {
+            KeyboardLayoutPanel.SetSpecialKeyOverride(item.KeyId, item.WidthAdjustment);
+        }
     }
 
     private void ApplyPerKeyOverrides()
@@ -333,6 +451,30 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             key.InnerOffsetXAdjustmentPercent = item.InnerOffsetXAdjustmentPercent;
             key.InnerOffsetYAdjustmentPercent = item.InnerOffsetYAdjustmentPercent;
         }
+    }
+
+    private void OnClusterItemChanged()
+    {
+        if (_suppressUpdates)
+        {
+            return;
+        }
+
+        ApplyClusterCalibration();
+        RefreshPreview();
+        PersistCalibrationLive();
+    }
+
+    private void OnSpecialItemChanged()
+    {
+        if (_suppressUpdates)
+        {
+            return;
+        }
+
+        ApplySpecialOverrides();
+        RefreshPreview();
+        PersistCalibrationLive();
     }
 
     private void RefreshPreview()
@@ -387,6 +529,35 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         calibration.InnerSectionOffsetXPercent = PreviewInnerOffsetXPercent;
         calibration.InnerSectionOffsetYPercent = PreviewInnerOffsetYPercent;
 
+        calibration.EscOffsetX = GetClusterItem(KeyboardCluster.EscCluster).OffsetX;
+        calibration.EscOffsetY = GetClusterItem(KeyboardCluster.EscCluster).OffsetY;
+        calibration.F1ToF4OffsetX = GetClusterItem(KeyboardCluster.F1ToF4Cluster).OffsetX;
+        calibration.F1ToF4OffsetY = GetClusterItem(KeyboardCluster.F1ToF4Cluster).OffsetY;
+        calibration.F5ToF8OffsetX = GetClusterItem(KeyboardCluster.F5ToF8Cluster).OffsetX;
+        calibration.F5ToF8OffsetY = GetClusterItem(KeyboardCluster.F5ToF8Cluster).OffsetY;
+        calibration.F9ToF12OffsetX = GetClusterItem(KeyboardCluster.F9ToF12Cluster).OffsetX;
+        calibration.F9ToF12OffsetY = GetClusterItem(KeyboardCluster.F9ToF12Cluster).OffsetY;
+        calibration.PrintScrollPauseOffsetX = GetClusterItem(KeyboardCluster.PrintScrollPauseCluster).OffsetX;
+        calibration.PrintScrollPauseOffsetY = GetClusterItem(KeyboardCluster.PrintScrollPauseCluster).OffsetY;
+        calibration.MainTypingOffsetX = GetClusterItem(KeyboardCluster.MainTypingCluster).OffsetX;
+        calibration.MainTypingOffsetY = GetClusterItem(KeyboardCluster.MainTypingCluster).OffsetY;
+        calibration.NavigationOffsetX = GetClusterItem(KeyboardCluster.NavigationCluster).OffsetX;
+        calibration.NavigationOffsetY = GetClusterItem(KeyboardCluster.NavigationCluster).OffsetY;
+        calibration.ArrowOffsetX = GetClusterItem(KeyboardCluster.ArrowCluster).OffsetX;
+        calibration.ArrowOffsetY = GetClusterItem(KeyboardCluster.ArrowCluster).OffsetY;
+        calibration.NumpadOffsetX = GetClusterItem(KeyboardCluster.NumpadCluster).OffsetX;
+        calibration.NumpadOffsetY = GetClusterItem(KeyboardCluster.NumpadCluster).OffsetY;
+
+        calibration.SpacebarWidthAdjustment = GetSpecialValue("SPACE");
+        calibration.BackspaceWidthAdjustment = GetSpecialValue("BACKSPACE");
+        calibration.EnterWidthAdjustment = GetSpecialValue("ENTER");
+        calibration.IsoEnterWidthAdjustment = GetSpecialValue("OEM102");
+        calibration.LeftShiftWidthAdjustment = GetSpecialValue("SHIFT-L");
+        calibration.RightShiftWidthAdjustment = GetSpecialValue("SHIFT-R");
+        calibration.NumpadEnterWidthAdjustment = GetSpecialValue("ENTER-NUMPAD");
+        calibration.TabWidthAdjustment = GetSpecialValue("TAB");
+        calibration.CapsLockWidthAdjustment = GetSpecialValue("CAPS LOCK");
+
         calibration.KeyOverrides = _keyItems
             .Where(item => !item.IsZero())
             .ToDictionary(
@@ -440,6 +611,16 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             _previewInnerOffsetXPercent = 0;
             _previewInnerOffsetYPercent = 0;
 
+            foreach (var cluster in _clusterItems)
+            {
+                cluster.Reset();
+            }
+
+            foreach (var special in _specialItems)
+            {
+                special.Reset();
+            }
+
             foreach (var key in _keyItems)
             {
                 key.Reset();
@@ -475,6 +656,26 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private void ResetSelectedKey_Click(object sender, RoutedEventArgs e)
     {
         SelectedKeyItem?.Reset();
+    }
+
+    private void ResetSelectedCluster_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement element || element.DataContext is not ClusterCalibrationItem item)
+        {
+            return;
+        }
+
+        item.Reset();
+    }
+
+    private void ResetSelectedSpecial_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement element || element.DataContext is not SpecialKeyOverrideItem item)
+        {
+            return;
+        }
+
+        item.Reset();
     }
 
     private void ApplyPerKeyJson_Click(object sender, RoutedEventArgs e)
@@ -593,6 +794,21 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         PerKeyOverridesJson = JsonSerializer.Serialize(map, new JsonSerializerOptions { WriteIndented = true });
     }
 
+    private ClusterCalibrationItem GetClusterItem(KeyboardCluster cluster)
+        => _clusterItems.First(item => item.Cluster == cluster);
+
+    private void SetSpecialValue(string keyId, double value)
+    {
+        var item = _specialItems.FirstOrDefault(entry => string.Equals(entry.KeyId, keyId, StringComparison.OrdinalIgnoreCase));
+        if (item is not null)
+        {
+            item.WidthAdjustment = value;
+        }
+    }
+
+    private double GetSpecialValue(string keyId)
+        => _specialItems.FirstOrDefault(entry => string.Equals(entry.KeyId, keyId, StringComparison.OrdinalIgnoreCase))?.WidthAdjustment ?? 0;
+
     private void NudgeValue_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: string tag } || string.IsNullOrWhiteSpace(tag))
@@ -647,6 +863,96 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    public sealed class ClusterCalibrationItem : INotifyPropertyChanged
+    {
+        private double _offsetX;
+        private double _offsetY;
+
+        public ClusterCalibrationItem(string name, KeyboardCluster cluster)
+        {
+            Name = name;
+            Cluster = cluster;
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        public event Action? Changed;
+
+        public string Name { get; }
+        public KeyboardCluster Cluster { get; }
+
+        public double OffsetX { get => _offsetX; set => Set(ref _offsetX, value); }
+        public double OffsetY { get => _offsetY; set => Set(ref _offsetY, value); }
+
+        public void Reset()
+        {
+            _offsetX = 0;
+            _offsetY = 0;
+            OnPropertyChanged(nameof(OffsetX));
+            OnPropertyChanged(nameof(OffsetY));
+            Changed?.Invoke();
+        }
+
+        private void Set(ref double field, double value, [CallerMemberName] string? propertyName = null)
+        {
+            if (Math.Abs(field - value) < double.Epsilon)
+            {
+                return;
+            }
+
+            field = value;
+            OnPropertyChanged(propertyName);
+            Changed?.Invoke();
+        }
+
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
+    public sealed class SpecialKeyOverrideItem : INotifyPropertyChanged
+    {
+        private double _widthAdjustment;
+
+        public SpecialKeyOverrideItem(string name, string keyId)
+        {
+            Name = name;
+            KeyId = keyId;
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        public event Action? Changed;
+
+        public string Name { get; }
+        public string KeyId { get; }
+
+        public double WidthAdjustment { get => _widthAdjustment; set => Set(ref _widthAdjustment, value); }
+
+        public void Reset()
+        {
+            _widthAdjustment = 0;
+            OnPropertyChanged(nameof(WidthAdjustment));
+            Changed?.Invoke();
+        }
+
+        private void Set(ref double field, double value, [CallerMemberName] string? propertyName = null)
+        {
+            if (Math.Abs(field - value) < double.Epsilon)
+            {
+                return;
+            }
+
+            field = value;
+            OnPropertyChanged(propertyName);
+            Changed?.Invoke();
+        }
+
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 
     public sealed class KeyCalibrationItem : INotifyPropertyChanged

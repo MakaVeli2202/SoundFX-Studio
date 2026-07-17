@@ -13,8 +13,8 @@ namespace SoundFXStudio.Views;
 
 public partial class KeyboardWindow : Window, INotifyPropertyChanged
 {
-    private const double BaseKeyboardWidth = 1536;
-    private const double BaseKeyboardHeight = 1024;
+    private const double BaseKeyboardWidth = 1306;
+    private const double BaseKeyboardHeight = 870;
     private const double BaseChamferSize = 52;
     private const double KeyboardImageWidth = 1521;
     private const double KeyboardImageHeight = 618;

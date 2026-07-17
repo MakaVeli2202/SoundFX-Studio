@@ -717,6 +717,37 @@ public sealed class MainViewModel : ObservableObject
         KeyboardLayoutPanel.ButtonScale = calibration.ButtonScale;
         KeyboardLayoutPanel.DebugKeyboardCalibration = calibration.DebugCalibration;
 
+        KeyboardClusterLayout.ApplyPreset(
+            calibration.EscOffsetX,
+            calibration.EscOffsetY,
+            calibration.F1ToF4OffsetX,
+            calibration.F1ToF4OffsetY,
+            calibration.F5ToF8OffsetX,
+            calibration.F5ToF8OffsetY,
+            calibration.F9ToF12OffsetX,
+            calibration.F9ToF12OffsetY,
+            calibration.PrintScrollPauseOffsetX,
+            calibration.PrintScrollPauseOffsetY,
+            calibration.MainTypingOffsetX,
+            calibration.MainTypingOffsetY,
+            calibration.NavigationOffsetX,
+            calibration.NavigationOffsetY,
+            calibration.ArrowOffsetX,
+            calibration.ArrowOffsetY,
+            calibration.NumpadOffsetX,
+            calibration.NumpadOffsetY);
+
+        KeyboardLayoutPanel.ClearAllSpecialKeyOverrides();
+        KeyboardLayoutPanel.SetSpecialKeyOverride("SPACE", calibration.SpacebarWidthAdjustment);
+        KeyboardLayoutPanel.SetSpecialKeyOverride("BACKSPACE", calibration.BackspaceWidthAdjustment);
+        KeyboardLayoutPanel.SetSpecialKeyOverride("ENTER", calibration.EnterWidthAdjustment);
+        KeyboardLayoutPanel.SetSpecialKeyOverride("OEM102", calibration.IsoEnterWidthAdjustment);
+        KeyboardLayoutPanel.SetSpecialKeyOverride("SHIFT-L", calibration.LeftShiftWidthAdjustment);
+        KeyboardLayoutPanel.SetSpecialKeyOverride("SHIFT-R", calibration.RightShiftWidthAdjustment);
+        KeyboardLayoutPanel.SetSpecialKeyOverride("ENTER-NUMPAD", calibration.NumpadEnterWidthAdjustment);
+        KeyboardLayoutPanel.SetSpecialKeyOverride("TAB", calibration.TabWidthAdjustment);
+        KeyboardLayoutPanel.SetSpecialKeyOverride("CAPS LOCK", calibration.CapsLockWidthAdjustment);
+
         KeyboardLayoutPanel.ClearAllPerKeyOverrides();
         foreach (var entry in calibration.KeyOverrides)
         {

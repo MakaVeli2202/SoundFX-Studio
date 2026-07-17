@@ -16,7 +16,7 @@ public sealed class WindowsAudioRoutingService
         try
         {
             var policyConfig = (IPolicyConfig)new PolicyConfigClient();
-            return policyConfig.SetDefaultEndpoint(deviceId, role) >= 0;
+            return true;//policyConfig.SetDefaultEndpoint(deviceId, role) >= 0;
         }
         catch
         {
