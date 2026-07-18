@@ -39,6 +39,13 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private double _previewInnerOffsetXPercent;
     private double _previewInnerOffsetYPercent;
 
+    private double _previewCapsLockIndicatorOffsetX = 1235;
+    private double _previewCapsLockIndicatorOffsetY = 252;
+    private double _previewNumLockIndicatorOffsetX = 1297;
+    private double _previewNumLockIndicatorOffsetY = 252;
+    private double _previewScrollLockIndicatorOffsetX = 1359;
+    private double _previewScrollLockIndicatorOffsetY = 252;
+
     private KeyCalibrationItem? _selectedKeyItem;
     private string _perKeyOverridesJson = "{}";
     private string _jsonEditorStatus = "Ready";
@@ -127,6 +134,42 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     {
         get => _previewInnerOffsetYPercent;
         set => SetAndApply(ref _previewInnerOffsetYPercent, Math.Clamp(value, -30, 30));
+    }
+
+    public double CapsLockIndicatorOffsetX
+    {
+        get => _previewCapsLockIndicatorOffsetX;
+        set => SetAndApply(ref _previewCapsLockIndicatorOffsetX, value);
+    }
+
+    public double CapsLockIndicatorOffsetY
+    {
+        get => _previewCapsLockIndicatorOffsetY;
+        set => SetAndApply(ref _previewCapsLockIndicatorOffsetY, value);
+    }
+
+    public double NumLockIndicatorOffsetX
+    {
+        get => _previewNumLockIndicatorOffsetX;
+        set => SetAndApply(ref _previewNumLockIndicatorOffsetX, value);
+    }
+
+    public double NumLockIndicatorOffsetY
+    {
+        get => _previewNumLockIndicatorOffsetY;
+        set => SetAndApply(ref _previewNumLockIndicatorOffsetY, value);
+    }
+
+    public double ScrollLockIndicatorOffsetX
+    {
+        get => _previewScrollLockIndicatorOffsetX;
+        set => SetAndApply(ref _previewScrollLockIndicatorOffsetX, value);
+    }
+
+    public double ScrollLockIndicatorOffsetY
+    {
+        get => _previewScrollLockIndicatorOffsetY;
+        set => SetAndApply(ref _previewScrollLockIndicatorOffsetY, value);
     }
 
     public KeyCalibrationItem? SelectedKeyItem
@@ -265,6 +308,12 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             _previewInnerInsetYPercent = Math.Abs(settings.InnerSectionInsetYPercent) > double.Epsilon ? settings.InnerSectionInsetYPercent : settings.InnerSectionInsetPercent;
             _previewInnerOffsetXPercent = settings.InnerSectionOffsetXPercent;
             _previewInnerOffsetYPercent = settings.InnerSectionOffsetYPercent;
+            _previewCapsLockIndicatorOffsetX = settings.CapsLockIndicatorOffsetX;
+            _previewCapsLockIndicatorOffsetY = NormalizeLampY(settings.CapsLockIndicatorOffsetY);
+            _previewNumLockIndicatorOffsetX = settings.NumLockIndicatorOffsetX;
+            _previewNumLockIndicatorOffsetY = NormalizeLampY(settings.NumLockIndicatorOffsetY);
+            _previewScrollLockIndicatorOffsetX = settings.ScrollLockIndicatorOffsetX;
+            _previewScrollLockIndicatorOffsetY = NormalizeLampY(settings.ScrollLockIndicatorOffsetY);
 
             GetClusterItem(KeyboardCluster.EscCluster).OffsetX = settings.EscOffsetX;
             GetClusterItem(KeyboardCluster.EscCluster).OffsetY = settings.EscOffsetY;
@@ -330,6 +379,12 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         OnPropertyChanged(nameof(PreviewInnerInsetYPercent));
         OnPropertyChanged(nameof(PreviewInnerOffsetXPercent));
         OnPropertyChanged(nameof(PreviewInnerOffsetYPercent));
+        OnPropertyChanged(nameof(CapsLockIndicatorOffsetX));
+        OnPropertyChanged(nameof(CapsLockIndicatorOffsetY));
+        OnPropertyChanged(nameof(NumLockIndicatorOffsetX));
+        OnPropertyChanged(nameof(NumLockIndicatorOffsetY));
+        OnPropertyChanged(nameof(ScrollLockIndicatorOffsetX));
+        OnPropertyChanged(nameof(ScrollLockIndicatorOffsetY));
 
         RefreshPerKeyOverridesJsonFromItems();
     }
@@ -528,6 +583,12 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         calibration.InnerSectionInsetPercent = (PreviewInnerInsetXPercent + PreviewInnerInsetYPercent) / 2d;
         calibration.InnerSectionOffsetXPercent = PreviewInnerOffsetXPercent;
         calibration.InnerSectionOffsetYPercent = PreviewInnerOffsetYPercent;
+        calibration.CapsLockIndicatorOffsetX = CapsLockIndicatorOffsetX;
+        calibration.CapsLockIndicatorOffsetY = CapsLockIndicatorOffsetY;
+        calibration.NumLockIndicatorOffsetX = NumLockIndicatorOffsetX;
+        calibration.NumLockIndicatorOffsetY = NumLockIndicatorOffsetY;
+        calibration.ScrollLockIndicatorOffsetX = ScrollLockIndicatorOffsetX;
+        calibration.ScrollLockIndicatorOffsetY = ScrollLockIndicatorOffsetY;
 
         calibration.EscOffsetX = GetClusterItem(KeyboardCluster.EscCluster).OffsetX;
         calibration.EscOffsetY = GetClusterItem(KeyboardCluster.EscCluster).OffsetY;
@@ -610,6 +671,12 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             _previewInnerInsetYPercent = 20;
             _previewInnerOffsetXPercent = 0;
             _previewInnerOffsetYPercent = 0;
+            _previewCapsLockIndicatorOffsetX = 1235;
+            _previewCapsLockIndicatorOffsetY = 252;
+            _previewNumLockIndicatorOffsetX = 1297;
+            _previewNumLockIndicatorOffsetY = 252;
+            _previewScrollLockIndicatorOffsetX = 1359;
+            _previewScrollLockIndicatorOffsetY = 252;
 
             foreach (var cluster in _clusterItems)
             {
@@ -641,6 +708,12 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         OnPropertyChanged(nameof(PreviewInnerInsetYPercent));
         OnPropertyChanged(nameof(PreviewInnerOffsetXPercent));
         OnPropertyChanged(nameof(PreviewInnerOffsetYPercent));
+        OnPropertyChanged(nameof(CapsLockIndicatorOffsetX));
+        OnPropertyChanged(nameof(CapsLockIndicatorOffsetY));
+        OnPropertyChanged(nameof(NumLockIndicatorOffsetX));
+        OnPropertyChanged(nameof(NumLockIndicatorOffsetY));
+        OnPropertyChanged(nameof(ScrollLockIndicatorOffsetX));
+        OnPropertyChanged(nameof(ScrollLockIndicatorOffsetY));
 
         ApplyAllCalibration();
         RefreshPreview();
@@ -864,6 +937,9 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+    private static double NormalizeLampY(double value)
+        => value < 220 ? value + 70 : value;
 
     public sealed class ClusterCalibrationItem : INotifyPropertyChanged
     {

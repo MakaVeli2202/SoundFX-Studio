@@ -23,6 +23,8 @@
 
   <ItemGroup>
     <Resource Include="Assets\SoundFXStudioLogo.png" />
+    <Resource Include="Assets\Keyboards\LEDOFF.png" />
+    <Resource Include="Assets\Keyboards\LEDON.png" />
     <Resource Include="Assets\Keyboards\SoundFXKeyBoard.png" />
     <Resource Include="Assets\UI\HeroSection.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>

@@ -17,6 +17,13 @@ public class KeyboardCalibrationSettings
     public double KeyboardWindowScale { get; set; } = 1.0;
     public bool DebugCalibration { get; set; }
 
+    public double CapsLockIndicatorOffsetX { get; set; } = 1235;
+    public double CapsLockIndicatorOffsetY { get; set; } = 252;
+    public double NumLockIndicatorOffsetX { get; set; } = 1297;
+    public double NumLockIndicatorOffsetY { get; set; } = 252;
+    public double ScrollLockIndicatorOffsetX { get; set; } = 1359;
+    public double ScrollLockIndicatorOffsetY { get; set; } = 252;
+
     // Legacy cluster offsets kept for migration compatibility.
     public double EscOffsetX { get; set; }
     public double EscOffsetY { get; set; }

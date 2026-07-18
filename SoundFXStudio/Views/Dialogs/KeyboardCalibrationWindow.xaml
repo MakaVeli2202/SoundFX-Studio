@@ -263,6 +263,63 @@
                                         </StackPanel>
                                         <Slider Minimum="-30" Maximum="30" Value="{Binding PreviewInnerOffsetYPercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TickFrequency="1" Margin="0,0,8,0" />
                                     </DockPanel>
+
+                                    <TextBlock Text="Lock Lamps" FontSize="18" FontWeight="Bold" Margin="0,10,0,8" />
+                                    <TextBlock Text="Calibrate the three lock indicators over the numpad." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,12" />
+
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Caps Lock Lamp" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                        <DockPanel Grid.Column="1">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="CapsLockIndicatorOffsetX:-1" Click="NudgeValue_Click" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding CapsLockIndicatorOffsetX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="CapsLockIndicatorOffsetX:1" Click="NudgeValue_Click" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▲" Tag="CapsLockIndicatorOffsetY:-1" Click="NudgeValue_Click" Margin="8,0,0,0" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding CapsLockIndicatorOffsetY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▼" Tag="CapsLockIndicatorOffsetY:1" Click="NudgeValue_Click" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Num Lock Lamp" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                        <DockPanel Grid.Column="1">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="NumLockIndicatorOffsetX:-1" Click="NudgeValue_Click" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding NumLockIndicatorOffsetX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="NumLockIndicatorOffsetX:1" Click="NudgeValue_Click" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▲" Tag="NumLockIndicatorOffsetY:-1" Click="NudgeValue_Click" Margin="8,0,0,0" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding NumLockIndicatorOffsetY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▼" Tag="NumLockIndicatorOffsetY:1" Click="NudgeValue_Click" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Scroll Lock Lamp" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                                        <DockPanel Grid.Column="1">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="◀" Tag="ScrollLockIndicatorOffsetX:-1" Click="NudgeValue_Click" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding ScrollLockIndicatorOffsetX, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▶" Tag="ScrollLockIndicatorOffsetX:1" Click="NudgeValue_Click" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▲" Tag="ScrollLockIndicatorOffsetY:-1" Click="NudgeValue_Click" Margin="8,0,0,0" />
+                                                <TextBox Width="72" Margin="6,0" Text="{Binding ScrollLockIndicatorOffsetY, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                <Button Style="{StaticResource StepperButtonStyle}" Content="▼" Tag="ScrollLockIndicatorOffsetY:1" Click="NudgeValue_Click" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Grid>
                                 </StackPanel>
                             </Border>
 

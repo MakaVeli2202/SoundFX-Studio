@@ -184,6 +184,7 @@ public sealed class MainViewModel : ObservableObject
         UpdateTitle();
 
         _keyboardViewModel.RebuildKeyboard();
+        NotifyKeyboardLampProperties();
     }
     public ObservableCollection<KeyboardKey> KeyboardKeys { get; }
 
@@ -323,10 +324,23 @@ public sealed class MainViewModel : ObservableObject
             Settings.KeyboardLayout = value;
             OnPropertyChanged(nameof(EffectiveKeyboardLayout));
             _keyboardViewModel.RebuildKeyboard();
+            NotifyKeyboardLampProperties();
             Save();
             OnPropertyChanged(nameof(KeyboardLayout));
         }
     }
+
+    public double CapsLockIndicatorOffsetX => GetKeyboardCalibration().CapsLockIndicatorOffsetX;
+
+    public double CapsLockIndicatorOffsetY => NormalizeLampY(GetKeyboardCalibration().CapsLockIndicatorOffsetY);
+
+    public double NumLockIndicatorOffsetX => GetKeyboardCalibration().NumLockIndicatorOffsetX;
+
+    public double NumLockIndicatorOffsetY => NormalizeLampY(GetKeyboardCalibration().NumLockIndicatorOffsetY);
+
+    public double ScrollLockIndicatorOffsetX => GetKeyboardCalibration().ScrollLockIndicatorOffsetX;
+
+    public double ScrollLockIndicatorOffsetY => NormalizeLampY(GetKeyboardCalibration().ScrollLockIndicatorOffsetY);
 
     public KeyboardKey? SelectedKey
     {
@@ -618,6 +632,7 @@ public sealed class MainViewModel : ObservableObject
     {
         ApplyKeyboardCalibration(Settings.KeyboardCalibration);
         _keyboardViewModel.RefreshAssignments();
+        NotifyKeyboardLampProperties();
     }
 
     public void SaveKeyboardCalibrationSettings()
@@ -676,6 +691,7 @@ public sealed class MainViewModel : ObservableObject
             _config.Settings.PropertyChanged += Settings_PropertyChanged;
             ApplyKeyboardCalibration(Settings.KeyboardCalibration);
             _keyboardViewModel.RefreshAssignments();
+            NotifyKeyboardLampProperties();
             UpdateRoutingStatus();
             UpdateStatus();
             RaiseSoundCollectionStats();
@@ -830,9 +846,16 @@ public sealed class MainViewModel : ObservableObject
         };
     }
 
-    internal void RefreshAssignments() => _keyboardViewModel.RefreshAssignments();
+    internal void RefreshAssignments()
+    {
+        _keyboardViewModel.RefreshAssignments();
+        NotifyKeyboardLampProperties();
+    }
 
-    private void HandlePhysicalKey(Key key, bool isKeyDown = true) => _keyboardViewModel.HandlePhysicalKey(key, isKeyDown);
+    private void HandlePhysicalKey(Key key, bool isKeyDown = true)
+    {
+        _keyboardViewModel.HandlePhysicalKey(key, isKeyDown);
+    }
 
     private static ModifierKeys GetModifierState()
         => (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl) ? ModifierKeys.Control : ModifierKeys.None)
@@ -2177,6 +2200,22 @@ public sealed class MainViewModel : ObservableObject
     }
 
     internal void UpdateKeyVisualState(KeyboardKey key) => _keyboardViewModel.UpdateKeyVisualState(key);
+
+    private KeyboardCalibrationSettings GetKeyboardCalibration()
+        => Settings.KeyboardCalibration ?? new KeyboardCalibrationSettings();
+
+    private static double NormalizeLampY(double value)
+        => value < 220 ? value + 70 : value;
+
+    private void NotifyKeyboardLampProperties()
+    {
+        OnPropertyChanged(nameof(CapsLockIndicatorOffsetX));
+        OnPropertyChanged(nameof(CapsLockIndicatorOffsetY));
+        OnPropertyChanged(nameof(NumLockIndicatorOffsetX));
+        OnPropertyChanged(nameof(NumLockIndicatorOffsetY));
+        OnPropertyChanged(nameof(ScrollLockIndicatorOffsetX));
+        OnPropertyChanged(nameof(ScrollLockIndicatorOffsetY));
+    }
 
     private async Task TrackPlaybackAsync(string soundId, string? keyId)
     {
