@@ -2,6 +2,7 @@ using SoundFXStudio.Models;
 using SoundFXStudio.Services;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Input;
 using Key = System.Windows.Input.Key;
 
@@ -9,6 +10,13 @@ namespace SoundFXStudio.ViewModels;
 
 public sealed class KeyboardViewModel
 {
+    [DllImport("user32.dll")]
+    private static extern short GetKeyState(int vKey);
+
+    private const int VK_CAPITAL = 0x14;
+    private const int VK_NUMLOCK = 0x90;
+    private const int VK_SCROLL = 0x91;
+
     private readonly Func<AppConfig> _getConfig;
     private readonly Func<AppSettings> _getSettings;
     private readonly Func<KeyboardLayoutMode> _getKeyboardLayoutMode;
@@ -122,6 +130,7 @@ public sealed class KeyboardViewModel
             key.InnerOffsetYAdjustmentPercent = keyOverride?.InnerOffsetYAdjustmentPercent ?? 0;
             key.IsSelected = string.Equals(key.Id, selectedKeyId, StringComparison.OrdinalIgnoreCase);
             UpdateKeyVisualState(key);
+            ApplyLockKeyVisualState(key);
             key.IsEnabled = true;
         }
     }
@@ -179,7 +188,27 @@ public sealed class KeyboardViewModel
                 }
 
                 _pressedKeys.Remove(key);
-                keyboardKey.IsSelected = false;
+
+                if (key == Key.CapsLock)
+                {
+                    bool isOn = (GetKeyState(VK_CAPITAL) & 1) != 0;
+                    keyboardKey.IsSelected = isOn;
+                }
+                else if (key == Key.NumLock)
+                {
+                    bool isOn = (GetKeyState(VK_NUMLOCK) & 1) != 0;
+                    keyboardKey.IsSelected = isOn;
+                }
+                else if (key == Key.Scroll)
+                {
+                    bool isOn = (GetKeyState(VK_SCROLL) & 1) != 0;
+                    keyboardKey.IsSelected = isOn;
+                }
+                else
+                {
+                    keyboardKey.IsSelected = false;
+                }
+
                 _ = _chordRuntimeService?.HandleKeyUpAsync(token);
             }
         });
@@ -222,6 +251,22 @@ public sealed class KeyboardViewModel
         }
 
         key.State = key.HasAssignment ? KeyState.Assigned : KeyState.Empty;
+    }
+
+    private static void ApplyLockKeyVisualState(KeyboardKey key)
+    {
+        bool isOn = key.KeyName switch
+        {
+            "CAPS LOCK" => (GetKeyState(VK_CAPITAL) & 1) != 0,
+            "NUM LOCK" => (GetKeyState(VK_NUMLOCK) & 1) != 0,
+            "SCROLL LOCK" => (GetKeyState(VK_SCROLL) & 1) != 0,
+            _ => false
+        };
+
+        if (isOn)
+        {
+            key.IsSelected = true;
+        }
     }
 
     public async Task TrackPlaybackAsync(string soundId, string? keyId)

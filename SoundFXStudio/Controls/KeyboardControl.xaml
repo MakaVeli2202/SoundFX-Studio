@@ -102,12 +102,12 @@
             BorderBrush="Transparent"
             BorderThickness="0"
             Padding="0">
-        <Grid Width="1536" Height="1024">
-            <Image Source="/Assets/Keyboards/SoundFXKeyBoard.png"
-                 Stretch="Uniform"
-                 HorizontalAlignment="Center"
-                 VerticalAlignment="Center"
-                   IsHitTestVisible="False" />
+                <Grid Width="1536" Height="1024">
+                        <Image Source="/Assets/Keyboards/SoundFXKeyBoard.png"
+                                 Stretch="Uniform"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
+                                     IsHitTestVisible="False" />
 
             <ItemsControl ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType=UserControl}}"
                           Panel.ZIndex="1">

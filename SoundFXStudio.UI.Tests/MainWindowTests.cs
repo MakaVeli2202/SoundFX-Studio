@@ -19,52 +19,38 @@ public class MainWindowTests
     }
 
     [Fact]
-    public void MainWindow_HasTabControl_With6Tabs()
+    public void MainWindow_HasCoreSidebarButtons()
     {
         var win = _app.GetMainWindow();
-        var tab = win.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
-        Assert.NotNull(tab);
+        var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
 
-        var tabs = tab.FindAllDescendants(cf => cf.ByControlType(ControlType.TabItem));
-        Assert.Equal(6, tabs.Length);
+        Assert.Contains(buttons, button => string.Equals(button.Name, "Home", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(buttons, button => string.Equals(button.Name, "Keyboard", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(buttons, button => string.Equals(button.Name, "Sound Library", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(buttons, button => string.Equals(button.Name, "Settings", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
-    public void MainWindow_TabHeaders_ContainExpectedNames()
+    public void MainWindow_HasCalibrationShortcut()
     {
         var win = _app.GetMainWindow();
-        var tab = win.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
-        Assert.NotNull(tab);
-        var tabs = tab.FindAllDescendants(cf => cf.ByControlType(ControlType.TabItem));
+        var calibrationButton = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByName("Calibration")));
 
-        var headers = tabs.Select(t => t.Name).ToList();
-        Assert.Contains("Keyboard", headers);
-        Assert.Contains("Routing", headers);
-        Assert.Contains("Library", headers);
-        Assert.Contains("Settings", headers);
-        Assert.Contains("Presets", headers);
-        Assert.Contains("Statistics", headers);
+        Assert.NotNull(calibrationButton);
     }
 
     [Theory]
+    [InlineData("Home")]
     [InlineData("Keyboard")]
-    [InlineData("Routing")]
-    [InlineData("Library")]
+    [InlineData("Sound Library")]
     [InlineData("Settings")]
-    [InlineData("Presets")]
-    [InlineData("Statistics")]
-    public void MainWindow_CanSwitchToTab(string tabName)
+    public void MainWindow_CanFindSidebarButton(string buttonName)
     {
         var win = _app.GetMainWindow();
-        var tab = win.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
-        Assert.NotNull(tab);
-        var tabItem = tab.FindFirstDescendant(cf =>
-            cf.ByControlType(ControlType.TabItem).And(cf.ByName(tabName)));
-        Assert.NotNull(tabItem);
+        var button = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByName(buttonName)));
 
-        tabItem.Click();
-        Thread.Sleep(300);
-
-        Assert.False(tabItem.IsOffscreen, $"Tab '{tabName}' should be visible after clicking");
+        Assert.NotNull(button);
     }
 }

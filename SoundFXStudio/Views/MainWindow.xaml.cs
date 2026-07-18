@@ -213,11 +213,6 @@ public partial class MainWindow : Window
         OpenKeyboardWindowButton_Click(sender, e);
     }
 
-    private void NavigateMixer_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.CurrentPage = "Mixer";
-    }
-
     private void NavigateSoundLibrary_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.CurrentPage = "SoundLibrary";

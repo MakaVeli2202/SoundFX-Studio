@@ -33,7 +33,6 @@ public sealed class MainViewModel : ObservableObject
     private readonly TriggerService _triggerService;
     private readonly SoundLibraryViewModel _soundLibraryViewModel;
     private readonly KeyboardViewModel _keyboardViewModel;
-    private readonly RoutingViewModel _routingViewModel;
     private AppConfig _config = new();
     private Window? _window;
     private KeyboardKey? _selectedKey;
@@ -144,19 +143,6 @@ public sealed class MainViewModel : ObservableObject
             RunOnUiThread,
             ImportImage);
 
-        _routingViewModel = new RoutingViewModel(
-            () => _config,
-            () => Settings,
-            _configService,
-            _audioPlayer,
-            OutputDevices,
-            InputDevices,
-            value => CurrentOutputDevice = value,
-            value => CurrentInputDevice = value,
-            value => RoutingStatus = value,
-            value => StatusText = value ?? string.Empty,
-            Save);
-
         _keyboardViewModel.AttachChordRuntimeService(_triggerService.ChordRuntimeService);
 
         AddSoundCommand = new RelayCommand(_ => _soundLibraryViewModel.AddSound());
@@ -183,8 +169,8 @@ public sealed class MainViewModel : ObservableObject
         ToggleFavoriteCommand = new RelayCommand(_ => ToggleFavorite(), _ => SelectedSound is not null);
         SaveCommand = new RelayCommand(_ => Save());
         RefreshCommand = new RelayCommand(_ => Refresh());
-        AutoConfigureAudioCommand = new RelayCommand(_ => _routingViewModel.AutoConfigureAudio());
-        TestRoutingCommand = new RelayCommand(_ => _routingViewModel.TestRouting());
+        AutoConfigureAudioCommand = new RelayCommand(_ => AutoConfigureAudio());
+        TestRoutingCommand = new RelayCommand(_ => TestRouting());
         OpenSetupWizardCommand = new RelayCommand(_ => OpenSetupWizard());
         CreateProfileCommand = new RelayCommand(_ => CreateProfile());
         DeleteProfileCommand = new RelayCommand(_ => DeleteSelectedProfile(), _ => SelectedProfile is not null && Profiles.Count > 1);
@@ -307,12 +293,6 @@ public sealed class MainViewModel : ObservableObject
     public KeyboardLayoutMode EffectiveKeyboardLayout => ResolveKeyboardLayoutMode();
 
     public IReadOnlyList<string> ThemeOptions { get; } = new[] { "Dark", "Light" };
-
-    public IReadOnlyList<SoundEntry> MostPlayedSounds => Sounds.OrderByDescending(item => item.PlayCount).Take(8).ToList();
-
-    public IReadOnlyList<SoundEntry> RecentSounds => Sounds.Where(item => item.LastPlayedUtc is not null).OrderByDescending(item => item.LastPlayedUtc).Take(8).ToList();
-
-    public IReadOnlyList<SoundEntry> FavoriteSounds => Sounds.Where(item => item.IsFavorite).Take(8).ToList();
 
     public string SelectedTheme
     {
@@ -696,7 +676,7 @@ public sealed class MainViewModel : ObservableObject
             _config.Settings.PropertyChanged += Settings_PropertyChanged;
             ApplyKeyboardCalibration(Settings.KeyboardCalibration);
             _keyboardViewModel.RefreshAssignments();
-            _routingViewModel.UpdateRoutingStatus();
+            UpdateRoutingStatus();
             UpdateStatus();
             RaiseSoundCollectionStats();
             _logService?.Info($"Profile Loaded: {active.Name}");
@@ -797,7 +777,7 @@ public sealed class MainViewModel : ObservableObject
             or nameof(AppSettings.VBCableDetected)
             or nameof(AppSettings.KeyboardPressedTextColor))
         {
-            _routingViewModel.UpdateRoutingStatus();
+            UpdateRoutingStatus();
             Save();
         }
     }
@@ -1908,7 +1888,21 @@ public sealed class MainViewModel : ObservableObject
         CurrentPreset = presetName;
     }
 
-    internal void UpdateRoutingStatus() => _routingViewModel.UpdateRoutingStatus();
+    internal void UpdateRoutingStatus()
+    {
+        CurrentOutputDevice = ResolveDeviceName(OutputDevices, Settings.OutputDeviceId);
+        CurrentInputDevice = ResolveDeviceName(InputDevices, Settings.InputDeviceId);
+
+        var routingParts = new List<string>
+        {
+            $"Output: {CurrentOutputDevice}",
+            $"Input: {CurrentInputDevice}"
+        };
+
+        RoutingStatus = Settings.VBCableDetected
+            ? $"Ready · {string.Join(" · ", routingParts)}"
+            : $"Needs setup · {string.Join(" · ", routingParts)}";
+    }
 
     private static string ResolveDeviceName(IEnumerable<AudioDeviceInfo> devices, string deviceId, string fallback = "System Default")
     {
@@ -1923,9 +1917,6 @@ public sealed class MainViewModel : ObservableObject
 
     internal void RaiseSoundCollectionStats()
     {
-        OnPropertyChanged(nameof(MostPlayedSounds));
-        OnPropertyChanged(nameof(RecentSounds));
-        OnPropertyChanged(nameof(FavoriteSounds));
     }
 
     private void UpdateBindingPanelState()

@@ -48,8 +48,7 @@ public class AppFixture : IDisposable
                         return;
                     }
 
-                    var tabControl = w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
-                    if (tabControl != null)
+                    if (IsMainWindow(w))
                         return;
                 }
             }
@@ -68,8 +67,7 @@ public class AppFixture : IDisposable
                 var appMainWindow = App.GetMainWindow(Automation);
                 if (appMainWindow != null)
                 {
-                    var hasTabs = appMainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab)) != null;
-                    if (hasTabs)
+                    if (IsMainWindow(appMainWindow))
                     {
                         return appMainWindow;
                     }
@@ -79,8 +77,7 @@ public class AppFixture : IDisposable
 
                 foreach (var w in windows)
                 {
-                    var hasTabs = w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab)) != null;
-                    if (hasTabs && w is Window win)
+                    if (w is Window win && IsMainWindow(win))
                         return win;
                 }
             }
@@ -89,6 +86,12 @@ public class AppFixture : IDisposable
         }
 
         throw new TimeoutException("Could not find SoundFX Studio main window.");
+    }
+
+    private static bool IsMainWindow(Window window)
+    {
+        var title = window.Name ?? string.Empty;
+        return title.Contains("SoundFX Studio", StringComparison.OrdinalIgnoreCase);
     }
 
     public void Dispose()

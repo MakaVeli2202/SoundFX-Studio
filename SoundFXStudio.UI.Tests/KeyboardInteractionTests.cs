@@ -13,12 +13,12 @@ public class KeyboardInteractionTests
     private void NavigateToKeyboardTab()
     {
         var win = _app.GetMainWindow();
-        var tab = win.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
-        Assert.NotNull(tab);
-        var kbTab = tab.FindFirstDescendant(cf =>
-            cf.ByControlType(ControlType.TabItem).And(cf.ByName("Keyboard")));
-        Assert.NotNull(kbTab);
-        kbTab.Click();
+        var openBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("OpenKeyboardButton")))
+            ?? win.FindFirstDescendant(cf =>
+                cf.ByControlType(ControlType.Button).And(cf.ByName("Open Keyboard")));
+        Assert.NotNull(openBtn);
+        openBtn.Click();
         Thread.Sleep(500);
     }
 
@@ -37,11 +37,23 @@ public class KeyboardInteractionTests
 
     private Window? FindKeyboardWindow()
     {
-        var windows = _app.App.GetAllTopLevelWindows(_app.Automation);
+        var deadline = DateTime.UtcNow.AddSeconds(10);
         var mainWin = _app.GetMainWindow();
-        return windows.FirstOrDefault(w =>
-            w != mainWin
-            && w.FindFirstDescendant(cf => cf.ByControlType(ControlType.Button)) is not null);
+
+        while (DateTime.UtcNow < deadline)
+        {
+            var windows = _app.App.GetAllTopLevelWindows(_app.Automation);
+            var match = windows.FirstOrDefault(w => w != mainWin);
+
+            if (match != null)
+            {
+                return match;
+            }
+
+            Thread.Sleep(250);
+        }
+
+        return null;
     }
 
     [Fact]
