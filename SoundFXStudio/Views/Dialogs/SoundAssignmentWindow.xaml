@@ -20,7 +20,7 @@
         <SolidColorBrush x:Key="MutedBrush" Color="#A4B2C9" />
     </Window.Resources>
 
-    <Grid Margin="20">
+    <Grid Margin="20" ClipToBounds="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>

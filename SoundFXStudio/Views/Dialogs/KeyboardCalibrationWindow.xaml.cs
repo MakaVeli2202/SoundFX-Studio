@@ -33,6 +33,7 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private double _previewOffsetX = 65;
     private double _previewOffsetY = 72;
     private double _previewButtonScale = 1.0;
+    private double _zoomLevel = 100;
 
     private double _previewInnerInsetXPercent = 20;
     private double _previewInnerInsetYPercent = 20;
@@ -110,6 +111,19 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     {
         get => _previewButtonScale;
         set => SetAndApply(ref _previewButtonScale, value);
+    }
+
+    public double ZoomLevel
+    {
+        get => _zoomLevel;
+        set
+        {
+            if (Math.Abs(_zoomLevel - value) < double.Epsilon)
+                return;
+            _zoomLevel = value;
+            OnPropertyChanged();
+            ApplyZoom();
+        }
     }
 
     public double PreviewInnerInsetXPercent
@@ -917,14 +931,23 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         property.SetValue(target, current + delta);
     }
 
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ClickCount == 2)
-        {
+        if (e.OriginalSource is System.Windows.Shapes.Path or System.Windows.Controls.Canvas)
             return;
-        }
-
+        if (e.ClickCount == 2)
+            return;
         DragMove();
+    }
+
+    private void ZoomIn_Click(object sender, RoutedEventArgs e) => ZoomLevel = Math.Min(300, ZoomLevel + 10);
+    private void ZoomOut_Click(object sender, RoutedEventArgs e) => ZoomLevel = Math.Max(10, ZoomLevel - 10);
+
+    private void ApplyZoom()
+    {
+        if (PreviewViewbox is null)
+            return;
+        PreviewViewbox.LayoutTransform = new System.Windows.Media.ScaleTransform(ZoomLevel / 100.0, ZoomLevel / 100.0);
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)

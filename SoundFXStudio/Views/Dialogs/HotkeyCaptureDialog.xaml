@@ -10,7 +10,8 @@
         Background="Transparent"
         AllowsTransparency="True"
         Loaded="Window_Loaded"
-        PreviewKeyDown="Window_PreviewKeyDown">
+        PreviewKeyDown="Window_PreviewKeyDown"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
     <Window.Resources>
 
@@ -106,7 +107,8 @@
     </Window.Resources>
 
     <Border Background="#081428"
-            CornerRadius="28">
+            CornerRadius="28"
+            ClipToBounds="True">
 
         <Border.BorderBrush>
 

@@ -109,7 +109,8 @@
     </Window.Resources>
 
     <Border Background="#081428"
-            CornerRadius="28">
+            CornerRadius="28"
+            ClipToBounds="True">
 
         <Border.BorderBrush>
 
