@@ -9,7 +9,6 @@ public class AppSettings : ObservableObject
     private string _playbackDeviceId = string.Empty;
     private string _microphoneDeviceId = string.Empty;
     private string _virtualCableDeviceId = string.Empty;
-    private string _theme = "Dark Neon";
     private KeyboardLayoutMode _keyboardLayout = KeyboardLayoutMode.Automatic;
     private float _masterVolume = 1f;
     private bool _enableGlobalHotkeys = true;
@@ -53,12 +52,6 @@ public class AppSettings : ObservableObject
     {
         get => _virtualCableDeviceId;
         set => SetProperty(ref _virtualCableDeviceId, value);
-    }
-
-    public string Theme
-    {
-        get => _theme;
-        set => SetProperty(ref _theme, value);
     }
 
     public KeyboardLayoutMode KeyboardLayout

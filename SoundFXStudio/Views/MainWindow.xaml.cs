@@ -30,8 +30,24 @@ public partial class MainWindow : Window
         Drop += MainWindow_Drop;
     }
 
-    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (e.OriginalSource is not DependencyObject source)
+        {
+            return;
+        }
+
+        if (IsInteractiveElement(source))
+        {
+            return;
+        }
+
+        if (e.ClickCount == 2)
+        {
+            WindowState = WindowState.Minimized;
+            return;
+        }
+
         DragMove();
     }
 
@@ -208,11 +224,6 @@ public partial class MainWindow : Window
         ViewModel.CurrentPage = "Home";
     }
 
-    private void NavigateKeyboard_Click(object sender, RoutedEventArgs e)
-    {
-        OpenKeyboardWindowButton_Click(sender, e);
-    }
-
     private void NavigateSoundLibrary_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.CurrentPage = "SoundLibrary";
@@ -221,11 +232,6 @@ public partial class MainWindow : Window
     private void NavigateEffects_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.CurrentPage = "Effects";
-    }
-
-    private void NavigateAnalytics_Click(object sender, RoutedEventArgs e)
-    {
-        ViewModel.CurrentPage = "Analytics";
     }
 
     private void NavigateSettings_Click(object sender, RoutedEventArgs e)

@@ -21,26 +21,26 @@
         <SolidColorBrush x:Key="UiMutedTextBrush" Color="#A2B0C9" />
 
         <Style x:Key="WindowChromeBar" TargetType="Border">
-            <Setter Property="Background" Value="#0B111B" />
-            <Setter Property="BorderBrush" Value="#26384D" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Background" Value="#B3131313" />
+            <Setter Property="BorderBrush" Value="#70343434" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="CornerRadius" Value="0" />
         </Style>
 
         <Style x:Key="WindowChromeButton" TargetType="Button">
-            <Setter Property="Width" Value="38" />
-            <Setter Property="Height" Value="34" />
-            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Width" Value="42" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Margin" Value="0" />
             <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="#161D2B" />
-            <Setter Property="BorderBrush" Value="#31475F" />
-            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="ChromeRoot"
-                                CornerRadius="10"
+                                CornerRadius="0"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}">
@@ -49,11 +49,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ChromeRoot" Property="Background" Value="#20314A" />
-                                <Setter TargetName="ChromeRoot" Property="BorderBrush" Value="#5AD8FF" />
+                                <Setter TargetName="ChromeRoot" Property="Background" Value="#55383838" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ChromeRoot" Property="Background" Value="#315170" />
+                                <Setter TargetName="ChromeRoot" Property="Background" Value="#66303030" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -62,8 +61,28 @@
         </Style>
 
         <Style x:Key="WindowChromeCloseButton" TargetType="Button" BasedOn="{StaticResource WindowChromeButton}">
-            <Setter Property="Background" Value="#24131A" />
-            <Setter Property="BorderBrush" Value="#8F3A53" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ChromeRoot"
+                                CornerRadius="0"
+                                Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ChromeRoot" Property="Background" Value="#66A11919" />
+                                <Setter Property="Foreground" Value="#FFFF4D4D" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ChromeRoot" Property="Background" Value="#88A11919" />
+                                <Setter Property="Foreground" Value="#FFFF8A8A" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="ComboBox">

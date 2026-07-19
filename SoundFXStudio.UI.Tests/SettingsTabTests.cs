@@ -46,18 +46,6 @@ public class SettingsTabTests
     }
 
     [Fact]
-    public void SettingsTab_HasAppearanceSection()
-    {
-        NavigateToSettings();
-        var win = _app.GetMainWindow();
-        var appearance = win.FindFirstDescendant(cf =>
-            cf.ByControlType(ControlType.Text).And(cf.ByAutomationId("SettingsAppearanceHeader")))
-            ?? win.FindAllDescendants(cf => cf.ByControlType(ControlType.Text))
-                .FirstOrDefault(t => t.Name.Contains("Appearance", StringComparison.OrdinalIgnoreCase));
-        Assert.NotNull(appearance);
-    }
-
-    [Fact]
     public void SettingsTab_HasDeviceComboBoxes()
     {
         NavigateToSettings();

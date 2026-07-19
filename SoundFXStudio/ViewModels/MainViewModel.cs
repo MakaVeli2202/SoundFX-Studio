@@ -293,24 +293,6 @@ public sealed class MainViewModel : ObservableObject
 
     public KeyboardLayoutMode EffectiveKeyboardLayout => ResolveKeyboardLayoutMode();
 
-    public IReadOnlyList<string> ThemeOptions { get; } = new[] { "Dark", "Light" };
-
-    public string SelectedTheme
-    {
-        get => Settings.Theme;
-        set
-        {
-            if (Settings.Theme == value)
-            {
-                return;
-            }
-
-            Settings.Theme = value;
-            Save();
-            OnPropertyChanged(nameof(SelectedTheme));
-        }
-    }
-
     public KeyboardLayoutMode KeyboardLayout
     {
         get => Settings.KeyboardLayout;

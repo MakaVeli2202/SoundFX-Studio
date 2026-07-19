@@ -25,7 +25,6 @@ public class MainWindowTests
         var buttons = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
 
         Assert.Contains(buttons, button => string.Equals(button.Name, "Home", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(buttons, button => string.Equals(button.Name, "Keyboard", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(buttons, button => string.Equals(button.Name, "Sound Library", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(buttons, button => string.Equals(button.Name, "Settings", StringComparison.OrdinalIgnoreCase));
     }
@@ -42,7 +41,6 @@ public class MainWindowTests
 
     [Theory]
     [InlineData("Home")]
-    [InlineData("Keyboard")]
     [InlineData("Sound Library")]
     [InlineData("Settings")]
     public void MainWindow_CanFindSidebarButton(string buttonName)
