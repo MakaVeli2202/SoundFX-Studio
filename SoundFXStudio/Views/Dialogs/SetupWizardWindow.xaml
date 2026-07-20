@@ -110,7 +110,7 @@
 
                     <StackPanel Orientation="Horizontal"
                                 VerticalAlignment="Center"
-                                Margin="20,0">
+                                Margin="16,0">
 
                         <Image Source="/Assets/UI/MainDashboardLogo.png"
                                Height="50"
@@ -134,7 +134,7 @@
                             Width="40"
                             Height="40"
                             Margin="0,10,10,10"
-                            Content="✕"
+                            Content="&#x2715;"
                             Background="#55203030"
                             BorderBrush="#FF5A7A"
                             Foreground="White"

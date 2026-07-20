@@ -11,273 +11,199 @@
         Background="Transparent"
         Icon="/Assets/SoundFXStudioLogo.png">
 
-
     <Window.Resources>
-        <SolidColorBrush x:Key="PanelBrush" Color="#101A2D" />
-        <SolidColorBrush x:Key="SecondaryPanelBrush" Color="#0E1728" />
-        <SolidColorBrush x:Key="BorderBrushTheme" Color="#2E4568" />
-        <SolidColorBrush x:Key="TextBrush" Color="#EAF1FF" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#A4B2C9" />
+        <SolidColorBrush x:Key="TextBrush" Color="#EAF1FF"/>
+        <SolidColorBrush x:Key="MutedBrush" Color="#A1B2D2"/>
+
+        <Style x:Key="GlassPanel" TargetType="Border">
+            <Setter Property="CornerRadius" Value="24"/>
+            <Setter Property="Background" Value="#66081428"/>
+            <Setter Property="BorderBrush" Value="#5580CFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="CyberButton" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#22112233"/>
+            <Setter Property="BorderBrush" Value="#3370AFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder" CornerRadius="14"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#00D8FF"/>
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#2200D8FF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#33FF44CC"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
-    <Grid Margin="20" ClipToBounds="True">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Border Background="#081428" CornerRadius="28" ClipToBounds="True">
+        <Border.BorderBrush>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                <GradientStop Color="#00D8FF" Offset="0"/>
+                <GradientStop Color="#FF44CC" Offset="1"/>
+            </LinearGradientBrush>
+        </Border.BorderBrush>
+        <Border.BorderThickness>2</Border.BorderThickness>
 
-        <Border Background="{StaticResource SecondaryPanelBrush}"
-                BorderBrush="#2E4568"
-                BorderThickness="1"
-                CornerRadius="16"
-                Padding="12"
-                Margin="0,0,0,14">
-            <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+        <Grid Margin="18">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="75"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="70"/>
+            </Grid.RowDefinitions>
 
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="42"
-                            Height="42"
-                            CornerRadius="12"
-                            Background="#0A0A0A"
-                            BorderBrush="#303030"
-                            BorderThickness="1"
-                            Padding="4"
-                            Margin="0,0,12,0">
-                        <Image Source="/Assets/SoundFXStudioLogo.png" Stretch="Uniform" />
-                    </Border>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="SoundFX Studio" FontSize="13" FontWeight="Bold" Foreground="{StaticResource MutedBrush}" />
-                        <TextBlock Text="Sound Details" FontSize="24" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+            <!-- HEADER -->
+            <Border Grid.Row="0" Style="{StaticResource GlassPanel}">
+                <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
+                        <Image Source="/Assets/UI/MainDashboardLogo.png" Height="50" Stretch="Uniform"/>
+                        <StackPanel Margin="14,0,0,0">
+                            <TextBlock Text="SOUNDFX STUDIO" Foreground="#00D8FF" FontWeight="Bold"/>
+                            <TextBlock Text="Sound Details" FontSize="22" FontWeight="SemiBold" Foreground="White"/>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
 
-                <Button Grid.Column="1"
-                        Content="✕"
-                    AutomationProperties.Name="Close"
-                        Width="40"
-                        Height="30"
-                        VerticalAlignment="Top"
-                        Background="#3C1B2A"
-                        BorderBrush="#7B3C57"
-                        Click="CloseButton_Click" />
-            </Grid>
-        </Border>
+                    <Button Grid.Column="1" Width="40" Height="40" Margin="0,10,10,10"
+                            Content="&#x2715;" Background="#55203030" BorderBrush="#FF5A7A"
+                            Foreground="White" Click="CloseButton_Click"/>
+                </Grid>
+            </Border>
 
-        <TextBlock Grid.Row="0"
-                   Text="Pick a file, name, image, shortcut, and options before saving"
-                   Foreground="{StaticResource MutedBrush}"
-                   Margin="0,54,0,14" />
+            <!-- CONTENT -->
+            <Border Grid.Row="1" Style="{StaticResource GlassPanel}" Margin="0,14,0,14">
+                <ScrollViewer>
+                    <StackPanel Margin="16">
 
-        <Border Grid.Row="1"
-                Background="{StaticResource SecondaryPanelBrush}"
-                BorderBrush="{StaticResource BorderBrushTheme}"
-                BorderThickness="1"
-                CornerRadius="14"
-                Padding="16">
-            <ScrollViewer>
-                <StackPanel>
-                    <!-- File Selection -->
-                    <Border Background="{StaticResource PanelBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,12">
-                        <StackPanel>
-                            <TextBlock Text="Sound File" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8" />
-                            <TextBlock Text="Pick an audio file (MP3, WAV, OGG, FLAC)" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="0,0,0,10" />
-                            
+                        <!-- File Selection -->
+                        <TextBlock Text="Sound File" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6"/>
+                        <TextBlock Text="Pick an audio file (MP3, WAV, OGG, FLAC)" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="0,0,0,10"/>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="FilePathBox" IsReadOnly="True" Text="{Binding FilePath, Mode=OneWay}"
+                                     Height="36" Padding="10,6" Background="#22112233" BorderBrush="#3370AFFF"
+                                     BorderThickness="1" Foreground="{StaticResource TextBrush}" Margin="0,0,10,0"/>
+                            <Button Grid.Column="1" Content="Browse" Width="100" Height="36"
+                                    Click="BrowseButton_Click" Style="{StaticResource CyberButton}"/>
+                        </Grid>
+
+                        <!-- Sound Name -->
+                        <StackPanel Margin="0,0,0,14">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <TextBlock Text="Sound Name" FontWeight="Bold" Foreground="{StaticResource TextBrush}"/>
+                                <TextBlock Text="(label on keyboard button)" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="8,2,0,0"/>
+                            </StackPanel>
+                            <TextBox x:Name="NameBox" Text="{Binding Name}" Height="36" Padding="10,6"
+                                     Background="#22112233" BorderBrush="#3370AFFF" BorderThickness="1"
+                                     Foreground="{StaticResource TextBrush}"/>
+                        </StackPanel>
+
+                        <!-- Keyboard Button -->
+                        <StackPanel Margin="0,0,0,14">
+                            <TextBlock Text="Keyboard Button" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6"/>
+                            <ComboBox ItemsSource="{Binding AvailableKeys}" DisplayMemberPath="DisplayLabel"
+                                      SelectedValuePath="Id" SelectedValue="{Binding SelectedKey}"
+                                      Height="36" Padding="10,6" Background="#22112233" BorderBrush="#3370AFFF"
+                                      BorderThickness="1" Foreground="{StaticResource TextBrush}"/>
+                        </StackPanel>
+
+                        <!-- Category -->
+                        <StackPanel Margin="0,0,0,14">
+                            <TextBlock Text="Sound Group" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6"/>
+                            <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding Category}"
+                                      Height="36" Padding="10,6" Background="#22112233" BorderBrush="#3370AFFF"
+                                      BorderThickness="1" Foreground="{StaticResource TextBrush}"/>
+                        </StackPanel>
+
+                        <!-- Volume -->
+                        <StackPanel Margin="0,0,0,14">
+                            <TextBlock Text="Volume" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="50"/>
                                 </Grid.ColumnDefinitions>
-                                
-                                <TextBox x:Name="FilePathBox" 
-                                         AutomationProperties.Name="Sound File Path"
-                                         IsReadOnly="True" 
-                                         Text="{Binding FilePath, Mode=OneWay}"
-                                         Height="34" 
-                                         Padding="10,6"
-                                         Background="{StaticResource PanelBrush}"
-                                         BorderBrush="{StaticResource BorderBrushTheme}"
-                                         BorderThickness="1"
-                                         Foreground="{StaticResource TextBrush}"
-                                         Margin="0,0,10,0"/>
-                                
-                                <Button x:Name="BrowseButton" 
-                                    AutomationProperties.Name="Browse"
-                                    AutomationProperties.AutomationId="BrowseButton"
-                                        Content="Browse" 
-                                        Width="100" 
-                                    Height="34"
-                                        Grid.Column="1"
-                                        Click="BrowseButton_Click"
-                                        Background="#5AD8FF"
-                                        Foreground="#08101D"
-                                        FontWeight="Bold" />
+                                <Slider Minimum="0" Maximum="100" Value="{Binding VolumePercent}"
+                                        Margin="0,0,10,0" VerticalAlignment="Center" Foreground="#00D8FF"/>
+                                <TextBlock Grid.Column="1" Text="{Binding VolumePercent, StringFormat='0%'}"
+                                           Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" TextAlignment="Right"/>
                             </Grid>
                         </StackPanel>
-                    </Border>
 
-                    <!-- Display Name -->
-                    <StackPanel Margin="0,0,0,12">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                            <TextBlock Text="Sound Name" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
-                            <TextBlock Text="(label on keyboard button)" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="8,2,0,0" />
+                        <!-- Options -->
+                        <StackPanel Margin="0,0,0,14">
+                            <TextBlock Text="Options" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,10"/>
+                            <CheckBox Content="Mark as favorite" IsChecked="{Binding IsFavorite}"
+                                      Foreground="{StaticResource TextBrush}" Margin="0,0,0,8"/>
+                            <CheckBox Content="Loop sound continuously" IsChecked="{Binding Loop}"
+                                      Foreground="{StaticResource TextBrush}"/>
                         </StackPanel>
-                        <TextBox x:Name="NameBox"
-                                 AutomationProperties.Name="Sound Name"
-                                 Text="{Binding Name}"
-                                 Height="36"
-                                 Padding="10,6"
-                                 Background="{StaticResource PanelBrush}"
-                                 BorderBrush="{StaticResource BorderBrushTheme}"
-                                 BorderThickness="1"
-                                 Foreground="{StaticResource TextBrush}" />
+
+                        <!-- Image Selection -->
+                        <Border Style="{StaticResource GlassPanel}" CornerRadius="14" Padding="14">
+                            <StackPanel>
+                                <TextBlock Text="Custom Image (Optional)" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,10"/>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="ImagePathBox" IsReadOnly="True" Text="{Binding ImagePath, Mode=OneWay}"
+                                             Height="34" Padding="10,6" Background="#22112233" BorderBrush="#3370AFFF"
+                                             BorderThickness="1" Foreground="{StaticResource TextBrush}"/>
+                                    <Button Grid.Column="1" Content="Choose" Width="90" Height="34"
+                                            Margin="10,0,0,0" Click="ImageBrowseButton_Click"
+                                            Style="{StaticResource CyberButton}"/>
+                                </Grid>
+                                <Border x:Name="ImagePreviewBorder" Background="#0A0F18" CornerRadius="8"
+                                        Height="120" BorderBrush="#3370AFFF" BorderThickness="1">
+                                    <Image x:Name="ImagePreview" Source="{Binding ImagePath, Mode=OneWay}" Stretch="UniformToFill"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
                     </StackPanel>
+                </ScrollViewer>
+            </Border>
 
-                    <!-- Keyboard Button Selection -->
-                    <StackPanel Margin="0,0,0,12">
-                        <TextBlock Text="Keyboard Button" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6" />
-                        <ComboBox ItemsSource="{Binding AvailableKeys}"
-                                  AutomationProperties.Name="Keyboard Button"
-                                  DisplayMemberPath="DisplayLabel"
-                                  SelectedValuePath="Id"
-                                  SelectedValue="{Binding SelectedKey}"
-                                  Height="36"
-                                  Padding="10,6"
-                                  Background="{StaticResource PanelBrush}"
-                                  BorderBrush="{StaticResource BorderBrushTheme}"
-                                  BorderThickness="1"
-                                  Foreground="{StaticResource TextBrush}" />
-                    </StackPanel>
-
-                    <!-- Category -->
-                    <StackPanel Margin="0,0,0,12">
-                        <TextBlock Text="Sound Group" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6" />
-                        <ComboBox ItemsSource="{Binding Categories}"
-                                  AutomationProperties.Name="Sound Group"
-                                  SelectedItem="{Binding Category}"
-                                  Height="36"
-                                  Padding="10,6"
-                                  Background="{StaticResource PanelBrush}"
-                                  BorderBrush="{StaticResource BorderBrushTheme}"
-                                  BorderThickness="1"
-                                  Foreground="{StaticResource TextBrush}" />
-                    </StackPanel>
-
-                    <!-- Volume -->
-                    <StackPanel Margin="0,0,0,12">
-                        <TextBlock Text="Volume" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6" />
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="50" />
-                            </Grid.ColumnDefinitions>
-                            <Slider Minimum="0"
-                                    AutomationProperties.Name="Volume"
-                                    AutomationProperties.AutomationId="VolumeSlider"
-                                    Maximum="100"
-                                    Value="{Binding VolumePercent}"
-                                    Margin="0,0,10,0"
-                                    VerticalAlignment="Center"
-                                    Foreground="#36D1FF" />
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding VolumePercent, StringFormat='0%'}"
-                                       Foreground="{StaticResource MutedBrush}"
-                                       VerticalAlignment="Center"
-                                       TextAlignment="Right" />
-                        </Grid>
-                    </StackPanel>
-
-                    <!-- Options -->
-                    <StackPanel Margin="0,0,0,12">
-                        <TextBlock Text="Options" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,10" />
-                        <CheckBox Content="Mark as favorite (⭐ icon)"
-                                  AutomationProperties.Name="Favorite"
-                                  IsChecked="{Binding IsFavorite}"
-                                  Foreground="{StaticResource TextBrush}"
-                                  Margin="0,0,0,8" />
-                        <CheckBox Content="Loop sound continuously"
-                                  AutomationProperties.Name="Loop"
-                                  IsChecked="{Binding Loop}"
-                                  Foreground="{StaticResource TextBrush}" />
-                    </StackPanel>
-
-                    <!-- Image Selection -->
-                    <Border Background="{StaticResource PanelBrush}" CornerRadius="10" Padding="12">
-                        <StackPanel>
-                            <TextBlock Text="Custom Image (Optional)" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,10" />
-                            
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                
-                                <TextBox x:Name="ImagePathBox" 
-                                         AutomationProperties.Name="Image File Path"
-                                         IsReadOnly="True" 
-                                         Text="{Binding ImagePath, Mode=OneWay}"
-                                         Height="34"
-                                         Padding="10,6"
-                                         Background="{StaticResource SecondaryPanelBrush}"
-                                         BorderBrush="{StaticResource BorderBrushTheme}"
-                                         BorderThickness="1"
-                                         Foreground="{StaticResource TextBrush}" />
-                                
-                                <Button x:Name="ImageBrowseButton" 
-                                    AutomationProperties.Name="Choose"
-                                    AutomationProperties.AutomationId="ImageBrowseButton"
-                                        Content="Choose" 
-                                        Width="90" 
-                                    Height="34"
-                                        Grid.Column="1"
-                                        Margin="10,0,0,0"
-                                        Click="ImageBrowseButton_Click"
-                                        Background="#5AD8FF"
-                                        Foreground="#08101D"
-                                        FontWeight="Bold" />
-                            </Grid>
-                            
-                            <!-- Image Preview -->
-                            <Border x:Name="ImagePreviewBorder"
-                                    Background="{StaticResource PanelBrush}"
-                                    CornerRadius="8"
-                                    Height="120"
-                                    BorderBrush="{StaticResource BorderBrushTheme}"
-                                    BorderThickness="1">
-                                <Image x:Name="ImagePreview"
-                                       Source="{Binding ImagePath, Mode=OneWay}"
-                                       Stretch="UniformToFill" />
-                            </Border>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
-        </Border>
-
-        <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Right"
-                Margin="0,14,0,0">
-            <Button Content="Cancel"
-                    AutomationProperties.Name="Cancel"
-                    AutomationProperties.AutomationId="CancelButton"
-                    Width="100"
-                    Margin="0,0,10,0"
-                    Click="CancelButton_Click"
-                    Background="#2A3D5D"
-                    Foreground="{StaticResource TextBrush}" />
-            <Button Content="Save"
-                    AutomationProperties.Name="Save"
-                    AutomationProperties.AutomationId="SaveButton"
-                    Width="100"
-                    Click="SaveButton_Click"
-                    Background="#5AD8FF"
-                    Foreground="#08101D"
-                    FontWeight="Bold" />
-        </StackPanel>
-    </Grid>
+            <!-- FOOTER -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button Content="Cancel" Width="110" Margin="0,0,10,0"
+                        Style="{StaticResource CyberButton}" Click="CancelButton_Click"/>
+                <Button Content="Save" Width="110" FontWeight="Bold" Foreground="#081428"
+                        Click="SaveButton_Click">
+                    <Button.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#00D8FF"/>
+                            <GradientStop Color="#FF44CC"/>
+                        </LinearGradientBrush>
+                    </Button.Background>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
 </Window>

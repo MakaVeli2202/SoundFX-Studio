@@ -184,7 +184,7 @@
                             Width="40"
                             Height="40"
                             Margin="0,10,10,10"
-                            Content="✕"
+                            Content="&#x2715;"
                             Background="#55203030"
                             BorderBrush="#FF5A7A"
                             Foreground="White"

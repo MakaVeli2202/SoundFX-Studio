@@ -348,8 +348,9 @@ public sealed class KeyboardLayoutPanel : Panel
             return KeyboardCluster.ArrowCluster;
         }
 
-        if (key.KeyName is "NUM LOCK" or "/" or "*" or "-" or "+" or "."
-            || (char.IsDigit(key.KeyName.FirstOrDefault()) && key.RowIndex >= 2))
+        if (key.ColumnIndex >= 20.25
+            && (key.KeyName is "NUM LOCK" or "/" or "*" or "-" or "+" or "."
+                || char.IsDigit(key.KeyName.FirstOrDefault())))
         {
             return KeyboardCluster.NumpadCluster;
         }
