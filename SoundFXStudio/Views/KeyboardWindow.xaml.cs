@@ -35,17 +35,6 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public IReadOnlyList<ScaleOption> ScaleOptions { get; } = new[]
-    {
-        new ScaleOption("85%", 0.85),
-        new ScaleOption("100%", 1.0),
-        new ScaleOption("110%", 1.1),
-        new ScaleOption("115%", 1.15),
-        new ScaleOption("125%", 1.25),
-        new ScaleOption("130%", 1.3),
-        new ScaleOption("145%", 1.45)
-    };
-
     public MainViewModel? ViewModel { get; private set; }
 
     public double SelectedWindowScale
@@ -53,13 +42,19 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         get => _selectedWindowScale;
         set
         {
-            if (Math.Abs(_selectedWindowScale - value) < double.Epsilon)
+            var clamped = Math.Clamp(value, 0.5, 2.0);
+            if (Math.Abs(_selectedWindowScale - clamped) < double.Epsilon)
             {
                 return;
             }
 
-            _selectedWindowScale = value;
+            _selectedWindowScale = clamped;
             OnPropertyChanged();
+
+            if (ScaleDisplay is not null)
+            {
+                ScaleDisplay.Text = $"{clamped * 100:F0}%";
+            }
 
             if (!_suppressSelectionEvents)
             {
@@ -211,38 +206,19 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         DragMove();
     }
 
-    private void SettingsButton_Click(object sender, RoutedEventArgs e)
-    {
-        SettingsPanel.Visibility = SettingsPanel.Visibility == Visibility.Visible
-            ? Visibility.Collapsed
-            : Visibility.Visible;
-    }
-
-    private void CloseSettingsPanelButton_Click(object sender, RoutedEventArgs e)
-    {
-        SettingsPanel.Visibility = Visibility.Collapsed;
-    }
-
-    private void CloseKeyboardButton_Click(object sender, RoutedEventArgs e)
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         Close();
     }
 
-    private void CalibrateKeyboardButton_Click(object sender, RoutedEventArgs e)
+    private void ZoomInScale_Click(object sender, RoutedEventArgs e)
     {
-        if (ViewModel is null)
-        {
-            return;
-        }
+        SelectedWindowScale += 0.05;
+    }
 
-        var window = new KeyboardCalibrationWindow
-        {
-            Owner = this
-        };
-
-        window.ShowDialog();
-        ViewModel.RefreshCommand.Execute(null);
-        ReloadWindowScale();
+    private void ZoomOutScale_Click(object sender, RoutedEventArgs e)
+    {
+        SelectedWindowScale -= 0.05;
     }
 
     private void ReloadWindowScale()
@@ -313,18 +289,6 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         ViewModel.SaveKeyboardCalibrationSettings();
     }
 
-    private void NudgeButtonScale_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button button && button.Tag is string tag)
-        {
-            var parts = tag.Split(':');
-            if (parts.Length == 2 && double.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var delta))
-            {
-                PreviewButtonScale += delta;
-            }
-        }
-    }
-
     private void ApplyWindowScale(double scale)
     {
         var clampedScale = Math.Clamp(scale, 0.5, 2.0);
@@ -334,13 +298,22 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         var workArea = SystemParameters.WorkArea;
         Left = workArea.Left + ((workArea.Width - Width) / 2);
         Top = workArea.Top + ((workArea.Height - Height) / 2);
-        UpdateSettingsHostMargin();
+        UpdateTopControlsMargin();
         UpdateWindowClip();
     }
 
     private void RootSurface_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         UpdateWindowClip();
+    }
+
+    private void UpdateTopControlsMargin()
+    {
+        var scale = Math.Min(Width / BaseKeyboardWidth, Height / BaseKeyboardHeight);
+        var fittedImageHeight = KeyboardImageHeight * (BaseKeyboardWidth / KeyboardImageWidth) * scale;
+        var topInset = Math.Max(18, ((Height - fittedImageHeight) / 2) + (20 * scale));
+        var rightInset = Math.Max(18, 28 * scale);
+        TopControls.Margin = new Thickness(18, topInset, rightInset, 18);
     }
 
     private void UpdateWindowClip()
@@ -371,16 +344,6 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         RootSurface.Clip = geometry;
     }
 
-    private void UpdateSettingsHostMargin()
-    {
-        var scale = Math.Min(Width / BaseKeyboardWidth, Height / BaseKeyboardHeight);
-        var fittedImageHeight = KeyboardImageHeight * (BaseKeyboardWidth / KeyboardImageWidth) * scale;
-        var topInset = Math.Max(18, ((Height - fittedImageHeight) / 2) + (20 * scale));
-        var rightInset = Math.Max(18, 28 * scale);
-
-        SettingsHost.Margin = new Thickness(18, topInset, rightInset, 18);
-    }
-
     private static bool IsInteractiveElement(DependencyObject? current)
     {
         while (current is not null)
@@ -400,6 +363,4 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
-
-    public sealed record ScaleOption(string Label, double Value);
 }

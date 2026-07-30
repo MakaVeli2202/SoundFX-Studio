@@ -28,20 +28,24 @@ public sealed class VoicemeeterService
     {
         try
         {
-            // Check HKLM for Voicemeeter registry key
-            using var key = Registry.LocalMachine.OpenSubKey(@"Software\VB-Audio\Voicemeeter", false);
-            if (key != null)
-                return true;
+            var regPaths = new[]
+            {
+                @"Software\VB-Audio\Voicemeeter",
+                @"Software\Wow6432Node\VB-Audio\Voicemeeter",
+                @"Software\VB-Audio\VoicemeeterPotato",
+                @"Software\Wow6432Node\VB-Audio\VoicemeeterPotato",
+                @"Software\VB-Audio\VBCable",          // VB-Cable (standalone)
+                @"Software\Wow6432Node\VB-Audio\VBCable",
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter Banana {E431F2C7-D220-4C7B-A36B-FBAA507F6AA1}",
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter Potato {BDA1746F-3D44-4E5D-BC69-EC0421615921}",
+            };
 
-            // Also check for 64-bit installation
-            using var key64 = Registry.LocalMachine.OpenSubKey(@"Software\Wow6432Node\VB-Audio\Voicemeeter", false);
-            if (key64 != null)
-                return true;
-
-            // Check for newer Voicemeeter Potato
-            using var keyPotato = Registry.LocalMachine.OpenSubKey(@"Software\VB-Audio\VoicemeeterPotato", false);
-            if (keyPotato != null)
-                return true;
+            foreach (var regPath in regPaths)
+            {
+                using var key = Registry.LocalMachine.OpenSubKey(regPath, false);
+                if (key != null) return true;
+            }
         }
         catch
         {
@@ -60,18 +64,21 @@ public sealed class VoicemeeterService
         {
             var paths = new[]
             {
-                @"C:\Program Files\VB-Audio\Voicemeeter",
+                @"C:\Program Files (x86)\VB\Voicemeeter",
+                @"C:\Program Files\VB\Voicemeeter",
                 @"C:\Program Files (x86)\VB-Audio\Voicemeeter",
-                @"C:\Program Files\VB-Audio\VoicemeeterPotato",
+                @"C:\Program Files\VB-Audio\Voicemeeter",
                 @"C:\Program Files (x86)\VB-Audio\VoicemeeterPotato",
+                @"C:\Program Files\VB-Audio\VoicemeeterPotato",
             };
 
             foreach (var path in paths)
             {
                 if (System.IO.Directory.Exists(path))
                 {
-                    // Check for key DLL files
-                    if (System.IO.File.Exists(System.IO.Path.Combine(path, "RemoteAPI.dll")))
+                    if (System.IO.File.Exists(System.IO.Path.Combine(path, "VoicemeeterRemote64.dll"))
+                        || System.IO.File.Exists(System.IO.Path.Combine(path, "VoicemeeterRemote.dll"))
+                        || System.IO.File.Exists(System.IO.Path.Combine(path, "RemoteAPI.dll")))
                         return true;
                 }
             }
@@ -121,10 +128,12 @@ public sealed class VoicemeeterService
             // Fallback to common paths
             var commonPaths = new[]
             {
-                @"C:\Program Files\VB-Audio\Voicemeeter",
+                @"C:\Program Files (x86)\VB\Voicemeeter",
+                @"C:\Program Files\VB\Voicemeeter",
                 @"C:\Program Files (x86)\VB-Audio\Voicemeeter",
-                @"C:\Program Files\VB-Audio\VoicemeeterPotato",
+                @"C:\Program Files\VB-Audio\Voicemeeter",
                 @"C:\Program Files (x86)\VB-Audio\VoicemeeterPotato",
+                @"C:\Program Files\VB-Audio\VoicemeeterPotato",
             };
 
             foreach (var commonPath in commonPaths)

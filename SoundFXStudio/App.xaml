@@ -96,6 +96,39 @@
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Foreground" Value="{StaticResource UiTextBrush}" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="Padding" Value="10,6" />
+                        <Setter Property="Cursor" Value="Hand" />
+                        <Setter Property="HorizontalContentAlignment" Value="Center" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ComboBoxItem">
+                                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                            Padding="{TemplateBinding Padding}"
+                                            SnapsToDevicePixels="True">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsHighlighted" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource BrandCyan}" />
+                                            <Setter Property="Foreground" Value="#05101C" />
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource BrandMagenta}" />
+                                            <Setter Property="Foreground" Value="#101825" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ComboBox">
@@ -119,13 +152,15 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <ContentPresenter Grid.Column="0"
-                                                              Content="{TemplateBinding SelectionBoxItem}"
-                                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                              VerticalAlignment="Center"
-                                                              HorizontalAlignment="Center"
-                                                              Margin="{TemplateBinding Padding}"
-                                                              IsHitTestVisible="False" />
+                                            <ContentControl Grid.Column="0"
+                                                            Content="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=SelectionBoxItem}"
+                                                            ContentTemplate="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=SelectionBoxItemTemplate}"
+                                                            ContentStringFormat="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=SelectionBoxItemStringFormat}"
+                                                            VerticalAlignment="Center"
+                                                            HorizontalAlignment="Center"
+                                                            Margin="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Padding}"
+                                                            IsHitTestVisible="False"
+                                                            Foreground="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Foreground}" />
                                             <Path Grid.Column="1" Data="M 0,0 L 5,5 L 10,0"
                                                   Stroke="#A2B0C9" StrokeThickness="1.5"
                                                   Margin="0,0,8,0" VerticalAlignment="Center" />
@@ -169,36 +204,7 @@
             </Setter>
         </Style>
 
-        <Style TargetType="ComboBoxItem">
-            <Setter Property="Foreground" Value="{StaticResource UiTextBrush}" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Padding" Value="10,6" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="HorizontalContentAlignment" Value="Center" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBoxItem">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                Padding="{TemplateBinding Padding}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource BrandCyan}" />
-                                <Setter Property="Foreground" Value="#05101C" />
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource BrandMagenta}" />
-                                <Setter Property="Foreground" Value="#101825" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+
 
         <Style TargetType="Button">
             <Setter Property="Background" Value="{StaticResource UiPanelBrush}" />

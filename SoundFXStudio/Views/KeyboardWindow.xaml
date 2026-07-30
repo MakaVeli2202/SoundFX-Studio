@@ -16,34 +16,30 @@
         MouseLeftButtonDown="KeyboardWindow_MouseLeftButtonDown">
 
     <Window.Resources>
-        <Style x:Key="SettingsButtonStyle" TargetType="Button">
-            <Setter Property="Foreground" Value="#DDEAFF"/>
+        <Style x:Key="TopBtn" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#AABBCC"/>
             <Setter Property="Background" Value="#1A2A4580"/>
             <Setter Property="BorderBrush" Value="#5580CFFF"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Height" Value="36"/>
-            <Setter Property="Padding" Value="14,7"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="12"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" CornerRadius="8" Padding="{TemplateBinding Padding}"
+                        <Border x:Name="Bd" CornerRadius="6"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
-                                              TextElement.Foreground="{TemplateBinding Foreground}"
-                                              TextElement.FontSize="{TemplateBinding FontSize}"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="#2200D8FF"/>
                                 <Setter TargetName="Bd" Property="BorderBrush" Value="#00D8FF"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#33FF44CC"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FF44CC"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -52,10 +48,9 @@
         </Style>
     </Window.Resources>
 
-
     <Grid x:Name="RootSurface" Background="Transparent" SizeChanged="RootSurface_SizeChanged">
 
-        <!-- Soundboard status bar at top -->
+        <!-- Soundboard status bar -->
         <Border x:Name="SoundboardStatusBar"
                 HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,12,0,0"
                 Padding="18,6" CornerRadius="8" BorderThickness="1"
@@ -76,114 +71,36 @@
                        FontSize="13" FontWeight="Bold"/>
         </Border>
 
-    <Viewbox Stretch="Uniform">
-        <controls:KeyboardControl ItemsSource="{Binding ViewModel.KeyboardKeys, RelativeSource={RelativeSource AncestorType=Window}}"
-                      DataContext="{Binding ViewModel, RelativeSource={RelativeSource AncestorType=Window}}"
-                                  ButtonScale="{Binding PreviewButtonScale, RelativeSource={RelativeSource AncestorType=Window}}"
-                                  InnerInsetXPercent="{Binding PreviewInnerInsetXPercent, RelativeSource={RelativeSource AncestorType=Window}}"
-                                  InnerInsetYPercent="{Binding PreviewInnerInsetYPercent, RelativeSource={RelativeSource AncestorType=Window}}"
-                                  InnerOffsetXPercent="{Binding PreviewInnerOffsetXPercent, RelativeSource={RelativeSource AncestorType=Window}}"
-                                  InnerOffsetYPercent="{Binding PreviewInnerOffsetYPercent, RelativeSource={RelativeSource AncestorType=Window}}"
-                                   />
-    </Viewbox>
-            
-            
+        <Viewbox Stretch="Uniform">
+            <controls:KeyboardControl ItemsSource="{Binding ViewModel.KeyboardKeys, RelativeSource={RelativeSource AncestorType=Window}}"
+                          DataContext="{Binding ViewModel, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      ButtonScale="{Binding PreviewButtonScale, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      InnerInsetXPercent="{Binding PreviewInnerInsetXPercent, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      InnerInsetYPercent="{Binding PreviewInnerInsetYPercent, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      InnerOffsetXPercent="{Binding PreviewInnerOffsetXPercent, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      InnerOffsetYPercent="{Binding PreviewInnerOffsetYPercent, RelativeSource={RelativeSource AncestorType=Window}}"
+                                       />
+        </Viewbox>
 
-        <StackPanel x:Name="SettingsHost"
+        <!-- Top-right controls: scale, close -->
+        <StackPanel x:Name="TopControls"
             HorizontalAlignment="Right"
             VerticalAlignment="Top"
             Margin="18">
 
-            <Button Width="48"
-        Height="48"
-        FontSize="18"
-        Foreground="#EAF1FF"
-        Background="#22081428"
-        BorderBrush="#5580CFFF"
-        BorderThickness="1"
-        Cursor="Hand"
-        Content="⚙"
-        Click="SettingsButton_Click">
-
-                <Button.Effect>
-                    <DropShadowEffect BlurRadius="12"
-                          ShadowDepth="0"
-                          Color="#00D8FF"
-                          Opacity="0.4"/>
-                </Button.Effect>
-
-            </Button>
-
-            <Border x:Name="SettingsPanel"
-            Margin="0,10,0,0"
-            Padding="14"
-            Background="#CC081428"
-            BorderBrush="#5580CFFF"
-            BorderThickness="1"
-            CornerRadius="14"
-            Visibility="Collapsed">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="20"
-                      ShadowDepth="0"
-                      Color="#00D8FF"
-                      Opacity="0.25"/>
-                </Border.Effect>
-                <StackPanel Width="240">
-                    <TextBlock Text="KEYBOARD SETTINGS"
-                               Foreground="#00D8FF"
-                               FontSize="20"
+            <Border Padding="6,5" CornerRadius="8" Background="#1A2A4580" BorderBrush="#5580CFFF" BorderThickness="1">
+                <StackPanel Orientation="Horizontal">
+                    <Button Style="{StaticResource TopBtn}" Content="−" FontSize="16" Click="ZoomOutScale_Click"/>
+                    <TextBlock x:Name="ScaleDisplay" Text="100%" VerticalAlignment="Center"
+                               Width="48" TextAlignment="Center" FontSize="11" Foreground="#AABBCC"
                                FontWeight="SemiBold"/>
-
-                    <TextBlock Text="Window Size"
-                   Foreground="#A1B2D2"
-                   Margin="0,0,0,4" />
-            <ComboBox ItemsSource="{Binding ScaleOptions}"
-                  SelectedValuePath="Value"
-                  SelectedValue="{Binding SelectedWindowScale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                  HorizontalContentAlignment="Center"
-                  Margin="0,0,0,12">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" />
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-
-            <TextBlock Text="Button Scale"
-                   Foreground="#CFCFCF"
-                   Margin="0,0,0,4" />
-            <DockPanel Margin="0,0,0,12">
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <Button Width="28" Height="28" Padding="0" FontSize="12" FontWeight="Bold"
-                            Content="-"
-                            Style="{StaticResource SettingsButtonStyle}"
-                            Tag="PreviewButtonScale:-0.05"
-                            Click="NudgeButtonScale_Click" />
-                    <TextBox Width="60" Margin="4,0"
-                             Text="{Binding PreviewButtonScale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Width="28" Height="28" Padding="0" FontSize="12" FontWeight="Bold"
-                            Content="+"
-                            Style="{StaticResource SettingsButtonStyle}"
-                            Tag="PreviewButtonScale:0.05"
-                            Click="NudgeButtonScale_Click" />
+                    <Button Style="{StaticResource TopBtn}" Content="+" FontSize="14" Click="ZoomInScale_Click"/>
+                    <Border Width="1" Background="#5580CFFF" Margin="6,2,6,2"/>
+                    <Button Style="{StaticResource TopBtn}" Content="&#x2715;" FontSize="12" Click="CloseButton_Click"
+                            Foreground="#FF8A8A"/>
                 </StackPanel>
-                <Slider Minimum="0.4"
-                        Maximum="1.6"
-                        Value="{Binding PreviewButtonScale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        TickFrequency="0.01"
-                        Margin="0,0,8,0" />
-            </DockPanel>
+            </Border>
 
-                    <Button Content="Calibrate Keyboard" Style="{StaticResource SettingsButtonStyle}"
-                Margin="0,0,0,8"
-                Click="CalibrateKeyboardButton_Click" />
-            <Button Content="Close Keyboard" Style="{StaticResource SettingsButtonStyle}"
-                Margin="0,0,0,8"
-                Click="CloseKeyboardButton_Click" />
-            <Button Content="Close Panel" Style="{StaticResource SettingsButtonStyle}"
-                Click="CloseSettingsPanelButton_Click" />
         </StackPanel>
-        </Border>
-    </StackPanel>
     </Grid>
 </Window>

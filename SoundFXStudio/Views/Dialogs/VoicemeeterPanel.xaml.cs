@@ -292,12 +292,25 @@ public partial class VoicemeeterPanel : Window
     private static string? FindVmExe()
     {
         string? dir = null;
-        using (var b = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
-        using (var k = b.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}"))
-            if (k?.GetValue("UninstallString") is string u)
-                dir = Path.GetDirectoryName(u.Trim('"'));
+        var uninstallKeys = new[]
+        {
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter Banana {E431F2C7-D220-4C7B-A36B-FBAA507F6AA1}",
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter Potato {BDA1746F-3D44-4E5D-BC69-EC0421615921}",
+        };
 
-        foreach (var d in new[] { dir, @"C:\Program Files (x86)\VB\Voicemeeter", @"C:\Program Files\VB\Voicemeeter" })
+        using var b = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+        foreach (var uninstallKey in uninstallKeys)
+        {
+            using var k = b.OpenSubKey(uninstallKey);
+            if (k?.GetValue("UninstallString") is string u)
+            {
+                dir = Path.GetDirectoryName(u.Trim('"'));
+                if (dir != null) break;
+            }
+        }
+
+        foreach (var d in new[] { dir, @"C:\Program Files (x86)\VB\Voicemeeter", @"C:\Program Files\VB\Voicemeeter", @"C:\Program Files (x86)\VB-Audio\Voicemeeter", @"C:\Program Files\VB-Audio\Voicemeeter" })
         {
             if (string.IsNullOrEmpty(d)) continue;
             foreach (var exe in new[] { "voicemeeter8x64.exe", "voicemeeter8.exe", "voicemeeterpro.exe", "voicemeeter.exe" })

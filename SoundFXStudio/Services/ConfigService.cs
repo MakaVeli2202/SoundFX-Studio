@@ -46,6 +46,7 @@ public class ConfigService
                 Save(normalized);
             }
 
+            ApplyProjectCalibrationIfAvailable(normalized);
             _logService?.Info("Config Loaded");
             return normalized;
         }
@@ -162,7 +163,7 @@ public class ConfigService
         config.Settings.KeyboardCalibration ??= new KeyboardCalibrationSettings();
         config.Settings.KeyboardCalibration.KeyOverrides ??= new Dictionary<string, KeyCalibrationOverrideSettings>();
         migrated |= MigrateLegacyKeyboardCalibration(config.Settings.KeyboardCalibration, config.Settings.KeyboardLayout);
-        if (config.Settings.KeyboardCalibration.KeyboardWindowScale <= 0)
+        if (config.Settings.KeyboardCalibration.KeyboardWindowScale < 0.5)
         {
             config.Settings.KeyboardCalibration.KeyboardWindowScale = 0.85;
             migrated = true;
@@ -197,22 +198,53 @@ public class ConfigService
         try
         {
             var json = File.ReadAllText(calibrationPath);
-            var calibration = JsonSerializer.Deserialize<KeyboardCalibrationSettings>(json, SerializerOptions);
-            if (calibration is not null)
+            var projectCal = JsonSerializer.Deserialize<KeyboardCalibrationSettings>(json, SerializerOptions);
+            if (projectCal is null)
             {
-                calibration.KeyOverrides ??= new Dictionary<string, KeyCalibrationOverrideSettings>();
-                MigrateLegacyKeyboardCalibration(calibration, config.Settings.KeyboardLayout);
-                if (calibration.KeyboardWindowScale <= 0)
-                {
-                    calibration.KeyboardWindowScale = 0.85;
-                }
-                config.Settings.KeyboardCalibration = calibration;
+                return;
             }
+
+            projectCal.KeyOverrides ??= new Dictionary<string, KeyCalibrationOverrideSettings>();
+            MigrateLegacyKeyboardCalibration(projectCal, config.Settings.KeyboardLayout);
+            if (projectCal.KeyboardWindowScale < 0.5)
+            {
+                projectCal.KeyboardWindowScale = 0.85;
+            }
+
+            var existing = config.Settings.KeyboardCalibration ?? new KeyboardCalibrationSettings();
+            existing.KeyOverrides ??= new Dictionary<string, KeyCalibrationOverrideSettings>();
+            MergeCalibration(existing, projectCal);
+            config.Settings.KeyboardCalibration = existing;
         }
         catch
         {
             // Ignore project calibration load failures and keep the persisted config.
         }
+    }
+
+    private static void MergeCalibration(KeyboardCalibrationSettings target, KeyboardCalibrationSettings source)
+    {
+        if (Math.Abs(target.KeyUnit) < double.Epsilon) target.KeyUnit = source.KeyUnit;
+        if (Math.Abs(target.GapX) < double.Epsilon) target.GapX = source.GapX;
+        if (Math.Abs(target.GapY) < double.Epsilon) target.GapY = source.GapY;
+        if (Math.Abs(target.Gap) < double.Epsilon) target.Gap = source.Gap;
+        if (Math.Abs(target.OffsetX) < double.Epsilon) target.OffsetX = source.OffsetX;
+        if (Math.Abs(target.OffsetY) < double.Epsilon) target.OffsetY = source.OffsetY;
+        if (Math.Abs(target.ButtonScale) < double.Epsilon) target.ButtonScale = source.ButtonScale;
+        if (Math.Abs(target.InnerSectionInsetXPercent) < double.Epsilon) target.InnerSectionInsetXPercent = source.InnerSectionInsetXPercent;
+        if (Math.Abs(target.InnerSectionInsetYPercent) < double.Epsilon) target.InnerSectionInsetYPercent = source.InnerSectionInsetYPercent;
+        if (Math.Abs(target.InnerSectionOffsetXPercent) < double.Epsilon) target.InnerSectionOffsetXPercent = source.InnerSectionOffsetXPercent;
+        if (Math.Abs(target.InnerSectionOffsetYPercent) < double.Epsilon) target.InnerSectionOffsetYPercent = source.InnerSectionOffsetYPercent;
+        if (Math.Abs(target.KeyboardWindowScale) < double.Epsilon) target.KeyboardWindowScale = source.KeyboardWindowScale;
+
+        if (Math.Abs(target.CapsLockIndicatorOffsetX) < double.Epsilon) target.CapsLockIndicatorOffsetX = source.CapsLockIndicatorOffsetX;
+        if (Math.Abs(target.CapsLockIndicatorOffsetY) < double.Epsilon) target.CapsLockIndicatorOffsetY = source.CapsLockIndicatorOffsetY;
+        if (Math.Abs(target.NumLockIndicatorOffsetX) < double.Epsilon) target.NumLockIndicatorOffsetX = source.NumLockIndicatorOffsetX;
+        if (Math.Abs(target.NumLockIndicatorOffsetY) < double.Epsilon) target.NumLockIndicatorOffsetY = source.NumLockIndicatorOffsetY;
+        if (Math.Abs(target.ScrollLockIndicatorOffsetX) < double.Epsilon) target.ScrollLockIndicatorOffsetX = source.ScrollLockIndicatorOffsetX;
+        if (Math.Abs(target.ScrollLockIndicatorOffsetY) < double.Epsilon) target.ScrollLockIndicatorOffsetY = source.ScrollLockIndicatorOffsetY;
+
+        if (Math.Abs(target.InnerSectionInsetPercent) < double.Epsilon) target.InnerSectionInsetPercent = source.InnerSectionInsetPercent;
     }
 
     private static string GetProjectCalibrationFilePath()

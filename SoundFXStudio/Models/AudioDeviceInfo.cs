@@ -68,4 +68,6 @@ public class AudioDeviceInfo : ObservableObject
         get => _state;
         set => SetProperty(ref _state, value);
     }
+
+    public override string ToString() => Name;
 }
