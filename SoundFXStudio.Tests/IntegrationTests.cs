@@ -1,7 +1,6 @@
 using SoundFXStudio.Infrastructure;
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
-using System.Collections.ObjectModel;
 using Xunit;
 
 namespace SoundFXStudio.Tests;

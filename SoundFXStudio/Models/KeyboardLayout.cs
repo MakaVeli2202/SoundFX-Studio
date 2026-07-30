@@ -1,6 +1,4 @@
-﻿using SoundFXStudio.Models;
-
-namespace SoundFXStudio.Models;
+﻿namespace SoundFXStudio.Models;
 
 public static class KeyboardLayout
 {

@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <None Remove="Assets\UI\HeroSection.png" />
-    <None Remove="Assets\UI\MainDashboardBackground.png" />
     <None Remove="Assets\UI\MainDashboardLogo.png" />
     <None Remove="Assets\UI\MainWindowBackground.png" />
   </ItemGroup>
@@ -24,12 +23,8 @@
   <ItemGroup>
     <Resource Include="Assets\SoundFXStudioLogo.png" />
     <Resource Include="Assets\Keyboards\LEDOFF.png" />
-    <Resource Include="Assets\Keyboards\LEDON.png" />
     <Resource Include="Assets\Keyboards\SoundFXKeyBoard.png" />
     <Resource Include="Assets\UI\HeroSection.png">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Resource>
-    <Resource Include="Assets\UI\MainDashboardBackground.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Assets\UI\MainDashboardLogo.png">

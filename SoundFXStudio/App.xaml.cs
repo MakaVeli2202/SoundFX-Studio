@@ -3,12 +3,12 @@ using SoundFXStudio.Models;
 using SoundFXStudio.Services;
 using SoundFXStudio.Views.Dialogs;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace SoundFXStudio;
