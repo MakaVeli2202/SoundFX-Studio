@@ -180,14 +180,20 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         ReloadWindowScale();
     }
 
-    private void KeyboardWindow_KeyDown(object sender, KeyEventArgs e)
+    private void KeyboardWindow_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Escape)
+        if (e.Key == Key.Escape)
         {
+            Close();
             return;
         }
 
-        Close();
+        ViewModel?.HandlePreviewKeyDown(e);
+    }
+
+    private void KeyboardWindow_PreviewKeyUp(object sender, KeyEventArgs e)
+    {
+        ViewModel?.HandlePreviewKeyUp(e);
     }
 
     private void KeyboardWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

@@ -11,25 +11,70 @@
         ResizeMode="NoResize"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterScreen"
-        KeyDown="KeyboardWindow_KeyDown"
+        PreviewKeyDown="KeyboardWindow_PreviewKeyDown"
+        PreviewKeyUp="KeyboardWindow_PreviewKeyUp"
         MouseLeftButtonDown="KeyboardWindow_MouseLeftButtonDown">
 
     <Window.Resources>
-        <Style x:Key="SettingsButtonStyle"
-       TargetType="Button">
-
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Background" Value="#22112233"/>
-            <Setter Property="BorderBrush" Value="#3370AFFF"/>
+        <Style x:Key="SettingsButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="#DDEAFF"/>
+            <Setter Property="Background" Value="#1A2A4580"/>
+            <Setter Property="BorderBrush" Value="#5580CFFF"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="14,7"/>
             <Setter Property="Cursor" Value="Hand"/>
-
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="8" Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"
+                                              TextElement.FontSize="{TemplateBinding FontSize}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#2200D8FF"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#00D8FF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#33FF44CC"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#FF44CC"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
 
     <Grid x:Name="RootSurface" Background="Transparent" SizeChanged="RootSurface_SizeChanged">
+
+        <!-- Soundboard status bar at top -->
+        <Border x:Name="SoundboardStatusBar"
+                HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,12,0,0"
+                Padding="18,6" CornerRadius="8" BorderThickness="1"
+                BorderBrush="#5580CFFF">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Background" Value="#1410B981"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ViewModel.IsSoundboardActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="False">
+                            <Setter Property="Background" Value="#14F43F5E"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <TextBlock x:Name="SoundboardStatusText"
+                       Text="{Binding ViewModel.IsSoundboardActiveText, RelativeSource={RelativeSource AncestorType=Window}}"
+                       Foreground="{Binding ViewModel.IsSoundboardActiveColor, RelativeSource={RelativeSource AncestorType=Window}}"
+                       FontSize="13" FontWeight="Bold"/>
+        </Border>
 
     <Viewbox Stretch="Uniform">
         <controls:KeyboardControl ItemsSource="{Binding ViewModel.KeyboardKeys, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -39,7 +84,7 @@
                                   InnerInsetYPercent="{Binding PreviewInnerInsetYPercent, RelativeSource={RelativeSource AncestorType=Window}}"
                                   InnerOffsetXPercent="{Binding PreviewInnerOffsetXPercent, RelativeSource={RelativeSource AncestorType=Window}}"
                                   InnerOffsetYPercent="{Binding PreviewInnerOffsetYPercent, RelativeSource={RelativeSource AncestorType=Window}}"
-                                  KeyClickedCommand="{Binding ViewModel.KeyClickedCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                   />
     </Viewbox>
             
             

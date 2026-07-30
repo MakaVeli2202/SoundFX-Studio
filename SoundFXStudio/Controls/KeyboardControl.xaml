@@ -155,64 +155,8 @@
 
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Button Command="{Binding DataContext.KeyClickedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                CommandParameter="{Binding}"
-                                AutomationProperties.AutomationId="{Binding Id}"
-                            AutomationProperties.Name="{Binding AutomationName}"
-                                AllowDrop="True"
-                                Drop="KeyButton_Drop"
-                                DragOver="KeyButton_DragOver"
-                                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                            <Button.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="➕ Assign Sound"
-                                              Command="{Binding PlacementTarget.Tag.AssignSelectedSoundToKeyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    <MenuItem Header="❌ Remove Sound"
-                                              Command="{Binding PlacementTarget.Tag.RemoveSoundFromKeyCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    <MenuItem Header="🖼️ Set Image"
-                                              Command="{Binding PlacementTarget.Tag.ChooseKeyImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    <MenuItem Header="❌ Remove Image"
-                                              Command="{Binding PlacementTarget.Tag.RemoveKeyImageCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    <Separator />
-                                    <MenuItem Header="📝 Rename Binding"
-                                              Command="{Binding PlacementTarget.Tag.RenameBindingCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    <Separator />
-                                    <MenuItem Header="🔊 Volume"
-                                              Command="{Binding PlacementTarget.Tag.ChangeKeyVolumeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    <MenuItem Header="🔁 Toggle Loop"
-                                              Command="{Binding PlacementTarget.Tag.ToggleKeyLoopCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    <MenuItem Header="⏹️ Stop Playback"
-                                              Command="{Binding PlacementTarget.Tag.StopKeyPlaybackCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    <Separator />
-                                    <MenuItem Header="📋 Duplicate Binding"
-                                              Command="{Binding PlacementTarget.Tag.DuplicateBindingCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                              CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                </ContextMenu>
-                            </Button.ContextMenu>
-
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasAssignment}" Value="True">
-                                            <Setter Property="Opacity" Value="0.94" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding HasAssignment}" Value="False">
-                                            <Setter Property="Opacity" Value="0.45" />
-                                        </DataTrigger>
-                                        <Trigger Property="IsEnabled" Value="False">
-                                            <Setter Property="Opacity" Value="0.4" />
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
+                        <Button AutomationProperties.AutomationId="{Binding Id}"
+                            AutomationProperties.Name="{Binding AutomationName}">
 
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -225,14 +169,6 @@
                                         CornerRadius="10"
                                         Background="#09000000"
                                         Opacity="0.06" />
-
-                                <Border Grid.RowSpan="3"
-                                        Width="4"
-                                        HorizontalAlignment="Left"
-                                        CornerRadius="2"
-                                        Background="{Binding CategoryAccentColor}"
-                                        Opacity="0.85"
-                                        Visibility="{Binding HasAssignment, Converter={StaticResource BoolToVisibilityConverter}}" />
 
                                 <Grid Grid.Row="1" Margin="1">
                                     <Border CornerRadius="7"

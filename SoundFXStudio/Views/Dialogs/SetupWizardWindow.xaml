@@ -205,7 +205,7 @@
                                    Foreground="{StaticResource MutedBrush}"
                                    FontSize="12"/>
 
-                        <TextBlock x:Name="StatusText"
+                        <TextBlock x:Name="WizardStatusText"
                                    Margin="0,20,0,0"
                                    Foreground="#00D8FF"
                                    TextWrapping="Wrap"/>
@@ -214,34 +214,67 @@
 
                 </Border>
 
-                <!-- INFO -->
+                <!-- VOICEMEETER SETUP -->
 
                 <Border Grid.Column="1"
                         Style="{StaticResource GlassPanel}">
 
                     <StackPanel Margin="16">
 
-                        <TextBlock Text="WHAT HAPPENS NEXT"
+                        <TextBlock Text="VOICEMEETER AUTO-SETUP"
                                    Foreground="#00D8FF"
                                    FontSize="18"
                                    FontWeight="Bold"
-                                   Margin="0,0,0,16"/>
-
-                        <TextBlock Text="✓ Configure playback routing"
-                                   Foreground="{StaticResource TextBrush}"
                                    Margin="0,0,0,12"/>
 
-                        <TextBlock Text="✓ Configure microphone capture"
-                                   Foreground="{StaticResource TextBrush}"
-                                   Margin="0,0,0,12"/>
+                        <Border Background="#1400D8FF" CornerRadius="8" Padding="10,7" Margin="0,0,0,12">
+                            <TextBlock x:Name="VmDetectText" Text="Checking for Voicemeeter..."
+                                       Foreground="#8891B8" FontSize="12"/>
+                        </Border>
 
-                        <TextBlock Text="✓ Prepare keyboard sound triggers"
-                                   Foreground="{StaticResource TextBrush}"
-                                   Margin="0,0,0,12"/>
+                        <TextBlock Text="What you HEAR with (headphones)"
+                                   Foreground="{StaticResource MutedBrush}" FontSize="12"/>
+                        <ComboBox x:Name="WizardHearCombo"
+                                  Margin="0,4,0,10" Height="30"
+                                  DisplayMemberPath="Name"
+                                  Background="#44111A2E" BorderBrush="#5580CFFF"
+                                  Foreground="White" FontSize="12"/>
 
-                        <TextBlock Text="✓ Save recommended settings"
-                                   Foreground="{StaticResource TextBrush}"
-                                   Margin="0,0,0,12"/>
+                        <TextBlock Text="What you TALK with (microphone)"
+                                   Foreground="{StaticResource MutedBrush}" FontSize="12"/>
+                        <ComboBox x:Name="WizardTalkCombo"
+                                  Margin="0,4,0,12" Height="30"
+                                  DisplayMemberPath="Name"
+                                  Background="#44111A2E" BorderBrush="#5580CFFF"
+                                  Foreground="White" FontSize="12"/>
+
+                        <Button x:Name="WizardAutoSetupBtn"
+                                Content="Auto-setup for Voicemeeter"
+                                Click="WizardAutoSetup_Click"
+                                Height="36"
+                                Background="#222A4580" BorderBrush="#5580CFFF"
+                                Foreground="White" Cursor="Hand" FontWeight="SemiBold" FontSize="12">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="#442A4580"/>
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#00D8FF"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <TextBlock x:Name="VmSetupStatus"
+                                   Margin="0,8,0,0"
+                                   Foreground="#10B981"
+                                   FontSize="10.5" TextWrapping="Wrap"
+                                   FontFamily="Consolas"/>
 
                     </StackPanel>
 
@@ -263,19 +296,13 @@
                           VerticalAlignment="Center"/>
 
                 <Button Content="Open Windows Sound"
-                        Width="180"
-                        Margin="0,0,10,0"
+                        Width="160"
+                        Margin="0,0,8,0"
                         Style="{StaticResource CyberButton}"
                         Click="OpenSound_Click"/>
 
-                <Button Content="Auto Configure"
-                        Width="160"
-                        Margin="0,0,10,0"
-                        Style="{StaticResource CyberButton}"
-                        Click="AutoConfigure_Click"/>
-
                 <Button Content="Finish"
-                        Width="130"
+                        Width="120"
                         FontWeight="Bold"
                         Foreground="#081428"
                         Click="Finish_Click">

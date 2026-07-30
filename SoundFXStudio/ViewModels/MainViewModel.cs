@@ -58,6 +58,7 @@ public sealed class MainViewModel : ObservableObject
     private bool _disposed;
     private bool _isLoading;
     private bool _isAssignMode;
+    private bool _isSoundboardActive = true;
     private string _currentPage = "Home";
     private KeyboardLayoutMode _detectedKeyboardLayout = KeyboardLayoutMode.EnglishUS;
 
@@ -531,6 +532,23 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
+    public bool IsSoundboardActive
+    {
+        get => _isSoundboardActive;
+        set
+        {
+            if (SetProperty(ref _isSoundboardActive, value))
+            {
+                OnPropertyChanged(nameof(IsSoundboardActiveText));
+                OnPropertyChanged(nameof(IsSoundboardActiveColor));
+                StatusText = value ? "Soundboard ON" : "Soundboard OFF";
+            }
+        }
+    }
+
+    public string IsSoundboardActiveText => IsSoundboardActive ? "SOUNDBOARD ON" : "SOUNDBOARD OFF";
+    public string IsSoundboardActiveColor => IsSoundboardActive ? "#10B981" : "#F43F5E";
+
     public string CurrentPage
     {
         get => _currentPage;
@@ -547,6 +565,38 @@ public sealed class MainViewModel : ObservableObject
     {
         _window = window;
         _triggerService.AttachWindow(window, _keyboardViewModel.HandlePhysicalKey);
+        RegisterMuteHotkeys();
+    }
+
+    public void RegisterMuteHotkeys()
+    {
+        _triggerService.RegisterMuteHotkeys(Settings.MuteAllKey, Settings.MuteHearKey, Settings.MuteTeamKey);
+    }
+
+    public int GetVoiceChangerMicIndex()
+    {
+        var micId = Settings.MicrophoneDeviceId;
+        if (!string.IsNullOrWhiteSpace(micId))
+        {
+            var idx = InputDevices.ToList().FindIndex(d => string.Equals(d.Id, micId, StringComparison.OrdinalIgnoreCase));
+            if (idx >= 0) return idx;
+        }
+        var def = InputDevices.FirstOrDefault(d => d.IsDefaultCommunication || d.IsDefault);
+        return def is not null ? InputDevices.IndexOf(def) : (InputDevices.Count > 0 ? 0 : -1);
+    }
+
+    private void ShowSoundboardNotification()
+    {
+        var status = IsSoundboardActive ? "ON" : "OFF";
+        RunOnUiThread(() =>
+        {
+            StatusText = $"Soundboard {status}";
+            _window?.Dispatcher.Invoke(() =>
+            {
+                var toast = new Views.Dialogs.ToastWindow($"Soundboard {status}");
+                toast.Show();
+            });
+        });
     }
 
     public void Dispose()
@@ -566,6 +616,13 @@ public sealed class MainViewModel : ObservableObject
         GC.SuppressFinalize(this);
     }
 
+    private static Key? ParseToggleKey(string keyName)
+    {
+        if (string.IsNullOrWhiteSpace(keyName)) return null;
+        if (Enum.TryParse<Key>(keyName.Trim(), ignoreCase: true, out var key)) return key;
+        return null;
+    }
+
     public void HandlePreviewKeyDown(System.Windows.Input.KeyEventArgs e)
     {
         if (IsAssignMode)
@@ -580,11 +637,39 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
+        var toggleKey = ParseToggleKey(Settings.SoundboardToggleKey);
+        if (toggleKey.HasValue && e.Key == toggleKey.Value)
+        {
+            if (Settings.HotkeyHoldMode)
+            {
+                IsSoundboardActive = true;
+            }
+            else
+            {
+                IsSoundboardActive = !IsSoundboardActive;
+            }
+            e.Handled = true;
+            return;
+        }
+
+        if (!IsSoundboardActive) return;
+
         HandlePhysicalKey(e.Key, isKeyDown: true);
     }
 
     public void HandlePreviewKeyUp(System.Windows.Input.KeyEventArgs e)
     {
+        var toggleKey = ParseToggleKey(Settings.SoundboardToggleKey);
+        if (toggleKey.HasValue && e.Key == toggleKey.Value)
+        {
+            if (Settings.HotkeyHoldMode)
+            {
+                IsSoundboardActive = false;
+            }
+            e.Handled = true;
+            return;
+        }
+
         HandlePhysicalKey(e.Key, isKeyDown: false);
     }
 
@@ -1183,11 +1268,14 @@ public sealed class MainViewModel : ObservableObject
             : "Assign mode off";
     }
 
-    private KeyboardKey? TryResolveKeyboardKeyFromPhysicalKey(Key key)
+    internal KeyboardKey? TryResolveKeyboardKeyFromPhysicalKey(Key key)
     {
         var token = NormalizeTokenForLayout(ToKeyToken(key, GetModifierState()));
         return KeyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, token, StringComparison.OrdinalIgnoreCase));
     }
+
+    public KeyboardKey? ResolveKeyFromName(string keyName) =>
+        KeyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, keyName, StringComparison.OrdinalIgnoreCase));
 
     private void RenameSelectedSound(object? parameter)
     {
@@ -1778,10 +1866,15 @@ public sealed class MainViewModel : ObservableObject
         _logService?.Info($"Profile Deleted: {profile.Name}");
     }
 
-    private void StopAll()
+    public void StopAllSounds()
     {
         _audioPlayer.StopAll();
         StatusText = "Stopped all sounds";
+    }
+
+    private void StopAll()
+    {
+        StopAllSounds();
     }
 
     private void Refresh()
@@ -1849,6 +1942,74 @@ public sealed class MainViewModel : ObservableObject
         _audioPlayer.Play("routing-test", testTonePath, 0.8f, false, PlaybackMode.Restart, deviceIndex);
         StatusText = $"Routing test playing through {selectedOutput.Name}";
         UpdateRoutingStatus();
+    }
+
+    // ─── Voicemeeter / audio setup methods ───────────────────────────────
+
+    internal async Task<string> AutoSetupVoicemeeterAsync(AudioDeviceInfo? hearDevice, AudioDeviceInfo? talkDevice)
+    {
+        if (hearDevice is null || talkDevice is null)
+            return "Select both Hear and Talk devices first.";
+
+        return await Task.Run(() =>
+        {
+            if (!VoicemeeterService.IsVoicemeeterInstalled())
+                return "✗  Voicemeeter isn't installed yet.";
+
+            try
+            {
+                Settings.HearDeviceName = hearDevice.Name;
+                Settings.TalkDeviceName = talkDevice.Name;
+                Settings.SpeakersDeviceName = hearDevice.Name;
+                Settings.OutputDeviceId = hearDevice.Id;
+                Settings.PlaybackDeviceId = hearDevice.Id;
+                Settings.VoicemeeterDetected = true;
+                Save();
+
+                return $"✓  Configured for Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
+            }
+            catch (Exception ex)
+            {
+                return $"✗  Setup failed: {ex.Message}";
+            }
+        });
+    }
+
+    internal void OpenMixer(Window owner)
+    {
+        try
+        {
+            var panel = new Views.Dialogs.VoicemeeterPanel { Owner = owner };
+            panel.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Mixer: {ex.Message}";
+        }
+    }
+
+    internal void OpenSetupWizard(Window owner)
+    {
+        try
+        {
+            var wizard = new SetupWizardWindow { Owner = owner };
+            wizard.ShowDialog();
+            Refresh();
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Setup wizard: {ex.Message}";
+        }
+    }
+
+    internal List<AudioDeviceInfo> GetPhysicalOutputDevices()
+    {
+        return OutputDevices.Where(d => !d.IsVirtual).ToList();
+    }
+
+    internal List<AudioDeviceInfo> GetPhysicalInputDevices()
+    {
+        return InputDevices.Where(d => !d.IsVirtual).ToList();
     }
 
     internal void Save()

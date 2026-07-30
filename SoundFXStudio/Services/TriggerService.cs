@@ -91,6 +91,22 @@ public sealed class TriggerService : IDisposable
         _hotkeyService.Attach(window);
         _hotkeyPressedHandler = (_, args) =>
         {
+            switch (args.OwnerId)
+            {
+                case HkMuteAll:
+                    _logService?.Info("Mute All triggered");
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => App.ToggleMuteAll());
+                    return;
+                case HkMuteHear:
+                    _logService?.Info("Mute Hear triggered");
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => App.ToggleMuteHear());
+                    return;
+                case HkMuteTeam:
+                    _logService?.Info("Mute Team triggered");
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => App.ToggleMuteTeam());
+                    return;
+            }
+
             var assignment = ActiveProfile?.Assignments.FirstOrDefault(item => string.Equals(item.Id, args.OwnerId, StringComparison.OrdinalIgnoreCase));
             if (assignment is null)
             {
@@ -165,6 +181,26 @@ public sealed class TriggerService : IDisposable
             }
         }
     }
+
+    public void RegisterMuteHotkeys(string muteAllKey, string muteHearKey, string muteTeamKey)
+    {
+        ThrowIfDisposed();
+
+        _hotkeyService.Unregister(HkMuteAll);
+        _hotkeyService.Unregister(HkMuteHear);
+        _hotkeyService.Unregister(HkMuteTeam);
+
+        if (!string.IsNullOrWhiteSpace(muteAllKey))
+            _hotkeyService.Register(HkMuteAll, muteAllKey);
+        if (!string.IsNullOrWhiteSpace(muteHearKey))
+            _hotkeyService.Register(HkMuteHear, muteHearKey);
+        if (!string.IsNullOrWhiteSpace(muteTeamKey))
+            _hotkeyService.Register(HkMuteTeam, muteTeamKey);
+    }
+
+    private const string HkMuteAll = "_mute_all";
+    private const string HkMuteHear = "_mute_hear";
+    private const string HkMuteTeam = "_mute_team";
 
     public void HandleKeyTrigger(KeyboardKey key, string triggerToken, bool isKeyDown)
     {
