@@ -11,6 +11,7 @@ public class KeyAssignment : ObservableObject
     private string? _bindingName;
     private string? _imagePath;
     private string _hotkeyText = string.Empty;
+    private string _chordKey = string.Empty;
     private bool _isGlobal;
     private float _volumeOverride = 1f;
     private bool _loop;
@@ -57,6 +58,12 @@ public class KeyAssignment : ObservableObject
     {
         get => _hotkeyText;
         set => SetProperty(ref _hotkeyText, value?.Trim().ToUpperInvariant() ?? string.Empty);
+    }
+
+    public string ChordKey
+    {
+        get => _chordKey;
+        set => SetProperty(ref _chordKey, value?.Trim().ToUpperInvariant() ?? string.Empty);
     }
 
     public bool IsGlobal

@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace SoundFXStudio.Views.Dialogs;
 
@@ -7,14 +9,42 @@ public partial class KeyCaptureDialog : Window
 {
     private bool _captured;
 
-    public KeyCaptureDialog()
+    public KeyCaptureDialog(bool chordMode = false)
     {
+        ChordMode = chordMode;
         InitializeComponent();
-        Loaded += (_, _) => Keyboard.Focus(this);
+        Loaded += (_, _) =>
+        {
+            Keyboard.Focus(this);
+            StartListeningAnimation();
+        };
     }
 
+    public bool ChordMode { get; }
     public Key CapturedKey { get; private set; }
+    public Key CapturedChordKey { get; private set; }
     public string CapturedKeyName { get; private set; } = string.Empty;
+    public string CapturedChordKeyName { get; private set; } = string.Empty;
+    public ModifierKeys CapturedModifiers { get; private set; }
+
+    private void StartListeningAnimation()
+    {
+        var pulse = new DoubleAnimation
+        {
+            From = 0.3,
+            To = 1.0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(800)),
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever
+        };
+        KeyDisplayBorder.BeginAnimation(OpacityProperty, pulse);
+    }
+
+    private void StopListeningAnimation()
+    {
+        KeyDisplayBorder.BeginAnimation(OpacityProperty, null);
+        KeyDisplayBorder.Opacity = 1.0;
+    }
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
@@ -33,13 +63,68 @@ public partial class KeyCaptureDialog : Window
             return;
         }
 
+        StopListeningAnimation();
+
+        var mods = ModifierKeys.None;
+        if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)) mods |= ModifierKeys.Control;
+        if (Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)) mods |= ModifierKeys.Alt;
+        if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift)) mods |= ModifierKeys.Shift;
+        if (Keyboard.IsKeyDown(Key.LWin) || Keyboard.IsKeyDown(Key.RWin)) mods |= ModifierKeys.Windows;
+
+        CapturedModifiers = mods;
+
         var name = KeyToName(e.Key);
+
+        if (ChordMode && _captured && CapturedChordKeyName == string.Empty)
+        {
+            CapturedChordKey = e.Key;
+            CapturedChordKeyName = name;
+            UpdateDisplay();
+            InstructionText.Text = "Chord combo captured. Press Save or Clear.";
+            return;
+        }
+
         CapturedKey = e.Key;
         CapturedKeyName = name;
-        CapturedKeyText.Text = name;
         _captured = true;
         SaveButton.IsEnabled = true;
-        InstructionText.Text = "Press Save to confirm, or press a different key.";
+        ClearButton.IsEnabled = true;
+        UpdateDisplay();
+        InstructionText.Text = ChordMode
+            ? "Now press a second key for the chord combo..."
+            : "Press Save to confirm, or Clear to reset.";
+
+        var flash = new ColorAnimation
+        {
+            To = Color.FromRgb(0x00, 0xD8, 0xFF),
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            AutoReverse = true
+        };
+        KeyDisplayBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x33, 0x70, 0xAF));
+        KeyDisplayBorder.BorderBrush.BeginAnimation(SolidColorBrush.ColorProperty, flash);
+    }
+
+    private void UpdateDisplay()
+    {
+        var modText = ModifierKeysToString(CapturedModifiers);
+        ModifierText.Text = modText;
+
+        var parts = new List<string>();
+        if (!string.IsNullOrEmpty(CapturedKeyName)) parts.Add(CapturedKeyName);
+        CapturedKeyText.Text = string.Join(" + ", parts);
+
+        if (ChordMode && !string.IsNullOrEmpty(CapturedChordKeyName))
+        {
+            ChordHintText.Text = $"Chord: {CapturedKeyName} then {CapturedChordKeyName}";
+        }
+        else if (ChordMode && _captured)
+        {
+            ChordHintText.Text = "Press a second key to complete chord";
+        }
+        else
+        {
+            ChordHintText.Text = "";
+        }
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -47,6 +132,24 @@ public partial class KeyCaptureDialog : Window
         if (!_captured) return;
         DialogResult = true;
         Close();
+    }
+
+    private void ClearButton_Click(object sender, RoutedEventArgs e)
+    {
+        CapturedKey = Key.None;
+        CapturedChordKey = Key.None;
+        CapturedKeyName = string.Empty;
+        CapturedChordKeyName = string.Empty;
+        CapturedModifiers = ModifierKeys.None;
+        CapturedKeyText.Text = "-";
+        ModifierText.Text = "";
+        ChordHintText.Text = "";
+        _captured = false;
+        SaveButton.IsEnabled = false;
+        ClearButton.IsEnabled = false;
+        InstructionText.Text = "Press a key to assign...";
+        KeyDisplayBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x33, 0x70, 0xAF));
+        StartListeningAnimation();
     }
 
     private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -62,6 +165,16 @@ public partial class KeyCaptureDialog : Window
         if (e.ClickCount == 2)
             return;
         DragMove();
+    }
+
+    private static string ModifierKeysToString(ModifierKeys mods)
+    {
+        var parts = new List<string>();
+        if (mods.HasFlag(ModifierKeys.Control)) parts.Add("Ctrl");
+        if (mods.HasFlag(ModifierKeys.Alt)) parts.Add("Alt");
+        if (mods.HasFlag(ModifierKeys.Shift)) parts.Add("Shift");
+        if (mods.HasFlag(ModifierKeys.Windows)) parts.Add("Win");
+        return parts.Count > 0 ? string.Join(" + ", parts) : "";
     }
 
     private static string KeyToName(Key key) => key switch

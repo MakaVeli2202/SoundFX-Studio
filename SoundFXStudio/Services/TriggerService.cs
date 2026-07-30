@@ -1,7 +1,10 @@
 using SoundFXStudio.Models;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
+using System.Timers;
 using Key = System.Windows.Input.Key;
+using Timer = System.Timers.Timer;
 
 namespace SoundFXStudio.Services;
 
@@ -30,7 +33,14 @@ public sealed class TriggerService : IDisposable
     private EventHandler<KeyboardHookKeyEventArgs>? _keyboardDownHandler;
     private EventHandler<KeyboardHookKeyEventArgs>? _keyboardUpHandler;
     private Window? _window;
+    private Action<Key, bool>? _handlePhysicalKey;
     private bool _disposed;
+    private readonly Dictionary<Key, string> _bareMuteKeys = new();
+    private Timer? _chordTimer;
+    private KeyAssignment? _chordPendingAssignment;
+    private Key _chordPendingKey;
+    private string _chordPendingToken = string.Empty;
+    private readonly object _chordLock = new();
 
     public TriggerService(
         HotkeyService hotkeyService,
@@ -87,6 +97,7 @@ public sealed class TriggerService : IDisposable
         ThrowIfDisposed();
 
         _window = window;
+        _handlePhysicalKey = handlePhysicalKey;
         _hotkeyService.Attach(window);
         _hotkeyPressedHandler = (_, args) =>
         {
@@ -124,6 +135,25 @@ public sealed class TriggerService : IDisposable
                 return;
             }
 
+            if (_bareMuteKeys.TryGetValue(args.Key, out var muteAction))
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    switch (muteAction)
+                    {
+                        case HkMuteAll: App.ToggleMuteAll(); break;
+                        case HkMuteHear: App.ToggleMuteHear(); break;
+                        case HkMuteTeam: App.ToggleMuteTeam(); break;
+                    }
+                });
+                return;
+            }
+
+            if (HandleChordKeyDown(args.Key))
+            {
+                return;
+            }
+
             handlePhysicalKey(args.Key, true);
         };
         _keyboardHookService.KeyDown += _keyboardDownHandler;
@@ -131,6 +161,11 @@ public sealed class TriggerService : IDisposable
         _keyboardUpHandler = (_, args) =>
         {
             if (_window?.IsActive == true)
+            {
+                return;
+            }
+
+            if (HandleChordKeyUp(args.Key))
             {
                 return;
             }
@@ -181,6 +216,23 @@ public sealed class TriggerService : IDisposable
         }
     }
 
+    private static bool TryParseBareKey(string? hotkeyText, out Key key)
+    {
+        key = Key.None;
+        if (string.IsNullOrWhiteSpace(hotkeyText)) return false;
+        if (hotkeyText.Contains('+')) return false;
+        if (Enum.TryParse<Key>(hotkeyText.Trim(), ignoreCase: true, out key)) return true;
+        return false;
+    }
+
+    private void RegisterMuteBareKey(string actionId, string? hotkeyText, Key parsedKey)
+    {
+        foreach (var kv in _bareMuteKeys.Where(kv => kv.Value == actionId).ToList())
+            _bareMuteKeys.Remove(kv.Key);
+        if (parsedKey != Key.None)
+            _bareMuteKeys[parsedKey] = actionId;
+    }
+
     public void RegisterMuteHotkeys(string muteAllKey, string muteHearKey, string muteTeamKey)
     {
         ThrowIfDisposed();
@@ -189,17 +241,182 @@ public sealed class TriggerService : IDisposable
         _hotkeyService.Unregister(HkMuteHear);
         _hotkeyService.Unregister(HkMuteTeam);
 
-        if (!string.IsNullOrWhiteSpace(muteAllKey))
+        if (TryParseBareKey(muteAllKey, out var allKey))
+            RegisterMuteBareKey(HkMuteAll, muteAllKey, allKey);
+        else if (!string.IsNullOrWhiteSpace(muteAllKey))
             _hotkeyService.Register(HkMuteAll, muteAllKey);
-        if (!string.IsNullOrWhiteSpace(muteHearKey))
+
+        if (TryParseBareKey(muteHearKey, out var hearKey))
+            RegisterMuteBareKey(HkMuteHear, muteHearKey, hearKey);
+        else if (!string.IsNullOrWhiteSpace(muteHearKey))
             _hotkeyService.Register(HkMuteHear, muteHearKey);
-        if (!string.IsNullOrWhiteSpace(muteTeamKey))
+
+        if (TryParseBareKey(muteTeamKey, out var teamKey))
+            RegisterMuteBareKey(HkMuteTeam, muteTeamKey, teamKey);
+        else if (!string.IsNullOrWhiteSpace(muteTeamKey))
             _hotkeyService.Register(HkMuteTeam, muteTeamKey);
     }
 
     private const string HkMuteAll = "_mute_all";
     private const string HkMuteHear = "_mute_hear";
     private const string HkMuteTeam = "_mute_team";
+
+    private bool HandleChordKeyDown(Key key)
+    {
+        var token = KeyToToken(key);
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        lock (_chordLock)
+        {
+            if (_chordPendingAssignment is not null)
+            {
+                if (string.Equals(token, _chordPendingAssignment.ChordKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    CancelChordTimer();
+                    _logService?.Info($"Chord triggered: {_chordPendingToken} + {token}");
+                    ExecuteAssignmentOnce(_chordPendingAssignment);
+                    _chordPendingAssignment = null;
+                    _chordPendingToken = string.Empty;
+                    return true;
+                }
+
+                CancelChordTimer();
+                var saved = _chordPendingAssignment;
+                _chordPendingAssignment = null;
+                _chordPendingToken = string.Empty;
+                System.Windows.Application.Current.Dispatcher.Invoke(() => ExecuteAssignmentOnce(saved));
+            }
+        }
+
+        var assignment = FindAssignmentByChordKey(key, token);
+        if (assignment is not null)
+        {
+            lock (_chordLock)
+            {
+                _chordPendingAssignment = assignment;
+                _chordPendingKey = key;
+                _chordPendingToken = token;
+                var timeout = GetChordTimeoutMs();
+                _chordTimer = new Timer(timeout);
+                _chordTimer.Elapsed += (_, _) => OnChordTimeout(token, assignment);
+                _chordTimer.AutoReset = false;
+                _chordTimer.Start();
+                _logService?.Info($"Chord pending for {token}, waiting for chord key...");
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool HandleChordKeyUp(Key key)
+    {
+        var token = KeyToToken(key);
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        lock (_chordLock)
+        {
+            if (_chordPendingAssignment is not null
+                && string.Equals(token, _chordPendingToken, StringComparison.OrdinalIgnoreCase))
+            {
+                // Primary key released, but chord timer is still running
+                // Don't fire yet - wait for chord key or timeout
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void OnChordTimeout(string token, KeyAssignment assignment)
+    {
+        Key savedKey;
+        lock (_chordLock)
+        {
+            if (_chordPendingAssignment != assignment)
+            {
+                return;
+            }
+
+            savedKey = _chordPendingKey;
+            _chordPendingAssignment = null;
+            _chordPendingToken = string.Empty;
+            _chordTimer = null;
+        }
+
+        _logService?.Info($"Chord timeout for {token}, firing single key");
+        System.Windows.Application.Current.Dispatcher.Invoke(() => _handlePhysicalKey?.Invoke(savedKey, true));
+    }
+
+    private void CancelChordTimer()
+    {
+        _chordTimer?.Stop();
+        _chordTimer?.Dispose();
+        _chordTimer = null;
+    }
+
+    private KeyAssignment? FindAssignmentByChordKey(Key key, string token)
+    {
+        var profile = ActiveProfile;
+        if (profile is null)
+        {
+            return null;
+        }
+
+        foreach (var assignment in profile.Assignments)
+        {
+            if (string.IsNullOrWhiteSpace(assignment.ChordKey))
+            {
+                continue;
+            }
+
+            if (string.Equals(assignment.HotkeyText, token, StringComparison.OrdinalIgnoreCase))
+            {
+                return assignment;
+            }
+
+            if (string.Equals(assignment.KeyId, token, StringComparison.OrdinalIgnoreCase))
+            {
+                return assignment;
+            }
+        }
+
+        return null;
+    }
+
+    private static string KeyToToken(Key key)
+    {
+        if (key == Key.None)
+        {
+            return string.Empty;
+        }
+
+        if (key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift
+            or Key.LeftAlt or Key.RightAlt or Key.LWin or Key.RWin)
+        {
+            return string.Empty;
+        }
+
+        return key.ToString().ToUpperInvariant();
+    }
+
+    private int GetChordTimeoutMs()
+    {
+        try
+        {
+            return _getConfig().Settings?.ChordTimeoutMs ?? 1000;
+        }
+        catch
+        {
+            return 1000;
+        }
+    }
 
     public void HandleKeyTrigger(KeyboardKey key, string triggerToken, bool isKeyDown)
     {

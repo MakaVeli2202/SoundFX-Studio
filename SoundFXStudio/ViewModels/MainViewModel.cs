@@ -59,6 +59,7 @@ public sealed class MainViewModel : ObservableObject
     private bool _isLoading;
     private bool _isAssignMode;
     private bool _isSoundboardActive = true;
+    private DateTime _lastTogglePress = DateTime.MinValue;
     private string _currentPage = "Home";
     private KeyboardLayoutMode _detectedKeyboardLayout = KeyboardLayoutMode.EnglishUS;
 
@@ -588,12 +589,13 @@ public sealed class MainViewModel : ObservableObject
     private void ShowSoundboardNotification()
     {
         var status = IsSoundboardActive ? "ON" : "OFF";
+        var mode = Settings.HotkeyHoldMode ? "HOLD" : "TOGGLE";
         RunOnUiThread(() =>
         {
-            StatusText = $"Soundboard {status}";
+            StatusText = $"Soundboard {status} [{mode}]";
             _window?.Dispatcher.Invoke(() =>
             {
-                var toast = new Views.Dialogs.ToastWindow($"Soundboard {status}");
+                var toast = new Views.Dialogs.ToastWindow($"Soundboard {status}\n{mode} mode");
                 toast.Show();
             });
         });
@@ -640,6 +642,17 @@ public sealed class MainViewModel : ObservableObject
         var toggleKey = ParseToggleKey(Settings.SoundboardToggleKey);
         if (toggleKey.HasValue && e.Key == toggleKey.Value)
         {
+            var now = DateTime.UtcNow;
+            if ((now - _lastTogglePress).TotalMilliseconds < 400)
+            {
+                Settings.HotkeyHoldMode = !Settings.HotkeyHoldMode;
+                ShowSoundboardNotification();
+                _lastTogglePress = DateTime.MinValue;
+                e.Handled = true;
+                return;
+            }
+            _lastTogglePress = now;
+
             if (Settings.HotkeyHoldMode)
             {
                 IsSoundboardActive = true;

@@ -12,14 +12,13 @@
         PreviewKeyDown="Window_PreviewKeyDown"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
-    <Border Background="#081428" CornerRadius="28" ClipToBounds="True">
+    <Border Background="#081428" CornerRadius="28" ClipToBounds="True" BorderThickness="2">
         <Border.BorderBrush>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                 <GradientStop Color="#00D8FF" Offset="0"/>
                 <GradientStop Color="#FF44CC" Offset="1"/>
             </LinearGradientBrush>
         </Border.BorderBrush>
-        <Border.BorderThickness>2</Border.BorderThickness>
 
         <Grid Margin="18">
             <Grid.RowDefinitions>
@@ -46,12 +45,18 @@
 
             <Border Grid.Row="1" CornerRadius="24" Background="#66081428" BorderBrush="#5580CFFF" BorderThickness="1" Margin="0,12,0,12">
                 <StackPanel Margin="20" VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock x:Name="InstructionText" Text="Press a key to assign..." FontSize="16" Foreground="#A1B2D2"
-                               HorizontalAlignment="Center" Margin="0,0,0,16"/>
-                    <Border Background="#22000000" BorderBrush="#3370AFFF" BorderThickness="1" CornerRadius="14" Padding="28,14">
-                        <TextBlock x:Name="CapturedKeyText" Text="-" FontSize="32" FontWeight="Bold" Foreground="#00D8FF"
-                                   HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="InstructionText" Text="Press a key to assign..." FontSize="14" Foreground="#A1B2D2"
+                               HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                    <Border x:Name="KeyDisplayBorder" Background="#22000000" BorderBrush="#3370AFFF" BorderThickness="1" CornerRadius="14" Padding="32,16">
+                        <StackPanel>
+                            <TextBlock x:Name="ModifierText" Text="" FontSize="14" Foreground="#FF44CC"
+                                       HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                            <TextBlock x:Name="CapturedKeyText" Text="-" FontSize="36" FontWeight="Bold" Foreground="#00D8FF"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
                     </Border>
+                    <TextBlock x:Name="ChordHintText" Text="" FontSize="12" Foreground="#8891B8"
+                               HorizontalAlignment="Center" Margin="0,8,0,0"/>
                 </StackPanel>
             </Border>
 
@@ -92,13 +97,43 @@
                         </Style>
                     </Button.Style>
                 </Button>
+                <Button x:Name="ClearButton" Content="Clear" Width="90" Margin="0,0,10,0" IsEnabled="False" Click="ClearButton_Click">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Height" Value="36"/>
+                            <Setter Property="Foreground" Value="#DDEAFF"/>
+                            <Setter Property="Background" Value="#22112233"/>
+                            <Setter Property="BorderBrush" Value="#5580CFFF"/>
+                            <Setter Property="BorderThickness" Value="1"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bd" CornerRadius="14"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="1">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#00D8FF"/>
+                                                <Setter TargetName="Bd" Property="Background" Value="#2200D8FF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
                 <Button Content="Cancel" Width="100" IsCancel="True" Click="CancelButton_Click">
                     <Button.Style>
                         <Style TargetType="Button">
                             <Setter Property="Height" Value="36"/>
-                            <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="Foreground" Value="#DDEAFF"/>
                             <Setter Property="Background" Value="#22112233"/>
-                            <Setter Property="BorderBrush" Value="#3370AFFF"/>
+                            <Setter Property="BorderBrush" Value="#5580CFFF"/>
                             <Setter Property="BorderThickness" Value="1"/>
                             <Setter Property="Cursor" Value="Hand"/>
                             <Setter Property="Template">

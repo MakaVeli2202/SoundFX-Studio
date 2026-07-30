@@ -66,6 +66,22 @@ public partial class SoundAssignmentWindow : Window
         }
     }
 
+    private void CaptureChordKey_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new KeyCaptureDialog(chordMode: true)
+        {
+            Owner = this
+        };
+        if (dlg.ShowDialog() == true && !string.IsNullOrEmpty(dlg.CapturedKeyName) && !string.IsNullOrEmpty(dlg.CapturedChordKeyName))
+        {
+            if (DataContext is SoundAssignmentViewModel vm)
+            {
+                vm.ChordKeyFirst = dlg.CapturedKeyName;
+                vm.ChordKeySecond = dlg.CapturedChordKeyName;
+            }
+        }
+    }
+
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
         DialogResult = false;
@@ -104,6 +120,9 @@ public class SoundAssignmentViewModel : INotifyPropertyChanged
     private string _name = string.Empty;
     private string _category = string.Empty;
     private string _selectedKey = string.Empty;
+    private string _chordKeyFirst = string.Empty;
+    private string _chordKeySecond = string.Empty;
+    private string _chordKeyDisplay = string.Empty;
     private double _volumePercent = 100;
     private bool _isFavorite;
     private bool _loop;
@@ -137,6 +156,31 @@ public class SoundAssignmentViewModel : INotifyPropertyChanged
         get => _selectedKey;
         set => SetProperty(ref _selectedKey, value);
     }
+
+    public string ChordKeyFirst
+    {
+        get => _chordKeyFirst;
+        set
+        {
+            _chordKeyFirst = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ChordKeyFirst)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ChordKeyDisplay)));
+        }
+    }
+
+    public string ChordKeySecond
+    {
+        get => _chordKeySecond;
+        set
+        {
+            _chordKeySecond = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ChordKeySecond)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ChordKeyDisplay)));
+        }
+    }
+
+    public string ChordKeyDisplay
+        => string.IsNullOrEmpty(_chordKeyFirst) ? "Not set" : $"{_chordKeyFirst} → {_chordKeySecond}";
 
     public double VolumePercent
     {
