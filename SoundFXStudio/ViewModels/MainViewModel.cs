@@ -78,7 +78,7 @@ public sealed class MainViewModel : ObservableObject
 
         _detectedKeyboardLayout = ResolveWindowsKeyboardLayout(System.Windows.Input.InputLanguageManager.Current.CurrentInputLanguage);
 
-        _actionExecutor = new ActionExecutor(_config, _configService, _audioPlayer, ResolveOutputDeviceIndex);
+        _actionExecutor = new ActionExecutor(() => _config, _configService, _audioPlayer, ResolveOutputDeviceIndex);
 
         ConfigureViews();
 
@@ -89,7 +89,7 @@ public sealed class MainViewModel : ObservableObject
             _audioPlayer,
             () => _config,
             GetAssignmentForKey,
-            token => ActiveProfile?.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, token, StringComparison.OrdinalIgnoreCase)),
+            GetAssignmentForKeyToken,
             ResolveSound,
             EnsureSoundAction,
             () => SelectedKey,
@@ -187,6 +187,12 @@ public sealed class MainViewModel : ObservableObject
 
         _keyboardViewModel.RebuildKeyboard();
         NotifyKeyboardLampProperties();
+        InitializeSoundboardState();
+    }
+
+    private void InitializeSoundboardState()
+    {
+        _isSoundboardActive = !Settings.HotkeyHoldMode;
     }
     public ObservableCollection<KeyboardKey> KeyboardKeys { get; }
 
@@ -565,8 +571,81 @@ public sealed class MainViewModel : ObservableObject
     public void AttachWindow(Window window)
     {
         _window = window;
-        _triggerService.AttachWindow(window, _keyboardViewModel.HandlePhysicalKey);
+        _triggerService.AttachWindow(window, HandleGlobalKey);
         RegisterMuteHotkeys();
+    }
+
+    private bool _toggleKeyDown;
+
+    private void HandleGlobalKey(Key key, bool isKeyDown)
+    {
+        if (HandleSoundboardToggleKey(key, isKeyDown))
+        {
+            return;
+        }
+
+        if (!IsSoundboardActive)
+        {
+            return;
+        }
+
+        _keyboardViewModel.HandlePhysicalKey(key, isKeyDown);
+    }
+
+    private bool HandleSoundboardToggleKey(Key key, bool isKeyDown)
+    {
+        var toggleKey = ParseToggleKey(Settings.SoundboardToggleKey);
+        if (!toggleKey.HasValue || key != toggleKey.Value)
+        {
+            return false;
+        }
+
+        if (isKeyDown)
+        {
+            if (_toggleKeyDown)
+            {
+                return true;
+            }
+            _toggleKeyDown = true;
+            OnToggleKeyPressed();
+            return true;
+        }
+
+        _toggleKeyDown = false;
+        if (Settings.HotkeyHoldMode)
+        {
+            IsSoundboardActive = false;
+        }
+        return true;
+    }
+
+    private void OnToggleKeyPressed()
+    {
+        var now = DateTime.UtcNow;
+        if ((now - _lastTogglePress).TotalMilliseconds < 400)
+        {
+            Settings.HotkeyHoldMode = !Settings.HotkeyHoldMode;
+            _lastTogglePress = DateTime.MinValue;
+            if (Settings.HotkeyHoldMode)
+            {
+                IsSoundboardActive = false;
+            }
+            else
+            {
+                IsSoundboardActive = true;
+            }
+            ShowSoundboardNotification();
+            return;
+        }
+        _lastTogglePress = now;
+
+        IsSoundboardActive = Settings.HotkeyHoldMode || !IsSoundboardActive;
+    }
+
+    public void ToggleSoundboardMode()
+    {
+        IsSoundboardActive = !IsSoundboardActive;
+        ShowSoundboardNotification();
     }
 
     public void RegisterMuteHotkeys()
@@ -642,24 +721,9 @@ public sealed class MainViewModel : ObservableObject
         var toggleKey = ParseToggleKey(Settings.SoundboardToggleKey);
         if (toggleKey.HasValue && e.Key == toggleKey.Value)
         {
-            var now = DateTime.UtcNow;
-            if ((now - _lastTogglePress).TotalMilliseconds < 400)
+            if (!e.IsRepeat)
             {
-                Settings.HotkeyHoldMode = !Settings.HotkeyHoldMode;
-                ShowSoundboardNotification();
-                _lastTogglePress = DateTime.MinValue;
-                e.Handled = true;
-                return;
-            }
-            _lastTogglePress = now;
-
-            if (Settings.HotkeyHoldMode)
-            {
-                IsSoundboardActive = true;
-            }
-            else
-            {
-                IsSoundboardActive = !IsSoundboardActive;
+                OnToggleKeyPressed();
             }
             e.Handled = true;
             return;
@@ -680,6 +744,12 @@ public sealed class MainViewModel : ObservableObject
                 IsSoundboardActive = false;
             }
             e.Handled = true;
+            return;
+        }
+
+        if (!IsSoundboardActive)
+        {
+            _keyboardViewModel.ReleaseVisualKey(e.Key);
             return;
         }
 
@@ -739,8 +809,10 @@ public sealed class MainViewModel : ObservableObject
             Profiles.Clear();
             foreach (var profile in _config.Profiles)
             {
-                    _keyboardViewModel.RefreshAssignments();
+                Profiles.Add(profile);
             }
+
+            MigrateLegacyChords();
 
             Categories.Clear();
             foreach (var category in _config.Categories)
@@ -963,7 +1035,7 @@ public sealed class MainViewModel : ObservableObject
         }
 
         var deviceId = Settings.OutputDeviceId;
-        var deviceIndex = OutputDevices.ToList().FindIndex(device => string.Equals(device.Id, deviceId, StringComparison.OrdinalIgnoreCase));
+        var deviceIndex = ResolveOutputDeviceIndex(deviceId);
 
         _audioPlayer.Play(
             sound.Id,
@@ -1029,6 +1101,8 @@ public sealed class MainViewModel : ObservableObject
             details.IsFavorite = existingSound.IsFavorite;
             details.Loop = existingSound.Loop;
             details.SelectedKey = GetAssignedKeyIdForSound(existingSound) ?? string.Empty;
+
+            details.ChordKeys = GetChordKeysForSound(existingSound);
         }
 
         if (!string.IsNullOrWhiteSpace(initialFilePath) && string.IsNullOrWhiteSpace(details.FilePath))
@@ -1094,6 +1168,7 @@ public sealed class MainViewModel : ObservableObject
         _config.Sounds.Add(sound);
 
         AssignSoundToKeyIfSelected(sound, details.SelectedKey);
+        UpdateSoundChordAssignment(sound, details.ChordKeys);
 
         RefreshAssignments();
         SoundsView.Refresh();
@@ -1126,13 +1201,14 @@ public sealed class MainViewModel : ObservableObject
         var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
         if (assignment is null)
         {
-            assignment = new KeyAssignment { KeyId = key.Id, SoundId = sound.Id, ActionId = EnsureSoundAction(sound).Id };
+            assignment = new KeyAssignment { KeyId = key.Id, SoundId = sound.Id, ActionId = EnsureSoundAction(sound).Id, HotkeyText = key.KeyName };
             profile.Assignments.Add(assignment);
         }
         else
         {
             assignment.SoundId = sound.Id;
             assignment.ActionId = EnsureSoundAction(sound).Id;
+            assignment.HotkeyText = key.KeyName;
         }
 
         sound.AssignedKeyId = key.Id;
@@ -1180,6 +1256,7 @@ public sealed class MainViewModel : ObservableObject
         }
 
         UpdateSoundKeyAssignment(sound, details.SelectedKey);
+        UpdateSoundChordAssignment(sound, details.ChordKeys);
 
         Save();
         SelectedSound = sound;
@@ -1218,13 +1295,14 @@ public sealed class MainViewModel : ObservableObject
         var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
         if (assignment is null)
         {
-            assignment = new KeyAssignment { KeyId = key.Id, SoundId = sound.Id, ActionId = EnsureSoundAction(sound).Id };
+            assignment = new KeyAssignment { KeyId = key.Id, SoundId = sound.Id, ActionId = EnsureSoundAction(sound).Id, HotkeyText = key.KeyName };
             profile.Assignments.Add(assignment);
         }
         else
         {
             assignment.SoundId = sound.Id;
             assignment.ActionId = EnsureSoundAction(sound).Id;
+            assignment.HotkeyText = key.KeyName;
         }
 
         if (existingAssignment is not null && !string.Equals(existingAssignment.KeyId, key.Id, StringComparison.OrdinalIgnoreCase))
@@ -1236,7 +1314,179 @@ public sealed class MainViewModel : ObservableObject
         sound.AssignedKeyLabel = key.DisplayLabel;
     }
 
+    internal void UpdateSoundChordAssignment(SoundEntry sound, IReadOnlyList<string> chordKeys)
+    {
+        var profile = ActiveProfile;
+        if (profile is null)
+        {
+            return;
+        }
+
+        var tokens = (chordKeys ?? Array.Empty<string>())
+            .Select(NormalizeChordToken)
+            .Where(token => !string.IsNullOrWhiteSpace(token))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var soundAction = EnsureSoundAction(sound);
+
+        var existingChord = profile.Assignments.FirstOrDefault(item =>
+            string.Equals(item.SoundId, sound.Id, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(item.ChordKey));
+
+        if (tokens.Count < 2)
+        {
+            if (existingChord is not null)
+            {
+                profile.Assignments.Remove(existingChord);
+            }
+
+            RemoveSoundChord(profile, soundAction.Id);
+            return;
+        }
+
+        var firstToken = tokens[0];
+        var secondToken = tokens[1];
+        var firstKey = KeyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, firstToken, StringComparison.OrdinalIgnoreCase));
+        if (existingChord is not null)
+        {
+            existingChord.HotkeyText = firstToken;
+            existingChord.ChordKey = secondToken;
+            existingChord.KeyId = firstKey?.Id ?? existingChord.KeyId;
+            existingChord.ActionId = soundAction.Id;
+        }
+        else
+        {
+            var assignment = new KeyAssignment
+            {
+                SoundId = sound.Id,
+                ActionId = soundAction.Id,
+                HotkeyText = firstToken,
+                ChordKey = secondToken,
+                KeyId = firstKey?.Id ?? string.Empty
+            };
+            profile.Assignments.Add(assignment);
+        }
+
+        SyncSoundChord(profile, sound, soundAction, tokens);
+    }
+
+    private static void SyncSoundChord(Profile profile, SoundEntry sound, ActionDefinition soundAction, IReadOnlyList<string> keys)
+    {
+        var chord = profile.KeyChords.FirstOrDefault(item => item.ActionId == soundAction.Id);
+        if (chord is null)
+        {
+            chord = new KeyChord { Name = sound.Name, ActionId = soundAction.Id };
+            profile.KeyChords.Add(chord);
+        }
+
+        chord.Name = sound.Name;
+        chord.Keys.Clear();
+        foreach (var key in keys)
+        {
+            chord.Keys.Add(key);
+        }
+    }
+
+    private static void RemoveSoundChord(Profile profile, Guid soundActionId)
+    {
+        var chord = profile.KeyChords.FirstOrDefault(item => item.ActionId == soundActionId);
+        if (chord is not null)
+        {
+            profile.KeyChords.Remove(chord);
+        }
+    }
+
+    private void MigrateLegacyChords()
+    {
+        foreach (var profile in _config.Profiles)
+        {
+            foreach (var assignment in profile.Assignments.Where(item => !string.IsNullOrWhiteSpace(item.ChordKey)))
+            {
+                var actionId = assignment.ActionId;
+                if (!actionId.HasValue)
+                {
+                    continue;
+                }
+
+                if (profile.KeyChords.Any(item => item.ActionId == actionId.Value))
+                {
+                    continue;
+                }
+
+                var first = NormalizeChordToken(assignment.HotkeyText);
+                var second = NormalizeChordToken(assignment.ChordKey);
+                if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second))
+                {
+                    continue;
+                }
+
+                var chord = new KeyChord
+                {
+                    Name = assignment.BindingName ?? assignment.HotkeyText,
+                    ActionId = actionId.Value
+                };
+                chord.Keys.Add(first);
+                chord.Keys.Add(second);
+                profile.KeyChords.Add(chord);
+            }
+        }
+    }
+
+    internal KeyAssignment? GetChordForSound(SoundEntry sound)
+        => ActiveProfile?.Assignments.FirstOrDefault(item =>
+            string.Equals(item.SoundId, sound.Id, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(item.ChordKey));
+
+    internal IReadOnlyList<string> GetChordKeysForSound(SoundEntry sound)
+    {
+        var action = _config.Actions.FirstOrDefault(item =>
+            item.Type == ActionType.Sound && string.Equals(item.Payload, sound.Id, StringComparison.OrdinalIgnoreCase));
+        if (action is not null)
+        {
+            var chord = ActiveProfile?.KeyChords.FirstOrDefault(item => item.ActionId == action.Id);
+            if (chord is not null && chord.Keys.Count > 0)
+            {
+                return chord.Keys.ToList();
+            }
+        }
+
+        var legacy = GetChordForSound(sound);
+        if (legacy is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        var keys = new List<string>();
+        if (!string.IsNullOrWhiteSpace(legacy.HotkeyText)) keys.Add(NormalizeChordToken(legacy.HotkeyText));
+        if (!string.IsNullOrWhiteSpace(legacy.ChordKey)) keys.Add(NormalizeChordToken(legacy.ChordKey));
+        return keys;
+    }
+
+    private static string NormalizeChordToken(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return string.Empty;
+        }
+
+        var parts = token.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length == 0 ? string.Empty : parts[^1].Trim().ToUpperInvariant();
+    }
+
     internal void AssignSoundToKeyFromUi(SoundEntry sound, KeyboardKey key) => AssignSoundToKey(sound, key);
+
+    internal void AssignSoundChordFromUi(SoundEntry sound, IReadOnlyList<string> keyNames)
+    {
+        UpdateSoundChordAssignment(sound, keyNames);
+        RefreshAssignments();
+        Save();
+        var tokens = (keyNames ?? Array.Empty<string>())
+            .Select(NormalizeChordToken)
+            .Where(token => !string.IsNullOrWhiteSpace(token))
+            .ToList();
+        StatusText = tokens.Count < 2
+            ? $"Cleared chord for {sound.Name}"
+            : $"Assigned {sound.Name} to {string.Join(" + ", tokens)}";
+    }
 
     private void AssignSoundToKey(SoundEntry? sound, KeyboardKey key)
     {
@@ -1255,13 +1505,14 @@ public sealed class MainViewModel : ObservableObject
         var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
         if (assignment is null)
         {
-            assignment = new KeyAssignment { KeyId = key.Id, SoundId = sound.Id, ActionId = EnsureSoundAction(sound).Id };
+            assignment = new KeyAssignment { KeyId = key.Id, SoundId = sound.Id, ActionId = EnsureSoundAction(sound).Id, HotkeyText = key.KeyName };
             profile.Assignments.Add(assignment);
         }
         else
         {
             assignment.SoundId = sound.Id;
             assignment.ActionId = EnsureSoundAction(sound).Id;
+            assignment.HotkeyText = key.KeyName;
         }
 
         sound.AssignedKeyId = key.Id;
@@ -1331,6 +1582,21 @@ public sealed class MainViewModel : ObservableObject
         }
 
         sound.Hotkey = dialog.CapturedHotkey;
+        var assignment = ActiveProfile?.Assignments.FirstOrDefault(item =>
+            string.Equals(item.SoundId, sound.Id, StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(item.ChordKey));
+        if (assignment is null)
+        {
+            var keyId = KeyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, NormalizeChordToken(dialog.CapturedHotkey), StringComparison.OrdinalIgnoreCase))?.Id;
+            assignment = new KeyAssignment { KeyId = keyId ?? string.Empty, SoundId = sound.Id, ActionId = EnsureSoundAction(sound).Id };
+            ActiveProfile?.Assignments.Add(assignment);
+        }
+
+        if (assignment is not null)
+        {
+            assignment.HotkeyText = dialog.CapturedHotkey;
+            assignment.ActionId = EnsureSoundAction(sound).Id;
+        }
+
         if (SelectedSound is not null && string.Equals(SelectedSound.Id, sound.Id, StringComparison.OrdinalIgnoreCase))
         {
             SelectedSound = sound;
@@ -1757,6 +2023,39 @@ public sealed class MainViewModel : ObservableObject
         return profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
     }
 
+    internal KeyAssignment? GetAssignmentForKeyToken(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return null;
+        }
+
+        var profile = ActiveProfile;
+        if (profile is null)
+        {
+            return null;
+        }
+
+        var direct = profile.Assignments.FirstOrDefault(item =>
+            string.IsNullOrWhiteSpace(item.ChordKey)
+            && (string.Equals(item.KeyId, token, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(item.HotkeyText, token, StringComparison.OrdinalIgnoreCase)));
+        if (direct is not null)
+        {
+            return direct;
+        }
+
+        var key = KeyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, token, StringComparison.OrdinalIgnoreCase));
+        if (key is null)
+        {
+            return null;
+        }
+
+        return profile.Assignments.FirstOrDefault(item =>
+            string.IsNullOrWhiteSpace(item.ChordKey)
+            && string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
+    }
+
     private void ClearSelectedKeyAssignment()
     {
         if (SelectedKey is null)
@@ -1949,7 +2248,7 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        var deviceIndex = OutputDevices.ToList().FindIndex(device => string.Equals(device.Id, selectedOutput.Id, StringComparison.OrdinalIgnoreCase));
+        var deviceIndex = ResolveWaveOutIndex(selectedOutput.Name);
         var testTonePath = EnsureRoutingTestTone();
 
         _audioPlayer.Play("routing-test", testTonePath, 0.8f, false, PlaybackMode.Restart, deviceIndex);
@@ -2436,12 +2735,42 @@ public sealed class MainViewModel : ObservableObject
 
     private int ResolveOutputDeviceIndex(string deviceId)
     {
-        if (string.IsNullOrWhiteSpace(deviceId))
+        var device = OutputDevices.FirstOrDefault(item => string.Equals(item.Id, deviceId, StringComparison.OrdinalIgnoreCase));
+        if (device is null)
         {
             return -1;
         }
 
-        return OutputDevices.ToList().FindIndex(device => string.Equals(device.Id, deviceId, StringComparison.OrdinalIgnoreCase));
+        return ResolveWaveOutIndex(device.Name);
+    }
+
+    private int ResolveWaveOutIndex(string deviceName)
+    {
+        if (string.IsNullOrWhiteSpace(deviceName))
+        {
+            return -1;
+        }
+
+        try
+        {
+            var trimmed = deviceName.Trim();
+            for (var i = 0; i < WaveOut.DeviceCount; i++)
+            {
+                var productName = WaveOut.GetCapabilities(i).ProductName;
+                var truncatedFriendly = trimmed.Length > 31 ? trimmed[..31] : trimmed;
+                if (productName.StartsWith(truncatedFriendly, StringComparison.OrdinalIgnoreCase) ||
+                    truncatedFriendly.StartsWith(productName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+        }
+        catch
+        {
+            // fall back to the default device
+        }
+
+        return -1;
     }
 
     private void RaiseCommandStateIfNeeded() => RaiseCommandState();

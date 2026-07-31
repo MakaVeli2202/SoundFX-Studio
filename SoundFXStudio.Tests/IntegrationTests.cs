@@ -2,6 +2,7 @@ using SoundFXStudio.Infrastructure;
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
 using Xunit;
+using System.IO;
 
 namespace SoundFXStudio.Tests;
 
@@ -11,30 +12,37 @@ namespace SoundFXStudio.Tests;
 /// </summary>
 public class IntegrationTests
 {
-    private readonly ConfigService _configService = new();
-
     [Fact]
     public void ConfigService_SaveAndLoad_PreservesSoundData()
     {
-        // Arrange
-        var config = new AppConfig();
-        var sound = new SoundEntry
+        var tempDir = Path.Combine(Path.GetTempPath(), "SoundFXStudio-Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
         {
-            Id = "test-sound-1",
-            Name = "Test Sound",
-            FilePath = @"C:\Sounds\test.mp3",
-            Category = "Test"
-        };
-        config.Sounds.Add(sound);
+            var service = new ConfigService(appFolder: tempDir);
+            var config = new AppConfig();
+            var sound = new SoundEntry
+            {
+                Id = "test-sound-1",
+                Name = "Test Sound",
+                FilePath = @"C:\Sounds\test.mp3",
+                Category = "Test"
+            };
+            config.Sounds.Add(sound);
 
-        // Act
-        _configService.Save(config);
-        var loaded = _configService.Load();
+            // Act
+            service.Save(config);
+            var loaded = service.Load();
 
-        // Assert
-        Assert.NotNull(loaded);
-        Assert.Contains(loaded.Sounds, s => s.Id == "test-sound-1");
-        Assert.Equal("Test Sound", loaded.Sounds[0].Name);
+            // Assert
+            Assert.NotNull(loaded);
+            Assert.Contains(loaded.Sounds, s => s.Id == "test-sound-1");
+            Assert.Equal("Test Sound", loaded.Sounds[0].Name);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
     }
 
     [Fact]

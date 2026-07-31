@@ -17,12 +17,12 @@ public class ConfigService
         Converters = { new JsonStringEnumConverter() }
     };
 
-    public ConfigService(ILogService? logService = null)
+    public ConfigService(ILogService? logService = null, string? appFolder = null)
     {
         _logService = logService;
-        var appFolder = GetAppFolder();
-        _configPath = Path.Combine(appFolder, "config.json");
-        _backupPath = Path.Combine(appFolder, "config.backup.json");
+        var folder = appFolder ?? GetAppFolder();
+        _configPath = Path.Combine(folder, "config.json");
+        _backupPath = Path.Combine(folder, "config.backup.json");
     }
 
     public AppConfig Load()
@@ -88,7 +88,8 @@ public class ConfigService
     {
         try
         {
-            Directory.CreateDirectory(GetAppFolder());
+            var folder = Path.GetDirectoryName(_configPath) ?? GetAppFolder();
+            Directory.CreateDirectory(folder);
 
             var json = JsonSerializer.Serialize(config, SerializerOptions);
 
@@ -224,27 +225,50 @@ public class ConfigService
 
     private static void MergeCalibration(KeyboardCalibrationSettings target, KeyboardCalibrationSettings source)
     {
-        if (Math.Abs(target.KeyUnit) < double.Epsilon) target.KeyUnit = source.KeyUnit;
-        if (Math.Abs(target.GapX) < double.Epsilon) target.GapX = source.GapX;
-        if (Math.Abs(target.GapY) < double.Epsilon) target.GapY = source.GapY;
-        if (Math.Abs(target.Gap) < double.Epsilon) target.Gap = source.Gap;
-        if (Math.Abs(target.OffsetX) < double.Epsilon) target.OffsetX = source.OffsetX;
-        if (Math.Abs(target.OffsetY) < double.Epsilon) target.OffsetY = source.OffsetY;
-        if (Math.Abs(target.ButtonScale) < double.Epsilon) target.ButtonScale = source.ButtonScale;
-        if (Math.Abs(target.InnerSectionInsetXPercent) < double.Epsilon) target.InnerSectionInsetXPercent = source.InnerSectionInsetXPercent;
-        if (Math.Abs(target.InnerSectionInsetYPercent) < double.Epsilon) target.InnerSectionInsetYPercent = source.InnerSectionInsetYPercent;
-        if (Math.Abs(target.InnerSectionOffsetXPercent) < double.Epsilon) target.InnerSectionOffsetXPercent = source.InnerSectionOffsetXPercent;
-        if (Math.Abs(target.InnerSectionOffsetYPercent) < double.Epsilon) target.InnerSectionOffsetYPercent = source.InnerSectionOffsetYPercent;
-        if (Math.Abs(target.KeyboardWindowScale) < double.Epsilon) target.KeyboardWindowScale = source.KeyboardWindowScale;
+        var defaults = new KeyboardCalibrationSettings();
 
-        if (Math.Abs(target.CapsLockIndicatorOffsetX) < double.Epsilon) target.CapsLockIndicatorOffsetX = source.CapsLockIndicatorOffsetX;
-        if (Math.Abs(target.CapsLockIndicatorOffsetY) < double.Epsilon) target.CapsLockIndicatorOffsetY = source.CapsLockIndicatorOffsetY;
-        if (Math.Abs(target.NumLockIndicatorOffsetX) < double.Epsilon) target.NumLockIndicatorOffsetX = source.NumLockIndicatorOffsetX;
-        if (Math.Abs(target.NumLockIndicatorOffsetY) < double.Epsilon) target.NumLockIndicatorOffsetY = source.NumLockIndicatorOffsetY;
-        if (Math.Abs(target.ScrollLockIndicatorOffsetX) < double.Epsilon) target.ScrollLockIndicatorOffsetX = source.ScrollLockIndicatorOffsetX;
-        if (Math.Abs(target.ScrollLockIndicatorOffsetY) < double.Epsilon) target.ScrollLockIndicatorOffsetY = source.ScrollLockIndicatorOffsetY;
+        MergeIfDefault(target, source, defaults, cal => cal.KeyUnit, (cal, v) => cal.KeyUnit = v);
+        MergeIfDefault(target, source, defaults, cal => cal.GapX, (cal, v) => cal.GapX = v);
+        MergeIfDefault(target, source, defaults, cal => cal.GapY, (cal, v) => cal.GapY = v);
+        MergeIfDefault(target, source, defaults, cal => cal.Gap, (cal, v) => cal.Gap = v);
+        MergeIfDefault(target, source, defaults, cal => cal.OffsetX, (cal, v) => cal.OffsetX = v);
+        MergeIfDefault(target, source, defaults, cal => cal.OffsetY, (cal, v) => cal.OffsetY = v);
+        MergeIfDefault(target, source, defaults, cal => cal.ButtonScale, (cal, v) => cal.ButtonScale = v);
+        MergeIfDefault(target, source, defaults, cal => cal.InnerSectionInsetXPercent, (cal, v) => cal.InnerSectionInsetXPercent = v);
+        MergeIfDefault(target, source, defaults, cal => cal.InnerSectionInsetYPercent, (cal, v) => cal.InnerSectionInsetYPercent = v);
+        MergeIfDefault(target, source, defaults, cal => cal.InnerSectionOffsetXPercent, (cal, v) => cal.InnerSectionOffsetXPercent = v);
+        MergeIfDefault(target, source, defaults, cal => cal.InnerSectionOffsetYPercent, (cal, v) => cal.InnerSectionOffsetYPercent = v);
+        MergeIfDefault(target, source, defaults, cal => cal.KeyboardWindowScale, (cal, v) => cal.KeyboardWindowScale = v);
 
-        if (Math.Abs(target.InnerSectionInsetPercent) < double.Epsilon) target.InnerSectionInsetPercent = source.InnerSectionInsetPercent;
+        MergeIfDefault(target, source, defaults, cal => cal.CapsLockIndicatorOffsetX, (cal, v) => cal.CapsLockIndicatorOffsetX = v);
+        MergeIfDefault(target, source, defaults, cal => cal.CapsLockIndicatorOffsetY, (cal, v) => cal.CapsLockIndicatorOffsetY = v);
+        MergeIfDefault(target, source, defaults, cal => cal.NumLockIndicatorOffsetX, (cal, v) => cal.NumLockIndicatorOffsetX = v);
+        MergeIfDefault(target, source, defaults, cal => cal.NumLockIndicatorOffsetY, (cal, v) => cal.NumLockIndicatorOffsetY = v);
+        MergeIfDefault(target, source, defaults, cal => cal.ScrollLockIndicatorOffsetX, (cal, v) => cal.ScrollLockIndicatorOffsetX = v);
+        MergeIfDefault(target, source, defaults, cal => cal.ScrollLockIndicatorOffsetY, (cal, v) => cal.ScrollLockIndicatorOffsetY = v);
+
+        MergeIfDefault(target, source, defaults, cal => cal.InnerSectionInsetPercent, (cal, v) => cal.InnerSectionInsetPercent = v);
+
+        foreach (var pair in source.KeyOverrides)
+        {
+            if (!target.KeyOverrides.ContainsKey(pair.Key))
+            {
+                target.KeyOverrides[pair.Key] = pair.Value;
+            }
+        }
+    }
+
+    private static void MergeIfDefault(
+        KeyboardCalibrationSettings target,
+        KeyboardCalibrationSettings source,
+        KeyboardCalibrationSettings defaults,
+        Func<KeyboardCalibrationSettings, double> getter,
+        Action<KeyboardCalibrationSettings, double> setter)
+    {
+        if (Math.Abs(getter(target) - getter(defaults)) < double.Epsilon)
+        {
+            setter(target, getter(source));
+        }
     }
 
     private static string GetProjectCalibrationFilePath()

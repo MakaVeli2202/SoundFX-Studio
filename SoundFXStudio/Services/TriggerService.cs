@@ -80,7 +80,7 @@ public sealed class TriggerService : IDisposable
         _logService = logService;
 
         ChordRuntimeService = new ChordRuntimeService(
-            _getConfig(),
+            _getConfig,
             _getAssignmentForKeyToken,
             assignment =>
             {
@@ -130,7 +130,7 @@ public sealed class TriggerService : IDisposable
 
         _keyboardDownHandler = (_, args) =>
         {
-            if (_window?.IsActive == true)
+            if (IsOwnWindowForeground())
             {
                 return;
             }
@@ -149,23 +149,12 @@ public sealed class TriggerService : IDisposable
                 return;
             }
 
-            if (HandleChordKeyDown(args.Key))
-            {
-                return;
-            }
-
             handlePhysicalKey(args.Key, true);
         };
         _keyboardHookService.KeyDown += _keyboardDownHandler;
-
         _keyboardUpHandler = (_, args) =>
         {
-            if (_window?.IsActive == true)
-            {
-                return;
-            }
-
-            if (HandleChordKeyUp(args.Key))
+            if (IsOwnWindowForeground())
             {
                 return;
             }
@@ -205,6 +194,12 @@ public sealed class TriggerService : IDisposable
                 continue;
             }
 
+            if (IsBareKey(assignment.HotkeyText))
+            {
+                _logService?.Info($"Bare key handled by hook (not registered): {assignment.HotkeyText}");
+                continue;
+            }
+
             if (_hotkeyService.Register(assignment.Id, assignment.HotkeyText))
             {
                 _logService?.Info($"Hotkey Registered: {assignment.HotkeyText}");
@@ -214,6 +209,30 @@ public sealed class TriggerService : IDisposable
                 _logService?.Warning($"Hotkey Registration Failed: {assignment.HotkeyText}");
             }
         }
+    }
+
+    private static bool IsBareKey(string hotkeyText)
+    {
+        if (string.IsNullOrWhiteSpace(hotkeyText))
+        {
+            return true;
+        }
+
+        foreach (var part in hotkeyText.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            switch (part.ToUpperInvariant())
+            {
+                case "CTRL":
+                case "CONTROL":
+                case "ALT":
+                case "SHIFT":
+                case "WIN":
+                case "WINDOWS":
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool TryParseBareKey(string? hotkeyText, out Key key)
@@ -261,7 +280,25 @@ public sealed class TriggerService : IDisposable
     private const string HkMuteHear = "_mute_hear";
     private const string HkMuteTeam = "_mute_team";
 
-    private bool HandleChordKeyDown(Key key)
+    private static bool IsOwnWindowForeground()
+    {
+        if (System.Windows.Application.Current is not { } app)
+        {
+            return false;
+        }
+
+        foreach (var window in app.Windows)
+        {
+            if (window is System.Windows.Window w && w.IsActive)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool HandleChordKeyDown(Key key)
     {
         var token = KeyToToken(key);
         if (string.IsNullOrWhiteSpace(token))
@@ -312,7 +349,7 @@ public sealed class TriggerService : IDisposable
         return false;
     }
 
-    private bool HandleChordKeyUp(Key key)
+    public bool HandleChordKeyUp(Key key)
     {
         var token = KeyToToken(key);
         if (string.IsNullOrWhiteSpace(token))
@@ -403,7 +440,24 @@ public sealed class TriggerService : IDisposable
             return string.Empty;
         }
 
-        return key.ToString().ToUpperInvariant();
+        return key switch
+        {
+            Key.Escape => "ESC",
+            Key.Back => "BACKSPACE",
+            Key.Tab => "TAB",
+            Key.CapsLock => "CAPS LOCK",
+            Key.Apps => "MENU",
+            Key.PrintScreen => "PRINT SCREEN",
+            Key.Scroll => "SCROLL LOCK",
+            Key.Pause => "PAUSE",
+            Key.NumLock => "NUM LOCK",
+            Key.PageUp => "PAGE UP",
+            Key.PageDown => "PAGE DOWN",
+            Key.Space => "SPACE",
+            Key.Return => "ENTER",
+            Key.Oem102 => "OEM102",
+            _ => key.ToString().ToUpperInvariant()
+        };
     }
 
     private int GetChordTimeoutMs()

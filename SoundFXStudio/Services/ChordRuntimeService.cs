@@ -4,7 +4,7 @@ namespace SoundFXStudio.Services;
 
 public sealed class ChordRuntimeService
 {
-    private readonly AppConfig _config;
+    private readonly Func<AppConfig> _getConfig;
     private readonly Func<string, KeyAssignment?> _resolveAssignmentForKey;
     private readonly Func<KeyAssignment, Task> _executeAssignmentAsync;
     private readonly Func<Guid, Task> _executeActionAsync;
@@ -14,9 +14,9 @@ public sealed class ChordRuntimeService
     private KeyChord? _pendingChordCandidate;
     private bool _chordFiredThisCycle;
 
-    public ChordRuntimeService(AppConfig config, Func<string, KeyAssignment?> resolveAssignmentForKey, Func<KeyAssignment, Task> executeAssignmentAsync, Func<Guid, Task> executeActionAsync)
+    public ChordRuntimeService(Func<AppConfig> getConfig, Func<string, KeyAssignment?> resolveAssignmentForKey, Func<KeyAssignment, Task> executeAssignmentAsync, Func<Guid, Task> executeActionAsync)
     {
-        _config = config;
+        _getConfig = getConfig;
         _resolveAssignmentForKey = resolveAssignmentForKey;
         _executeAssignmentAsync = executeAssignmentAsync;
         _executeActionAsync = executeActionAsync;
@@ -56,6 +56,18 @@ public sealed class ChordRuntimeService
         if (_pressedKeys.Count == 1)
         {
             _pendingSingleKeyToken = normalizedToken;
+
+            if (HasLongerMatch(_pressedKeys, 1))
+            {
+                return;
+            }
+
+            var assignment = _resolveAssignmentForKey(normalizedToken);
+            if (assignment is not null)
+            {
+                _chordFiredThisCycle = true;
+                await _executeAssignmentAsync(assignment).ConfigureAwait(false);
+            }
         }
     }
 
@@ -132,12 +144,14 @@ public sealed class ChordRuntimeService
             return chords ?? Array.Empty<KeyChord>();
         }
 
-        foreach (var chord in fromChordSet(_config.KeyChords))
+        var config = _getConfig();
+
+        foreach (var chord in fromChordSet(config.KeyChords))
         {
             yield return chord;
         }
 
-        foreach (var profile in _config.Profiles.Where(profile => string.Equals(profile.Id, _config.ActiveProfileId, StringComparison.OrdinalIgnoreCase)))
+        foreach (var profile in config.Profiles.Where(profile => string.Equals(profile.Id, config.ActiveProfileId, StringComparison.OrdinalIgnoreCase)))
         {
             foreach (var chord in fromChordSet(profile.KeyChords))
             {

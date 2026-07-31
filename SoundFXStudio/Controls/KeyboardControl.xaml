@@ -156,7 +156,9 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Button AutomationProperties.AutomationId="{Binding Id}"
-                            AutomationProperties.Name="{Binding AutomationName}">
+                            AutomationProperties.Name="{Binding AutomationName}"
+                            Command="{Binding KeyClickedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}">
 
                             <Grid>
                                 <Grid.RowDefinitions>

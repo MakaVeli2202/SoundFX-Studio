@@ -72,12 +72,11 @@ public partial class SoundAssignmentWindow : Window
         {
             Owner = this
         };
-        if (dlg.ShowDialog() == true && !string.IsNullOrEmpty(dlg.CapturedKeyName) && !string.IsNullOrEmpty(dlg.CapturedChordKeyName))
+        if (dlg.ShowDialog() == true && dlg.KeyNames.Count > 0)
         {
             if (DataContext is SoundAssignmentViewModel vm)
             {
-                vm.ChordKeyFirst = dlg.CapturedKeyName;
-                vm.ChordKeySecond = dlg.CapturedChordKeyName;
+                vm.ChordKeys = dlg.KeyNames;
             }
         }
     }
@@ -120,8 +119,7 @@ public class SoundAssignmentViewModel : INotifyPropertyChanged
     private string _name = string.Empty;
     private string _category = string.Empty;
     private string _selectedKey = string.Empty;
-    private string _chordKeyFirst = string.Empty;
-    private string _chordKeySecond = string.Empty;
+    private readonly List<string> _chordKeys = new();
     private string _chordKeyDisplay = string.Empty;
     private double _volumePercent = 100;
     private bool _isFavorite;
@@ -157,30 +155,29 @@ public class SoundAssignmentViewModel : INotifyPropertyChanged
         set => SetProperty(ref _selectedKey, value);
     }
 
-    public string ChordKeyFirst
+    public IReadOnlyList<string> ChordKeys
     {
-        get => _chordKeyFirst;
+        get => _chordKeys;
         set
         {
-            _chordKeyFirst = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ChordKeyFirst)));
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ChordKeyDisplay)));
-        }
-    }
-
-    public string ChordKeySecond
-    {
-        get => _chordKeySecond;
-        set
-        {
-            _chordKeySecond = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ChordKeySecond)));
+            _chordKeys.Clear();
+            if (value is not null)
+            {
+                foreach (var key in value)
+                {
+                    if (!string.IsNullOrWhiteSpace(key))
+                    {
+                        _chordKeys.Add(key.Trim().ToUpperInvariant());
+                    }
+                }
+            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ChordKeys)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ChordKeyDisplay)));
         }
     }
 
     public string ChordKeyDisplay
-        => string.IsNullOrEmpty(_chordKeyFirst) ? "Not set" : $"{_chordKeyFirst} → {_chordKeySecond}";
+        => _chordKeys.Count == 0 ? "Not set" : string.Join(" + ", _chordKeys);
 
     public double VolumePercent
     {

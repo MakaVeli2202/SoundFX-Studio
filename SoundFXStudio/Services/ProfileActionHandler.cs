@@ -4,12 +4,12 @@ namespace SoundFXStudio.Services;
 
 public sealed class ProfileActionHandler : IActionHandler
 {
-    private readonly AppConfig _config;
+    private readonly Func<AppConfig> _getConfig;
     private readonly ConfigService _configService;
 
-    public ProfileActionHandler(AppConfig config, ConfigService configService)
+    public ProfileActionHandler(Func<AppConfig> getConfig, ConfigService configService)
     {
-        _config = config;
+        _getConfig = getConfig;
         _configService = configService;
     }
 
@@ -20,14 +20,15 @@ public sealed class ProfileActionHandler : IActionHandler
             return Task.CompletedTask;
         }
 
-        var profile = _config.Profiles.FirstOrDefault(item => string.Equals(item.Id, action.Payload, StringComparison.OrdinalIgnoreCase));
+        var config = _getConfig();
+        var profile = config.Profiles.FirstOrDefault(item => string.Equals(item.Id, action.Payload, StringComparison.OrdinalIgnoreCase));
         if (profile is null)
         {
             return Task.CompletedTask;
         }
 
-        _config.ActiveProfileId = profile.Id;
-        _configService.Save(_config);
+        config.ActiveProfileId = profile.Id;
+        _configService.Save(config);
         return Task.CompletedTask;
     }
 }

@@ -61,6 +61,25 @@ public class ChordRuntimeServiceTests
     }
 
     [Fact]
+    public async Task RealConfigAssignment_WithLayoutSuffixedKeyIdAndHotkeyText_FiresOnKeyDown()
+    {
+        var config = BuildConfig(out var profile, out var actionA, out var _, out var _);
+        profile.Assignments.Add(new KeyAssignment
+        {
+            KeyId = "A-3-1_75",
+            HotkeyText = "A",
+            ActionId = actionA.Id
+        });
+
+        var executions = new List<Guid>();
+        var service = CreateService(config, executions);
+
+        await service.HandleKeyDownAsync("A");
+
+        Assert.Equal(new[] { actionA.Id }, executions);
+    }
+
+    [Fact]
     public async Task Chord_FiresOncePerPressCycle()
     {
         var config = BuildConfig(out var profile, out var _, out var actionB, out var _);
@@ -84,8 +103,10 @@ public class ChordRuntimeServiceTests
     private static ChordRuntimeService CreateService(AppConfig config, List<Guid> executions)
     {
         return new ChordRuntimeService(
-            config,
-            token => config.Profiles.SelectMany(profile => profile.Assignments).FirstOrDefault(assignment => assignment.KeyId == token),
+            () => config,
+            token => config.Profiles.SelectMany(profile => profile.Assignments).FirstOrDefault(assignment =>
+                string.Equals(assignment.KeyId, token, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(assignment.HotkeyText, token, StringComparison.OrdinalIgnoreCase)),
             assignment =>
             {
                 if (assignment.ActionId is Guid actionId)

@@ -47,12 +47,14 @@
                 <StackPanel Margin="20" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock x:Name="InstructionText" Text="Press a key to assign..." FontSize="14" Foreground="#A1B2D2"
                                HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                    <Border x:Name="KeyDisplayBorder" Background="#22000000" BorderBrush="#3370AFFF" BorderThickness="1" CornerRadius="14" Padding="32,16">
+                    <Border x:Name="KeyDisplayBorder" Background="#22000000" BorderBrush="#3370AFFF" BorderThickness="1" CornerRadius="14" Padding="28,14">
                         <StackPanel>
                             <TextBlock x:Name="ModifierText" Text="" FontSize="14" Foreground="#FF44CC"
                                        HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                            <TextBlock x:Name="CapturedKeyText" Text="-" FontSize="36" FontWeight="Bold" Foreground="#00D8FF"
-                                       HorizontalAlignment="Center"/>
+                            <Viewbox MaxHeight="56" Stretch="Uniform">
+                                <TextBlock x:Name="CapturedKeyText" Text="-" FontSize="36" FontWeight="Bold" Foreground="#00D8FF"
+                                           HorizontalAlignment="Center" TextAlignment="Center"/>
+                            </Viewbox>
                         </StackPanel>
                     </Border>
                     <TextBlock x:Name="ChordHintText" Text="" FontSize="12" Foreground="#8891B8"

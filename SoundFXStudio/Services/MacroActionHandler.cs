@@ -4,14 +4,14 @@ namespace SoundFXStudio.Services;
 
 public sealed class MacroActionHandler : IActionHandler
 {
-    private readonly AppConfig _config;
+    private readonly Func<AppConfig> _getConfig;
     private readonly ConfigService _configService;
     private readonly AudioPlayer _audioPlayer;
     private readonly Func<Guid, CancellationToken, Task> _executeActionAsync;
 
-    public MacroActionHandler(AppConfig config, ConfigService configService, AudioPlayer audioPlayer, Func<Guid, CancellationToken, Task> executeActionAsync)
+    public MacroActionHandler(Func<AppConfig> getConfig, ConfigService configService, AudioPlayer audioPlayer, Func<Guid, CancellationToken, Task> executeActionAsync)
     {
-        _config = config;
+        _getConfig = getConfig;
         _configService = configService;
         _audioPlayer = audioPlayer;
         _executeActionAsync = executeActionAsync;
@@ -87,10 +87,10 @@ public sealed class MacroActionHandler : IActionHandler
             return;
         }
 
-        var sound = _config.Sounds.FirstOrDefault(item => string.Equals(item.Id, target, StringComparison.OrdinalIgnoreCase) || string.Equals(item.Name, target, StringComparison.OrdinalIgnoreCase));
+        var sound = _getConfig().Sounds.FirstOrDefault(item => string.Equals(item.Id, target, StringComparison.OrdinalIgnoreCase) || string.Equals(item.Name, target, StringComparison.OrdinalIgnoreCase));
         if (sound is not null)
         {
-            var soundAction = _config.Actions.FirstOrDefault(item => item.Type == ActionType.Sound && string.Equals(item.Payload, sound.Id, StringComparison.OrdinalIgnoreCase))
+            var soundAction = _getConfig().Actions.FirstOrDefault(item => item.Type == ActionType.Sound && string.Equals(item.Payload, sound.Id, StringComparison.OrdinalIgnoreCase))
                               ?? CreateSoundAction(sound);
 
             await _executeActionAsync(soundAction.Id, cancellationToken).ConfigureAwait(false);
@@ -104,7 +104,7 @@ public sealed class MacroActionHandler : IActionHandler
             return;
         }
 
-        var sound = _config.Sounds.FirstOrDefault(item => string.Equals(item.Id, target, StringComparison.OrdinalIgnoreCase) || string.Equals(item.Name, target, StringComparison.OrdinalIgnoreCase));
+        var sound = _getConfig().Sounds.FirstOrDefault(item => string.Equals(item.Id, target, StringComparison.OrdinalIgnoreCase) || string.Equals(item.Name, target, StringComparison.OrdinalIgnoreCase));
         if (sound is not null)
         {
             _audioPlayer.Stop(sound.Id);
@@ -125,30 +125,30 @@ public sealed class MacroActionHandler : IActionHandler
             return;
         }
 
-        var profile = _config.Profiles.FirstOrDefault(item => string.Equals(item.Id, target, StringComparison.OrdinalIgnoreCase)
+        var profile = _getConfig().Profiles.FirstOrDefault(item => string.Equals(item.Id, target, StringComparison.OrdinalIgnoreCase)
                                                                || string.Equals(item.Name, target, StringComparison.OrdinalIgnoreCase));
         if (profile is null)
         {
             return;
         }
 
-        _config.ActiveProfileId = profile.Id;
-        _configService.Save(_config);
+        _getConfig().ActiveProfileId = profile.Id;
+        _configService.Save(_getConfig());
     }
 
     private void SetVolume(string target)
     {
         if (float.TryParse(target, out var value))
         {
-            _config.Settings.MasterVolume = Math.Clamp(value, 0f, 1f);
-            _configService.Save(_config);
+            _getConfig().Settings.MasterVolume = Math.Clamp(value, 0f, 1f);
+            _configService.Save(_getConfig());
         }
     }
 
     private ActionDefinition? FindAction(string token)
-        => _config.Actions.FirstOrDefault(item => string.Equals(item.Id.ToString(), token, StringComparison.OrdinalIgnoreCase)
+        => _getConfig().Actions.FirstOrDefault(item => string.Equals(item.Id.ToString(), token, StringComparison.OrdinalIgnoreCase)
                                                  || string.Equals(item.Name, token, StringComparison.OrdinalIgnoreCase))
-           ?? _config.Profiles.SelectMany(profile => profile.Actions).FirstOrDefault(item => string.Equals(item.Id.ToString(), token, StringComparison.OrdinalIgnoreCase)
+           ?? _getConfig().Profiles.SelectMany(profile => profile.Actions).FirstOrDefault(item => string.Equals(item.Id.ToString(), token, StringComparison.OrdinalIgnoreCase)
                                                                                         || string.Equals(item.Name, token, StringComparison.OrdinalIgnoreCase));
 
     private ActionDefinition CreateSoundAction(SoundEntry sound)
@@ -163,7 +163,7 @@ public sealed class MacroActionHandler : IActionHandler
             Payload = sound.Id
         };
 
-        _config.Actions.Add(action);
+        _getConfig().Actions.Add(action);
         return action;
     }
 

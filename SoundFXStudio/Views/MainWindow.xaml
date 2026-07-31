@@ -1238,9 +1238,10 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+                                <TextBlock Grid.Row="0" Grid.ColumnSpan="3"
                                            Text="MUTE HOTKEYS (Voicemeeter)" Foreground="#00D8FF" FontSize="11" FontWeight="Bold"
                                            Margin="0,0,0,8"/>
 
@@ -1248,19 +1249,28 @@
                                            Foreground="#DDEAFF" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,4"/>
                                 <TextBox Grid.Row="1" Grid.Column="1" x:Name="MuteAllKeyBox"
                                          Text="{Binding Settings.MuteAllKey}" Height="26" FontSize="11"
-                                         Margin="0,0,0,4" ToolTip="e.g. Ctrl+Shift+F13"/>
+                                         Margin="0,0,8,4" ToolTip="e.g. Ctrl+Shift+F13"/>
+                                <Button Grid.Row="1" Grid.Column="2" x:Name="CaptureMuteAllButton"
+                                        Content="Capture" Height="26" Width="70" FontSize="11" Margin="0,0,0,4"
+                                        Click="CaptureMuteAllButton_Click"/>
 
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Mute Hear:" 
                                            Foreground="#DDEAFF" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,4"/>
                                 <TextBox Grid.Row="2" Grid.Column="1" x:Name="MuteHearKeyBox"
                                          Text="{Binding Settings.MuteHearKey}" Height="26" FontSize="11"
-                                         Margin="0,0,0,4" ToolTip="e.g. Ctrl+Shift+F14"/>
+                                         Margin="0,0,8,4" ToolTip="e.g. Ctrl+Shift+F14"/>
+                                <Button Grid.Row="2" Grid.Column="2" x:Name="CaptureMuteHearButton"
+                                        Content="Capture" Height="26" Width="70" FontSize="11" Margin="0,0,0,4"
+                                        Click="CaptureMuteHearButton_Click"/>
 
                                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Mute Team:" 
                                            Foreground="#DDEAFF" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                 <TextBox Grid.Row="3" Grid.Column="1" x:Name="MuteTeamKeyBox"
                                          Text="{Binding Settings.MuteTeamKey}" Height="26" FontSize="11"
-                                         ToolTip="e.g. Ctrl+Shift+F15"/>
+                                         Margin="0,0,8,0" ToolTip="e.g. Ctrl+Shift+F15"/>
+                                <Button Grid.Row="3" Grid.Column="2" x:Name="CaptureMuteTeamButton"
+                                        Content="Capture" Height="26" Width="70" FontSize="11" Margin="0,0,0,0"
+                                        Click="CaptureMuteTeamButton_Click"/>
                             </Grid>
                         </Border>
 

@@ -211,6 +211,11 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         Close();
     }
 
+    private void SoundboardToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel?.ToggleSoundboardMode();
+    }
+
     private void ZoomInScale_Click(object sender, RoutedEventArgs e)
     {
         SelectedWindowScale += 0.05;

@@ -4,12 +4,12 @@ namespace SoundFXStudio.Services;
 
 public sealed class PlaylistActionHandler : IActionHandler
 {
-    private readonly AppConfig _config;
+    private readonly Func<AppConfig> _getConfig;
     private readonly Func<Guid, CancellationToken, Task> _executeActionAsync;
 
-    public PlaylistActionHandler(AppConfig config, Func<Guid, CancellationToken, Task> executeActionAsync)
+    public PlaylistActionHandler(Func<AppConfig> getConfig, Func<Guid, CancellationToken, Task> executeActionAsync)
     {
-        _config = config;
+        _getConfig = getConfig;
         _executeActionAsync = executeActionAsync;
     }
 
@@ -38,7 +38,7 @@ public sealed class PlaylistActionHandler : IActionHandler
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                if (_config.Actions.Any(item => item.Id == actionId) || _config.Profiles.SelectMany(profile => profile.Actions).Any(item => item.Id == actionId))
+                if (_getConfig().Actions.Any(item => item.Id == actionId) || _getConfig().Profiles.SelectMany(profile => profile.Actions).Any(item => item.Id == actionId))
                 {
                     await _executeActionAsync(actionId, cancellationToken).ConfigureAwait(false);
                 }

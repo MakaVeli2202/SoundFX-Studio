@@ -4,20 +4,20 @@ namespace SoundFXStudio.Services;
 
 public sealed class ActionExecutor
 {
-    private readonly AppConfig _config;
+    private readonly Func<AppConfig> _getConfig;
     private readonly Dictionary<ActionType, IActionHandler> _handlers;
 
-    public ActionExecutor(AppConfig config, ConfigService configService, AudioPlayer audioPlayer, Func<string, int> resolveOutputDeviceIndex)
+    public ActionExecutor(Func<AppConfig> getConfig, ConfigService configService, AudioPlayer audioPlayer, Func<string, int> resolveOutputDeviceIndex)
     {
-        _config = config;
+        _getConfig = getConfig;
 
         _handlers = new Dictionary<ActionType, IActionHandler>
         {
-            [ActionType.Sound] = new SoundActionHandler(_config, audioPlayer, resolveOutputDeviceIndex),
-            [ActionType.Combo] = new ComboActionHandler(_config, audioPlayer, configService, ExecuteAsync),
-            [ActionType.Macro] = new MacroActionHandler(_config, configService, audioPlayer, ExecuteAsync),
-            [ActionType.Playlist] = new PlaylistActionHandler(_config, ExecuteAsync),
-            [ActionType.Profile] = new ProfileActionHandler(_config, configService)
+            [ActionType.Sound] = new SoundActionHandler(_getConfig, audioPlayer, resolveOutputDeviceIndex),
+            [ActionType.Combo] = new ComboActionHandler(_getConfig, audioPlayer, configService, ExecuteAsync),
+            [ActionType.Macro] = new MacroActionHandler(_getConfig, configService, audioPlayer, ExecuteAsync),
+            [ActionType.Playlist] = new PlaylistActionHandler(_getConfig, ExecuteAsync),
+            [ActionType.Profile] = new ProfileActionHandler(_getConfig, configService)
         };
     }
 
@@ -40,9 +40,10 @@ public sealed class ActionExecutor
 
     private ActionDefinition? ResolveAction(Guid actionId)
     {
-        return _config.Profiles
+        var config = _getConfig();
+        return config.Profiles
             .SelectMany(profile => profile.Actions)
             .FirstOrDefault(action => action.Id == actionId)
-            ?? _config.Actions.FirstOrDefault(action => action.Id == actionId);
+            ?? config.Actions.FirstOrDefault(action => action.Id == actionId);
     }
 }

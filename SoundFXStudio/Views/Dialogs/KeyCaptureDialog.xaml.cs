@@ -26,6 +26,7 @@ public partial class KeyCaptureDialog : Window
     public string CapturedKeyName { get; private set; } = string.Empty;
     public string CapturedChordKeyName { get; private set; } = string.Empty;
     public ModifierKeys CapturedModifiers { get; private set; }
+    public List<string> KeyNames { get; } = new();
 
     private void StartListeningAnimation()
     {
@@ -50,14 +51,44 @@ public partial class KeyCaptureDialog : Window
     {
         e.Handled = true;
 
-        if (e.Key == Key.Escape)
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+
+        if (key == Key.Escape)
         {
             DialogResult = false;
             Close();
             return;
         }
 
-        if (e.Key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift
+        if (key is Key.Back or Key.Delete)
+        {
+            if (ChordMode && KeyNames.Count > 0)
+            {
+                KeyNames.RemoveAt(KeyNames.Count - 1);
+                if (KeyNames.Count == 0)
+                {
+                    ClearButton_Click(sender, new RoutedEventArgs());
+                }
+                else
+                {
+                    CapturedKeyName = KeyNames[0];
+                    CapturedChordKeyName = KeyNames.Count > 1 ? KeyNames[^1] : string.Empty;
+                    CapturedChordKey = KeyNames.Count > 1 ? CapturedChordKey : Key.None;
+                    _captured = true;
+                    SaveButton.IsEnabled = true;
+                    UpdateDisplay();
+                    InstructionText.Text = "Press another key or press Save.";
+                }
+            }
+            else
+            {
+                ClearButton_Click(sender, new RoutedEventArgs());
+            }
+
+            return;
+        }
+
+        if (key is Key.LeftCtrl or Key.RightCtrl or Key.LeftShift or Key.RightShift
             or Key.LeftAlt or Key.RightAlt or Key.LWin or Key.RWin)
         {
             return;
@@ -73,25 +104,27 @@ public partial class KeyCaptureDialog : Window
 
         CapturedModifiers = mods;
 
-        var name = KeyToName(e.Key);
+        var name = KeyToName(key);
 
-        if (ChordMode && _captured && CapturedChordKeyName == string.Empty)
+        if (ChordMode && _captured)
         {
-            CapturedChordKey = e.Key;
+            CapturedChordKey = key;
             CapturedChordKeyName = name;
+            KeyNames.Add(name);
             UpdateDisplay();
-            InstructionText.Text = "Chord combo captured. Press Save or Clear.";
+            InstructionText.Text = "Combo captured. Press another key or Save.";
             return;
         }
 
-        CapturedKey = e.Key;
+        CapturedKey = key;
         CapturedKeyName = name;
+        KeyNames.Add(name);
         _captured = true;
         SaveButton.IsEnabled = true;
         ClearButton.IsEnabled = true;
         UpdateDisplay();
         InstructionText.Text = ChordMode
-            ? "Now press a second key for the chord combo..."
+            ? "Press another key for the chord combo, or press Save..."
             : "Press Save to confirm, or Clear to reset.";
 
         var flash = new ColorAnimation
@@ -111,15 +144,19 @@ public partial class KeyCaptureDialog : Window
 
         var parts = new List<string>();
         if (!string.IsNullOrEmpty(CapturedKeyName)) parts.Add(CapturedKeyName);
+        if (ChordMode)
+        {
+            parts.AddRange(KeyNames.Skip(1));
+        }
         CapturedKeyText.Text = string.Join(" + ", parts);
 
-        if (ChordMode && !string.IsNullOrEmpty(CapturedChordKeyName))
+        if (ChordMode && parts.Count > 1)
         {
-            ChordHintText.Text = $"Chord: {CapturedKeyName} then {CapturedChordKeyName}";
+            ChordHintText.Text = $"Chord: press {string.Join(" + ", parts)} together";
         }
         else if (ChordMode && _captured)
         {
-            ChordHintText.Text = "Press a second key to complete chord";
+            ChordHintText.Text = "Press another key to extend the chord";
         }
         else
         {
@@ -141,6 +178,7 @@ public partial class KeyCaptureDialog : Window
         CapturedKeyName = string.Empty;
         CapturedChordKeyName = string.Empty;
         CapturedModifiers = ModifierKeys.None;
+        KeyNames.Clear();
         CapturedKeyText.Text = "-";
         ModifierText.Text = "";
         ChordHintText.Text = "";

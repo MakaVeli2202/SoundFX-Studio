@@ -70,6 +70,33 @@ public partial class MainWindow : Window
         MuteTeamKeyBox.LostFocus += (_, _) => { ViewModel.Save(); ViewModel.RegisterMuteHotkeys(); };
     }
 
+    private void CaptureMuteKey(string propertyName, Action<string> setter, string current)
+    {
+        var dialog = new HotkeyCaptureDialog(current)
+        {
+            Owner = this
+        };
+
+        if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.CapturedHotkey))
+        {
+            return;
+        }
+
+        setter(dialog.CapturedHotkey);
+        ViewModel.Save();
+        ViewModel.RegisterMuteHotkeys();
+        ViewModel.StatusText = $"Mute {propertyName} hotkey set to {dialog.CapturedHotkey}";
+    }
+
+    private void CaptureMuteAllButton_Click(object sender, RoutedEventArgs e)
+        => CaptureMuteKey("All", value => ViewModel.Settings.MuteAllKey = value, ViewModel.Settings.MuteAllKey);
+
+    private void CaptureMuteHearButton_Click(object sender, RoutedEventArgs e)
+        => CaptureMuteKey("Hear", value => ViewModel.Settings.MuteHearKey = value, ViewModel.Settings.MuteHearKey);
+
+    private void CaptureMuteTeamButton_Click(object sender, RoutedEventArgs e)
+        => CaptureMuteKey("Team", value => ViewModel.Settings.MuteTeamKey = value, ViewModel.Settings.MuteTeamKey);
+
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.OriginalSource is not DependencyObject source)
@@ -271,7 +298,7 @@ public partial class MainWindow : Window
         var sound = GetSoundFromMenu(sender);
         if (sound is null) return;
 
-        var dialog = new KeyCaptureDialog
+        var dialog = new KeyCaptureDialog(chordMode: true)
         {
             Owner = this
         };
@@ -281,11 +308,12 @@ public partial class MainWindow : Window
         var key = ViewModel.TryResolveKeyboardKeyFromPhysicalKey(dialog.CapturedKey);
         if (key is null)
         {
-            key = ViewModel.ResolveKeyFromName(dialog.CapturedKeyName);
+            key = ViewModel.ResolveKeyFromName(dialog.KeyNames.FirstOrDefault() ?? string.Empty);
         }
         if (key is null) return;
 
         ViewModel.AssignSoundToKeyFromUi(sound, key);
+        ViewModel.AssignSoundChordFromUi(sound, dialog.KeyNames);
     }
 
     private void SoundTileMenu_Delete(object sender, RoutedEventArgs e)

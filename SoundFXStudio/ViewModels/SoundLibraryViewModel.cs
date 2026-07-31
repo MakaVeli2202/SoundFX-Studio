@@ -2,6 +2,7 @@ using Microsoft.Win32;
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
 using SoundFXStudio.Views.Dialogs;
+using NAudio.Wave;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -344,6 +345,7 @@ public sealed class SoundLibraryViewModel
         _sounds.Add(sound);
         _getConfig().Sounds.Add(sound);
         UpdateSoundKeyAssignment(sound, details.SelectedKey);
+        UpdateSoundChordAssignment(sound, details.ChordKeys);
         _refreshAssignments();
         _soundsView.Refresh();
         _setSelectedSound(sound);
@@ -387,6 +389,7 @@ public sealed class SoundLibraryViewModel
         }
 
         UpdateSoundKeyAssignment(sound, details.SelectedKey);
+        UpdateSoundChordAssignment(sound, details.ChordKeys);
         _refreshAssignments();
         _save();
         _setSelectedSound(sound);
@@ -408,6 +411,8 @@ public sealed class SoundLibraryViewModel
             details.IsFavorite = existingSound.IsFavorite;
             details.Loop = existingSound.Loop;
             details.SelectedKey = GetAssignedKeyIdForSound(existingSound) ?? string.Empty;
+
+            details.ChordKeys = GetChordKeysForSound(existingSound);
         }
 
         if (!string.IsNullOrWhiteSpace(initialFilePath) && string.IsNullOrWhiteSpace(details.FilePath))
@@ -462,13 +467,14 @@ public sealed class SoundLibraryViewModel
         var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
         if (assignment is null)
         {
-            assignment = new KeyAssignment { KeyId = key.Id, SoundId = sound.Id, ActionId = EnsureSoundAction(sound).Id };
+            assignment = new KeyAssignment { KeyId = key.Id, SoundId = sound.Id, ActionId = EnsureSoundAction(sound).Id, HotkeyText = key.KeyName };
             profile.Assignments.Add(assignment);
         }
         else
         {
             assignment.SoundId = sound.Id;
             assignment.ActionId = EnsureSoundAction(sound).Id;
+            assignment.HotkeyText = key.KeyName;
         }
 
         if (existingAssignment is not null && !string.Equals(existingAssignment.KeyId, key.Id, StringComparison.OrdinalIgnoreCase))
@@ -477,6 +483,129 @@ public sealed class SoundLibraryViewModel
         }
 
         sound.AssignedKeyId = key.Id;
+        sound.AssignedKeyLabel = key.DisplayLabel;
+    }
+
+    internal void UpdateSoundChordAssignment(SoundEntry sound, IReadOnlyList<string> chordKeys)
+    {
+        var profile = ActiveProfile;
+        if (profile is null)
+        {
+            return;
+        }
+
+        var tokens = (chordKeys ?? Array.Empty<string>())
+            .Select(NormalizeChordToken)
+            .Where(token => !string.IsNullOrWhiteSpace(token))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var soundAction = EnsureSoundAction(sound);
+
+        var existingChord = profile.Assignments.FirstOrDefault(item =>
+            string.Equals(item.SoundId, sound.Id, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(item.ChordKey));
+
+        if (tokens.Count < 2)
+        {
+            if (existingChord is not null)
+            {
+                profile.Assignments.Remove(existingChord);
+            }
+
+            RemoveSoundChord(profile, soundAction.Id);
+            return;
+        }
+
+        var firstToken = tokens[0];
+        var secondToken = tokens[1];
+        var firstKey = _keyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, firstToken, StringComparison.OrdinalIgnoreCase));
+        if (existingChord is not null)
+        {
+            existingChord.HotkeyText = firstToken;
+            existingChord.ChordKey = secondToken;
+            existingChord.KeyId = firstKey?.Id ?? existingChord.KeyId;
+            existingChord.ActionId = soundAction.Id;
+        }
+        else
+        {
+            var assignment = new KeyAssignment
+            {
+                SoundId = sound.Id,
+                ActionId = soundAction.Id,
+                HotkeyText = firstToken,
+                ChordKey = secondToken,
+                KeyId = firstKey?.Id ?? string.Empty
+            };
+            profile.Assignments.Add(assignment);
+        }
+
+        SyncSoundChord(profile, sound, soundAction, tokens);
+    }
+
+    private static void SyncSoundChord(Profile profile, SoundEntry sound, ActionDefinition soundAction, IReadOnlyList<string> keys)
+    {
+        var chord = profile.KeyChords.FirstOrDefault(item => item.ActionId == soundAction.Id);
+        if (chord is null)
+        {
+            chord = new KeyChord { Name = sound.Name, ActionId = soundAction.Id };
+            profile.KeyChords.Add(chord);
+        }
+
+        chord.Name = sound.Name;
+        chord.Keys.Clear();
+        foreach (var key in keys)
+        {
+            chord.Keys.Add(key);
+        }
+    }
+
+    private static void RemoveSoundChord(Profile profile, Guid soundActionId)
+    {
+        var chord = profile.KeyChords.FirstOrDefault(item => item.ActionId == soundActionId);
+        if (chord is not null)
+        {
+            profile.KeyChords.Remove(chord);
+        }
+    }
+
+    internal KeyAssignment? GetChordForSound(SoundEntry sound)
+        => ActiveProfile?.Assignments.FirstOrDefault(item =>
+            string.Equals(item.SoundId, sound.Id, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(item.ChordKey));
+
+    internal IReadOnlyList<string> GetChordKeysForSound(SoundEntry sound)
+    {
+        var action = _getConfig().Actions.FirstOrDefault(item =>
+            item.Type == ActionType.Sound && string.Equals(item.Payload, sound.Id, StringComparison.OrdinalIgnoreCase));
+        if (action is not null)
+        {
+            var chord = ActiveProfile?.KeyChords.FirstOrDefault(item => item.ActionId == action.Id);
+            if (chord is not null && chord.Keys.Count > 0)
+            {
+                return chord.Keys.ToList();
+            }
+        }
+
+        var legacy = GetChordForSound(sound);
+        if (legacy is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        var keys = new List<string>();
+        if (!string.IsNullOrWhiteSpace(legacy.HotkeyText)) keys.Add(NormalizeChordToken(legacy.HotkeyText));
+        if (!string.IsNullOrWhiteSpace(legacy.ChordKey)) keys.Add(NormalizeChordToken(legacy.ChordKey));
+        return keys;
+    }
+
+    private static string NormalizeChordToken(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return string.Empty;
+        }
+
+        var parts = token.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length == 0 ? string.Empty : parts[^1].Trim().ToUpperInvariant();
     }
 
     internal string? GetAssignedKeyIdForSound(SoundEntry sound)
@@ -499,7 +628,7 @@ public sealed class SoundLibraryViewModel
         }
 
         var deviceId = _getSettings().OutputDeviceId;
-        var deviceIndex = _outputDevices.ToList().FindIndex(device => string.Equals(device.Id, deviceId, StringComparison.OrdinalIgnoreCase));
+        var deviceIndex = ResolveOutputDeviceIndex(deviceId);
 
         _audioPlayer.Play(
             sound.Id,
@@ -519,6 +648,41 @@ public sealed class SoundLibraryViewModel
         });
 
         _ = TrackPlaybackAsync(sound.Id, assignment?.KeyId);
+    }
+
+    private int ResolveOutputDeviceIndex(string deviceId)
+    {
+        var device = _outputDevices.FirstOrDefault(item => string.Equals(item.Id, deviceId, StringComparison.OrdinalIgnoreCase));
+        if (device is null)
+        {
+            return -1;
+        }
+
+        if (string.IsNullOrWhiteSpace(device.Name))
+        {
+            return -1;
+        }
+
+        try
+        {
+            var name = device.Name.Trim();
+            for (var i = 0; i < WaveOut.DeviceCount; i++)
+            {
+                var productName = WaveOut.GetCapabilities(i).ProductName;
+                var truncated = name.Length > 31 ? name[..31] : name;
+                if (productName.StartsWith(truncated, StringComparison.OrdinalIgnoreCase) ||
+                    truncated.StartsWith(productName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+        }
+        catch
+        {
+            // fall back to the default device
+        }
+
+        return -1;
     }
 
     private async Task ImportSoundFromUrlAsync(Uri uri)

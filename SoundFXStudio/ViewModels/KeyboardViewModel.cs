@@ -1,5 +1,6 @@
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
+using NAudio.Wave;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -133,6 +134,52 @@ public sealed class KeyboardViewModel
             ApplyLockKeyVisualState(key);
             key.IsEnabled = true;
         }
+    }
+
+    public void ReleaseVisualKey(Key key)
+    {
+        var token = NormalizeTokenForLayout(ToKeyToken(key, ModifierKeys.None));
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return;
+        }
+
+        var keyboardKey = _keyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, token, StringComparison.OrdinalIgnoreCase));
+        if (keyboardKey is null)
+        {
+            return;
+        }
+
+        _runOnUiThread(() =>
+        {
+            if (_unhighlightTimers.TryGetValue(token, out var cts))
+            {
+                cts.Cancel();
+                _unhighlightTimers.Remove(token);
+            }
+
+            _pressedKeys.Remove(key);
+
+            if (key == Key.CapsLock)
+            {
+                bool isOn = (GetKeyState(VK_CAPITAL) & 1) != 0;
+                keyboardKey.IsSelected = isOn;
+            }
+            else if (key == Key.NumLock)
+            {
+                bool isOn = (GetKeyState(VK_NUMLOCK) & 1) != 0;
+                keyboardKey.IsSelected = isOn;
+            }
+            else if (key == Key.Scroll)
+            {
+                bool isOn = (GetKeyState(VK_SCROLL) & 1) != 0;
+                keyboardKey.IsSelected = isOn;
+            }
+            else
+            {
+                keyboardKey.IsSelected = false;
+            }
+        });
     }
 
     public void HandlePhysicalKey(Key key, bool isKeyDown = true)
@@ -299,7 +346,9 @@ public sealed class KeyboardViewModel
             return null;
         }
 
-        return profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, token, StringComparison.OrdinalIgnoreCase));
+        return profile.Assignments.FirstOrDefault(item =>
+            string.IsNullOrWhiteSpace(item.ChordKey)
+            && string.Equals(item.KeyId, token, StringComparison.OrdinalIgnoreCase));
     }
 
     internal void ExecuteAssignmentOnce(KeyAssignment assignment)
@@ -338,7 +387,7 @@ public sealed class KeyboardViewModel
         }
 
         var deviceId = _getSettings().OutputDeviceId;
-        var deviceIndex = _outputDevices.ToList().FindIndex(device => string.Equals(device.Id, deviceId, StringComparison.OrdinalIgnoreCase));
+        var deviceIndex = ResolveOutputDeviceIndex(deviceId);
 
         _audioPlayer.Play(
             sound.Id,
@@ -358,6 +407,36 @@ public sealed class KeyboardViewModel
         });
 
         _ = TrackPlaybackAsync(sound.Id, assignment?.KeyId);
+    }
+
+    private int ResolveOutputDeviceIndex(string deviceId)
+    {
+        var device = _outputDevices.FirstOrDefault(item => string.Equals(item.Id, deviceId, StringComparison.OrdinalIgnoreCase));
+        if (device is null || string.IsNullOrWhiteSpace(device.Name))
+        {
+            return -1;
+        }
+
+        try
+        {
+            var name = device.Name.Trim();
+            for (var i = 0; i < WaveOut.DeviceCount; i++)
+            {
+                var productName = WaveOut.GetCapabilities(i).ProductName;
+                var truncated = name.Length > 31 ? name[..31] : name;
+                if (productName.StartsWith(truncated, StringComparison.OrdinalIgnoreCase) ||
+                    truncated.StartsWith(productName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+        }
+        catch
+        {
+            // fall back to the default device
+        }
+
+        return -1;
     }
 
     private ActionDefinition? ResolveActionForAssignment(KeyAssignment assignment)

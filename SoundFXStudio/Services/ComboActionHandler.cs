@@ -4,14 +4,14 @@ namespace SoundFXStudio.Services;
 
 public sealed class ComboActionHandler : IActionHandler
 {
-    private readonly AppConfig _config;
+    private readonly Func<AppConfig> _getConfig;
     private readonly AudioPlayer _audioPlayer;
     private readonly ConfigService _configService;
     private readonly Func<Guid, CancellationToken, Task> _executeActionAsync;
 
-    public ComboActionHandler(AppConfig config, AudioPlayer audioPlayer, ConfigService configService, Func<Guid, CancellationToken, Task> executeActionAsync)
+    public ComboActionHandler(Func<AppConfig> getConfig, AudioPlayer audioPlayer, ConfigService configService, Func<Guid, CancellationToken, Task> executeActionAsync)
     {
-        _config = config;
+        _getConfig = getConfig;
         _audioPlayer = audioPlayer;
         _configService = configService;
         _executeActionAsync = executeActionAsync;
@@ -67,9 +67,9 @@ public sealed class ComboActionHandler : IActionHandler
             return null;
         }
 
-        return _config.Combos.FirstOrDefault(item => string.Equals(item.Id.ToString(), payload, StringComparison.OrdinalIgnoreCase)
+        return _getConfig().Combos.FirstOrDefault(item => string.Equals(item.Id.ToString(), payload, StringComparison.OrdinalIgnoreCase)
                                                      || string.Equals(item.Name, payload, StringComparison.OrdinalIgnoreCase))
-               ?? _config.Profiles.SelectMany(profile => profile.Combos).FirstOrDefault(item => string.Equals(item.Id.ToString(), payload, StringComparison.OrdinalIgnoreCase)
+               ?? _getConfig().Profiles.SelectMany(profile => profile.Combos).FirstOrDefault(item => string.Equals(item.Id.ToString(), payload, StringComparison.OrdinalIgnoreCase)
                                                                                            || string.Equals(item.Name, payload, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -80,13 +80,13 @@ public sealed class ComboActionHandler : IActionHandler
             return;
         }
 
-        var sound = _config.Sounds.FirstOrDefault(item => string.Equals(item.Id, targetId.ToString(), StringComparison.OrdinalIgnoreCase));
+        var sound = _getConfig().Sounds.FirstOrDefault(item => string.Equals(item.Id, targetId.ToString(), StringComparison.OrdinalIgnoreCase));
         if (sound is null)
         {
             return;
         }
 
-        var soundAction = _config.Actions.FirstOrDefault(item => item.Type == ActionType.Sound && string.Equals(item.Payload, sound.Id, StringComparison.OrdinalIgnoreCase))
+        var soundAction = _getConfig().Actions.FirstOrDefault(item => item.Type == ActionType.Sound && string.Equals(item.Payload, sound.Id, StringComparison.OrdinalIgnoreCase))
                           ?? CreateSoundAction(sound);
 
         soundAction.PlaybackMode = PlaybackMode.Restart;
@@ -116,8 +116,8 @@ public sealed class ComboActionHandler : IActionHandler
             return;
         }
 
-        var playlistAction = _config.Actions.FirstOrDefault(item => item.Id == targetId && item.Type == ActionType.Playlist)
-                            ?? _config.Profiles.SelectMany(profile => profile.Actions).FirstOrDefault(item => item.Id == targetId && item.Type == ActionType.Playlist);
+        var playlistAction = _getConfig().Actions.FirstOrDefault(item => item.Id == targetId && item.Type == ActionType.Playlist)
+                            ?? _getConfig().Profiles.SelectMany(profile => profile.Actions).FirstOrDefault(item => item.Id == targetId && item.Type == ActionType.Playlist);
 
         if (playlistAction is not null)
         {
@@ -132,14 +132,14 @@ public sealed class ComboActionHandler : IActionHandler
             return;
         }
 
-        var profile = _config.Profiles.FirstOrDefault(item => item.Id == targetId.ToString());
+        var profile = _getConfig().Profiles.FirstOrDefault(item => item.Id == targetId.ToString());
         if (profile is null)
         {
             return;
         }
 
-        _config.ActiveProfileId = profile.Id;
-        _configService.Save(_config);
+        _getConfig().ActiveProfileId = profile.Id;
+        _configService.Save(_getConfig());
     }
 
     private ActionDefinition CreateSoundAction(SoundEntry sound)
@@ -155,7 +155,7 @@ public sealed class ComboActionHandler : IActionHandler
             PlaybackMode = PlaybackMode.Restart
         };
 
-        _config.Actions.Add(action);
+        _getConfig().Actions.Add(action);
         return action;
     }
 }
