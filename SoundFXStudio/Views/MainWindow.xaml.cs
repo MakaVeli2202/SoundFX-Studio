@@ -446,6 +446,7 @@ public partial class MainWindow : Window
         VoicemeeterStatus.Foreground = new SolidColorBrush(result.StartsWith("✓")
             ? Color.FromRgb(0x10, 0xB9, 0x81)
             : Color.FromRgb(0xE8, 0x55, 0x55));
+        RevealVoicemeeterStatus();
     }
 
     private async void ResetVoicemeeterButton_Click(object sender, RoutedEventArgs e)
@@ -463,7 +464,22 @@ public partial class MainWindow : Window
         VoicemeeterStatus.Foreground = new SolidColorBrush(result.StartsWith("✓")
             ? Color.FromRgb(0x10, 0xB9, 0x81)
             : Color.FromRgb(0xE8, 0x55, 0x55));
+        RevealVoicemeeterStatus();
         ViewModel.Refresh();
+    }
+
+    private void RevealVoicemeeterStatus()
+    {
+        VoicemeeterStatus.UpdateLayout();
+        SettingsScrollViewer.UpdateLayout();
+        if (!VoicemeeterStatus.IsVisible || SettingsScrollViewer.ViewportHeight <= 0)
+            return;
+        var top = VoicemeeterStatus.TranslatePoint(new Point(0, 0), SettingsScrollViewer).Y;
+        var bottom = VoicemeeterStatus.TranslatePoint(new Point(0, VoicemeeterStatus.ActualHeight), SettingsScrollViewer).Y;
+        if (bottom > SettingsScrollViewer.ViewportHeight)
+            SettingsScrollViewer.ScrollToVerticalOffset(SettingsScrollViewer.VerticalOffset + (bottom - SettingsScrollViewer.ViewportHeight) + 8);
+        else if (top < 0)
+            SettingsScrollViewer.ScrollToVerticalOffset(Math.Max(0, SettingsScrollViewer.VerticalOffset + top - 8));
     }
 
     private void MixerButton_Click(object sender, RoutedEventArgs e)

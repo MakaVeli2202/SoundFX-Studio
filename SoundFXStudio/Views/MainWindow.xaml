@@ -988,7 +988,7 @@
 
             <!-- Settings Page -->
             <Border Width="850"
-                    Height="470"
+                    Height="580"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
                     Margin="300,220,0,0">
@@ -1002,7 +1002,7 @@
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ScrollViewer x:Name="SettingsScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="20,16,20,16">
 
                         <TextBlock Text="SETTINGS"
@@ -1274,6 +1274,7 @@
                         <TextBlock Text="{Binding StatusText}"
                                    Foreground="#A1B2D2"
                                    FontSize="11"
+                                   TextWrapping="Wrap"
                                    Margin="0,4,0,4"/>
 
                     </StackPanel>
