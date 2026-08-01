@@ -5,6 +5,7 @@ using SoundFXStudio.Models;
 using SoundFXStudio.Services;
 using SoundFXStudio.Views.Dialogs;
 using NAudio.Wave;
+using NAudio.CoreAudioApi;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
@@ -26,6 +27,7 @@ public sealed class MainViewModel : ObservableObject
     private readonly AudioPlayer _audioPlayer;
     private readonly ActionExecutor _actionExecutor;
     private readonly AudioDeviceService _audioDeviceService = new();
+    private readonly WindowsAudioRoutingService _windowsAudioRoutingService = new();
     private readonly HttpClient _httpClient = new();
     private readonly HashSet<Key> _pressedKeys = new();
     private readonly HashSet<string> _unhighlightTokens = new(StringComparer.OrdinalIgnoreCase);
@@ -2374,24 +2376,58 @@ public sealed class MainViewModel : ObservableObject
 
             try
             {
-                Settings.HearDeviceName = hearDevice.Name;
-                Settings.TalkDeviceName = talkDevice.Name;
-                Settings.SpeakersDeviceName = hearDevice.Name;
-                Settings.OutputDeviceId = hearDevice.Id;
-                Settings.PlaybackDeviceId = hearDevice.Id;
-                Settings.VoicemeeterDetected = true;
-                Save();
-
                 using var vm = new VoicemeeterRemote();
                 if (!vm.Login())
                     return "✗  Could not start Voicemeeter.";
 
                 bool applied = vm.ApplyRouting(hearDevice.Name, talkDevice.Name);
+                var diagnostics = string.IsNullOrWhiteSpace(vm.LastDiagnostics) ? null : vm.LastDiagnostics;
                 vm.Dispose();
 
-                return applied
-                    ? $"✓  Configured for Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}"
-                    : $"✗  Could not select devices in Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
+                if (!applied)
+                {
+                    var msg = $"✗  Could not select devices in Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
+                    if (diagnostics is not null)
+                        msg += $"\n\n{diagnostics}";
+                    return msg;
+                }
+
+                Settings.HearDeviceName = hearDevice.Name;
+                Settings.TalkDeviceName = talkDevice.Name;
+                Settings.SpeakersDeviceName = hearDevice.Name;
+                Settings.VoicemeeterDetected = true;
+
+                var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
+                var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
+
+                if (string.IsNullOrWhiteSpace(Settings.SavedDefaultRenderId))
+                    Settings.SavedDefaultRenderId = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render) ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(Settings.SavedDefaultCaptureId))
+                    Settings.SavedDefaultCaptureId = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture) ?? string.Empty;
+
+                bool defaultsOk = false;
+                if (!string.IsNullOrWhiteSpace(vmInputId) || !string.IsNullOrWhiteSpace(vmOutputId))
+                    defaultsOk = _windowsAudioRoutingService.TrySetDefaultDevices(vmInputId ?? string.Empty, vmOutputId ?? string.Empty);
+
+                if (!string.IsNullOrWhiteSpace(vmInputId))
+                {
+                    Settings.OutputDeviceId = vmInputId;
+                    Settings.PlaybackDeviceId = vmInputId;
+                }
+
+                if (!string.IsNullOrWhiteSpace(vmOutputId))
+                {
+                    Settings.InputDeviceId = vmOutputId;
+                    Settings.MicrophoneDeviceId = vmOutputId;
+                }
+
+                Save();
+
+                var result = $"✓  Configured for Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
+                result += defaultsOk
+                    ? "\n   Windows defaults → VoiceMeeter Input / Output"
+                    : "\n   ⚠  Could not set Windows defaults — set VoiceMeeter Input (output) and VoiceMeeter Output (input) manually";
+                return result;
             }
             catch (Exception ex)
             {

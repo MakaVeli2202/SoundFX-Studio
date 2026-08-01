@@ -100,13 +100,28 @@ public partial class SetupWizardWindow : Window
                 _config.Settings.HearDeviceName = hear.Name;
                 _config.Settings.TalkDeviceName = talk.Name;
                 _config.Settings.SpeakersDeviceName = hear.Name;
-                _config.Settings.OutputDeviceId = hear.Id;
-                _config.Settings.PlaybackDeviceId = hear.Id;
                 _config.Settings.VoicemeeterDetected = true;
+
                 bool routed = ApplyAppsRouting();
+                if (routed)
+                {
+                    var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
+                    var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
+                    if (!string.IsNullOrWhiteSpace(vmInputId))
+                    {
+                        _config.Settings.OutputDeviceId = vmInputId;
+                        _config.Settings.PlaybackDeviceId = vmInputId;
+                    }
+                    if (!string.IsNullOrWhiteSpace(vmOutputId))
+                    {
+                        _config.Settings.InputDeviceId = vmOutputId;
+                        _config.Settings.MicrophoneDeviceId = vmOutputId;
+                    }
+                }
+
                 _configService.Save(_config);
                 result = routed
-                    ? $"✓ Voicemeeter configured:\n   Hear: {hear.Name}\n   Talk: {talk.Name}\n   Apps routed to VoiceMeeter Input"
+                    ? $"✓ Voicemeeter configured:\n   Hear: {hear.Name}\n   Talk: {talk.Name}\n   Windows defaults → VoiceMeeter Input / Output"
                     : $"✓ Voicemeeter configured:\n   Hear: {hear.Name}\n   Talk: {talk.Name}";
             }
             else
@@ -135,23 +150,28 @@ public partial class SetupWizardWindow : Window
             return false;
 
         var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
+        var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
         if (string.IsNullOrWhiteSpace(vmInputId))
             return false;
 
         if (string.IsNullOrWhiteSpace(_config.Settings.SavedDefaultRenderId))
             _config.Settings.SavedDefaultRenderId = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render) ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(_config.Settings.SavedDefaultCaptureId))
+            _config.Settings.SavedDefaultCaptureId = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture) ?? string.Empty;
 
-        return _windowsAudioRoutingService.TrySetDefaultDevices(vmInputId, string.Empty);
+        return _windowsAudioRoutingService.TrySetDefaultDevices(vmInputId, vmOutputId ?? string.Empty);
     }
 
     private void RevertAppsRouting()
     {
-        var previous = _config.Settings.SavedDefaultRenderId;
-        if (string.IsNullOrWhiteSpace(previous))
+        var previousRender = _config.Settings.SavedDefaultRenderId;
+        var previousCapture = _config.Settings.SavedDefaultCaptureId;
+        if (string.IsNullOrWhiteSpace(previousRender) && string.IsNullOrWhiteSpace(previousCapture))
             return;
 
-        _windowsAudioRoutingService.TrySetDefaultDevices(previous, string.Empty);
+        _windowsAudioRoutingService.TrySetDefaultDevices(previousRender, previousCapture);
         _config.Settings.SavedDefaultRenderId = string.Empty;
+        _config.Settings.SavedDefaultCaptureId = string.Empty;
     }
 
     private void RouteAppsToVmCheckBox_Checked(object sender, RoutedEventArgs e)
@@ -216,9 +236,27 @@ public partial class SetupWizardWindow : Window
         _config.Settings.VBCableDetected = false;
 
         bool appsRouted = ApplyAppsRouting();
-        bool defaultsOk = appsRouted
-            ? _windowsAudioRoutingService.TrySetDefaultDevices(string.Empty, inputId ?? string.Empty)
-            : _windowsAudioRoutingService.TrySetDefaultDevices(outputId ?? string.Empty, inputId ?? string.Empty);
+        bool defaultsOk;
+        if (appsRouted)
+        {
+            var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
+            var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
+            if (!string.IsNullOrWhiteSpace(vmInputId))
+            {
+                _config.Settings.OutputDeviceId = vmInputId;
+                _config.Settings.PlaybackDeviceId = vmInputId;
+            }
+            if (!string.IsNullOrWhiteSpace(vmOutputId))
+            {
+                _config.Settings.InputDeviceId = vmOutputId;
+                _config.Settings.MicrophoneDeviceId = vmOutputId;
+            }
+            defaultsOk = true;
+        }
+        else
+        {
+            defaultsOk = _windowsAudioRoutingService.TrySetDefaultDevices(outputId ?? string.Empty, inputId ?? string.Empty);
+        }
 
         if (defaultsOk)
             WizardStatusText.Text = "System defaults updated.";

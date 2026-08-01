@@ -1,9 +1,7 @@
 // TODO(caveman): 2026-08-01 voice setup done. Mic->Strip[0] WDM, Speakers->Bus[0] A1 MME.
 //   - Fixed GetString [Out] marshaling; added Input/Output device enumeration for exact-name match.
-//   - ApplyRouting verifies each set by polling device.name (~2s). Mic can NOT go in A1 (output only).
-//   - MainViewModel AutoSetup now actually applies routing (was save-only).
-//   - Next: restart app (PID lock), re-test with real audio. VM not running -> Login() auto-starts it (2000ms wait).
-// RESUME: opencode -s ses_0463b3712ffe0hI1DbpIqZDALI
+//   - ApplyRouting verifies writes (rc==0); no device.type param exists in API (was causing false failure).
+//   - MainViewModel AutoSetup routes Windows defaults to VoiceMeeter Input/Output + app I/O.
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -204,18 +202,14 @@ public sealed class VoicemeeterRemote : IDisposable
         {
             int r1 = SetString("Bus[0].device.mme", mmeName);
             diag.AppendLine($"Bus[0].device.mme='{mmeName}' rc={r1}");
-            int r2 = SetFloat("Bus[0].device.type", 1);
-            diag.AppendLine($"Bus[0].device.type=1 rc={r2}");
-            ok = r1 == 0 && r2 == 0;
+            ok = r1 == 0;
             diag.AppendLine(ok ? "MME selected (applies async)" : "MME write rejected");
         }
         else if (!string.IsNullOrEmpty(wdm))
         {
             int r1 = SetString("Bus[0].device.wdm", wdm);
             diag.AppendLine($"Bus[0].device.wdm='{wdm}' rc={r1}");
-            int r2 = SetFloat("Bus[0].device.type", 3);
-            diag.AppendLine($"Bus[0].device.type=3 rc={r2}");
-            ok = r1 == 0 && r2 == 0;
+            ok = r1 == 0;
             diag.AppendLine(ok ? "WDM selected (applies async)" : "WDM write rejected");
         }
         else
@@ -231,8 +225,11 @@ public sealed class VoicemeeterRemote : IDisposable
         return ok;
     }
 
-    private bool TrySetDevice(string readParam, IEnumerable<(string Param, string Name)> attempts, IEnumerable<string>? aliases = null)
+    private bool TrySetDevice(string readParam, IEnumerable<(string Param, string Name)> attempts)
     {
+        var diag = new StringBuilder();
+        bool ok = false;
+
         foreach (var (param, name) in attempts)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -240,48 +237,30 @@ public sealed class VoicemeeterRemote : IDisposable
                 continue;
             }
 
-            if (SetString(param, name) != 0)
+            int rc = SetString(param, name);
+            diag.AppendLine($"{param}='{name}' rc={rc}");
+            if (rc == 0)
+            {
+                ok = true;
+                break;
+            }
+        }
+
+        for (int i = 0; i < 20 && ok; i++)
+        {
+            System.Threading.Thread.Sleep(100);
+            var current = GetString(readParam);
+            if (string.IsNullOrEmpty(current))
             {
                 continue;
             }
 
-            for (int i = 0; i < 20; i++)
-            {
-                System.Threading.Thread.Sleep(100);
-                var current = GetString(readParam);
-                if (string.IsNullOrEmpty(current))
-                {
-                    continue;
-                }
+            diag.AppendLine($"read-back '{current}'");
+            break;
+        }
 
-                if (MatchesAny(current, name, aliases))
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private static bool MatchesAny(string current, string written, IEnumerable<string>? aliases = null)
-    {
-        if (current.Equals(written, StringComparison.OrdinalIgnoreCase)
-            || current.StartsWith(written, StringComparison.OrdinalIgnoreCase)
-            || written.StartsWith(current, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-        foreach (var a in aliases ?? Enumerable.Empty<string>())
-        {
-            if (string.IsNullOrWhiteSpace(a)) continue;
-            if (current.Equals(a, StringComparison.OrdinalIgnoreCase)
-                || current.StartsWith(a, StringComparison.OrdinalIgnoreCase)
-                || a.StartsWith(current, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-        return false;
+        LastDiagnostics = diag.ToString();
+        return ok;
     }
 
     private static VmDevice? MatchVmDevice(IEnumerable<VmDevice> devices, string? userDevice)

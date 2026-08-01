@@ -35,7 +35,41 @@ public sealed class WindowsAudioRoutingService
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IPolicyConfig
     {
+        [PreserveSig]
+        int GetMixFormat([MarshalAs(UnmanagedType.LPWStr)] string deviceId, out IntPtr format);
+
+        [PreserveSig]
+        int GetDeviceFormat([MarshalAs(UnmanagedType.LPWStr)] string deviceId, bool default_, out IntPtr format);
+
+        [PreserveSig]
+        int ResetDeviceFormat([MarshalAs(UnmanagedType.LPWStr)] string deviceId);
+
+        [PreserveSig]
+        int SetDeviceFormat([MarshalAs(UnmanagedType.LPWStr)] string deviceId, IntPtr endpointFormat, IntPtr mixFormat);
+
+        [PreserveSig]
+        int GetProcessingPeriod([MarshalAs(UnmanagedType.LPWStr)] string deviceId, bool default_, out long defaultPeriod, out long minimumPeriod);
+
+        [PreserveSig]
+        int SetProcessingPeriod([MarshalAs(UnmanagedType.LPWStr)] string deviceId, long period);
+
+        [PreserveSig]
+        int GetShareMode([MarshalAs(UnmanagedType.LPWStr)] string deviceId, out int mode);
+
+        [PreserveSig]
+        int SetShareMode([MarshalAs(UnmanagedType.LPWStr)] string deviceId, int mode);
+
+        [PreserveSig]
+        int GetPropertyValue([MarshalAs(UnmanagedType.LPWStr)] string deviceId, bool store, IntPtr key, out IntPtr value);
+
+        [PreserveSig]
+        int SetPropertyValue([MarshalAs(UnmanagedType.LPWStr)] string deviceId, bool store, IntPtr key, IntPtr value);
+
+        [PreserveSig]
         int SetDefaultEndpoint([MarshalAs(UnmanagedType.LPWStr)] string deviceId, ERole role);
+
+        [PreserveSig]
+        int SetEndpointVisibility([MarshalAs(UnmanagedType.LPWStr)] string deviceId, bool visible);
     }
 
     private enum ERole
