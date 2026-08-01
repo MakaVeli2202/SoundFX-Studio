@@ -206,10 +206,21 @@ public sealed class VoicemeeterRemote : IDisposable
             SetFloat($"Strip[{i}].gain", 0);
         }
 
-        System.Threading.Thread.Sleep(300);
-        var stripDevice = GetString("Strip[0].device.name");
-        var busDevice = GetString("Bus[0].device.name");
-        if (!string.IsNullOrWhiteSpace(stripDevice) || !string.IsNullOrWhiteSpace(busDevice))
+        string stripDevice = "";
+        string busDevice = "";
+        var readBackOk = false;
+        for (int i = 0; i < 10; i++)
+        {
+            System.Threading.Thread.Sleep(200);
+            stripDevice = GetString("Strip[0].device.name");
+            busDevice = GetString("Bus[0].device.name");
+            if (string.IsNullOrWhiteSpace(stripDevice) && string.IsNullOrWhiteSpace(busDevice))
+            {
+                readBackOk = true;
+                break;
+            }
+        }
+        if (!readBackOk)
             failures.AppendLine($"read-back Strip[0]='{stripDevice}' Bus[0]='{busDevice}' (still selected)");
 
         LastDiagnostics = failures.ToString();

@@ -4,6 +4,8 @@ namespace SoundFXStudio.Services;
 
 public sealed class WindowsAudioRoutingService
 {
+    public string LastError { get; private set; } = string.Empty;
+
     public bool TrySetDefaultDevices(string outputDeviceId, string inputDeviceId)
     {
         var outputApplied = TrySetDefaultOutput(outputDeviceId);
@@ -13,24 +15,40 @@ public sealed class WindowsAudioRoutingService
 
     public bool TrySetDefaultOutput(string deviceId)
     {
-        return string.IsNullOrWhiteSpace(deviceId) || TrySetDefaultEndpoint(deviceId, ERole.Console) && TrySetDefaultEndpoint(deviceId, ERole.Multimedia) && TrySetDefaultEndpoint(deviceId, ERole.Communications);
+        return string.IsNullOrWhiteSpace(deviceId) || TrySetAllRoles(deviceId);
     }
 
     public bool TrySetDefaultInput(string deviceId)
     {
-        return string.IsNullOrWhiteSpace(deviceId) || TrySetDefaultEndpoint(deviceId, ERole.Console) && TrySetDefaultEndpoint(deviceId, ERole.Multimedia) && TrySetDefaultEndpoint(deviceId, ERole.Communications);
+        return string.IsNullOrWhiteSpace(deviceId) || TrySetAllRoles(deviceId);
     }
 
-    private static bool TrySetDefaultEndpoint(string deviceId, ERole role)
+    private bool TrySetAllRoles(string deviceId)
+    {
+        LastError = string.Empty;
+        foreach (var role in new[] { ERole.Console, ERole.Multimedia, ERole.Communications })
+        {
+            var (ok, hr) = TrySetDefaultEndpoint(deviceId, role);
+            if (!ok)
+            {
+                LastError = $"role {role} failed 0x{hr:X8}";
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static (bool Ok, int Hr) TrySetDefaultEndpoint(string deviceId, ERole role)
     {
         try
         {
             var policyConfig = (IPolicyConfig)new PolicyConfigClient();
-            return policyConfig.SetDefaultEndpoint(deviceId, role) >= 0;
+            int hr = policyConfig.SetDefaultEndpoint(deviceId, role);
+            return (hr >= 0, hr);
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            return (false, ex.HResult);
         }
     }
 

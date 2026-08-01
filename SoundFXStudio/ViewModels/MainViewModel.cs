@@ -2409,10 +2409,14 @@ public sealed class MainViewModel : ObservableObject
 
                 bool outputApplied = false;
                 bool inputApplied = false;
+                string? renderError = null;
+                string? captureError = null;
                 if (haveRender || haveCapture)
                 {
                     outputApplied = _windowsAudioRoutingService.TrySetDefaultOutput(haveRender ? vmInputId! : string.Empty);
+                    renderError = _windowsAudioRoutingService.LastError;
                     inputApplied = _windowsAudioRoutingService.TrySetDefaultInput(haveCapture ? vmOutputId! : string.Empty);
+                    captureError = _windowsAudioRoutingService.LastError;
                 }
 
                 if (haveRender)
@@ -2430,19 +2434,36 @@ public sealed class MainViewModel : ObservableObject
                 Save();
 
                 var result = $"✓  Configured for Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
-                if (haveRender && outputApplied)
-                    result += "\n   ✓ App output + Windows playback → VoiceMeeter Input";
-                else if (haveRender)
-                    result += "\n   ⚠  Could not set Windows playback → VoiceMeeter Input (set manually)";
-                else
-                    result += "\n   ⚠  VoiceMeeter Input device not found — playback not routed";
 
-                if (haveCapture && inputApplied)
-                    result += "\n   ✓ Mic + Windows input → VoiceMeeter Output (B1)";
-                else if (haveCapture)
-                    result += "\n   ⚠  Could not set Windows input → VoiceMeeter Output (B1) (set manually)";
+                if (haveRender)
+                {
+                    var rb = outputApplied ? _audioDeviceService.GetDefaultDeviceId(DataFlow.Render) : null;
+                    if (outputApplied && string.Equals(rb, vmInputId, StringComparison.OrdinalIgnoreCase))
+                        result += "\n   ✓ App output + Windows playback → VoiceMeeter Input";
+                    else if (outputApplied)
+                        result += $"\n   ⚠  Playback default is '{rb}' — VoiceMeeter Input not applied ({renderError ?? "none"})";
+                    else
+                        result += $"\n   ⚠  Could not set Windows playback → VoiceMeeter Input ({renderError ?? "set failed"})";
+                }
                 else
+                {
+                    result += "\n   ⚠  VoiceMeeter Input device not found — playback not routed";
+                }
+
+                if (haveCapture)
+                {
+                    var rb = inputApplied ? _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture) : null;
+                    if (inputApplied && string.Equals(rb, vmOutputId, StringComparison.OrdinalIgnoreCase))
+                        result += "\n   ✓ Mic + Windows input → VoiceMeeter Output (B1)";
+                    else if (inputApplied)
+                        result += $"\n   ⚠  Input default is '{rb}' — VoiceMeeter Output (B1) not applied ({captureError ?? "none"})";
+                    else
+                        result += $"\n   ⚠  Could not set Windows input → VoiceMeeter Output (B1) ({captureError ?? "set failed"})";
+                }
+                else
+                {
                     result += "\n   ⚠  VoiceMeeter Output (B1) device not found — input not routed";
+                }
 
                 return result;
             }
@@ -2457,14 +2478,22 @@ public sealed class MainViewModel : ObservableObject
     {
         return await Task.Run(() =>
         {
-            var vmResult = "✓ Voicemeeter devices cleared.";
-            if (VoicemeeterService.IsVoicemeeterInstalled())
+            string vmResult;
+            if (!VoicemeeterService.IsVoicemeeterInstalled())
+            {
+                vmResult = "⚠  Voicemeeter not installed — devices were NOT cleared.";
+            }
+            else
             {
                 using var vm = new VoicemeeterRemote();
                 if (vm.Login())
                 {
                     vmResult = vm.ResetRouting();
                     vm.Dispose();
+                }
+                else
+                {
+                    vmResult = "⚠  Could not log in to Voicemeeter — devices were NOT cleared.";
                 }
             }
 

@@ -70,7 +70,7 @@ public partial class App : Application
         var config = _configService.Load();
         _logService.Enabled = config.Settings.EnableLogging;
 
-        if (config.Settings.ShowSetupWizardOnStartup && !config.Settings.SetupCompleted)
+        if (config.Settings.ShowSetupWizardOnStartup)
         {
             var wizard = new SetupWizardWindow();
             wizard.ShowDialog();
