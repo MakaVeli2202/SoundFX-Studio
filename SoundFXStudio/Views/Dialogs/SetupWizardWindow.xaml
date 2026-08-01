@@ -249,7 +249,7 @@
                                   Foreground="White" FontSize="12"/>
 
                         <CheckBox x:Name="RouteAppsToVmCheckBox"
-                                  Content="Route system apps to VoiceMeeter Input"
+                                  Content="Route system apps through Voicemeeter (app output → VoiceMeeter Input, mic → VoiceMeeter Output / B1)"
                                   IsChecked="True"
                                   Checked="RouteAppsToVmCheckBox_Checked"
                                   Unchecked="RouteAppsToVmCheckBox_Unchecked"
