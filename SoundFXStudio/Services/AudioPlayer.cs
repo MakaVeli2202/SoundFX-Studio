@@ -157,6 +157,24 @@ public sealed class AudioPlayer : IDisposable
         }
     }
 
+    public void SetMasterVolume(float volume)
+    {
+        volume = Math.Clamp(volume, 0f, 1f);
+        List<PlaybackSession> sessions;
+
+        lock (_gate)
+        {
+            sessions = _sessions.Values.SelectMany(item => item).ToList();
+        }
+
+        foreach (var session in sessions)
+        {
+            session.Reader.Volume = volume;
+        }
+
+        _logService?.Info($"Master Volume Set: {volume:P0}");
+    }
+
     public void Dispose() => StopAll();
 
     private void RemoveSession(string soundId, PlaybackSession? session)

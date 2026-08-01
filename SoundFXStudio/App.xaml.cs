@@ -173,6 +173,7 @@ public partial class App : Application
     private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
     {
         _logService.Critical("DispatcherUnhandledException", e.Exception);
+        e.Handled = true;
     }
 
     private void AppDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)

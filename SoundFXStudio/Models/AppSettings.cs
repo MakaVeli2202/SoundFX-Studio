@@ -39,6 +39,7 @@ public class AppSettings : ObservableObject
     private string _savedConsoleMicId = string.Empty;
     private string _savedCommMicId = string.Empty;
     private string _savedDefaultRenderId = string.Empty;
+    private string _savedDefaultCaptureId = string.Empty;
     private bool _voicemeeterDetected;
 
     // Hotkey mode (migrated from MyBoard)
@@ -50,6 +51,7 @@ public class AppSettings : ObservableObject
     private string _muteAllKey = string.Empty;
     private string _muteHearKey = string.Empty;
     private string _muteTeamKey = string.Empty;
+    private string _stopAllKey = string.Empty;
     private bool _showAllStrips;
 
     public string InputDeviceId
@@ -240,6 +242,12 @@ public class AppSettings : ObservableObject
         set => SetProperty(ref _savedDefaultRenderId, value);
     }
 
+    public string SavedDefaultCaptureId
+    {
+        get => _savedDefaultCaptureId;
+        set => SetProperty(ref _savedDefaultCaptureId, value);
+    }
+
     public bool VoicemeeterDetected
     {
         get => _voicemeeterDetected;
@@ -284,6 +292,12 @@ public class AppSettings : ObservableObject
     {
         get => _muteTeamKey;
         set => SetProperty(ref _muteTeamKey, value);
+    }
+
+    public string StopAllKey
+    {
+        get => _stopAllKey;
+        set => SetProperty(ref _stopAllKey, value);
     }
 
     public bool ShowAllStrips

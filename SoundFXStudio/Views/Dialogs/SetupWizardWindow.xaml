@@ -248,6 +248,14 @@
                                   Background="#44111A2E" BorderBrush="#5580CFFF"
                                   Foreground="White" FontSize="12"/>
 
+                        <CheckBox x:Name="RouteAppsToVmCheckBox"
+                                  Content="Route system apps to VoiceMeeter Input"
+                                  IsChecked="True"
+                                  Checked="RouteAppsToVmCheckBox_Checked"
+                                  Unchecked="RouteAppsToVmCheckBox_Unchecked"
+                                  Foreground="#C9D7F0" FontSize="12"
+                                  Margin="0,0,0,12"/>
+
                         <Button x:Name="WizardAutoSetupBtn"
                                 Content="Auto-setup for Voicemeeter"
                                 Click="WizardAutoSetup_Click"
@@ -264,6 +272,29 @@
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter TargetName="Bd" Property="Background" Value="#442A4580"/>
                                             <Setter TargetName="Bd" Property="BorderBrush" Value="#00D8FF"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                        </Button>
+
+                        <Button x:Name="WizardResetWindowsBtn"
+                                Content="Reset Windows Settings"
+                                Margin="0,8,0,0"
+                                Click="WizardResetWindows_Click"
+                                Height="36"
+                                Background="#222A4580" BorderBrush="#F43F5E"
+                                Foreground="White" Cursor="Hand" FontSize="12">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="#442A4580"/>
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#F43F5E"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>

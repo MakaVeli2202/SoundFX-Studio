@@ -15,6 +15,55 @@ public sealed class AudioDeviceService
         return GetDevices(DataFlow.Capture);
     }
 
+    public string? GetVoicemeeterInputId()
+    {
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            foreach (var device in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+            {
+                if (device.FriendlyName.Contains("VoiceMeeter Input", StringComparison.OrdinalIgnoreCase))
+                    return device.ID;
+            }
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public string? GetVoicemeeterOutputId()
+    {
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            foreach (var device in enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active))
+            {
+                if (device.FriendlyName.Contains("VoiceMeeter Output", StringComparison.OrdinalIgnoreCase))
+                    return device.ID;
+            }
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public string? GetDefaultDeviceId(DataFlow flow)
+    {
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            return enumerator.GetDefaultAudioEndpoint(flow, Role.Multimedia)?.ID;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public string? GetDefaultCommunicationDeviceName(DataFlow flow)
     {
         try

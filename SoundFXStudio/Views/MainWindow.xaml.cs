@@ -68,6 +68,7 @@ public partial class MainWindow : Window
         MuteAllKeyBox.LostFocus += (_, _) => { ViewModel.Save(); ViewModel.RegisterMuteHotkeys(); };
         MuteHearKeyBox.LostFocus += (_, _) => { ViewModel.Save(); ViewModel.RegisterMuteHotkeys(); };
         MuteTeamKeyBox.LostFocus += (_, _) => { ViewModel.Save(); ViewModel.RegisterMuteHotkeys(); };
+        StopAllKeyBox.LostFocus += (_, _) => { ViewModel.Save(); ViewModel.RegisterMuteHotkeys(); };
     }
 
     private void CaptureMuteKey(string propertyName, Action<string> setter, string current)
@@ -85,7 +86,7 @@ public partial class MainWindow : Window
         setter(dialog.CapturedHotkey);
         ViewModel.Save();
         ViewModel.RegisterMuteHotkeys();
-        ViewModel.StatusText = $"Mute {propertyName} hotkey set to {dialog.CapturedHotkey}";
+        ViewModel.StatusText = $"{propertyName} key set to {dialog.CapturedHotkey}";
     }
 
     private void CaptureMuteAllButton_Click(object sender, RoutedEventArgs e)
@@ -96,6 +97,9 @@ public partial class MainWindow : Window
 
     private void CaptureMuteTeamButton_Click(object sender, RoutedEventArgs e)
         => CaptureMuteKey("Team", value => ViewModel.Settings.MuteTeamKey = value, ViewModel.Settings.MuteTeamKey);
+
+    private void CaptureStopAllButton_Click(object sender, RoutedEventArgs e)
+        => CaptureMuteKey("Stop All", value => ViewModel.Settings.StopAllKey = value, ViewModel.Settings.StopAllKey);
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {

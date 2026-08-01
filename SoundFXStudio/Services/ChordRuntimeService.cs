@@ -2,17 +2,17 @@ using SoundFXStudio.Models;
 
 namespace SoundFXStudio.Services;
 
-public sealed class ChordRuntimeService
+public sealed class ChordRuntimeService : IDisposable
 {
     private readonly Func<AppConfig> _getConfig;
     private readonly Func<string, KeyAssignment?> _resolveAssignmentForKey;
     private readonly Func<KeyAssignment, Task> _executeAssignmentAsync;
     private readonly Func<Guid, Task> _executeActionAsync;
-    private readonly HashSet<string> _pressedKeys = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _gate = new();
+    private readonly List<string> _sequence = new();
+    private readonly HashSet<string> _heldKeys = new(StringComparer.OrdinalIgnoreCase);
 
-    private string? _pendingSingleKeyToken;
-    private KeyChord? _pendingChordCandidate;
-    private bool _chordFiredThisCycle;
+    private CancellationTokenSource? _timeoutCts;
 
     public ChordRuntimeService(Func<AppConfig> getConfig, Func<string, KeyAssignment?> resolveAssignmentForKey, Func<KeyAssignment, Task> executeAssignmentAsync, Func<Guid, Task> executeActionAsync)
     {
@@ -30,111 +30,185 @@ public sealed class ChordRuntimeService
             return;
         }
 
-        _pressedKeys.Add(normalizedToken);
+        List<KeyAssignment>? fireAssignments = null;
+        Guid? fireActionId = null;
 
-        if (_chordFiredThisCycle)
+        lock (_gate)
         {
-            return;
-        }
-
-        var match = FindBestMatch(_pressedKeys);
-        if (match is not null && match.Keys.Count > 1)
-        {
-            if (HasLongerMatch(_pressedKeys, match.Keys.Count))
-            {
-                _pendingChordCandidate = match;
-                return;
-            }
-
-            _pendingSingleKeyToken = null;
-            _pendingChordCandidate = null;
-            _chordFiredThisCycle = true;
-            await _executeActionAsync(match.ActionId).ConfigureAwait(false);
-            return;
-        }
-
-        if (_pressedKeys.Count == 1)
-        {
-            _pendingSingleKeyToken = normalizedToken;
-
-            if (HasLongerMatch(_pressedKeys, 1))
+            if (_heldKeys.Contains(normalizedToken))
             {
                 return;
             }
 
-            var assignment = _resolveAssignmentForKey(normalizedToken);
-            if (assignment is not null)
+            _heldKeys.Add(normalizedToken);
+            if (!_sequence.Contains(normalizedToken, StringComparer.OrdinalIgnoreCase))
             {
-                _chordFiredThisCycle = true;
+                _sequence.Add(normalizedToken);
+            }
+
+            var chords = GetAvailableChords().ToList();
+
+            var satisfied = chords
+                .Where(chord => chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase).IsSubsetOf(_sequence))
+                .OrderByDescending(chord => chord.Keys.Count)
+                .FirstOrDefault();
+
+            if (satisfied is not null && !HasLongerPendingChord(chords, satisfied.Keys.Count, _sequence))
+            {
+                CancelTimeout();
+                _sequence.Clear();
+                fireActionId = satisfied.ActionId;
+            }
+            else if (CanCompleteChord(chords, _sequence))
+            {
+                if (_sequence.Count == 1)
+                {
+                    StartTimeout();
+                }
+                else
+                {
+                    RestartTimeout();
+                }
+            }
+            else
+            {
+                CancelTimeout();
+                var pending = _sequence.ToList();
+                _sequence.Clear();
+                fireAssignments = pending
+                    .Select(_resolveAssignmentForKey)
+                    .OfType<KeyAssignment>()
+                    .ToList();
+            }
+        }
+
+        if (fireAssignments is { Count: > 0 })
+        {
+            foreach (var assignment in fireAssignments)
+            {
+                await _executeAssignmentAsync(assignment).ConfigureAwait(false);
+            }
+        }
+        else if (fireActionId is Guid actionId)
+        {
+            await _executeActionAsync(actionId).ConfigureAwait(false);
+        }
+    }
+
+    public Task HandleKeyUpAsync(string keyToken)
+    {
+        var normalizedToken = NormalizeToken(keyToken);
+        if (string.IsNullOrWhiteSpace(normalizedToken))
+        {
+            return Task.CompletedTask;
+        }
+
+        lock (_gate)
+        {
+            _heldKeys.Remove(normalizedToken);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        lock (_gate)
+        {
+            CancelTimeout();
+        }
+
+        GC.SuppressFinalize(this);
+    }
+
+    private void StartTimeout()
+    {
+        CancelTimeout();
+        var cts = new CancellationTokenSource();
+        _timeoutCts = cts;
+        _ = FirePendingOnTimeoutAsync(cts.Token);
+    }
+
+    private void RestartTimeout()
+    {
+        StartTimeout();
+    }
+
+    private void CancelTimeout()
+    {
+        _timeoutCts?.Cancel();
+        _timeoutCts?.Dispose();
+        _timeoutCts = null;
+    }
+
+    private async Task FirePendingOnTimeoutAsync(CancellationToken token)
+    {
+        var timeoutMs = GetChordTimeoutMs();
+
+        try
+        {
+            await Task.Delay(timeoutMs, token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        List<KeyAssignment>? fireAssignments = null;
+
+        lock (_gate)
+        {
+            if (token.IsCancellationRequested || _sequence.Count == 0)
+            {
+                return;
+            }
+
+            var pending = _sequence.ToList();
+            _sequence.Clear();
+            fireAssignments = pending
+                .Select(_resolveAssignmentForKey)
+                .OfType<KeyAssignment>()
+                .ToList();
+        }
+
+        if (fireAssignments is { Count: > 0 })
+        {
+            foreach (var assignment in fireAssignments)
+            {
                 await _executeAssignmentAsync(assignment).ConfigureAwait(false);
             }
         }
     }
 
-    public async Task HandleKeyUpAsync(string keyToken)
+    private int GetChordTimeoutMs()
     {
-        var normalizedToken = NormalizeToken(keyToken);
-        if (string.IsNullOrWhiteSpace(normalizedToken))
-        {
-            return;
-        }
-
-        _pressedKeys.Remove(normalizedToken);
-
-        if (_pressedKeys.Count > 0)
-        {
-            return;
-        }
-
         try
         {
-            if (!_chordFiredThisCycle && _pendingChordCandidate is not null)
-            {
-                _chordFiredThisCycle = true;
-                await _executeActionAsync(_pendingChordCandidate.ActionId).ConfigureAwait(false);
-                return;
-            }
-
-            if (!_chordFiredThisCycle && _pendingSingleKeyToken is not null)
-            {
-                var assignment = _resolveAssignmentForKey(_pendingSingleKeyToken);
-                if (assignment is not null)
-                {
-                    await _executeAssignmentAsync(assignment).ConfigureAwait(false);
-                }
-            }
+            var timeout = _getConfig().Settings.ChordTimeoutMs;
+            return timeout > 0 ? timeout : 1000;
         }
-        finally
+        catch
         {
-            _pendingSingleKeyToken = null;
-            _pendingChordCandidate = null;
-            _chordFiredThisCycle = false;
-            _pressedKeys.Clear();
+            return 1000;
         }
     }
 
-    private KeyChord? FindBestMatch(IEnumerable<string> pressedKeys)
+    private static bool CanCompleteChord(IEnumerable<KeyChord> chords, IReadOnlyCollection<string> sequence)
     {
-        var pressedSet = new HashSet<string>(pressedKeys, StringComparer.OrdinalIgnoreCase);
-        if (pressedSet.Count == 0)
+        var sequenceSet = new HashSet<string>(sequence, StringComparer.OrdinalIgnoreCase);
+        return chords.Any(chord =>
         {
-            return null;
-        }
-
-        return GetAvailableChords()
-            .Where(chord => chord.Keys.Count > 1)
-            .Where(chord => chord.Keys.Count == pressedSet.Count)
-            .Where(chord => chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(pressedSet))
-            .OrderByDescending(chord => chord.Keys.Count)
-            .FirstOrDefault();
+            var keys = chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            return sequenceSet.IsSubsetOf(keys);
+        });
     }
 
-    private bool HasLongerMatch(IEnumerable<string> pressedKeys, int currentSize)
+    private static bool HasLongerPendingChord(IEnumerable<KeyChord> chords, int satisfiedSize, IReadOnlyCollection<string> sequence)
     {
-        var pressedSet = new HashSet<string>(pressedKeys, StringComparer.OrdinalIgnoreCase);
-
-        return GetAvailableChords().Any(chord => chord.Keys.Count > currentSize
-                                                && chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase).IsSupersetOf(pressedSet));
+        var sequenceSet = new HashSet<string>(sequence, StringComparer.OrdinalIgnoreCase);
+        return chords.Any(chord =>
+            chord.Keys.Count > satisfiedSize
+            && sequenceSet.IsSubsetOf(chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase)));
     }
 
     private IEnumerable<KeyChord> GetAvailableChords()

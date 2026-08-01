@@ -115,6 +115,11 @@ public sealed class TriggerService : IDisposable
                     _logService?.Info("Mute Team triggered");
                     System.Windows.Application.Current.Dispatcher.Invoke(() => App.ToggleMuteTeam());
                     return;
+                case HkStopAll:
+                    _logService?.Info("Stop All triggered");
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                        (System.Windows.Application.Current.MainWindow?.DataContext as ViewModels.MainViewModel)?.StopAllSounds());
+                    return;
             }
 
             var assignment = ActiveProfile?.Assignments.FirstOrDefault(item => string.Equals(item.Id, args.OwnerId, StringComparison.OrdinalIgnoreCase));
@@ -144,6 +149,9 @@ public sealed class TriggerService : IDisposable
                         case HkMuteAll: App.ToggleMuteAll(); break;
                         case HkMuteHear: App.ToggleMuteHear(); break;
                         case HkMuteTeam: App.ToggleMuteTeam(); break;
+                        case HkStopAll:
+                            (System.Windows.Application.Current.MainWindow?.DataContext as ViewModels.MainViewModel)?.StopAllSounds();
+                            break;
                     }
                 });
                 return;
@@ -252,13 +260,14 @@ public sealed class TriggerService : IDisposable
             _bareMuteKeys[parsedKey] = actionId;
     }
 
-    public void RegisterMuteHotkeys(string muteAllKey, string muteHearKey, string muteTeamKey)
+    public void RegisterMuteHotkeys(string muteAllKey, string muteHearKey, string muteTeamKey, string stopAllKey)
     {
         ThrowIfDisposed();
 
         _hotkeyService.Unregister(HkMuteAll);
         _hotkeyService.Unregister(HkMuteHear);
         _hotkeyService.Unregister(HkMuteTeam);
+        _hotkeyService.Unregister(HkStopAll);
 
         if (TryParseBareKey(muteAllKey, out var allKey))
             RegisterMuteBareKey(HkMuteAll, muteAllKey, allKey);
@@ -274,11 +283,17 @@ public sealed class TriggerService : IDisposable
             RegisterMuteBareKey(HkMuteTeam, muteTeamKey, teamKey);
         else if (!string.IsNullOrWhiteSpace(muteTeamKey))
             _hotkeyService.Register(HkMuteTeam, muteTeamKey);
+
+        if (TryParseBareKey(stopAllKey, out var stopKey))
+            RegisterMuteBareKey(HkStopAll, stopAllKey, stopKey);
+        else if (!string.IsNullOrWhiteSpace(stopAllKey))
+            _hotkeyService.Register(HkStopAll, stopAllKey);
     }
 
     private const string HkMuteAll = "_mute_all";
     private const string HkMuteHear = "_mute_hear";
     private const string HkMuteTeam = "_mute_team";
+    private const string HkStopAll = "_stop_all";
 
     private static bool IsOwnWindowForeground()
     {
@@ -528,12 +543,16 @@ public sealed class TriggerService : IDisposable
         ThrowIfDisposed();
 
         var profile = ActiveProfile;
-        if (profile is null)
+        if (profile is null || string.IsNullOrWhiteSpace(token))
         {
             return null;
         }
 
-        return profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, token, StringComparison.OrdinalIgnoreCase));
+        var normalized = token.Trim();
+        return profile.Assignments.FirstOrDefault(item =>
+            string.IsNullOrWhiteSpace(item.ChordKey)
+            && (string.Equals(item.KeyId, normalized, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(item.HotkeyText, normalized, StringComparison.OrdinalIgnoreCase)));
     }
 
     private void HandleAssignmentTrigger(KeyboardKey? keyboardKey, KeyAssignment assignment, string triggerToken, bool isKeyDown)

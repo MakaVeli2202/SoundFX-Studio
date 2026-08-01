@@ -1271,6 +1271,17 @@
                                 <Button Grid.Row="3" Grid.Column="2" x:Name="CaptureMuteTeamButton"
                                         Content="Capture" Height="26" Width="70" FontSize="11" Margin="0,0,0,0"
                                         Click="CaptureMuteTeamButton_Click"/>
+
+                                <Border Grid.Row="4" Grid.ColumnSpan="3" Height="1" Background="#22445E" Margin="0,6,0,6"/>
+
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Stop All Sounds:" 
+                                           Foreground="#DDEAFF" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBox Grid.Row="5" Grid.Column="1" x:Name="StopAllKeyBox"
+                                         Text="{Binding Settings.StopAllKey}" Height="26" FontSize="11"
+                                         Margin="0,0,8,0" ToolTip="e.g. Ctrl+Shift+F16"/>
+                                <Button Grid.Row="5" Grid.Column="2" x:Name="CaptureStopAllButton"
+                                        Content="Capture" Height="26" Width="70" FontSize="11" Margin="0,0,0,0"
+                                        Click="CaptureStopAllButton_Click"/>
                             </Grid>
                         </Border>
 

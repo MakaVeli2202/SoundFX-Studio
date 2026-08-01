@@ -19,6 +19,12 @@ public sealed class ActionExecutor
             [ActionType.Playlist] = new PlaylistActionHandler(_getConfig, ExecuteAsync),
             [ActionType.Profile] = new ProfileActionHandler(_getConfig, configService)
         };
+
+        var commandHandler = new CommandActionHandler(_getConfig, audioPlayer, resolveOutputDeviceIndex);
+        _handlers[ActionType.StopPlayback] = commandHandler;
+        _handlers[ActionType.StopAllPlayback] = commandHandler;
+        _handlers[ActionType.VolumeChange] = commandHandler;
+        _handlers[ActionType.DeviceSwitch] = commandHandler;
     }
 
     public Task ExecuteAsync(Guid actionId)

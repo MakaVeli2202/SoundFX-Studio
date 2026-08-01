@@ -13,11 +13,9 @@ namespace SoundFXStudio.Views;
 
 public partial class KeyboardWindow : Window, INotifyPropertyChanged
 {
-    private const double BaseKeyboardWidth = 1306;
-    private const double BaseKeyboardHeight = 870;
+    private const double BaseKeyboardWidth = 1512.6;
+    private const double BaseKeyboardHeight = 608;
     private const double BaseChamferSize = 52;
-    private const double KeyboardImageWidth = 1521;
-    private const double KeyboardImageHeight = 618;
 
     private bool _suppressSelectionEvents;
     private double _selectedWindowScale = 1.0;
@@ -315,10 +313,8 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
     private void UpdateTopControlsMargin()
     {
         var scale = Math.Min(Width / BaseKeyboardWidth, Height / BaseKeyboardHeight);
-        var fittedImageHeight = KeyboardImageHeight * (BaseKeyboardWidth / KeyboardImageWidth) * scale;
-        var topInset = Math.Max(18, ((Height - fittedImageHeight) / 2) + (20 * scale));
-        var rightInset = Math.Max(18, 28 * scale);
-        TopControls.Margin = new Thickness(18, topInset, rightInset, 18);
+        var inset = Math.Max(8, 10 * scale);
+        TopControls.Margin = new Thickness(inset, inset, inset, inset);
     }
 
     private void UpdateWindowClip()

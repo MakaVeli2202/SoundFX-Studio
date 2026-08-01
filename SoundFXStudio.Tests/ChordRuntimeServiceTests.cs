@@ -7,25 +7,75 @@ namespace SoundFXStudio.Tests;
 public class ChordRuntimeServiceTests
 {
     [Fact]
-    public async Task SingleKey_FiresOnRelease()
+    public async Task SingleKey_NotPartOfChord_FiresImmediatelyOnKeyDown()
     {
         var config = BuildConfig(out var profile, out var actionA, out var _, out var _);
-        profile.Assignments.Add(new KeyAssignment { KeyId = "S", ActionId = actionA.Id });
+        profile.Assignments.Add(new KeyAssignment { KeyId = "S", ActionId = actionA.Id, HotkeyText = "S" });
 
         var executions = new List<Guid>();
         var service = CreateService(config, executions);
 
         await service.HandleKeyDownAsync("S");
-        await service.HandleKeyUpAsync("S");
 
         Assert.Equal(new[] { actionA.Id }, executions);
     }
 
     [Fact]
-    public async Task MostSpecificChord_WinsOverSingleKey()
+    public async Task SequentialDistinctKeys_NoChordMembership_FireOwnActionsImmediately()
     {
         var config = BuildConfig(out var profile, out var actionA, out var actionB, out var _);
-        profile.Assignments.Add(new KeyAssignment { KeyId = "S", ActionId = actionA.Id });
+        profile.Assignments.Add(new KeyAssignment { KeyId = "A", ActionId = actionA.Id, HotkeyText = "A" });
+        profile.Assignments.Add(new KeyAssignment { KeyId = "D", ActionId = actionB.Id, HotkeyText = "D" });
+
+        var executions = new List<Guid>();
+        var service = CreateService(config, executions);
+
+        await service.HandleKeyDownAsync("A");
+        await service.HandleKeyDownAsync("D");
+
+        Assert.Equal(new[] { actionA.Id, actionB.Id }, executions);
+    }
+
+    [Fact]
+    public async Task ChordableKey_Alone_FiresSingleAfterTimeout()
+    {
+        var config = BuildConfig(out var profile, out var actionA, out var actionB, out var _);
+        config.Settings.ChordTimeoutMs = 50;
+        profile.Assignments.Add(new KeyAssignment { KeyId = "A", ActionId = actionA.Id, HotkeyText = "A" });
+        profile.KeyChords.Add(new KeyChord { Name = "A + D", ActionId = actionB.Id, Keys = { "A", "D" } });
+
+        var executions = new List<Guid>();
+        var service = CreateService(config, executions);
+
+        await service.HandleKeyDownAsync("A");
+        await service.HandleKeyUpAsync("A");
+        await Task.Delay(200);
+
+        Assert.Equal(new[] { actionA.Id }, executions);
+    }
+
+    [Fact]
+    public async Task ChordableKey_Alone_WithNoSingleBinding_FiresNothing()
+    {
+        var config = BuildConfig(out var profile, out var _, out var actionB, out var _);
+        config.Settings.ChordTimeoutMs = 50;
+        profile.KeyChords.Add(new KeyChord { Name = "H + T", ActionId = actionB.Id, Keys = { "H", "T" } });
+
+        var executions = new List<Guid>();
+        var service = CreateService(config, executions);
+
+        await service.HandleKeyDownAsync("H");
+        await service.HandleKeyUpAsync("H");
+        await Task.Delay(200);
+
+        Assert.Empty(executions);
+    }
+
+    [Fact]
+    public async Task Chord_WinsOverSingleKey_WhenBothPressed()
+    {
+        var config = BuildConfig(out var profile, out var actionA, out var actionB, out var _);
+        profile.Assignments.Add(new KeyAssignment { KeyId = "S", ActionId = actionA.Id, HotkeyText = "S" });
         profile.KeyChords.Add(new KeyChord { Name = "S + W", ActionId = actionB.Id, Keys = { "S", "W" } });
 
         var executions = new List<Guid>();
@@ -40,10 +90,28 @@ public class ChordRuntimeServiceTests
     }
 
     [Fact]
+    public async Task SequentialChord_TapFirstThenTapSecond_FiresChord()
+    {
+        var config = BuildConfig(out var profile, out var _, out var actionB, out var _);
+        config.Settings.ChordTimeoutMs = 200;
+        profile.KeyChords.Add(new KeyChord { Name = "A + D", ActionId = actionB.Id, Keys = { "A", "D" } });
+
+        var executions = new List<Guid>();
+        var service = CreateService(config, executions);
+
+        await service.HandleKeyDownAsync("A");
+        await service.HandleKeyUpAsync("A");
+        await service.HandleKeyDownAsync("D");
+        await service.HandleKeyUpAsync("D");
+
+        Assert.Equal(new[] { actionB.Id }, executions);
+    }
+
+    [Fact]
     public async Task ThreeKeyChord_WinsOverTwoKeyChord_AndSingleKey()
     {
         var config = BuildConfig(out var profile, out var actionA, out var actionB, out var actionC);
-        profile.Assignments.Add(new KeyAssignment { KeyId = "Q", ActionId = actionA.Id });
+        profile.Assignments.Add(new KeyAssignment { KeyId = "Q", ActionId = actionA.Id, HotkeyText = "Q" });
         profile.KeyChords.Add(new KeyChord { Name = "Q + E", ActionId = actionB.Id, Keys = { "Q", "E" } });
         profile.KeyChords.Add(new KeyChord { Name = "Q + E + R", ActionId = actionC.Id, Keys = { "Q", "E", "R" } });
 
@@ -105,8 +173,9 @@ public class ChordRuntimeServiceTests
         return new ChordRuntimeService(
             () => config,
             token => config.Profiles.SelectMany(profile => profile.Assignments).FirstOrDefault(assignment =>
-                string.Equals(assignment.KeyId, token, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(assignment.HotkeyText, token, StringComparison.OrdinalIgnoreCase)),
+                string.IsNullOrWhiteSpace(assignment.ChordKey)
+                && (string.Equals(assignment.KeyId, token, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(assignment.HotkeyText, token, StringComparison.OrdinalIgnoreCase))),
             assignment =>
             {
                 if (assignment.ActionId is Guid actionId)

@@ -13,6 +13,7 @@ public partial class SetupWizardWindow : Window
     private readonly AudioDeviceService _audioDeviceService = new();
     private readonly WindowsAudioRoutingService _windowsAudioRoutingService = new();
     private AppConfig _config;
+    private bool _ready;
 
     public SetupWizardWindow()
     {
@@ -49,6 +50,7 @@ public partial class SetupWizardWindow : Window
 
         UpdateStatus();
         CheckVoicemeeter();
+        _ready = true;
     }
 
     private void CheckVoicemeeter()
@@ -77,11 +79,23 @@ public partial class SetupWizardWindow : Window
 
         WizardAutoSetupBtn.IsEnabled = false;
         VmSetupStatus.Text = "Setting up…";
+        VmSetupStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x98, 0xA0, 0xC0));
         Mouse.OverrideCursor = Cursors.Wait;
 
-        string result = await Task.Run(() =>
+        string result;
+        try
         {
-            try
+            var (applied, diagnostics) = await Task.Run(() =>
+            {
+                using var vm = new VoicemeeterRemote();
+                if (!vm.Login()) return (false, "Login failed.");
+                bool ok = vm.ApplyRouting(hear.Name, talk.Name);
+                string diag = vm.LastDiagnostics;
+                vm.Dispose();
+                return (ok, diag);
+            });
+
+            if (applied)
             {
                 _config.Settings.HearDeviceName = hear.Name;
                 _config.Settings.TalkDeviceName = talk.Name;
@@ -89,22 +103,23 @@ public partial class SetupWizardWindow : Window
                 _config.Settings.OutputDeviceId = hear.Id;
                 _config.Settings.PlaybackDeviceId = hear.Id;
                 _config.Settings.VoicemeeterDetected = true;
+                bool routed = ApplyAppsRouting();
                 _configService.Save(_config);
-
-                using var vm = new VoicemeeterRemote();
-                if (vm.Login())
-                {
-                    vm.ApplyRouting(hear.Name, talk.Name);
-                    vm.Dispose();
-                }
-
-                return $"✓ Voicemeeter configured:\n   Hear: {hear.Name}\n   Talk: {talk.Name}";
+                result = routed
+                    ? $"✓ Voicemeeter configured:\n   Hear: {hear.Name}\n   Talk: {talk.Name}\n   Apps routed to VoiceMeeter Input"
+                    : $"✓ Voicemeeter configured:\n   Hear: {hear.Name}\n   Talk: {talk.Name}";
             }
-            catch (Exception ex)
+            else
             {
-                return $"✗ Setup failed: {ex.Message}";
+                result = "✗ Setup failed: could not configure Voicemeeter.\n   Check Hear/Talk device names and retry.";
+                if (!string.IsNullOrWhiteSpace(diagnostics))
+                    result += $"\n\n{diagnostics}";
             }
-        });
+        }
+        catch (Exception ex)
+        {
+            result = $"✗ Setup failed: {ex.Message}";
+        }
 
         Mouse.OverrideCursor = null;
         WizardAutoSetupBtn.IsEnabled = true;
@@ -112,6 +127,53 @@ public partial class SetupWizardWindow : Window
         VmSetupStatus.Foreground = new System.Windows.Media.SolidColorBrush(result.StartsWith("✓")
             ? System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)
             : System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+    }
+
+    private bool ApplyAppsRouting()
+    {
+        if (RouteAppsToVmCheckBox.IsChecked != true)
+            return false;
+
+        var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
+        if (string.IsNullOrWhiteSpace(vmInputId))
+            return false;
+
+        if (string.IsNullOrWhiteSpace(_config.Settings.SavedDefaultRenderId))
+            _config.Settings.SavedDefaultRenderId = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render) ?? string.Empty;
+
+        return _windowsAudioRoutingService.TrySetDefaultDevices(vmInputId, string.Empty);
+    }
+
+    private void RevertAppsRouting()
+    {
+        var previous = _config.Settings.SavedDefaultRenderId;
+        if (string.IsNullOrWhiteSpace(previous))
+            return;
+
+        _windowsAudioRoutingService.TrySetDefaultDevices(previous, string.Empty);
+        _config.Settings.SavedDefaultRenderId = string.Empty;
+    }
+
+    private void RouteAppsToVmCheckBox_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!_ready) return;
+        ApplyAppsRouting();
+        _configService.Save(_config);
+    }
+
+    private void RouteAppsToVmCheckBox_Unchecked(object sender, RoutedEventArgs e)
+    {
+        if (!_ready) return;
+        RevertAppsRouting();
+        _configService.Save(_config);
+    }
+
+    private void WizardResetWindows_Click(object sender, RoutedEventArgs e)
+    {
+        RevertAppsRouting();
+        RouteAppsToVmCheckBox.IsChecked = false;
+        _configService.Save(_config);
+        WizardStatusText.Text = "Windows sound settings reset to previous defaults.";
     }
 
     private void Finish_Click(object sender, RoutedEventArgs e)
@@ -153,7 +215,12 @@ public partial class SetupWizardWindow : Window
         _config.Settings.VirtualCableDeviceId = string.Empty;
         _config.Settings.VBCableDetected = false;
 
-        if (_windowsAudioRoutingService.TrySetDefaultDevices(outputId ?? string.Empty, inputId ?? string.Empty))
+        bool appsRouted = ApplyAppsRouting();
+        bool defaultsOk = appsRouted
+            ? _windowsAudioRoutingService.TrySetDefaultDevices(string.Empty, inputId ?? string.Empty)
+            : _windowsAudioRoutingService.TrySetDefaultDevices(outputId ?? string.Empty, inputId ?? string.Empty);
+
+        if (defaultsOk)
             WizardStatusText.Text = "System defaults updated.";
         else
             WizardStatusText.Text = "Saved. System defaults could not be updated.";

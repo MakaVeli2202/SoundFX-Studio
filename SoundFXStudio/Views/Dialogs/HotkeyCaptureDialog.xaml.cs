@@ -103,6 +103,7 @@ public partial class HotkeyCaptureDialog : Window, INotifyPropertyChanged
             return;
         }
 
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
         var modifiers = Keyboard.Modifiers;
         var parts = new List<string>();
 
@@ -126,15 +127,67 @@ public partial class HotkeyCaptureDialog : Window, INotifyPropertyChanged
             parts.Add("WIN");
         }
 
-        var keyText = e.Key switch
+        var keyText = key switch
         {
             Key.Escape => "ESC",
-            Key.Space => "SPACE",
-            Key.Return => "ENTER",
             Key.Back => "BACKSPACE",
             Key.Tab => "TAB",
+            Key.CapsLock => "CAPS LOCK",
+            Key.LeftShift or Key.RightShift => "SHIFT",
+            Key.LeftCtrl or Key.RightCtrl => "CTRL",
+            Key.LeftAlt or Key.RightAlt => "ALT",
+            Key.LWin or Key.RWin => "WIN",
+            Key.Apps => "MENU",
+            Key.PrintScreen => "PRINT SCREEN",
+            Key.Scroll => "SCROLL LOCK",
+            Key.Pause => "PAUSE",
+            Key.NumLock => "NUM LOCK",
+            Key.PageUp => "PAGE UP",
+            Key.PageDown => "PAGE DOWN",
+            Key.D0 => "0",
+            Key.D1 => "1",
+            Key.D2 => "2",
+            Key.D3 => "3",
+            Key.D4 => "4",
+            Key.D5 => "5",
+            Key.D6 => "6",
+            Key.D7 => "7",
+            Key.D8 => "8",
+            Key.D9 => "9",
+            Key.NumPad0 => "NUMPAD0",
+            Key.NumPad1 => "NUMPAD1",
+            Key.NumPad2 => "NUMPAD2",
+            Key.NumPad3 => "NUMPAD3",
+            Key.NumPad4 => "NUMPAD4",
+            Key.NumPad5 => "NUMPAD5",
+            Key.NumPad6 => "NUMPAD6",
+            Key.NumPad7 => "NUMPAD7",
+            Key.NumPad8 => "NUMPAD8",
+            Key.NumPad9 => "NUMPAD9",
+            Key.Add => "+",
+            Key.Subtract => "-",
+            Key.Multiply => "*",
+            Key.Divide => "/",
+            Key.Decimal => ".",
+            Key.Space => "SPACE",
+            Key.Return => "ENTER",
+            Key.OemTilde => "`",
+            Key.OemMinus => "-",
+            Key.OemPlus => "=",
+            Key.OemOpenBrackets => "[",
+            Key.Oem6 => "]",
+            Key.Oem5 => "\\",
+            Key.Oem1 => ";",
+            Key.Oem7 => "'",
+            Key.OemComma => ",",
+            Key.OemPeriod => ".",
+            Key.OemQuestion => "/",
             Key.Oem102 => "OEM102",
-            _ => e.Key.ToString().ToUpperInvariant()
+            Key.Left => "LEFT",
+            Key.Right => "RIGHT",
+            Key.Up => "UP",
+            Key.Down => "DOWN",
+            _ => key.ToString().ToUpperInvariant()
         };
 
         parts.Add(keyText);

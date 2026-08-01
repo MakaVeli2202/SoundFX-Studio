@@ -5,8 +5,9 @@
              xmlns:converters="clr-namespace:SoundFXStudio.Converters"
              xmlns:effects="clr-namespace:System.Windows.Media.Effects;assembly=PresentationCore"
              Background="Transparent"
-             Width="1536"
-             Height="1024"
+             Width="1512.6"
+             Height="608"
+             ClipToBounds="True"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True">
 
@@ -102,7 +103,7 @@
             BorderBrush="Transparent"
             BorderThickness="0"
             Padding="0">
-                 <Grid Width="1536" Height="1024">
+                 <Grid Width="1536" Height="1024" Margin="-12.31,-179.69,0,0">
                      <Image Source="/Assets/Keyboards/SoundFXKeyBoard.png"
                          Stretch="Uniform"
                          HorizontalAlignment="Center"

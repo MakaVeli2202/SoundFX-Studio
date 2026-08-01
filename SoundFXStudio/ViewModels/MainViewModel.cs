@@ -650,7 +650,7 @@ public sealed class MainViewModel : ObservableObject
 
     public void RegisterMuteHotkeys()
     {
-        _triggerService.RegisterMuteHotkeys(Settings.MuteAllKey, Settings.MuteHearKey, Settings.MuteTeamKey);
+        _triggerService.RegisterMuteHotkeys(Settings.MuteAllKey, Settings.MuteHearKey, Settings.MuteTeamKey, Settings.StopAllKey);
     }
 
     public int GetVoiceChangerMicIndex()
@@ -1273,7 +1273,9 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        var existingAssignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.SoundId, sound.Id, StringComparison.OrdinalIgnoreCase));
+        var existingAssignment = profile.Assignments.FirstOrDefault(item =>
+            string.Equals(item.SoundId, sound.Id, StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(item.ChordKey));
 
         if (string.IsNullOrWhiteSpace(keyId))
         {
@@ -1283,6 +1285,7 @@ public sealed class MainViewModel : ObservableObject
             }
 
             sound.AssignedKeyId = null;
+            sound.AssignedKeyLabel = null;
             return;
         }
 
@@ -1292,7 +1295,9 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
+        var assignment = profile.Assignments.FirstOrDefault(item =>
+            string.IsNullOrWhiteSpace(item.ChordKey)
+            && string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
         if (assignment is null)
         {
             assignment = new KeyAssignment { KeyId = key.Id, SoundId = sound.Id, ActionId = EnsureSoundAction(sound).Id, HotkeyText = key.KeyName };
@@ -1310,8 +1315,50 @@ public sealed class MainViewModel : ObservableObject
             profile.Assignments.Remove(existingAssignment);
         }
 
+        RemoveConflictingChordForSingleKey(profile, sound.Id, key.KeyName);
+
         sound.AssignedKeyId = key.Id;
         sound.AssignedKeyLabel = key.DisplayLabel;
+    }
+
+    private static void RemoveConflictingChordForSingleKey(Profile profile, string soundId, string keyName)
+    {
+        var singleToken = NormalizeChordToken(keyName);
+        if (string.IsNullOrWhiteSpace(singleToken))
+        {
+            return;
+        }
+
+        var chordForSound = profile.Assignments.FirstOrDefault(item =>
+            string.Equals(item.SoundId, soundId, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(item.ChordKey));
+        if (chordForSound is null)
+        {
+            return;
+        }
+
+        var chordKeys = new List<string>();
+        if (!string.IsNullOrWhiteSpace(chordForSound.HotkeyText))
+        {
+            chordKeys.Add(NormalizeChordToken(chordForSound.HotkeyText));
+        }
+
+        if (!string.IsNullOrWhiteSpace(chordForSound.ChordKey))
+        {
+            chordKeys.Add(NormalizeChordToken(chordForSound.ChordKey));
+        }
+
+        if (!chordKeys.Contains(singleToken, StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var chordActionId = chordForSound.ActionId;
+        profile.Assignments.Remove(chordForSound);
+        if (chordActionId is Guid id)
+        {
+            RemoveSoundChord(profile, id);
+        }
     }
 
     internal void UpdateSoundChordAssignment(SoundEntry sound, IReadOnlyList<string> chordKeys)
@@ -1367,7 +1414,30 @@ public sealed class MainViewModel : ObservableObject
             profile.Assignments.Add(assignment);
         }
 
+        RemoveConflictingSingleKeysForChord(profile, sound, tokens, firstKey);
+
         SyncSoundChord(profile, sound, soundAction, tokens);
+    }
+
+    private static void RemoveConflictingSingleKeysForChord(Profile profile, SoundEntry sound, IReadOnlyList<string> chordTokens, KeyboardKey? firstKey)
+    {
+        var tokenSet = new HashSet<string>(chordTokens, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var single in profile.Assignments
+            .Where(item =>
+                string.Equals(item.SoundId, sound.Id, StringComparison.OrdinalIgnoreCase)
+                && string.IsNullOrWhiteSpace(item.ChordKey)
+                && tokenSet.Contains(NormalizeChordToken(item.HotkeyText)))
+            .ToList())
+        {
+            profile.Assignments.Remove(single);
+        }
+
+        if (firstKey is not null)
+        {
+            sound.AssignedKeyId = firstKey.Id;
+            sound.AssignedKeyLabel = firstKey.DisplayLabel;
+        }
     }
 
     private static void SyncSoundChord(Profile profile, SoundEntry sound, ActionDefinition soundAction, IReadOnlyList<string> keys)
@@ -1428,6 +1498,40 @@ public sealed class MainViewModel : ObservableObject
                 chord.Keys.Add(first);
                 chord.Keys.Add(second);
                 profile.KeyChords.Add(chord);
+            }
+
+            RemoveConflictingSingleKeysFromLegacy(profile);
+        }
+    }
+
+    private static void RemoveConflictingSingleKeysFromLegacy(Profile profile)
+    {
+        foreach (var chordAssignment in profile.Assignments.Where(item => !string.IsNullOrWhiteSpace(item.ChordKey)).ToList())
+        {
+            var chordKeys = new List<string>();
+            if (!string.IsNullOrWhiteSpace(chordAssignment.HotkeyText))
+            {
+                chordKeys.Add(NormalizeChordToken(chordAssignment.HotkeyText));
+            }
+
+            if (!string.IsNullOrWhiteSpace(chordAssignment.ChordKey))
+            {
+                chordKeys.Add(NormalizeChordToken(chordAssignment.ChordKey));
+            }
+
+            if (chordKeys.Count == 0)
+            {
+                continue;
+            }
+
+            foreach (var single in profile.Assignments
+                .Where(item =>
+                    string.IsNullOrWhiteSpace(item.ChordKey)
+                    && string.Equals(item.SoundId, chordAssignment.SoundId, StringComparison.OrdinalIgnoreCase)
+                    && chordKeys.Contains(NormalizeChordToken(item.HotkeyText), StringComparer.OrdinalIgnoreCase))
+                .ToList())
+            {
+                profile.Assignments.Remove(single);
             }
         }
     }
@@ -2278,7 +2382,16 @@ public sealed class MainViewModel : ObservableObject
                 Settings.VoicemeeterDetected = true;
                 Save();
 
-                return $"✓  Configured for Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
+                using var vm = new VoicemeeterRemote();
+                if (!vm.Login())
+                    return "✗  Could not start Voicemeeter.";
+
+                bool applied = vm.ApplyRouting(hearDevice.Name, talkDevice.Name);
+                vm.Dispose();
+
+                return applied
+                    ? $"✓  Configured for Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}"
+                    : $"✗  Could not select devices in Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
             }
             catch (Exception ex)
             {
