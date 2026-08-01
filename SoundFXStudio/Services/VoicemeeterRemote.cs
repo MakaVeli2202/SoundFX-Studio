@@ -163,6 +163,38 @@ public sealed class VoicemeeterRemote : IDisposable
         return ok;
     }
 
+    public string ResetRouting()
+    {
+        LastDiagnostics = "";
+        if (!Available && !Load()) return "Voicemeeter DLL not found.";
+        if (!LoggedIn && !Login()) return "Could not log in to Voicemeeter.";
+
+        var cleared = new[]
+        {
+            "Strip[0].device.name",
+            "Strip[0].device.mme",
+            "Strip[0].device.wdm",
+            "Strip[0].device.ks",
+            "Bus[0].device.name",
+            "Bus[0].device.mme",
+            "Bus[0].device.wdm",
+            "Bus[0].device.ks"
+        };
+
+        foreach (var param in cleared)
+        {
+            int rc = SetString(param, string.Empty);
+            if (rc != 0)
+                LastDiagnostics += $"{param} rc={rc}\n";
+        }
+
+        SetFloat("Strip[0].A1", 0);
+        SetFloat("Strip[0].B1", 0);
+        SetFloat("Bus[0].A1", 0);
+        SetString("Bus[0].label", string.Empty);
+        return LastDiagnostics.Length == 0 ? "✓ Voicemeeter devices cleared." : "⚠ Some Voicemeeter writes failed:\n" + LastDiagnostics;
+    }
+
     private List<VmDevice> WaitForOutputDevices(int timeoutMs = 10000)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();

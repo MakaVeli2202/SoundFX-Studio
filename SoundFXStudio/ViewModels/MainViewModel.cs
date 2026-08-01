@@ -2295,7 +2295,7 @@ public sealed class MainViewModel : ObservableObject
         StopAllSounds();
     }
 
-    private void Refresh()
+    internal void Refresh()
     {
         Load();
         _triggerService.RegisterGlobalHotkeys();
@@ -2433,6 +2433,54 @@ public sealed class MainViewModel : ObservableObject
             {
                 return $"✗  Setup failed: {ex.Message}";
             }
+        });
+    }
+
+    internal async Task<string> ResetVoicemeeterAsync()
+    {
+        return await Task.Run(() =>
+        {
+            var vmResult = "✓ Voicemeeter devices cleared.";
+            if (VoicemeeterService.IsVoicemeeterInstalled())
+            {
+                using var vm = new VoicemeeterRemote();
+                if (vm.Login())
+                {
+                    vmResult = vm.ResetRouting();
+                    vm.Dispose();
+                }
+            }
+
+            var previousRender = Settings.SavedDefaultRenderId;
+            var previousCapture = Settings.SavedDefaultCaptureId;
+            var restoredDefaults = false;
+
+            if (!string.IsNullOrWhiteSpace(previousRender) || !string.IsNullOrWhiteSpace(previousCapture))
+            {
+                restoredDefaults = _windowsAudioRoutingService.TrySetDefaultDevices(previousRender ?? string.Empty, previousCapture ?? string.Empty);
+                Settings.SavedDefaultRenderId = string.Empty;
+                Settings.SavedDefaultCaptureId = string.Empty;
+            }
+
+            if (restoredDefaults)
+            {
+                var render = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
+                var capture = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
+                Settings.OutputDeviceId = render ?? string.Empty;
+                Settings.PlaybackDeviceId = render ?? string.Empty;
+                Settings.InputDeviceId = capture ?? string.Empty;
+                Settings.MicrophoneDeviceId = capture ?? string.Empty;
+            }
+
+            Settings.HearDeviceName = string.Empty;
+            Settings.TalkDeviceName = string.Empty;
+            Settings.VoicemeeterDetected = false;
+            Save();
+
+            var line2 = restoredDefaults
+                ? "✓  Windows defaults + app I/O restored."
+                : "⚠  No saved Windows defaults to restore (or restore failed).";
+            return $"{vmResult}\n{line2}";
         });
     }
 

@@ -448,6 +448,24 @@ public partial class MainWindow : Window
             : Color.FromRgb(0xE8, 0x55, 0x55));
     }
 
+    private async void ResetVoicemeeterButton_Click(object sender, RoutedEventArgs e)
+    {
+        ResetVoicemeeterButton.IsEnabled = false;
+        VoicemeeterStatus.Text = "Resetting Voicemeeter…";
+        VoicemeeterStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x98, 0xA0, 0xC0));
+        Mouse.OverrideCursor = Cursors.Wait;
+
+        string result = await ViewModel.ResetVoicemeeterAsync();
+
+        Mouse.OverrideCursor = null;
+        ResetVoicemeeterButton.IsEnabled = true;
+        VoicemeeterStatus.Text = result;
+        VoicemeeterStatus.Foreground = new SolidColorBrush(result.StartsWith("✓")
+            ? Color.FromRgb(0x10, 0xB9, 0x81)
+            : Color.FromRgb(0xE8, 0x55, 0x55));
+        ViewModel.Refresh();
+    }
+
     private void MixerButton_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.OpenMixer(this);

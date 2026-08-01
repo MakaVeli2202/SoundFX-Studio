@@ -17,31 +17,27 @@ public sealed class AudioDeviceService
 
     public string? GetVoicemeeterInputId()
     {
-        try
-        {
-            using var enumerator = new MMDeviceEnumerator();
-            foreach (var device in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
-            {
-                if (device.FriendlyName.Contains("VoiceMeeter Input", StringComparison.OrdinalIgnoreCase))
-                    return device.ID;
-            }
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
+        return GetVoicemeeterDeviceId(DataFlow.Render, "VoiceMeeter Input");
     }
 
     public string? GetVoicemeeterOutputId()
     {
+        return GetVoicemeeterDeviceId(DataFlow.Capture, "VoiceMeeter Output");
+    }
+
+    private static string? GetVoicemeeterDeviceId(DataFlow flow, string primaryPrefix)
+    {
         try
         {
             using var enumerator = new MMDeviceEnumerator();
-            foreach (var device in enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active))
+            foreach (var device in enumerator.EnumerateAudioEndPoints(flow, DeviceState.Active))
             {
-                if (device.FriendlyName.Contains("VoiceMeeter Output", StringComparison.OrdinalIgnoreCase))
-                    return device.ID;
+                var name = device.FriendlyName;
+                if (!name.StartsWith(primaryPrefix, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (name.Contains("Aux", StringComparison.OrdinalIgnoreCase) || name.Contains("Virtual", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                return device.ID;
             }
             return null;
         }
