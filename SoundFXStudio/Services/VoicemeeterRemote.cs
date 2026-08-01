@@ -168,31 +168,54 @@ public sealed class VoicemeeterRemote : IDisposable
         LastDiagnostics = "";
         if (!Available && !Load()) return "Voicemeeter DLL not found.";
         if (!LoggedIn && !Login()) return "Could not log in to Voicemeeter.";
+        if (!WaitUntilReady()) return "Voicemeeter not ready.";
 
-        var cleared = new[]
+        int count = StripCount();
+        int firstVirtual = FirstVirtualStrip(count);
+        var failures = new StringBuilder();
+
+        var deviceParams = new[]
         {
-            "Strip[0].device.name",
             "Strip[0].device.mme",
             "Strip[0].device.wdm",
             "Strip[0].device.ks",
-            "Bus[0].device.name",
             "Bus[0].device.mme",
             "Bus[0].device.wdm",
-            "Bus[0].device.ks"
+            "Bus[0].device.ks",
+            "Bus[0].device.asio"
         };
 
-        foreach (var param in cleared)
+        foreach (var param in deviceParams)
         {
             int rc = SetString(param, string.Empty);
             if (rc != 0)
-                LastDiagnostics += $"{param} rc={rc}\n";
+                failures.AppendLine($"{param} rc={rc}");
         }
 
         SetFloat("Strip[0].A1", 0);
         SetFloat("Strip[0].B1", 0);
-        SetFloat("Bus[0].A1", 0);
+        SetFloat("Strip[0].gain", 0);
+        SetFloat("Bus[0].gain", 0);
+        SetFloat("Bus[0].Mute", 0);
         SetString("Bus[0].label", string.Empty);
-        return LastDiagnostics.Length == 0 ? "✓ Voicemeeter devices cleared." : "⚠ Some Voicemeeter writes failed:\n" + LastDiagnostics;
+
+        for (int i = firstVirtual; i < count; i++)
+        {
+            SetFloat($"Strip[{i}].A1", 1);
+            SetFloat($"Strip[{i}].B1", 0);
+            SetFloat($"Strip[{i}].gain", 0);
+        }
+
+        System.Threading.Thread.Sleep(300);
+        var stripDevice = GetString("Strip[0].device.name");
+        var busDevice = GetString("Bus[0].device.name");
+        if (!string.IsNullOrWhiteSpace(stripDevice) || !string.IsNullOrWhiteSpace(busDevice))
+            failures.AppendLine($"read-back Strip[0]='{stripDevice}' Bus[0]='{busDevice}' (still selected)");
+
+        LastDiagnostics = failures.ToString();
+        return failures.Length == 0
+            ? "✓ Voicemeeter reset to factory (devices unselected)."
+            : "⚠ Some Voicemeeter writes failed:\n" + failures;
     }
 
     private List<VmDevice> WaitForOutputDevices(int timeoutMs = 10000)
