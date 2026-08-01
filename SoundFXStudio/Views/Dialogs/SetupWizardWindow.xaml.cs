@@ -120,9 +120,21 @@ public partial class SetupWizardWindow : Window
                 }
 
                 _configService.Save(_config);
-                result = routed
-                    ? $"✓ Voicemeeter configured:\n   Hear: {hear.Name}\n   Talk: {talk.Name}\n   Windows defaults → VoiceMeeter Input / Output"
-                    : $"✓ Voicemeeter configured:\n   Hear: {hear.Name}\n   Talk: {talk.Name}";
+                var parts = new List<string> { $"✓ Voicemeeter configured:\n   Hear: {hear.Name}\n   Talk: {talk.Name}" };
+                if (routed)
+                {
+                    var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
+                    var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
+                    if (!string.IsNullOrWhiteSpace(vmInputId))
+                        parts.Add("   ✓ App output + Windows playback → VoiceMeeter Input");
+                    else
+                        parts.Add("   ⚠  VoiceMeeter Input not found — playback not routed");
+                    if (!string.IsNullOrWhiteSpace(vmOutputId))
+                        parts.Add("   ✓ Mic + Windows input → VoiceMeeter Output (B1)");
+                    else
+                        parts.Add("   ⚠  VoiceMeeter Output (B1) not found — input not routed");
+                }
+                result = string.Join("\n", parts);
             }
             else
             {

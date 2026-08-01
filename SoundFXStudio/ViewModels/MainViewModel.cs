@@ -2399,34 +2399,51 @@ public sealed class MainViewModel : ObservableObject
 
                 var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
                 var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
+                var haveRender = !string.IsNullOrWhiteSpace(vmInputId);
+                var haveCapture = !string.IsNullOrWhiteSpace(vmOutputId);
 
                 if (string.IsNullOrWhiteSpace(Settings.SavedDefaultRenderId))
                     Settings.SavedDefaultRenderId = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render) ?? string.Empty;
                 if (string.IsNullOrWhiteSpace(Settings.SavedDefaultCaptureId))
                     Settings.SavedDefaultCaptureId = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture) ?? string.Empty;
 
-                bool defaultsOk = false;
-                if (!string.IsNullOrWhiteSpace(vmInputId) || !string.IsNullOrWhiteSpace(vmOutputId))
-                    defaultsOk = _windowsAudioRoutingService.TrySetDefaultDevices(vmInputId ?? string.Empty, vmOutputId ?? string.Empty);
-
-                if (!string.IsNullOrWhiteSpace(vmInputId))
+                bool outputApplied = false;
+                bool inputApplied = false;
+                if (haveRender || haveCapture)
                 {
-                    Settings.OutputDeviceId = vmInputId;
-                    Settings.PlaybackDeviceId = vmInputId;
+                    outputApplied = _windowsAudioRoutingService.TrySetDefaultOutput(haveRender ? vmInputId! : string.Empty);
+                    inputApplied = _windowsAudioRoutingService.TrySetDefaultInput(haveCapture ? vmOutputId! : string.Empty);
                 }
 
-                if (!string.IsNullOrWhiteSpace(vmOutputId))
+                if (haveRender)
                 {
-                    Settings.InputDeviceId = vmOutputId;
-                    Settings.MicrophoneDeviceId = vmOutputId;
+                    Settings.OutputDeviceId = vmInputId!;
+                    Settings.PlaybackDeviceId = vmInputId!;
+                }
+
+                if (haveCapture)
+                {
+                    Settings.InputDeviceId = vmOutputId!;
+                    Settings.MicrophoneDeviceId = vmOutputId!;
                 }
 
                 Save();
 
                 var result = $"✓  Configured for Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
-                result += defaultsOk
-                    ? "\n   Windows defaults → VoiceMeeter Input / Output"
-                    : "\n   ⚠  Could not set Windows defaults — set VoiceMeeter Input (output) and VoiceMeeter Output (input) manually";
+                if (haveRender && outputApplied)
+                    result += "\n   ✓ App output + Windows playback → VoiceMeeter Input";
+                else if (haveRender)
+                    result += "\n   ⚠  Could not set Windows playback → VoiceMeeter Input (set manually)";
+                else
+                    result += "\n   ⚠  VoiceMeeter Input device not found — playback not routed";
+
+                if (haveCapture && inputApplied)
+                    result += "\n   ✓ Mic + Windows input → VoiceMeeter Output (B1)";
+                else if (haveCapture)
+                    result += "\n   ⚠  Could not set Windows input → VoiceMeeter Output (B1) (set manually)";
+                else
+                    result += "\n   ⚠  VoiceMeeter Output (B1) device not found — input not routed";
+
                 return result;
             }
             catch (Exception ex)

@@ -25,7 +25,7 @@ public sealed class AudioDeviceService
         return GetVoicemeeterDeviceId(DataFlow.Capture, "VoiceMeeter Output");
     }
 
-    private static string? GetVoicemeeterDeviceId(DataFlow flow, string primaryPrefix)
+    private static string? GetVoicemeeterDeviceId(DataFlow flow, string primaryToken)
     {
         try
         {
@@ -33,7 +33,7 @@ public sealed class AudioDeviceService
             foreach (var device in enumerator.EnumerateAudioEndPoints(flow, DeviceState.Active))
             {
                 var name = device.FriendlyName;
-                if (!name.StartsWith(primaryPrefix, StringComparison.OrdinalIgnoreCase))
+                if (!name.Contains(primaryToken, StringComparison.OrdinalIgnoreCase))
                     continue;
                 if (name.Contains("Aux", StringComparison.OrdinalIgnoreCase) || name.Contains("Virtual", StringComparison.OrdinalIgnoreCase))
                     continue;

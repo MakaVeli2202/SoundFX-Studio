@@ -6,9 +6,19 @@ public sealed class WindowsAudioRoutingService
 {
     public bool TrySetDefaultDevices(string outputDeviceId, string inputDeviceId)
     {
-        var outputApplied = string.IsNullOrWhiteSpace(outputDeviceId) || TrySetDefaultEndpoint(outputDeviceId, ERole.Console) && TrySetDefaultEndpoint(outputDeviceId, ERole.Multimedia) && TrySetDefaultEndpoint(outputDeviceId, ERole.Communications);
-        var inputApplied = string.IsNullOrWhiteSpace(inputDeviceId) || TrySetDefaultEndpoint(inputDeviceId, ERole.Console) && TrySetDefaultEndpoint(inputDeviceId, ERole.Multimedia) && TrySetDefaultEndpoint(inputDeviceId, ERole.Communications);
+        var outputApplied = TrySetDefaultOutput(outputDeviceId);
+        var inputApplied = TrySetDefaultInput(inputDeviceId);
         return outputApplied && inputApplied;
+    }
+
+    public bool TrySetDefaultOutput(string deviceId)
+    {
+        return string.IsNullOrWhiteSpace(deviceId) || TrySetDefaultEndpoint(deviceId, ERole.Console) && TrySetDefaultEndpoint(deviceId, ERole.Multimedia) && TrySetDefaultEndpoint(deviceId, ERole.Communications);
+    }
+
+    public bool TrySetDefaultInput(string deviceId)
+    {
+        return string.IsNullOrWhiteSpace(deviceId) || TrySetDefaultEndpoint(deviceId, ERole.Console) && TrySetDefaultEndpoint(deviceId, ERole.Multimedia) && TrySetDefaultEndpoint(deviceId, ERole.Communications);
     }
 
     private static bool TrySetDefaultEndpoint(string deviceId, ERole role)
