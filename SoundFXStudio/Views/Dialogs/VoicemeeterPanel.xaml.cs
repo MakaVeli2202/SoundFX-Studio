@@ -315,47 +315,15 @@ public partial class VoicemeeterPanel : Window
             StatusText.Text = "Install Voicemeeter, then reopen.";
             return;
         }
-        var exe = FindVmExe();
-        if (exe is not null) { try { Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true }); } catch { } }
+        StatusText.Text = VoicemeeterRemote.LaunchHidden()
+            ? "Voicemeeter opened (hidden)."
+            : "Could not find Voicemeeter.";
     }
 
     private void TestHear_Click(object sender, RoutedEventArgs e)
     {
         var monitor = new TeamMonitorWindow { Owner = this };
         monitor.ShowDialog();
-    }
-
-    private static string? FindVmExe()
-    {
-        string? dir = null;
-        var uninstallKeys = new[]
-        {
-            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
-            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter Banana {E431F2C7-D220-4C7B-A36B-FBAA507F6AA1}",
-            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter Potato {BDA1746F-3D44-4E5D-BC69-EC0421615921}",
-        };
-
-        using var b = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-        foreach (var uninstallKey in uninstallKeys)
-        {
-            using var k = b.OpenSubKey(uninstallKey);
-            if (k?.GetValue("UninstallString") is string u)
-            {
-                dir = Path.GetDirectoryName(u.Trim('"'));
-                if (dir != null) break;
-            }
-        }
-
-        foreach (var d in new[] { dir, @"C:\Program Files (x86)\VB\Voicemeeter", @"C:\Program Files\VB\Voicemeeter", @"C:\Program Files (x86)\VB-Audio\Voicemeeter", @"C:\Program Files\VB-Audio\Voicemeeter" })
-        {
-            if (string.IsNullOrEmpty(d)) continue;
-            foreach (var exe in new[] { "voicemeeter8x64.exe", "voicemeeter8.exe", "voicemeeterpro.exe", "voicemeeter.exe" })
-            {
-                var p = Path.Combine(d, exe);
-                if (File.Exists(p)) return p;
-            }
-        }
-        return null;
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DragMove();

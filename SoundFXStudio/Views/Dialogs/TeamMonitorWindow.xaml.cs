@@ -50,7 +50,27 @@ public partial class TeamMonitorWindow : Window
 
         PopulateDevices();
         DevicesText.Text = BuildDevicesLine();
-        MonitorStatus.Text = "Press Start to hear what teammates hear.";
+
+        var config = new ConfigService().Load();
+        var isB1Source = (CaptureCombo.SelectedItem as AudioDeviceInfo)?.Name?.Contains("B1", StringComparison.OrdinalIgnoreCase) == true;
+
+        if (!config.Settings.SetupCompleted)
+        {
+            StartBtn.IsEnabled = false;
+            MonitorStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
+            MonitorStatus.Text = "✗ VoiceMeeter setup hasn't been run yet.\nClose this window, run Setup, then reopen.";
+        }
+        else if (!isB1Source)
+        {
+            StartBtn.IsEnabled = false;
+            MonitorStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
+            MonitorStatus.Text = "✗ VoiceMeeter B1 monitor source not found.\nInstall/launch Voicemeeter, run Setup, then reopen.";
+        }
+        else
+        {
+            StartBtn.IsEnabled = true;
+            MonitorStatus.Text = "Press Start to hear what teammates hear.";
+        }
     }
 
     private void PopulateDevices()
@@ -65,8 +85,7 @@ public partial class TeamMonitorWindow : Window
             d.Name.Contains("Voicemeeter", StringComparison.OrdinalIgnoreCase)
             && d.Name.Contains("B1", StringComparison.OrdinalIgnoreCase)
             && !d.Name.Contains("Aux", StringComparison.OrdinalIgnoreCase)
-            && !d.Name.Contains("Virtual", StringComparison.OrdinalIgnoreCase))
-            ?? captures.FirstOrDefault();
+            && !d.Name.Contains("Virtual", StringComparison.OrdinalIgnoreCase));
 
         var config = new ConfigService().Load();
         var saved = !string.IsNullOrWhiteSpace(config.Settings.HearDeviceName)

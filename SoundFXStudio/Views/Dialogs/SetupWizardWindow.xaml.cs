@@ -210,7 +210,9 @@ public partial class SetupWizardWindow : Window
             vmResult = await Task.Run(() =>
             {
                 using var vm = new VoicemeeterRemote();
-                return vm.ResetRouting();
+                var inputs = _audioDeviceService.GetAllInputDevices().Select(d => d.Name).ToList();
+                var outputs = _audioDeviceService.GetAllOutputDevices().Select(d => d.Name).ToList();
+                return vm.ResetRouting(inputs, outputs);
             });
         }
         catch (Exception ex)

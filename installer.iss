@@ -30,6 +30,8 @@ Name: "startupicon"; Description: "Start SoundFX Studio with &Windows"; GroupDes
 [Files]
 ; Main app — all files from publish
 Source: "{#SourcePath}publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Voicemeeter setup — used only if Voicemeeter is missing
+Source: "{#SourcePath}voicemeetersetup\voicemeetersetup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [Icons]
 Name: "{group}\SoundFX Studio";           Filename: "{app}\SoundFXStudio.exe"
@@ -43,11 +45,29 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 Type: filesandordirs; Name: "{userappdata}\SoundFXStudio"
 
 [Run]
+Filename: "{tmp}\voicemeetersetup.exe"; Parameters: "-i -h"; WorkingDir: "{tmp}"; StatusMsg: "Installing Voicemeeter (silent)…"; Flags: runhidden waituntilterminated; Check: NotVoicemeeterInstalled
 Filename: "{app}\SoundFXStudio.exe"; Description: "Launch SoundFX Studio now"; Flags: nowait postinstall skipifsilent shellexec
 
 [Code]
 function GetSystemMetrics(Index: Integer): Integer;
   external 'GetSystemMetrics@user32.dll stdcall';
+
+const
+  VmUninstallKey = 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}';
+  VmExePath = 'C:\Program Files (x86)\VB\Voicemeeter\voicemeeter.exe';
+
+function VoicemeeterInstalled: Boolean;
+var
+  S: String;
+begin
+  Result := RegQueryStringValue(HKLM32, VmUninstallKey, 'DisplayName', S) or
+            FileExists(VmExePath);
+end;
+
+function NotVoicemeeterInstalled: Boolean;
+begin
+  Result := not VoicemeeterInstalled;
+end;
 
 function InitializeSetup: Boolean;
 var

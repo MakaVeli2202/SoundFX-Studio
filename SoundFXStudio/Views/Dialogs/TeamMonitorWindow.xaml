@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Hear what others hear"
-        Width="560" Height="680"
+        Width="560" Height="700"
         WindowStyle="None"
         Background="#08091F"
         ResizeMode="NoResize"
@@ -22,7 +22,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="46"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="64"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Title -->
@@ -91,9 +91,14 @@
 
             <!-- Footer -->
             <Border Grid.Row="2" Background="#0EFFFFFF" CornerRadius="0,0,16,16">
-                <Grid Margin="20,0">
-                    <TextBlock x:Name="DevicesText" Foreground="#8891B8" FontSize="11" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="300"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Grid Margin="20,12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="DevicesText" Grid.Row="0" Foreground="#8891B8" FontSize="11"
+                               VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button x:Name="CloseBtn" HorizontalAlignment="Right" VerticalAlignment="Center"
                                 Content="Close" Click="Done_Click" Cursor="Hand" Width="90" Height="40"
                                 Margin="0,0,10,0"

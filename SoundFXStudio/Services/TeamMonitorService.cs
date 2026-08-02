@@ -173,8 +173,8 @@ public sealed class TeamMonitorService : IDisposable
 
                 for (int i = 0; i < frameSamples; i++)
                 {
-                    int left = pcmIn[i * 4] | (pcmIn[i * 4 + 1] << 8);
-                    int right = pcmIn[i * 4 + 2] | (pcmIn[i * 4 + 3] << 8);
+                    int left = (short)(pcmIn[i * 4] | (pcmIn[i * 4 + 1] << 8));
+                    int right = (short)(pcmIn[i * 4 + 2] | (pcmIn[i * 4 + 3] << 8));
                     if (channels == 1)
                     {
                         encodeIn[i] = (short)((left + right) / 2);

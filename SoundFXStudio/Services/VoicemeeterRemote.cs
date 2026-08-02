@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Win32;
 
 namespace SoundFXStudio.Services;
@@ -68,7 +69,7 @@ public sealed class VoicemeeterRemote : IDisposable
         Marshal.GetDelegateForFunctionPointer<T>(NativeLibrary.GetExport(_lib, name));
 
     [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hwnd, int cmd);
-    private const int SW_MINIMIZE = 6;
+    private const int SW_HIDE = 0;
 
     public bool Login()
     {
@@ -78,12 +79,9 @@ public sealed class VoicemeeterRemote : IDisposable
         {
             _run!(1);
             System.Threading.Thread.Sleep(2000);
-            try
-            {
-                var hwnd = FindVmWindow();
-                if (hwnd != IntPtr.Zero) ShowWindow(hwnd, SW_MINIMIZE);
-            }
-            catch { }
+            HideVmWindow();
+            System.Threading.Thread.Sleep(1000);
+            HideVmWindow();
         }
         LoggedIn = r >= 0;
         return LoggedIn;
@@ -163,7 +161,8 @@ public sealed class VoicemeeterRemote : IDisposable
         return ok;
     }
 
-    public string ResetRouting()
+    public string ResetRouting(IReadOnlyCollection<string>? currentInputNames = null,
+                               IReadOnlyCollection<string>? currentOutputNames = null)
     {
         LastDiagnostics = "";
         if (!Available && !Load()) return "Voicemeeter DLL not found.";
@@ -221,7 +220,24 @@ public sealed class VoicemeeterRemote : IDisposable
             }
         }
         if (!readBackOk)
+        {
+            bool stripGone = currentInputNames is not null &&
+                             !string.IsNullOrWhiteSpace(stripDevice) &&
+                             !currentInputNames.Contains(stripDevice, StringComparer.OrdinalIgnoreCase);
+            bool busGone = currentOutputNames is not null &&
+                           !string.IsNullOrWhiteSpace(busDevice) &&
+                           !currentOutputNames.Contains(busDevice, StringComparer.OrdinalIgnoreCase);
+            if (stripGone || busGone)
+            {
+                var gone = new List<string>();
+                if (stripGone) gone.Add($"Strip[0] '{stripDevice}'");
+                if (busGone) gone.Add($"Bus[0] '{busDevice}'");
+                LastDiagnostics = string.Join(", ", gone) +
+                    " no longer exist in Windows — cleared from SoundFX Studio; Voicemeeter will drop them after restart.";
+                return "✓ Voicemeeter reset — removed devices no longer in Windows.";
+            }
             failures.AppendLine($"read-back Strip[0]='{stripDevice}' Bus[0]='{busDevice}' (still selected)");
+        }
 
         LastDiagnostics = failures.ToString();
         return failures.Length == 0
@@ -472,12 +488,64 @@ public sealed class VoicemeeterRemote : IDisposable
         return null;
     }
 
-    private static IntPtr FindVmWindow()
+    private static void HideVmWindow()
     {
         foreach (var name in new[] { "voicemeeter8x64", "voicemeeter8", "voicemeeterpro", "voicemeeter" })
             foreach (var p in Process.GetProcessesByName(name))
-                if (p.MainWindowHandle != IntPtr.Zero) return p.MainWindowHandle;
-        return IntPtr.Zero;
+                if (p.MainWindowHandle != IntPtr.Zero)
+                    ShowWindow(p.MainWindowHandle, SW_HIDE);
+    }
+
+    public static bool LaunchHidden()
+    {
+        var exe = FindVmExe();
+        if (exe is null) return false;
+        try
+        {
+            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true, WindowStyle = ProcessWindowStyle.Hidden });
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(1500);
+                HideVmWindow();
+                await Task.Delay(1500);
+                HideVmWindow();
+            });
+            return true;
+        }
+        catch { return false; }
+    }
+
+    public static string? FindVmExe()
+    {
+        string? dir = null;
+        var uninstallKeys = new[]
+        {
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter Banana {E431F2C7-D220-4C7B-A36B-FBAA507F6AA1}",
+            @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter Potato {BDA1746F-3D44-4E5D-BC69-EC0421615921}"
+        };
+
+        using var b = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+        foreach (var uninstallKey in uninstallKeys)
+        {
+            using var k = b.OpenSubKey(uninstallKey);
+            if (k?.GetValue("UninstallString") is string u)
+            {
+                dir = Path.GetDirectoryName(u.Trim('"'));
+                if (dir != null) break;
+            }
+        }
+
+        foreach (var d in new[] { dir, @"C:\Program Files (x86)\VB\Voicemeeter", @"C:\Program Files\VB\Voicemeeter", @"C:\Program Files (x86)\VB-Audio\Voicemeeter", @"C:\Program Files\VB-Audio\Voicemeeter" })
+        {
+            if (string.IsNullOrEmpty(d)) continue;
+            foreach (var exe in new[] { "voicemeeter8x64.exe", "voicemeeter8.exe", "voicemeeterpro.exe", "voicemeeter.exe" })
+            {
+                var p = Path.Combine(d, exe);
+                if (File.Exists(p)) return p;
+            }
+        }
+        return null;
     }
 
     public void Dispose()
