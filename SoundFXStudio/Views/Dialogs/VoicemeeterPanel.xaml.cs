@@ -278,6 +278,36 @@ public partial class VoicemeeterPanel : Window
         if (_vm.LoggedIn) { BuildStrips(); RefreshFromVoicemeeter(); }
     }
 
+    private void RemoveInput1_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_vm.LoggedIn) { StatusText.Text = "Not connected to Voicemeeter."; return; }
+        _vm.SetString("Strip[0].device.mme", string.Empty);
+        _vm.SetString("Strip[0].device.wdm", string.Empty);
+        _vm.SetString("Strip[0].device.ks", string.Empty);
+        StatusText.Text = "Hardware Input 1 device removed (unselected).";
+        RefreshFromVoicemeeter();
+    }
+
+    private void RemoveHwOut_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_vm.LoggedIn) { StatusText.Text = "Not connected to Voicemeeter."; return; }
+        _vm.SetString("Bus[0].device.mme", string.Empty);
+        _vm.SetString("Bus[0].device.wdm", string.Empty);
+        _vm.SetString("Bus[0].device.ks", string.Empty);
+        _vm.SetString("Bus[0].device.asio", string.Empty);
+        StatusText.Text = "Hardware Output A1 device removed (unselected).";
+        RefreshFromVoicemeeter();
+    }
+
+    private void ResetBoth_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_vm.LoggedIn) { StatusText.Text = "Not connected to Voicemeeter."; return; }
+        RemoveInput1_Click(sender, e);
+        RemoveHwOut_Click(sender, e);
+        StatusText.Text = "Both devices unselected — nothing selected.";
+        RefreshFromVoicemeeter();
+    }
+
     private void OpenVm_Click(object sender, RoutedEventArgs e)
     {
         if (!VoicemeeterRemote.IsInstalled())
@@ -287,6 +317,12 @@ public partial class VoicemeeterPanel : Window
         }
         var exe = FindVmExe();
         if (exe is not null) { try { Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true }); } catch { } }
+    }
+
+    private void TestHear_Click(object sender, RoutedEventArgs e)
+    {
+        var monitor = new TeamMonitorWindow { Owner = this };
+        monitor.ShowDialog();
     }
 
     private static string? FindVmExe()

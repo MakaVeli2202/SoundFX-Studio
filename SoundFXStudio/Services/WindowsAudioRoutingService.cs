@@ -8,8 +8,8 @@ public sealed class WindowsAudioRoutingService
 
     public bool TrySetDefaultDevices(string outputDeviceId, string inputDeviceId)
     {
-        var outputApplied = TrySetDefaultOutput(outputDeviceId);
         var inputApplied = TrySetDefaultInput(inputDeviceId);
+        var outputApplied = TrySetDefaultOutput(outputDeviceId);
         return outputApplied && inputApplied;
     }
 

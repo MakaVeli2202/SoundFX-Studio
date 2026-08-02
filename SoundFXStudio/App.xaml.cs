@@ -19,6 +19,16 @@ public partial class App : Application
     private readonly ConfigService _configService;
     private TaskbarIcon? _trayIcon;
     private static VoicemeeterRemote? _vmShared;
+    private static readonly Mutex _singleInstanceMutex;
+    private static readonly bool _isFirstInstance;
+    private static EventWaitHandle? _showRequested;
+
+    static App()
+    {
+        _singleInstanceMutex = new Mutex(true, @"SoundFXStudio_SingleInstance", out _isFirstInstance);
+    }
+
+    public static bool IsShuttingDown { get; private set; }
 
     public App()
     {
@@ -66,6 +76,34 @@ public partial class App : Application
     {
         _logService.Info($"App Version: {Assembly.GetExecutingAssembly().GetName().Version}");
         _logService.Info($"Operating System: {RuntimeInformation.OSDescription}");
+
+        if (!_isFirstInstance)
+        {
+            using var evt = new EventWaitHandle(false, EventResetMode.AutoReset, @"SoundFXStudio_ShowRequested");
+            for (int i = 0; i < 20; i++)
+            {
+                evt.Set();
+                if (!_singleInstanceMutex.WaitOne(0))
+                {
+                    Thread.Sleep(50);
+                    continue;
+                }
+                break;
+            }
+            _logService.Info("Second instance detected - signaling existing instance and exiting");
+            Shutdown();
+            return;
+        }
+
+        _showRequested = new EventWaitHandle(false, EventResetMode.AutoReset, @"SoundFXStudio_ShowRequested");
+        _ = Task.Run(() =>
+        {
+            while (true)
+            {
+                try { _showRequested.WaitOne(); } catch { break; }
+                Dispatcher.Invoke(() => ShowMainWindow());
+            }
+        });
 
         var config = _configService.Load();
         _logService.Enabled = config.Settings.EnableLogging;

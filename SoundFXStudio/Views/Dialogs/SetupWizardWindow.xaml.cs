@@ -35,20 +35,12 @@ public partial class SetupWizardWindow : Window
         var outputs = _audioDeviceService.GetOutputDevices().ToList();
         var inputs = _audioDeviceService.GetInputDevices().ToList();
 
-        OutputCombo.ItemsSource = outputs;
-        InputCombo.ItemsSource = inputs;
         WizardHearCombo.ItemsSource = outputs;
         WizardTalkCombo.ItemsSource = inputs;
 
-        OutputDefaultText.Text = BuildDefaultLabel(_audioDeviceService.GetDefaultDeviceName(DataFlow.Render));
-        InputDefaultText.Text = BuildDefaultLabel(_audioDeviceService.GetDefaultDeviceName(DataFlow.Capture));
-
-        SelectSavedOrDefault(OutputCombo, _config.Settings.OutputDeviceId, outputs);
-        SelectSavedOrDefault(InputCombo, _config.Settings.InputDeviceId, inputs);
         WizardHearCombo.SelectedItem = outputs.FirstOrDefault(d => d.Name == _config.Settings.HearDeviceName) ?? outputs.FirstOrDefault();
         WizardTalkCombo.SelectedItem = inputs.FirstOrDefault(d => d.Name == _config.Settings.TalkDeviceName) ?? inputs.FirstOrDefault();
 
-        UpdateStatus();
         CheckVoicemeeter();
         _ready = true;
     }
@@ -125,12 +117,18 @@ public partial class SetupWizardWindow : Window
                 {
                     var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
                     var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
-                    if (!string.IsNullOrWhiteSpace(vmInputId))
+                    var rbOut = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
+                    var rbIn = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
+                    if (!string.IsNullOrWhiteSpace(vmInputId) && string.Equals(rbOut, vmInputId, StringComparison.OrdinalIgnoreCase))
                         parts.Add("   ✓ App output + Windows playback → VoiceMeeter Input");
+                    else if (!string.IsNullOrWhiteSpace(vmInputId))
+                        parts.Add("   ⚠  VoiceMeeter Input set failed — Windows playback unchanged");
                     else
                         parts.Add("   ⚠  VoiceMeeter Input not found — playback not routed");
-                    if (!string.IsNullOrWhiteSpace(vmOutputId))
+                    if (!string.IsNullOrWhiteSpace(vmOutputId) && string.Equals(rbIn, vmOutputId, StringComparison.OrdinalIgnoreCase))
                         parts.Add("   ✓ Mic + Windows input → VoiceMeeter Output (B1)");
+                    else if (!string.IsNullOrWhiteSpace(vmOutputId))
+                        parts.Add("   ⚠  VoiceMeeter Output (B1) set failed — Windows input unchanged");
                     else
                         parts.Add("   ⚠  VoiceMeeter Output (B1) not found — input not routed");
                 }
@@ -171,17 +169,31 @@ public partial class SetupWizardWindow : Window
         if (string.IsNullOrWhiteSpace(_config.Settings.SavedDefaultCaptureId))
             _config.Settings.SavedDefaultCaptureId = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture) ?? string.Empty;
 
-        return _windowsAudioRoutingService.TrySetDefaultDevices(vmInputId, vmOutputId ?? string.Empty);
+        bool ok = true;
+        if (!string.IsNullOrWhiteSpace(vmOutputId))
+            ok &= _windowsAudioRoutingService.TrySetDefaultInput(vmOutputId);
+        ok &= TrySetDefaultOutputVerified(vmInputId);
+        return ok;
+    }
+
+    private bool TrySetDefaultOutputVerified(string deviceId)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            bool applied = _windowsAudioRoutingService.TrySetDefaultOutput(deviceId);
+            var rb = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
+            if (applied && string.Equals(rb, deviceId, StringComparison.OrdinalIgnoreCase))
+                return true;
+            System.Threading.Thread.Sleep(500);
+        }
+        return false;
     }
 
     private void RevertAppsRouting()
     {
-        var previousRender = _config.Settings.SavedDefaultRenderId;
-        var previousCapture = _config.Settings.SavedDefaultCaptureId;
-        if (string.IsNullOrWhiteSpace(previousRender) && string.IsNullOrWhiteSpace(previousCapture))
-            return;
-
-        _windowsAudioRoutingService.TrySetDefaultDevices(previousRender, previousCapture);
+        var previousRender = (WizardHearCombo.SelectedItem as AudioDeviceInfo)?.Id;
+        var previousCapture = (WizardTalkCombo.SelectedItem as AudioDeviceInfo)?.Id;
+        _windowsAudioRoutingService.TrySetDefaultDevices(previousRender ?? string.Empty, previousCapture ?? string.Empty);
         _config.Settings.SavedDefaultRenderId = string.Empty;
         _config.Settings.SavedDefaultCaptureId = string.Empty;
     }
@@ -200,12 +212,40 @@ public partial class SetupWizardWindow : Window
         _configService.Save(_config);
     }
 
-    private void WizardResetWindows_Click(object sender, RoutedEventArgs e)
+    private async void WizardResetWindows_Click(object sender, RoutedEventArgs e)
     {
         RevertAppsRouting();
         RouteAppsToVmCheckBox.IsChecked = false;
         _configService.Save(_config);
-        WizardStatusText.Text = "Windows sound settings reset to previous defaults.";
+        WizardStatusText.Text = "Resetting Voicemeeter devices…";
+        WizardStatusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x98, 0xA0, 0xC0));
+        WizardResetWindowsBtn.IsEnabled = false;
+
+        string vmResult;
+        try
+        {
+            vmResult = await Task.Run(() =>
+            {
+                using var vm = new VoicemeeterRemote();
+                return vm.ResetRouting();
+            });
+        }
+        catch (Exception ex)
+        {
+            vmResult = $"✗ Voicemeeter reset failed: {ex.Message}";
+        }
+
+        WizardResetWindowsBtn.IsEnabled = true;
+        WizardStatusText.Text = $"Windows sound settings reset to selected devices.\n{vmResult}";
+        WizardStatusText.Foreground = new System.Windows.Media.SolidColorBrush(vmResult.StartsWith("✓")
+            ? System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)
+            : System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+    }
+
+    private void WizardTestHear_Click(object sender, RoutedEventArgs e)
+    {
+        var monitor = new TeamMonitorWindow { Owner = this };
+        monitor.ShowDialog();
     }
 
     private void Finish_Click(object sender, RoutedEventArgs e)
@@ -228,27 +268,10 @@ public partial class SetupWizardWindow : Window
 
     private void ApplySelection()
     {
-        string? outputId = null;
-        string? inputId = null;
-
-        if (OutputCombo.SelectedItem is AudioDeviceInfo output)
-        {
-            outputId = output.Id;
-            _config.Settings.OutputDeviceId = output.Id;
-            _config.Settings.PlaybackDeviceId = output.Id;
-        }
-        if (InputCombo.SelectedItem is AudioDeviceInfo input)
-        {
-            inputId = input.Id;
-            _config.Settings.InputDeviceId = input.Id;
-            _config.Settings.MicrophoneDeviceId = input.Id;
-        }
-
         _config.Settings.VirtualCableDeviceId = string.Empty;
         _config.Settings.VBCableDetected = false;
 
         bool appsRouted = ApplyAppsRouting();
-        bool defaultsOk;
         if (appsRouted)
         {
             var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
@@ -263,50 +286,11 @@ public partial class SetupWizardWindow : Window
                 _config.Settings.InputDeviceId = vmOutputId;
                 _config.Settings.MicrophoneDeviceId = vmOutputId;
             }
-            defaultsOk = true;
+            WizardStatusText.Text = "Voicemeeter routing applied.";
         }
         else
         {
-            defaultsOk = _windowsAudioRoutingService.TrySetDefaultDevices(outputId ?? string.Empty, inputId ?? string.Empty);
+            WizardStatusText.Text = "Settings saved.";
         }
-
-        if (defaultsOk)
-            WizardStatusText.Text = "System defaults updated.";
-        else
-            WizardStatusText.Text = "Saved. System defaults could not be updated.";
-    }
-
-    private static void SelectSavedOrDefault(System.Windows.Controls.ComboBox combo, string? savedId, List<AudioDeviceInfo> items)
-    {
-        if (!string.IsNullOrWhiteSpace(savedId))
-        {
-            foreach (var item in items)
-            {
-                if (string.Equals(item.Id, savedId, StringComparison.OrdinalIgnoreCase))
-                {
-                    combo.SelectedItem = item;
-                    return;
-                }
-            }
-        }
-        foreach (var item in items)
-        {
-            if (item.IsDefaultCommunication || item.IsDefault)
-            {
-                combo.SelectedItem = item;
-                return;
-            }
-        }
-        if (items.Count > 0) combo.SelectedIndex = 0;
-    }
-
-    private static string BuildDefaultLabel(string? deviceName)
-        => string.IsNullOrWhiteSpace(deviceName) ? "Current Windows Default: not detected" : $"Current Windows Default: {deviceName}";
-
-    private void UpdateStatus()
-    {
-        var output = OutputCombo.SelectedItem as AudioDeviceInfo;
-        var input = InputCombo.SelectedItem as AudioDeviceInfo;
-        WizardStatusText.Text = $"Output: {output?.Name ?? "none"} | Input: {input?.Name ?? "none"}";
     }
 }

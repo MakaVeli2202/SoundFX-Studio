@@ -2413,10 +2413,16 @@ public sealed class MainViewModel : ObservableObject
                 string? captureError = null;
                 if (haveRender || haveCapture)
                 {
-                    outputApplied = _windowsAudioRoutingService.TrySetDefaultOutput(haveRender ? vmInputId! : string.Empty);
-                    renderError = _windowsAudioRoutingService.LastError;
-                    inputApplied = _windowsAudioRoutingService.TrySetDefaultInput(haveCapture ? vmOutputId! : string.Empty);
-                    captureError = _windowsAudioRoutingService.LastError;
+                    if (haveCapture)
+                    {
+                        inputApplied = _windowsAudioRoutingService.TrySetDefaultInput(vmOutputId!);
+                        captureError = _windowsAudioRoutingService.LastError;
+                    }
+                    if (haveRender)
+                    {
+                        outputApplied = TrySetDefaultOutputVerified(vmInputId!);
+                        renderError = _windowsAudioRoutingService.LastError;
+                    }
                 }
 
                 if (haveRender)
@@ -2437,11 +2443,8 @@ public sealed class MainViewModel : ObservableObject
 
                 if (haveRender)
                 {
-                    var rb = outputApplied ? _audioDeviceService.GetDefaultDeviceId(DataFlow.Render) : null;
-                    if (outputApplied && string.Equals(rb, vmInputId, StringComparison.OrdinalIgnoreCase))
+                    if (outputApplied)
                         result += "\n   ✓ App output + Windows playback → VoiceMeeter Input";
-                    else if (outputApplied)
-                        result += $"\n   ⚠  Playback default is '{rb}' — VoiceMeeter Input not applied ({renderError ?? "none"})";
                     else
                         result += $"\n   ⚠  Could not set Windows playback → VoiceMeeter Input ({renderError ?? "set failed"})";
                 }
@@ -2472,6 +2475,19 @@ public sealed class MainViewModel : ObservableObject
                 return $"✗  Setup failed: {ex.Message}";
             }
         });
+    }
+
+    private bool TrySetDefaultOutputVerified(string deviceId)
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            bool applied = _windowsAudioRoutingService.TrySetDefaultOutput(deviceId);
+            var rb = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
+            if (applied && string.Equals(rb, deviceId, StringComparison.OrdinalIgnoreCase))
+                return true;
+            System.Threading.Thread.Sleep(500);
+        }
+        return false;
     }
 
     internal async Task<string> ResetVoicemeeterAsync()

@@ -20,6 +20,8 @@ public partial class MainWindow : Window
     private KeyboardCalibrationWindow? _keyboardCalibrationWindow;
     private KeyboardWindow? _keyboardWindow;
     private VoiceChangerService? _voiceChanger;
+    private readonly WindowsAudioRoutingService _windowsAudioRoutingService = new();
+    private readonly AudioDeviceService _audioDeviceService = new();
 
     public MainWindow(ILogService? logService = null)
     {
@@ -160,7 +162,18 @@ public partial class MainWindow : Window
 
     private void MinimizeButton_Click(object sender, RoutedEventArgs e)
     {
-        Hide();
+        WindowState = WindowState.Minimized;
+    }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        if (!App.IsShuttingDown)
+        {
+            e.Cancel = true;
+            WindowState = WindowState.Minimized;
+            return;
+        }
+        base.OnClosing(e);
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
@@ -190,14 +203,17 @@ public partial class MainWindow : Window
         HearCombo.ItemsSource = outputs;
         TalkCombo.ItemsSource = inputs;
         SpeakersComboBox.ItemsSource = outputs;
+        MicrophoneComboBox.ItemsSource = inputs;
 
         HearCombo.SelectedItem = outputs.FirstOrDefault(d => d.Name == settings.HearDeviceName);
         TalkCombo.SelectedItem = inputs.FirstOrDefault(d => d.Name == settings.TalkDeviceName);
         SpeakersComboBox.SelectedItem = outputs.FirstOrDefault(d => d.Id == settings.OutputDeviceId);
+        MicrophoneComboBox.SelectedItem = inputs.FirstOrDefault(d => d.Id == settings.InputDeviceId);
 
         HearCombo.SelectedItem ??= outputs.FirstOrDefault();
         TalkCombo.SelectedItem ??= inputs.FirstOrDefault();
         SpeakersComboBox.SelectedItem ??= outputs.FirstOrDefault();
+        MicrophoneComboBox.SelectedItem ??= inputs.FirstOrDefault();
 
         ActivationModeCombo.SelectedIndex = settings.HotkeyHoldMode ? 0 : 1;
         ActivationModeCombo.SelectionChanged += (_, _) =>
@@ -217,6 +233,10 @@ public partial class MainWindow : Window
         SpeakersComboBox.SelectionChanged += (_, _) =>
         {
             if (SpeakersComboBox.SelectedItem is AudioDeviceInfo d) { settings.OutputDeviceId = d.Id; settings.PlaybackDeviceId = d.Id; ViewModel.Save(); }
+        };
+        MicrophoneComboBox.SelectionChanged += (_, _) =>
+        {
+            if (MicrophoneComboBox.SelectedItem is AudioDeviceInfo d) { settings.InputDeviceId = d.Id; settings.MicrophoneDeviceId = d.Id; ViewModel.Save(); }
         };
 
         PitchSlider.Value = Math.Clamp(settings.PitchShift, -12, 12);
@@ -502,6 +522,51 @@ public partial class MainWindow : Window
     {
         try { Process.Start(new ProcessStartInfo("control", "mmsys.cpl") { UseShellExecute = true }); }
         catch { }
+    }
+
+    private void TestSetVmInput_Click(object sender, RoutedEventArgs e)
+    {
+        var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
+        if (string.IsNullOrWhiteSpace(vmInputId))
+        {
+            VoicemeeterStatus.Text = "✗ Voicemeeter Input device not found.";
+            VoicemeeterStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+        bool ok = _windowsAudioRoutingService.TrySetDefaultOutput(vmInputId);
+        VoicemeeterStatus.Text = ok ? $"✓ Windows playback default → {_audioDeviceService.GetVoicemeeterInputDeviceName()}" : $"✗ Failed: {_windowsAudioRoutingService.LastError}";
+        VoicemeeterStatus.Foreground = new SolidColorBrush(ok ? Color.FromRgb(0x10, 0xB9, 0x81) : Color.FromRgb(0xE8, 0x55, 0x55));
+        RevealVoicemeeterStatus();
+        ViewModel.Refresh();
+    }
+
+    private void TestSetB1_Click(object sender, RoutedEventArgs e)
+    {
+        var vmB1Id = _audioDeviceService.GetVoicemeeterB1Id();
+        if (string.IsNullOrWhiteSpace(vmB1Id))
+        {
+            VoicemeeterStatus.Text = "✗ Voicemeeter Out B1 device not found.";
+            VoicemeeterStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+        bool ok = _windowsAudioRoutingService.TrySetDefaultInput(vmB1Id);
+        VoicemeeterStatus.Text = ok ? $"✓ Windows input (mic) default → {_audioDeviceService.GetVoicemeeterB1Name()}" : $"✗ Failed: {_windowsAudioRoutingService.LastError}";
+        VoicemeeterStatus.Foreground = new SolidColorBrush(ok ? Color.FromRgb(0x10, 0xB9, 0x81) : Color.FromRgb(0xE8, 0x55, 0x55));
+        RevealVoicemeeterStatus();
+        ViewModel.Refresh();
+    }
+
+    private void TestResetDefaults_Click(object sender, RoutedEventArgs e)
+    {
+        var outputId = (SpeakersComboBox.SelectedItem as Models.AudioDeviceInfo)?.Id;
+        var inputId = (MicrophoneComboBox.SelectedItem as Models.AudioDeviceInfo)?.Id;
+        bool ok = _windowsAudioRoutingService.TrySetDefaultDevices(outputId ?? string.Empty, inputId ?? string.Empty);
+        VoicemeeterStatus.Text = ok
+            ? $"✓ Defaults reset → out: {(SpeakersComboBox.SelectedItem as Models.AudioDeviceInfo)?.Name ?? "none"} | mic: {(MicrophoneComboBox.SelectedItem as Models.AudioDeviceInfo)?.Name ?? "none"}"
+            : $"✗ Failed: {_windowsAudioRoutingService.LastError}";
+        VoicemeeterStatus.Foreground = new SolidColorBrush(ok ? Color.FromRgb(0x10, 0xB9, 0x81) : Color.FromRgb(0xE8, 0x55, 0x55));
+        RevealVoicemeeterStatus();
+        ViewModel.Refresh();
     }
 
 }

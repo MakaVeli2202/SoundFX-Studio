@@ -1071,6 +1071,22 @@
                                                 Background="#151B35" BorderBrush="#3A5A8A" Foreground="#A1B2D2"
                                                 Command="{Binding TestRoutingCommand}"/>
                                     </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                        <Button x:Name="TestSetVmInputBtn" Content="TEST: Set Default → VM Input" Width="190"
+                                                Style="{StaticResource SettingsButton}"
+                                                Background="#22122AAA" BorderBrush="#00D8FF" Foreground="#A7F3D0"
+                                                Click="TestSetVmInput_Click" ToolTip="Set Windows playback default to Voicemeeter Input"/>
+                                        <Button x:Name="TestSetB1Btn" Content="TEST: Set Mic → B1" Width="150"
+                                                Style="{StaticResource SettingsButton}"
+                                                Background="#22122AAA" BorderBrush="#00D8FF" Foreground="#A7F3D0"
+                                                Margin="8,0,0,0"
+                                                Click="TestSetB1_Click" ToolTip="Set Windows input (mic) default to Voicemeeter Out B1"/>
+                                        <Button x:Name="TestResetDefaultsBtn" Content="TEST: Reset Defaults" Width="150"
+                                                Style="{StaticResource SettingsButton}"
+                                                Background="#331E0E12" BorderBrush="#F43F5E" Foreground="#FECDD3"
+                                                Margin="8,0,0,0"
+                                                Click="TestResetDefaults_Click" ToolTip="Reset Windows defaults to the devices selected in the OUTPUT DEVICE and MICROPHONE pickers above"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -1103,9 +1119,10 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- ══ OUTPUT DEVICE & PITCH — side by side ══ -->
+                        <!-- ══ OUTPUT DEVICE / MICROPHONE / PITCH ══ -->
                         <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
@@ -1123,6 +1140,18 @@
                             </Border>
 
                             <Border Grid.Column="1" Background="#66081428" BorderBrush="#5580CFFF"
+                                    BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,8,0">
+                                <StackPanel>
+                                    <TextBlock Text="MICROPHONE (VOICE INPUT)" Foreground="#00D8FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                    <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,6"
+                                               Text="Where your voice comes from (VoiceMeeter B1 when routed)."/>
+                                    <ComboBox x:Name="MicrophoneComboBox" Height="28" DisplayMemberPath="Name"
+                                              Background="#44111A2E" BorderBrush="#5580CFFF" Foreground="White" FontSize="12"
+                                              BorderThickness="1" Padding="6,1"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2" Background="#66081428" BorderBrush="#5580CFFF"
                                     BorderThickness="1" CornerRadius="12" Padding="14,12" Width="310">
                                 <StackPanel>
                                     <TextBlock Text="PITCH SHIFT" Foreground="#00D8FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>

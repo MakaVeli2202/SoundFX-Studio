@@ -23,6 +23,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="46"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="56"/>
             </Grid.RowDefinitions>
@@ -133,16 +134,104 @@
                 </Grid>
             </Border>
 
+            <!-- Undo auto-setup toolbar -->
+            <Border Grid.Row="2" Background="#0AFFFFFF" Padding="20,8">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Undo auto-setup:" Foreground="#8891B8" FontSize="11"
+                               VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Button x:Name="RemoveInput1Btn" Content="Remove Input 1 device"
+                            Background="#22112233" BorderBrush="#10B981" Foreground="#A7F3D0"
+                            BorderThickness="1" Cursor="Hand" FontSize="11" Padding="12,6" Margin="0,0,8,0"
+                            ToolTip="Unselect the microphone/device assigned to Hardware Input 1 (Strip[0]) by auto-setup"
+                            Click="RemoveInput1_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button x:Name="RemoveHwOutBtn" Content="Remove Hardware Out device"
+                            Background="#22112233" BorderBrush="#10B981" Foreground="#A7F3D0"
+                            BorderThickness="1" Cursor="Hand" FontSize="11" Padding="12,6" Margin="0,0,8,0"
+                            ToolTip="Unselect the device assigned to Hardware Output A1 (Bus[0]) by auto-setup"
+                            Click="RemoveHwOut_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                    <Button x:Name="ResetBothBtn" Content="Reset Both" Width="110"
+                            Background="#331E0E12" BorderBrush="#F43F5E" Foreground="#FECDD3"
+                            BorderThickness="1" Cursor="Hand" FontWeight="SemiBold" FontSize="11" Padding="12,6"
+                            ToolTip="Remove selection from both Hardware Input 1 and Hardware Output — no device selected"
+                            Click="ResetBoth_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="#44F43F5E"/>
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#F43F5E"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+            </Border>
+
             <!-- Strips (generated) -->
-            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel x:Name="StripsPanel" Margin="20,14,20,8"/>
             </ScrollViewer>
 
             <!-- Footer -->
-            <Border Grid.Row="3" Background="#0EFFFFFF" CornerRadius="0,0,16,16">
+            <Border Grid.Row="4" Background="#0EFFFFFF" CornerRadius="0,0,16,16">
                 <Grid Margin="20,0">
                     <TextBlock x:Name="StatusText" Foreground="#8891B8" FontSize="11" VerticalAlignment="Center"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button x:Name="TestHearBtn" Content="Hear what others hear"
+                                Background="#22112233" BorderBrush="#10B981" Foreground="#A7F3D0"
+                                BorderThickness="1" Cursor="Hand" FontSize="12" Padding="14,7" Margin="0,0,10,0"
+                                ToolTip="Listen to the exact mix your mic sends to Discord (VoiceMeeter B1)"
+                                Click="TestHear_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
                         <Button x:Name="OpenVmBtn" Content="Open Voicemeeter" 
                                 Background="#151B35" BorderBrush="#3A5A8A" Foreground="#A1B2D2"
                                 BorderThickness="1" Cursor="Hand" FontSize="12" Padding="14,7"
