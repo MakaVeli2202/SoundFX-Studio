@@ -631,6 +631,7 @@
                                     <controls:KeyboardControl x:Name="PreviewKeyboard"
                                                               ItemsSource="{Binding KeyboardKeys}"
                                                               ButtonScale="{Binding PreviewButtonScale}"
+                                                              CalibrationSelectionHighlight="True"
                                                               InnerInsetXPercent="{Binding PreviewInnerInsetXPercent}"
                                                               InnerInsetYPercent="{Binding PreviewInnerInsetYPercent}"
                                                               InnerOffsetXPercent="{Binding PreviewInnerOffsetXPercent}"

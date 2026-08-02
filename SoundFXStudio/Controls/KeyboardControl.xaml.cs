@@ -27,6 +27,12 @@ public partial class KeyboardControl : UserControl
         typeof(KeyboardControl),
         new PropertyMetadata(null));
 
+    public static readonly DependencyProperty CalibrationSelectionHighlightProperty = DependencyProperty.Register(
+        nameof(CalibrationSelectionHighlight),
+        typeof(bool),
+        typeof(KeyboardControl),
+        new PropertyMetadata(false));
+
     public static readonly DependencyProperty InnerInsetXPercentProperty = DependencyProperty.Register(
         nameof(InnerInsetXPercent),
         typeof(double),
@@ -99,6 +105,12 @@ public partial class KeyboardControl : UserControl
     {
         get => (ICommand?)GetValue(KeyClickedCommandProperty);
         set => SetValue(KeyClickedCommandProperty, value);
+    }
+
+    public bool CalibrationSelectionHighlight
+    {
+        get => (bool)GetValue(CalibrationSelectionHighlightProperty);
+        set => SetValue(CalibrationSelectionHighlightProperty, value);
     }
 
     public double InnerInsetXPercent
