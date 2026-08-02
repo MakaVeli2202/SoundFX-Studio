@@ -118,6 +118,11 @@ public partial class App : Application
         MainWindow = mainWindow;
         mainWindow.Show();
 
+        if (config.Settings.StartMinimized)
+        {
+            mainWindow.WindowState = WindowState.Minimized;
+        }
+
         _trayIcon = new TaskbarIcon
         {
             IconSource = CreateTrayIcon(),

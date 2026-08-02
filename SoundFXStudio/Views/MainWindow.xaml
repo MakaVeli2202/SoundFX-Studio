@@ -879,9 +879,11 @@
                                                            HorizontalAlignment="Center">
                                                         <Image.Style>
                                                             <Style TargetType="Image">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding ImagePath}" Value="{x:Null}">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding ImagePath}" Value="">
                                                                         <Setter Property="Visibility" Value="Collapsed"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
@@ -906,7 +908,6 @@
                                                             </Style>
                                                         </TextBlock.Style>
                                                     </TextBlock>
-                                                    <!-- scrim so text is legible -->
                                                     <Border Background="#44000000"/>
                                                 </Grid>
                                             </Border>
@@ -928,7 +929,11 @@
                                                            TextTrimming="CharacterEllipsis"
                                                            LineHeight="13"
                                                            VerticalAlignment="Top"
-                                                           Margin="0,0,4,0"/>
+                                                           Margin="0,0,4,0">
+                                                    <TextBlock.Effect>
+                                                        <DropShadowEffect Color="#000000" BlurRadius="4" ShadowDepth="1" Opacity="0.9"/>
+                                                    </TextBlock.Effect>
+                                                </TextBlock>
 
                                                 <Border Grid.Row="2"
                                                         CornerRadius="5"
@@ -1009,118 +1014,43 @@
                                    Foreground="#00D8FF"
                                    FontSize="20"
                                    FontWeight="Bold"
-                                   Margin="0,0,0,14"/>
+                                   Margin="0,0,0,2"/>
+                        <TextBlock Text="Tune your audio routing, hotkeys and general behavior."
+                                   Foreground="#A1B2D2" FontSize="12" Margin="0,0,0,14"/>
 
-                        <!-- ══ VOICEMEETER (RECOMMENDED) ══ -->
+                        <!-- ══ AUDIO SETUP ══ -->
                         <Border Background="#66081428" BorderBrush="#5580CFFF"
-                                BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,10">
+                                BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,14">
                             <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-
-                                <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
-                                           Text="VOICEMEETER" Foreground="#00D8FF" FontSize="11" FontWeight="Bold"
-                                           Margin="0,0,0,8"/>
-
-                                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,6,0">
-                                    <TextBlock Text="What you HEAR with" Foreground="#DDEAFF" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,3"/>
-                                    <ComboBox x:Name="HearCombo" Height="30" DisplayMemberPath="Name"
-                                              Background="#44111A2E" BorderBrush="#5580CFFF" Foreground="White" FontSize="12"
-                                              BorderThickness="1" Padding="6,2"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock Text="AUDIO SETUP" Foreground="#00D8FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,3"/>
+                                    <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap"
+                                               Text="Set hear/talk devices, route apps through Voicemeeter, or reset routing."/>
                                 </StackPanel>
-                                <StackPanel Grid.Row="1" Grid.Column="1" Margin="6,0,0,0">
-                                    <TextBlock Text="What you TALK with" Foreground="#DDEAFF" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,3"/>
-                                    <ComboBox x:Name="TalkCombo" Height="30" DisplayMemberPath="Name"
-                                              Background="#44111A2E" BorderBrush="#5580CFFF" Foreground="White" FontSize="12"
-                                              BorderThickness="1" Padding="6,2"/>
-                                </StackPanel>
-
-                                <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="0,8,0,0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Button x:Name="VoicemeeterButton"
-                                                Content="Auto-setup for Voicemeeter" Width="200"
-                                                Style="{StaticResource SettingsButton}"
-                                                Click="VoicemeeterButton_Click"
-                                                FontWeight="SemiBold" FontSize="12"/>
-                                        <Button x:Name="ResetVoicemeeterButton" Content="Reset" Width="90"
-                                                Style="{StaticResource SettingsButton}"
-                                                Background="#151B35" BorderBrush="#3A5A8A" Foreground="#A1B2D2"
-                                                Margin="8,0,0,0"
-                                                Click="ResetVoicemeeterButton_Click"/>
-                                    </StackPanel>
-                                    <TextBlock x:Name="VoicemeeterStatus" Text="" Foreground="#10B981"
-                                               FontSize="10.5" TextWrapping="Wrap" FontFamily="Consolas" Margin="2,6,2,0"/>
-                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                        <Button x:Name="MixerBtn" Content="Sound Mixer" Width="120"
-                                                Style="{StaticResource SettingsButton}"
-                                                Background="#151B35" BorderBrush="#3A5A8A" Foreground="#A1B2D2"
-                                                Click="MixerButton_Click"/>
-                                        <Button x:Name="RerunWizardBtn" Content="Setup Wizard" Width="120"
-                                                Style="{StaticResource SettingsButton}"
-                                                Background="#151B35" BorderBrush="#3A5A8A" Foreground="#A1B2D2"
-                                                Click="RerunWizard_Click"/>
-                                        <Button x:Name="TestRoutingBtn" Content="Test Routing" Width="120"
-                                                Style="{StaticResource SettingsButton}"
-                                                Background="#151B35" BorderBrush="#3A5A8A" Foreground="#A1B2D2"
-                                                Command="{Binding TestRoutingCommand}"/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                                        <Button x:Name="TestSetVmInputBtn" Content="TEST: Set Default → VM Input" Width="190"
-                                                Style="{StaticResource SettingsButton}"
-                                                Background="#22122AAA" BorderBrush="#00D8FF" Foreground="#A7F3D0"
-                                                Click="TestSetVmInput_Click" ToolTip="Set Windows playback default to Voicemeeter Input"/>
-                                        <Button x:Name="TestSetB1Btn" Content="TEST: Set Mic → B1" Width="150"
-                                                Style="{StaticResource SettingsButton}"
-                                                Background="#22122AAA" BorderBrush="#00D8FF" Foreground="#A7F3D0"
-                                                Margin="8,0,0,0"
-                                                Click="TestSetB1_Click" ToolTip="Set Windows input (mic) default to Voicemeeter Out B1"/>
-                                        <Button x:Name="TestResetDefaultsBtn" Content="TEST: Reset Defaults" Width="150"
-                                                Style="{StaticResource SettingsButton}"
-                                                Background="#331E0E12" BorderBrush="#F43F5E" Foreground="#FECDD3"
-                                                Margin="8,0,0,0"
-                                                Click="TestResetDefaults_Click" ToolTip="Reset Windows defaults to the devices selected in the OUTPUT DEVICE and MICROPHONE pickers above"/>
-                                    </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button x:Name="RerunWizardBtn" Content="Open Setup Wizard" Width="190"
+                                            AutomationProperties.AutomationId="SettingsOpenAudioSetupWizardButton"
+                                            Style="{StaticResource SettingsButton}"
+                                            FontWeight="SemiBold"
+                                            Click="RerunWizard_Click"/>
+                                    <Button x:Name="MixerBtn" Content="Sound Mixer" Width="130"
+                                            Style="{StaticResource SettingsButton}"
+                                            Background="#151B35" BorderBrush="#3A5A8A" Foreground="#A1B2D2"
+                                            Margin="8,0,0,0"
+                                            Click="MixerButton_Click"/>
                                 </StackPanel>
                             </Grid>
                         </Border>
 
-                        <!-- ══ ACTIVATION ══ -->
-                        <Border Background="#66081428" BorderBrush="#5580CFFF"
-                                BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,10">
-                            <StackPanel>
-                                <TextBlock Text="ACTIVATION" Foreground="#00D8FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <TextBlock Text="Key" Foreground="#DDEAFF" FontSize="10.5" Margin="0,0,0,2"/>
-                                        <TextBox x:Name="ActivationKeyBox"
-                                                 Text="{Binding Settings.SoundboardToggleKey}"
-                                                 Height="26" FontSize="11"
-                                                 Background="#44111A2E" BorderBrush="#5580CFFF" Foreground="White"
-                                                 BorderThickness="1" Padding="6,2" Margin="0,0,0,6"/>
-                                    </StackPanel>
-                                    <ComboBox Grid.Column="1" x:Name="ActivationModeCombo" Height="28"
-                                              Background="#44111A2E" BorderBrush="#5580CFFF" Foreground="White" FontSize="11"
-                                              BorderThickness="1" Padding="4,1" VerticalAlignment="Center" Margin="10,0,0,0">
-                                        <ComboBoxItem Content="Hold key + tap a sound key"/>
-                                        <ComboBoxItem Content="Toggle: press key once on/off"/>
-                                    </ComboBox>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- ══ OUTPUT DEVICE / MICROPHONE / PITCH ══ -->
-                        <Grid Margin="0,0,0,10">
+                        <!-- ══ AUDIO DEVICES ══ -->
+                        <TextBlock x:Name="SettingsAudioHeader" Text="AUDIO DEVICES"
+                                   Foreground="#00D8FF" FontSize="11" FontWeight="Bold"
+                                   Margin="0,0,0,6"/>
+                        <Grid Margin="0,0,0,14">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
@@ -1173,6 +1103,34 @@
                                 </StackPanel>
                             </Border>
                         </Grid>
+
+                        <!-- ══ ACTIVATION ══ -->
+                        <Border Background="#66081428" BorderBrush="#5580CFFF"
+                                BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="ACTIVATION" Foreground="#00D8FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Key" Foreground="#DDEAFF" FontSize="10.5" Margin="0,0,0,2"/>
+                                        <TextBox x:Name="ActivationKeyBox"
+                                                 Text="{Binding Settings.SoundboardToggleKey}"
+                                                 Height="26" FontSize="11"
+                                                 Background="#44111A2E" BorderBrush="#5580CFFF" Foreground="White"
+                                                 BorderThickness="1" Padding="6,2" Margin="0,0,0,6"/>
+                                    </StackPanel>
+                                    <ComboBox Grid.Column="1" x:Name="ActivationModeCombo" Height="28"
+                                              Background="#44111A2E" BorderBrush="#5580CFFF" Foreground="White" FontSize="11"
+                                              BorderThickness="1" Padding="4,1" VerticalAlignment="Center" Margin="10,0,0,0">
+                                        <ComboBoxItem Content="Hold key + tap a sound key"/>
+                                        <ComboBoxItem Content="Toggle: press key once on/off"/>
+                                    </ComboBox>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
 
                         <!-- ══ KEYBOARD LAYOUT & ADVANCED — side by side ══ -->
                         <Grid Margin="0,0,0,10">
@@ -1298,6 +1256,35 @@
                                         Content="Capture" Height="26" Width="70" FontSize="11" Margin="0,0,0,0"
                                         Click="CaptureStopAllButton_Click"/>
                             </Grid>
+                        </Border>
+
+                        <!-- ══ GENERAL ══ -->
+                        <Border Background="#66081428" BorderBrush="#5580CFFF"
+                                BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock x:Name="SettingsGeneralHeader"
+                                           Text="GENERAL" Foreground="#00D8FF" FontSize="11" FontWeight="Bold"
+                                           Margin="0,0,0,8"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <CheckBox x:Name="ShowWizardOnStartupCheck"
+                                              Content="Show setup wizard on startup"
+                                              IsChecked="{Binding Settings.ShowSetupWizardOnStartup, Mode=TwoWay}"
+                                              Foreground="#DDEAFF" FontSize="11.5" Margin="0,0,0,6"/>
+                                    <CheckBox x:Name="StartMinimizedCheck"
+                                              Content="Start minimized to tray"
+                                              IsChecked="{Binding Settings.StartMinimized, Mode=TwoWay}"
+                                              Foreground="#DDEAFF" FontSize="11.5"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" VerticalAlignment="Center"
+                                           Text="Voicemeeter hear/talk selection, routing and reset live in the Setup Wizard."/>
+                            </Grid>
+                            </StackPanel>
                         </Border>
 
                         <TextBlock Text="{Binding StatusText}"

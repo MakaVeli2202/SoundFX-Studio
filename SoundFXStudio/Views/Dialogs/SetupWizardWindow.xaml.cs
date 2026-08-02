@@ -13,7 +13,6 @@ public partial class SetupWizardWindow : Window
     private readonly AudioDeviceService _audioDeviceService = new();
     private readonly WindowsAudioRoutingService _windowsAudioRoutingService = new();
     private AppConfig _config;
-    private bool _ready;
 
     public SetupWizardWindow()
     {
@@ -42,7 +41,6 @@ public partial class SetupWizardWindow : Window
         WizardTalkCombo.SelectedItem = inputs.FirstOrDefault(d => d.Name == _config.Settings.TalkDeviceName) ?? inputs.FirstOrDefault();
 
         CheckVoicemeeter();
-        _ready = true;
     }
 
     private void CheckVoicemeeter()
@@ -198,24 +196,9 @@ public partial class SetupWizardWindow : Window
         _config.Settings.SavedDefaultCaptureId = string.Empty;
     }
 
-    private void RouteAppsToVmCheckBox_Checked(object sender, RoutedEventArgs e)
-    {
-        if (!_ready) return;
-        ApplyAppsRouting();
-        _configService.Save(_config);
-    }
-
-    private void RouteAppsToVmCheckBox_Unchecked(object sender, RoutedEventArgs e)
-    {
-        if (!_ready) return;
-        RevertAppsRouting();
-        _configService.Save(_config);
-    }
-
     private async void WizardResetWindows_Click(object sender, RoutedEventArgs e)
     {
         RevertAppsRouting();
-        RouteAppsToVmCheckBox.IsChecked = false;
         _configService.Save(_config);
         WizardStatusText.Text = "Resetting Voicemeeter devices…";
         WizardStatusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x98, 0xA0, 0xC0));
@@ -270,27 +253,6 @@ public partial class SetupWizardWindow : Window
     {
         _config.Settings.VirtualCableDeviceId = string.Empty;
         _config.Settings.VBCableDetected = false;
-
-        bool appsRouted = ApplyAppsRouting();
-        if (appsRouted)
-        {
-            var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
-            var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
-            if (!string.IsNullOrWhiteSpace(vmInputId))
-            {
-                _config.Settings.OutputDeviceId = vmInputId;
-                _config.Settings.PlaybackDeviceId = vmInputId;
-            }
-            if (!string.IsNullOrWhiteSpace(vmOutputId))
-            {
-                _config.Settings.InputDeviceId = vmOutputId;
-                _config.Settings.MicrophoneDeviceId = vmOutputId;
-            }
-            WizardStatusText.Text = "Voicemeeter routing applied.";
-        }
-        else
-        {
-            WizardStatusText.Text = "Settings saved.";
-        }
+        WizardStatusText.Text = "Settings saved.";
     }
 }

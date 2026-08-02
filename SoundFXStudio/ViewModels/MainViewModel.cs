@@ -777,6 +777,7 @@ public sealed class MainViewModel : ObservableObject
             }
         }
 
+        RefreshAssignments();
         Save();
     }
 
@@ -1260,6 +1261,7 @@ public sealed class MainViewModel : ObservableObject
         UpdateSoundKeyAssignment(sound, details.SelectedKey);
         UpdateSoundChordAssignment(sound, details.ChordKeys);
 
+        RefreshAssignments();
         Save();
         SelectedSound = sound;
         StatusText = $"Updated {sound.Name}";

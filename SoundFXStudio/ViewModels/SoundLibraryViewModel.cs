@@ -265,6 +265,7 @@ public sealed class SoundLibraryViewModel
 
         sound.ImagePath = _importImage(dialog.FileName);
         _save();
+        _refreshAssignments();
         _setSelectedSound(sound);
         _setStatusText($"Updated image for {sound.Name}");
     }

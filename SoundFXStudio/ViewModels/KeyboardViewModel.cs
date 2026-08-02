@@ -119,7 +119,7 @@ public sealed class KeyboardViewModel
                 ? value
                 : null;
 
-            key.ImagePath = assignment?.ImagePath ?? sound?.ImagePath;
+            key.ImagePath = sound?.ImagePath ?? assignment?.ImagePath;
             key.AssignedSoundId = assignment?.SoundId;
             key.AssignedSoundName = sound?.Name;
             key.AssignmentName = assignment?.BindingName;
