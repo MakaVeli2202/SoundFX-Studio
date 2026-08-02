@@ -339,6 +339,56 @@ public partial class MainWindow : Window
         }
     }
 
+    private void SoundTileMenu_Duplicate(object sender, RoutedEventArgs e)
+    {
+        var sound = GetSoundFromMenu(sender);
+        if (sound is not null)
+        {
+            ViewModel.SelectedSound = sound;
+            ViewModel.DuplicateSoundCommand.Execute(null);
+        }
+    }
+
+    private void SoundTileMenu_Favorite(object sender, RoutedEventArgs e)
+    {
+        var sound = GetSoundFromMenu(sender);
+        if (sound is not null)
+        {
+            ViewModel.SelectedSound = sound;
+            ViewModel.ToggleFavoriteCommand.Execute(null);
+        }
+    }
+
+    private void SoundTileMenu_ChooseImage(object sender, RoutedEventArgs e)
+    {
+        var sound = GetSoundFromMenu(sender);
+        if (sound is not null)
+        {
+            ViewModel.SelectedSound = sound;
+            ViewModel.ChooseSoundImageCommand.Execute(sound);
+        }
+    }
+
+    private void SoundTileMenu_RemoveImage(object sender, RoutedEventArgs e)
+    {
+        var sound = GetSoundFromMenu(sender);
+        if (sound is not null)
+        {
+            ViewModel.SelectedSound = sound;
+            ViewModel.RemoveSoundImageCommand.Execute(sound);
+        }
+    }
+
+    private void SoundTileMenu_ClearBinding(object sender, RoutedEventArgs e)
+    {
+        var sound = GetSoundFromMenu(sender);
+        if (sound is not null)
+        {
+            ViewModel.SelectedSound = sound;
+            ViewModel.ClearSelectedSoundBindingCommand.Execute(null);
+        }
+    }
+
     private void LibraryMicButton_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new MicrophoneRecorderDialog { Owner = this };

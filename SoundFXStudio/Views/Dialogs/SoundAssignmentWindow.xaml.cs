@@ -66,6 +66,14 @@ public partial class SoundAssignmentWindow : Window
         }
     }
 
+    private void RemoveImageButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is SoundAssignmentViewModel vm)
+        {
+            vm.ImagePath = string.Empty;
+        }
+    }
+
     private void CaptureChordKey_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new KeyCaptureDialog(chordMode: true)
@@ -117,13 +125,11 @@ public class SoundAssignmentViewModel : INotifyPropertyChanged
     private string _filePath = string.Empty;
     private string _imagePath = string.Empty;
     private string _name = string.Empty;
-    private string _category = string.Empty;
     private string _selectedKey = string.Empty;
     private readonly List<string> _chordKeys = new();
     private string _chordKeyDisplay = string.Empty;
     private double _volumePercent = 100;
     private bool _isFavorite;
-    private bool _loop;
 
     public string FilePath
     {
@@ -141,12 +147,6 @@ public class SoundAssignmentViewModel : INotifyPropertyChanged
     {
         get => _name;
         set => SetProperty(ref _name, value);
-    }
-
-    public string Category
-    {
-        get => _category;
-        set => SetProperty(ref _category, value);
     }
 
     public string SelectedKey
@@ -191,32 +191,9 @@ public class SoundAssignmentViewModel : INotifyPropertyChanged
         set => SetProperty(ref _isFavorite, value);
     }
 
-    public bool Loop
-    {
-        get => _loop;
-        set => SetProperty(ref _loop, value);
-    }
-
-    public List<KeyboardKey> AvailableKeys { get; }
-
-    public SoundAssignmentViewModel(IEnumerable<KeyboardKey>? availableKeys = null)
-    {
-        AvailableKeys = availableKeys?.Select(key => new KeyboardKey
-        {
-            Id = key.Id,
-            KeyName = key.KeyName,
-            DisplayLabel = key.DisplayLabel
-        }).ToList() ?? new List<KeyboardKey>();
-    }
-
-    public SoundAssignmentViewModel() : this(null)
+    public SoundAssignmentViewModel()
     {
     }
-
-    public List<string> Categories { get; } = new()
-    {
-        "Games", "Memes", "Notifications", "Music", "Effects", "Other"
-    };
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

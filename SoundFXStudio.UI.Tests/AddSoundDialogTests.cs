@@ -88,17 +88,6 @@ public class AddSoundDialogTests
     }
 
     [Fact]
-    public void AddSound_HasCategoryComboBox()
-    {
-        OpenAddSoundDialog();
-        var dialog = FindSoundDialog();
-        Assert.NotNull(dialog);
-
-        var combos = dialog.FindAllDescendants(cf => cf.ByControlType(ControlType.ComboBox));
-        Assert.True(combos.Length >= 2, "Dialog should have keyboard key + category combos");
-    }
-
-    [Fact]
     public void AddSound_HasSaveAndCancelButtons()
     {
         OpenAddSoundDialog();
@@ -113,14 +102,14 @@ public class AddSoundDialogTests
     }
 
     [Fact]
-    public void AddSound_HasFavoriteAndLoopCheckboxes()
+    public void AddSound_HasFavoriteCheckbox()
     {
         OpenAddSoundDialog();
         var dialog = FindSoundDialog();
         Assert.NotNull(dialog);
 
         var checkboxes = dialog.FindAllDescendants(cf => cf.ByControlType(ControlType.CheckBox));
-        Assert.True(checkboxes.Length >= 2, "Dialog should have favorite + loop checkboxes");
+        Assert.True(checkboxes.Length >= 1, "Dialog should have a favorite checkbox");
     }
 
     [Fact]

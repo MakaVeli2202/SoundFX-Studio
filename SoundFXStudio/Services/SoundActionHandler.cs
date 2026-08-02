@@ -32,7 +32,7 @@ public sealed class SoundActionHandler : IActionHandler
         }
 
         var outputDeviceIndex = _resolveOutputDeviceIndex(config.Settings.OutputDeviceId);
-        _audioPlayer.Play(sound.Id, filePath, sound.Volume, sound.Loop, action.PlaybackMode, outputDeviceIndex);
+        _audioPlayer.Play(sound.Id, filePath, sound.Volume, action.PlaybackMode, outputDeviceIndex);
         return Task.CompletedTask;
     }
 }

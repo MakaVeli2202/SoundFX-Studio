@@ -980,6 +980,13 @@
                                                 <MenuItem Header="&#x270E; Edit" Click="SoundTileMenu_Edit"/>
                                                 <MenuItem Header="&#x1F4CC; Assign to Key" Click="SoundTileMenu_Assign"/>
                                                 <Separator/>
+                                                <MenuItem Header="&#x1F4CE; Duplicate" Click="SoundTileMenu_Duplicate"/>
+                                                <MenuItem Header="&#x2B50; Toggle Favorite" Click="SoundTileMenu_Favorite"/>
+                                                <Separator/>
+                                                <MenuItem Header="&#x1F5BC; Choose Image" Click="SoundTileMenu_ChooseImage"/>
+                                                <MenuItem Header="&#x274C; Remove Image" Click="SoundTileMenu_RemoveImage"/>
+                                                <MenuItem Header="&#x1F511; Remove Binding" Click="SoundTileMenu_ClearBinding"/>
+                                                <Separator/>
                                                 <MenuItem Header="&#x1F5D1; Delete" Foreground="#F43F5E" Click="SoundTileMenu_Delete"/>
                                             </ContextMenu>
                                         </Button.ContextMenu>

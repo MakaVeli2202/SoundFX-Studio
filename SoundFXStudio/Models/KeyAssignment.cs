@@ -14,7 +14,6 @@ public class KeyAssignment : ObservableObject
     private string _chordKey = string.Empty;
     private bool _isGlobal;
     private float _volumeOverride = 1f;
-    private bool _loop;
     private int _fadeOutMs = 120;
     private bool _stopOnReplay = true;
 
@@ -76,12 +75,6 @@ public class KeyAssignment : ObservableObject
     {
         get => _volumeOverride;
         set => SetProperty(ref _volumeOverride, value);
-    }
-
-    public bool Loop
-    {
-        get => _loop;
-        set => SetProperty(ref _loop, value);
     }
 
     public int FadeOutMs

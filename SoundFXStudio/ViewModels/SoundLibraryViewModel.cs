@@ -181,7 +181,6 @@ public sealed class SoundLibraryViewModel
             Volume = selectedSound.Volume,
             ImagePath = selectedSound.ImagePath,
             Category = selectedSound.Category,
-            Loop = selectedSound.Loop,
             IsFavorite = selectedSound.IsFavorite,
             Hotkey = string.Empty
         };
@@ -332,10 +331,9 @@ public sealed class SoundLibraryViewModel
         {
             Name = string.IsNullOrWhiteSpace(details.Name) ? Path.GetFileNameWithoutExtension(destinationFile) : details.Name.Trim(),
             FilePath = destinationFile,
-            Category = string.IsNullOrWhiteSpace(details.Category) ? "Custom" : details.Category.Trim(),
+            Category = "Custom",
             Volume = (float)Math.Clamp(details.VolumePercent / 100.0, 0.0, 1.0),
-            IsFavorite = details.IsFavorite,
-            Loop = details.Loop
+            IsFavorite = details.IsFavorite
         };
 
         if (!string.IsNullOrWhiteSpace(details.ImagePath) && File.Exists(details.ImagePath))
@@ -375,10 +373,8 @@ public sealed class SoundLibraryViewModel
         }
 
         sound.Name = string.IsNullOrWhiteSpace(details.Name) ? sound.Name : details.Name.Trim();
-        sound.Category = string.IsNullOrWhiteSpace(details.Category) ? sound.Category : details.Category.Trim();
         sound.Volume = (float)Math.Clamp(details.VolumePercent / 100.0, 0.0, 1.0);
         sound.IsFavorite = details.IsFavorite;
-        sound.Loop = details.Loop;
 
         if (!string.IsNullOrWhiteSpace(details.ImagePath) && File.Exists(details.ImagePath))
         {
@@ -400,17 +396,15 @@ public sealed class SoundLibraryViewModel
 
     public bool TryGetSoundDetails(string? initialFilePath, SoundEntry? existingSound, out SoundAssignmentViewModel details)
     {
-        details = new SoundAssignmentViewModel(_keyboardKeys);
+        details = new SoundAssignmentViewModel();
 
         if (existingSound is not null)
         {
             details.FilePath = existingSound.FilePath;
             details.ImagePath = existingSound.ImagePath ?? string.Empty;
             details.Name = existingSound.Name;
-            details.Category = existingSound.Category;
             details.VolumePercent = existingSound.Volume * 100;
             details.IsFavorite = existingSound.IsFavorite;
-            details.Loop = existingSound.Loop;
             details.SelectedKey = GetAssignedKeyIdForSound(existingSound) ?? string.Empty;
 
             details.ChordKeys = GetChordKeysForSound(existingSound);
@@ -420,7 +414,6 @@ public sealed class SoundLibraryViewModel
         {
             details.FilePath = initialFilePath;
             details.Name = Path.GetFileNameWithoutExtension(initialFilePath);
-            details.Category = string.IsNullOrWhiteSpace(details.Category) ? "Custom" : details.Category;
             details.VolumePercent = 100;
         }
 
@@ -635,7 +628,6 @@ public sealed class SoundLibraryViewModel
             sound.Id,
             sound.FilePath,
             assignment?.VolumeOverride ?? sound.Volume,
-            assignment?.Loop ?? sound.Loop,
             PlaybackMode.Restart,
             deviceIndex);
 

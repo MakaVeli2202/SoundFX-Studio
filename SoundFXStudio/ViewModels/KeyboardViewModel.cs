@@ -393,7 +393,6 @@ public sealed class KeyboardViewModel
             sound.Id,
             sound.FilePath,
             assignment?.VolumeOverride ?? sound.Volume,
-            assignment?.Loop ?? sound.Loop,
             PlaybackMode.Restart,
             deviceIndex);
 

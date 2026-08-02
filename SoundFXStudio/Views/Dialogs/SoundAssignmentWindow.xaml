@@ -122,15 +122,6 @@
                                      Foreground="{StaticResource TextBrush}"/>
                         </StackPanel>
 
-                        <!-- Keyboard Button -->
-                        <StackPanel Margin="0,0,0,14">
-                            <TextBlock Text="Keyboard Button" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6"/>
-                            <ComboBox ItemsSource="{Binding AvailableKeys}" DisplayMemberPath="DisplayLabel"
-                                      SelectedValuePath="Id" SelectedValue="{Binding SelectedKey}"
-                                      Height="36" Padding="10,6" Background="#22112233" BorderBrush="#3370AFFF"
-                                      BorderThickness="1" Foreground="{StaticResource TextBrush}"/>
-                        </StackPanel>
-
                         <!-- Chord Key -->
                         <StackPanel Margin="0,0,0,14">
                             <TextBlock Text="Chord Sequence (optional)" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6"/>
@@ -147,14 +138,6 @@
                                 <Button Grid.Column="1" Content="Capture" Width="100" Height="36"
                                         Click="CaptureChordKey_Click" Style="{StaticResource CyberButton}"/>
                             </Grid>
-                        </StackPanel>
-
-                        <!-- Category -->
-                        <StackPanel Margin="0,0,0,14">
-                            <TextBlock Text="Sound Group" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6"/>
-                            <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding Category}"
-                                      Height="36" Padding="10,6" Background="#22112233" BorderBrush="#3370AFFF"
-                                      BorderThickness="1" Foreground="{StaticResource TextBrush}"/>
                         </StackPanel>
 
                         <!-- Volume -->
@@ -176,8 +159,6 @@
                         <StackPanel Margin="0,0,0,14">
                             <TextBlock Text="Options" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,10"/>
                             <CheckBox Content="Mark as favorite" IsChecked="{Binding IsFavorite}"
-                                      Foreground="{StaticResource TextBrush}" Margin="0,0,0,8"/>
-                            <CheckBox Content="Loop sound continuously" IsChecked="{Binding Loop}"
                                       Foreground="{StaticResource TextBrush}"/>
                         </StackPanel>
 
@@ -185,22 +166,47 @@
                         <Border Style="{StaticResource GlassPanel}" CornerRadius="14" Padding="14">
                             <StackPanel>
                                 <TextBlock Text="Custom Image (Optional)" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,10"/>
-                                <Grid Margin="0,0,0,10">
+                                <Grid>
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120"/>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox x:Name="ImagePathBox" IsReadOnly="True" Text="{Binding ImagePath, Mode=OneWay}"
-                                             Height="34" Padding="10,6" Background="#22112233" BorderBrush="#3370AFFF"
-                                             BorderThickness="1" Foreground="{StaticResource TextBrush}"/>
-                                    <Button Grid.Column="1" Content="Choose" Width="90" Height="34"
-                                            Margin="10,0,0,0" Click="ImageBrowseButton_Click"
-                                            Style="{StaticResource CyberButton}"/>
+
+                                    <Border Background="#0A0F18" CornerRadius="8" Height="96" BorderBrush="#3370AFFF"
+                                            BorderThickness="1" ClipToBounds="True">
+                                        <Grid>
+                                            <Image Source="{Binding ImagePath, Mode=OneWay}" Stretch="Uniform"/>
+                                            <TextBlock Text="No image" FontSize="11" Foreground="#556288"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ImagePath}" Value="{x:Null}">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding ImagePath}" Value="">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1" Margin="12,0,0,0">
+                                        <TextBox x:Name="ImagePathBox" IsReadOnly="True" Text="{Binding ImagePath, Mode=OneWay}"
+                                                 Height="34" Padding="10,6" Background="#22112233" BorderBrush="#3370AFFF"
+                                                 BorderThickness="1" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="Choose" Width="90" Height="34"
+                                                    Click="ImageBrowseButton_Click" Style="{StaticResource CyberButton}"/>
+                                            <Button Content="Remove" Width="90" Height="34" Margin="8,0,0,0"
+                                                    Click="RemoveImageButton_Click" Style="{StaticResource CyberButton}"/>
+                                        </StackPanel>
+                                    </StackPanel>
                                 </Grid>
-                                <Border x:Name="ImagePreviewBorder" Background="#0A0F18" CornerRadius="8"
-                                        Height="120" BorderBrush="#3370AFFF" BorderThickness="1">
-                                    <Image x:Name="ImagePreview" Source="{Binding ImagePath, Mode=OneWay}" Stretch="UniformToFill"/>
-                                </Border>
                             </StackPanel>
                         </Border>
 

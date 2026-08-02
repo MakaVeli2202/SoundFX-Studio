@@ -13,7 +13,6 @@ public class SoundEntry : ObservableObject
     private bool _isFavorite;
     private string _hotkey = string.Empty;
     private string _category = "Custom";
-    private bool _loop;
     private bool _isMuted;
     private int _playCount;
     private DateTime? _lastPlayedUtc;
@@ -67,12 +66,6 @@ public class SoundEntry : ObservableObject
     {
         get => _category;
         set => SetProperty(ref _category, value);
-    }
-
-    public bool Loop
-    {
-        get => _loop;
-        set => SetProperty(ref _loop, value);
     }
 
     public bool IsMuted

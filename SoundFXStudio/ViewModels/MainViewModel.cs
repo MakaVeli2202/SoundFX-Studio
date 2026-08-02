@@ -164,7 +164,6 @@ public sealed class MainViewModel : ObservableObject
         RemoveSoundFromKeyCommand = new RelayCommand(parameter => RemoveSoundFromKey(parameter), parameter => ResolveKey(parameter) is not null);
         RemoveKeyImageCommand = new RelayCommand(parameter => RemoveKeyImage(parameter), parameter => ResolveKey(parameter) is not null);
         ChangeKeyVolumeCommand = new RelayCommand(parameter => ChangeKeyVolume(parameter), parameter => ResolveKey(parameter) is not null);
-        ToggleKeyLoopCommand = new RelayCommand(parameter => ToggleKeyLoop(parameter), parameter => ResolveKey(parameter) is not null);
         StopKeyPlaybackCommand = new RelayCommand(parameter => StopKeyPlayback(parameter), parameter => ResolveKey(parameter) is not null);
         DuplicateBindingCommand = new RelayCommand(parameter => DuplicateBinding(parameter), parameter => ResolveKey(parameter) is not null);
         ChooseKeyImageCommand = new RelayCommand(parameter => ChooseKeyImage(parameter), parameter => ResolveKey(parameter) is not null);
@@ -181,6 +180,7 @@ public sealed class MainViewModel : ObservableObject
         SetGlobalHotkeyCommand = new RelayCommand(_ => SetSelectedSoundHotkey());
         RenameSoundCommand = new RelayCommand(parameter => RenameSelectedSound(parameter), parameter => ResolveSound(parameter) is not null);
         ChooseSoundImageCommand = new RelayCommand(parameter => ChooseSelectedSoundImage(parameter), parameter => ResolveSound(parameter) is not null);
+        RemoveSoundImageCommand = new RelayCommand(parameter => RemoveSelectedSoundImage(parameter), parameter => ResolveSound(parameter) is not null);
         ToggleAssignModeCommand = new RelayCommand(_ => ToggleAssignMode(), _ => SelectedSound is not null);
         ClearSelectedSoundBindingCommand = new RelayCommand(_ => ClearSelectedSoundBinding(), _ => SelectedSound is not null);
         SetSoundHotkeyCommand = new RelayCommand(parameter => SetSoundHotkey(parameter), parameter => ResolveSound(parameter) is not null);
@@ -254,8 +254,6 @@ public sealed class MainViewModel : ObservableObject
 
     public ICommand ChangeKeyVolumeCommand { get; }
 
-    public ICommand ToggleKeyLoopCommand { get; }
-
     public ICommand StopKeyPlaybackCommand { get; }
 
     public ICommand DuplicateBindingCommand { get; }
@@ -286,6 +284,8 @@ public sealed class MainViewModel : ObservableObject
     public ICommand RenameSoundCommand { get; }
 
     public ICommand ChooseSoundImageCommand { get; }
+
+    public ICommand RemoveSoundImageCommand { get; }
 
     public ICommand SetSoundHotkeyCommand { get; }
 
@@ -1044,7 +1044,6 @@ public sealed class MainViewModel : ObservableObject
             sound.Id,
             sound.FilePath,
             assignment?.VolumeOverride ?? sound.Volume,
-            assignment?.Loop ?? sound.Loop,
             PlaybackMode.Restart,
             deviceIndex);
 
@@ -1092,17 +1091,15 @@ public sealed class MainViewModel : ObservableObject
 
     internal bool TryGetSoundDetails(string? initialFilePath, SoundEntry? existingSound, out SoundAssignmentViewModel details)
     {
-        details = new SoundAssignmentViewModel(KeyboardKeys);
+        details = new SoundAssignmentViewModel();
 
         if (existingSound is not null)
         {
             details.FilePath = existingSound.FilePath;
             details.ImagePath = existingSound.ImagePath ?? string.Empty;
             details.Name = existingSound.Name;
-            details.Category = existingSound.Category;
             details.VolumePercent = existingSound.Volume * 100;
             details.IsFavorite = existingSound.IsFavorite;
-            details.Loop = existingSound.Loop;
             details.SelectedKey = GetAssignedKeyIdForSound(existingSound) ?? string.Empty;
 
             details.ChordKeys = GetChordKeysForSound(existingSound);
@@ -1112,7 +1109,6 @@ public sealed class MainViewModel : ObservableObject
         {
             details.FilePath = initialFilePath;
             details.Name = Path.GetFileNameWithoutExtension(initialFilePath);
-            details.Category = string.IsNullOrWhiteSpace(details.Category) ? "Custom" : details.Category;
             details.VolumePercent = 100;
         }
 
@@ -1156,10 +1152,9 @@ public sealed class MainViewModel : ObservableObject
         {
             Name = string.IsNullOrWhiteSpace(details.Name) ? Path.GetFileNameWithoutExtension(destinationFile) : details.Name.Trim(),
             FilePath = destinationFile,
-            Category = string.IsNullOrWhiteSpace(details.Category) ? "Custom" : details.Category.Trim(),
+            Category = "Custom",
             Volume = (float)Math.Clamp(details.VolumePercent / 100.0, 0.0, 1.0),
-            IsFavorite = details.IsFavorite,
-            Loop = details.Loop
+            IsFavorite = details.IsFavorite
         };
 
         if (!string.IsNullOrWhiteSpace(details.ImagePath) && File.Exists(details.ImagePath))
@@ -1244,10 +1239,8 @@ public sealed class MainViewModel : ObservableObject
         }
 
         sound.Name = string.IsNullOrWhiteSpace(details.Name) ? sound.Name : details.Name.Trim();
-        sound.Category = string.IsNullOrWhiteSpace(details.Category) ? sound.Category : details.Category.Trim();
         sound.Volume = (float)Math.Clamp(details.VolumePercent / 100.0, 0.0, 1.0);
         sound.IsFavorite = details.IsFavorite;
-        sound.Loop = details.Loop;
 
         if (!string.IsNullOrWhiteSpace(details.ImagePath) && File.Exists(details.ImagePath))
         {
@@ -1671,6 +1664,20 @@ public sealed class MainViewModel : ObservableObject
 
     private void ChooseSelectedSoundImage(object? parameter) => _soundLibraryViewModel.ChooseSelectedSoundImage(parameter);
 
+    private void RemoveSelectedSoundImage(object? parameter)
+    {
+        var sound = ResolveSound(parameter);
+        if (sound is null)
+        {
+            return;
+        }
+
+        sound.ImagePath = null;
+        RefreshAssignments();
+        Save();
+        StatusText = $"Removed image from {sound.Name}";
+    }
+
     private void SetSoundHotkey(object? parameter)
     {
         var sound = ResolveSound(parameter);
@@ -1923,26 +1930,6 @@ public sealed class MainViewModel : ObservableObject
         StatusText = $"Volume set for {key.DisplayLabel}";
     }
 
-    private void ToggleKeyLoop(object? parameter)
-    {
-        var key = ResolveKey(parameter);
-        if (key is null)
-        {
-            return;
-        }
-
-        var assignment = GetAssignmentForKey(key);
-        if (assignment is null)
-        {
-            return;
-        }
-
-        assignment.Loop = !assignment.Loop;
-        Save();
-        SelectedKey = key;
-        StatusText = $"Loop {(assignment.Loop ? "enabled" : "disabled")} for {key.DisplayLabel}";
-    }
-
     private void StopKeyPlayback(object? parameter)
     {
         var key = ResolveKey(parameter);
@@ -2004,7 +1991,6 @@ public sealed class MainViewModel : ObservableObject
             HotkeyText = assignment.HotkeyText,
             IsGlobal = assignment.IsGlobal,
             VolumeOverride = assignment.VolumeOverride,
-            Loop = assignment.Loop,
             FadeOutMs = assignment.FadeOutMs,
             StopOnReplay = assignment.StopOnReplay
         };
@@ -2110,7 +2096,6 @@ public sealed class MainViewModel : ObservableObject
             || !string.IsNullOrWhiteSpace(assignment.ImagePath)
             || !string.IsNullOrWhiteSpace(assignment.BindingName)
             || Math.Abs(assignment.VolumeOverride - 1f) > float.Epsilon
-            || assignment.Loop
             || !string.IsNullOrWhiteSpace(assignment.HotkeyText)
             || assignment.ActionId is not null)
         {
@@ -2359,7 +2344,7 @@ public sealed class MainViewModel : ObservableObject
         var deviceIndex = ResolveWaveOutIndex(selectedOutput.Name);
         var testTonePath = EnsureRoutingTestTone();
 
-        _audioPlayer.Play("routing-test", testTonePath, 0.8f, false, PlaybackMode.Restart, deviceIndex);
+        _audioPlayer.Play("routing-test", testTonePath, 0.8f, PlaybackMode.Restart, deviceIndex);
         StatusText = $"Routing test playing through {selectedOutput.Name}";
         UpdateRoutingStatus();
     }
@@ -2608,6 +2593,8 @@ public sealed class MainViewModel : ObservableObject
         (RenameBindingCommand as RelayCommand)?.RaiseCanExecuteChanged();
         (ClearKeyAssignmentCommand as RelayCommand)?.RaiseCanExecuteChanged();
         (ClearSelectedSoundBindingCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (ChooseSoundImageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (RemoveSoundImageCommand as RelayCommand)?.RaiseCanExecuteChanged();
         (ToggleFavoriteCommand as RelayCommand)?.RaiseCanExecuteChanged();
         (DeleteProfileCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }

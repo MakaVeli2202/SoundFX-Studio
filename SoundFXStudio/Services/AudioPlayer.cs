@@ -15,7 +15,7 @@ public sealed class AudioPlayer : IDisposable
         _logService = logService;
     }
 
-    public void Play(string soundId, string filePath, float volume = 1f, bool loop = false, PlaybackMode playbackMode = PlaybackMode.Restart, int outputDeviceNumber = -1)
+    public void Play(string soundId, string filePath, float volume = 1f, PlaybackMode playbackMode = PlaybackMode.Restart, int outputDeviceNumber = -1)
     {
         try
         {
@@ -53,13 +53,12 @@ public sealed class AudioPlayer : IDisposable
                 Volume = Math.Clamp(volume, 0f, 1f)
             };
 
-            IWaveProvider provider = loop ? new LoopStream(reader) : reader;
             var output = new WaveOutEvent
             {
                 DeviceNumber = outputDeviceNumber
             };
 
-            output.Init(provider);
+            output.Init(reader);
 
             var session = new PlaybackSession(reader, output);
 
@@ -241,49 +240,6 @@ public sealed class AudioPlayer : IDisposable
         {
             Output.Dispose();
             Reader.Dispose();
-        }
-    }
-
-    private sealed class LoopStream : WaveStream
-    {
-        private readonly WaveStream _sourceStream;
-
-        public LoopStream(WaveStream sourceStream)
-        {
-            _sourceStream = sourceStream;
-        }
-
-        public override WaveFormat WaveFormat => _sourceStream.WaveFormat;
-
-        public override long Length => _sourceStream.Length;
-
-        public override long Position
-        {
-            get => _sourceStream.Position;
-            set => _sourceStream.Position = value;
-        }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            int totalBytesRead = 0;
-
-            while (totalBytesRead < count)
-            {
-                int bytesRead = _sourceStream.Read(buffer, offset + totalBytesRead, count - totalBytesRead);
-                if (bytesRead == 0)
-                {
-                    _sourceStream.Position = 0;
-                    bytesRead = _sourceStream.Read(buffer, offset + totalBytesRead, count - totalBytesRead);
-                    if (bytesRead == 0)
-                    {
-                        break;
-                    }
-                }
-
-                totalBytesRead += bytesRead;
-            }
-
-            return totalBytesRead;
         }
     }
 }

@@ -67,7 +67,7 @@ public class IntegrationTests
         var missingFile = @"C:\NonExistent\sound.mp3";
 
         // Act & Assert
-        player.Play("test-id", missingFile, 1f, false, PlaybackMode.Restart, -1); // Should return early, not throw
+        player.Play("test-id", missingFile, 1f, PlaybackMode.Restart, -1); // Should return early, not throw
         Assert.True(true); // If we got here, no exception was thrown
     }
 
