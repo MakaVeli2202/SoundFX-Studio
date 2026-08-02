@@ -180,7 +180,15 @@ public sealed class KeyboardLayoutPanel : Panel
     {
         foreach (UIElement child in InternalChildren)
         {
-            child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            if (child is FrameworkElement element && element.DataContext is KeyboardKey key)
+            {
+                var slot = GetKeySlotSize(key);
+                child.Measure(slot);
+            }
+            else
+            {
+                child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            }
         }
 
         var maxWidth = InternalChildren.OfType<FrameworkElement>()
@@ -246,6 +254,15 @@ public sealed class KeyboardLayoutPanel : Panel
         return new Size(
             Math.Max(BaseLayoutWidth, Math.Max(0d, maxWidth + GapX)),
             Math.Max(BaseLayoutHeight, Math.Max(0d, maxHeight + GapY)));
+    }
+
+    private static Size GetKeySlotSize(KeyboardKey key)
+    {
+        var specialOverride = GetSpecialOverride(key);
+        var keyOverride = GetPerKeyOverride(key);
+        var baseWidth = Math.Max(1d, (key.WidthUnits * KeyUnit) + specialOverride.WidthAdjustment + keyOverride.WidthAdjustment);
+        var baseHeight = Math.Max(1d, (key.HeightUnits * KeyUnit) + keyOverride.HeightAdjustment);
+        return new Size(Math.Max(1d, baseWidth * ButtonScale), Math.Max(1d, baseHeight * ButtonScale));
     }
 
     private static PerKeyOverride GetPerKeyOverride(KeyboardKey key)

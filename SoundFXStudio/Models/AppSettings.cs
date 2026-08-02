@@ -45,6 +45,7 @@ public class AppSettings : ObservableObject
     // Hotkey mode (migrated from MyBoard)
     private string _soundboardToggleKey = "Insert";
     private int _chordTimeoutMs = 1000;
+    private int _simultaneousPressTimeoutMs = 200;
     private bool _hotkeyHoldMode = true;
 
     // Mixer quick-mute hotkeys
@@ -266,6 +267,12 @@ public class AppSettings : ObservableObject
     {
         get => _chordTimeoutMs;
         set => SetProperty(ref _chordTimeoutMs, value);
+    }
+
+    public int SimultaneousPressTimeoutMs
+    {
+        get => _simultaneousPressTimeoutMs;
+        set => SetProperty(ref _simultaneousPressTimeoutMs, value);
     }
 
     public bool HotkeyHoldMode

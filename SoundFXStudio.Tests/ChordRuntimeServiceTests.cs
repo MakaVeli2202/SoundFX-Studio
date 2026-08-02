@@ -7,23 +7,26 @@ namespace SoundFXStudio.Tests;
 public class ChordRuntimeServiceTests
 {
     [Fact]
-    public async Task SingleKey_NotPartOfChord_FiresImmediatelyOnKeyDown()
+    public async Task SingleKey_NotPartOfChord_FiresOnKeyDown()
     {
         var config = BuildConfig(out var profile, out var actionA, out var _, out var _);
+        config.Settings.SimultaneousPressTimeoutMs = 50;
         profile.Assignments.Add(new KeyAssignment { KeyId = "S", ActionId = actionA.Id, HotkeyText = "S" });
 
         var executions = new List<Guid>();
         var service = CreateService(config, executions);
 
         await service.HandleKeyDownAsync("S");
+        await Task.Delay(200);
 
         Assert.Equal(new[] { actionA.Id }, executions);
     }
 
     [Fact]
-    public async Task SequentialDistinctKeys_NoChordMembership_FireOwnActionsImmediately()
+    public async Task TwoKeysHeldTogether_NoChord_FiresNothing()
     {
         var config = BuildConfig(out var profile, out var actionA, out var actionB, out var _);
+        config.Settings.SimultaneousPressTimeoutMs = 50;
         profile.Assignments.Add(new KeyAssignment { KeyId = "A", ActionId = actionA.Id, HotkeyText = "A" });
         profile.Assignments.Add(new KeyAssignment { KeyId = "D", ActionId = actionB.Id, HotkeyText = "D" });
 
@@ -32,6 +35,30 @@ public class ChordRuntimeServiceTests
 
         await service.HandleKeyDownAsync("A");
         await service.HandleKeyDownAsync("D");
+        await service.HandleKeyUpAsync("D");
+        await service.HandleKeyUpAsync("A");
+        await Task.Delay(200);
+
+        Assert.Empty(executions);
+    }
+
+    [Fact]
+    public async Task SequentialDistinctKeys_NoOverlap_FireOwnActions()
+    {
+        var config = BuildConfig(out var profile, out var actionA, out var actionB, out var _);
+        config.Settings.SimultaneousPressTimeoutMs = 50;
+        profile.Assignments.Add(new KeyAssignment { KeyId = "A", ActionId = actionA.Id, HotkeyText = "A" });
+        profile.Assignments.Add(new KeyAssignment { KeyId = "D", ActionId = actionB.Id, HotkeyText = "D" });
+
+        var executions = new List<Guid>();
+        var service = CreateService(config, executions);
+
+        await service.HandleKeyDownAsync("A");
+        await service.HandleKeyUpAsync("A");
+        await Task.Delay(200);
+        await service.HandleKeyDownAsync("D");
+        await service.HandleKeyUpAsync("D");
+        await Task.Delay(200);
 
         Assert.Equal(new[] { actionA.Id, actionB.Id }, executions);
     }
@@ -132,6 +159,7 @@ public class ChordRuntimeServiceTests
     public async Task RealConfigAssignment_WithLayoutSuffixedKeyIdAndHotkeyText_FiresOnKeyDown()
     {
         var config = BuildConfig(out var profile, out var actionA, out var _, out var _);
+        config.Settings.SimultaneousPressTimeoutMs = 50;
         profile.Assignments.Add(new KeyAssignment
         {
             KeyId = "A-3-1_75",
@@ -143,6 +171,7 @@ public class ChordRuntimeServiceTests
         var service = CreateService(config, executions);
 
         await service.HandleKeyDownAsync("A");
+        await Task.Delay(200);
 
         Assert.Equal(new[] { actionA.Id }, executions);
     }

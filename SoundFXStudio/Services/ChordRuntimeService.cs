@@ -9,9 +9,10 @@ public sealed class ChordRuntimeService : IDisposable
     private readonly Func<KeyAssignment, Task> _executeAssignmentAsync;
     private readonly Func<Guid, Task> _executeActionAsync;
     private readonly object _gate = new();
-    private readonly List<string> _sequence = new();
-    private readonly HashSet<string> _heldKeys = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _held = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _session = new(StringComparer.OrdinalIgnoreCase);
 
+    private bool _overlap;
     private CancellationTokenSource? _timeoutCts;
 
     public ChordRuntimeService(Func<AppConfig> getConfig, Func<string, KeyAssignment?> resolveAssignmentForKey, Func<KeyAssignment, Task> executeAssignmentAsync, Func<Guid, Task> executeActionAsync)
@@ -30,66 +31,47 @@ public sealed class ChordRuntimeService : IDisposable
             return;
         }
 
-        List<KeyAssignment>? fireAssignments = null;
         Guid? fireActionId = null;
 
         lock (_gate)
         {
-            if (_heldKeys.Contains(normalizedToken))
+            if (_held.Contains(normalizedToken))
             {
                 return;
             }
 
-            _heldKeys.Add(normalizedToken);
-            if (!_sequence.Contains(normalizedToken, StringComparer.OrdinalIgnoreCase))
+            _held.Add(normalizedToken);
+            _session.Add(normalizedToken);
+            if (_held.Count > 1)
             {
-                _sequence.Add(normalizedToken);
+                _overlap = true;
             }
 
             var chords = GetAvailableChords().ToList();
 
             var satisfied = chords
-                .Where(chord => chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase).IsSubsetOf(_sequence))
+                .Where(chord => chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase).IsSubsetOf(_session))
                 .OrderByDescending(chord => chord.Keys.Count)
                 .FirstOrDefault();
 
-            if (satisfied is not null && !HasLongerPendingChord(chords, satisfied.Keys.Count, _sequence))
+            if (satisfied is not null && !HasLongerPendingChord(chords, satisfied.Keys.Count, _session))
             {
                 CancelTimeout();
-                _sequence.Clear();
+                _session.Clear();
+                _overlap = false;
                 fireActionId = satisfied.ActionId;
             }
-            else if (CanCompleteChord(chords, _sequence))
+            else if (CanCompleteChord(chords, _session))
             {
-                if (_sequence.Count == 1)
-                {
-                    StartTimeout();
-                }
-                else
-                {
-                    RestartTimeout();
-                }
+                RestartTimeout(GetChordTimeoutMs());
             }
             else
             {
-                CancelTimeout();
-                var pending = _sequence.ToList();
-                _sequence.Clear();
-                fireAssignments = pending
-                    .Select(_resolveAssignmentForKey)
-                    .OfType<KeyAssignment>()
-                    .ToList();
+                RestartTimeout(GetSimultaneousTimeoutMs());
             }
         }
 
-        if (fireAssignments is { Count: > 0 })
-        {
-            foreach (var assignment in fireAssignments)
-            {
-                await _executeAssignmentAsync(assignment).ConfigureAwait(false);
-            }
-        }
-        else if (fireActionId is Guid actionId)
+        if (fireActionId is Guid actionId)
         {
             await _executeActionAsync(actionId).ConfigureAwait(false);
         }
@@ -105,7 +87,7 @@ public sealed class ChordRuntimeService : IDisposable
 
         lock (_gate)
         {
-            _heldKeys.Remove(normalizedToken);
+            _held.Remove(normalizedToken);
         }
 
         return Task.CompletedTask;
@@ -121,17 +103,17 @@ public sealed class ChordRuntimeService : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private void StartTimeout()
+    private void StartTimeout(int timeoutMs)
     {
         CancelTimeout();
         var cts = new CancellationTokenSource();
         _timeoutCts = cts;
-        _ = FirePendingOnTimeoutAsync(cts.Token);
+        _ = FirePendingOnTimeoutAsync(timeoutMs, cts.Token);
     }
 
-    private void RestartTimeout()
+    private void RestartTimeout(int timeoutMs)
     {
-        StartTimeout();
+        StartTimeout(timeoutMs);
     }
 
     private void CancelTimeout()
@@ -141,10 +123,8 @@ public sealed class ChordRuntimeService : IDisposable
         _timeoutCts = null;
     }
 
-    private async Task FirePendingOnTimeoutAsync(CancellationToken token)
+    private async Task FirePendingOnTimeoutAsync(int timeoutMs, CancellationToken token)
     {
-        var timeoutMs = GetChordTimeoutMs();
-
         try
         {
             await Task.Delay(timeoutMs, token).ConfigureAwait(false);
@@ -158,13 +138,22 @@ public sealed class ChordRuntimeService : IDisposable
 
         lock (_gate)
         {
-            if (token.IsCancellationRequested || _sequence.Count == 0)
+            if (token.IsCancellationRequested || _session.Count == 0)
             {
                 return;
             }
 
-            var pending = _sequence.ToList();
-            _sequence.Clear();
+            var overlap = _overlap;
+            var pending = _session.ToList();
+            _session.Clear();
+            _overlap = false;
+
+            if (overlap)
+            {
+                // Two or more keys were held together without a matching chord: play nothing.
+                return;
+            }
+
             fireAssignments = pending
                 .Select(_resolveAssignmentForKey)
                 .OfType<KeyAssignment>()
@@ -193,22 +182,35 @@ public sealed class ChordRuntimeService : IDisposable
         }
     }
 
-    private static bool CanCompleteChord(IEnumerable<KeyChord> chords, IReadOnlyCollection<string> sequence)
+    private int GetSimultaneousTimeoutMs()
     {
-        var sequenceSet = new HashSet<string>(sequence, StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var timeout = _getConfig().Settings.SimultaneousPressTimeoutMs;
+            return timeout > 0 ? timeout : 200;
+        }
+        catch
+        {
+            return 200;
+        }
+    }
+
+    private static bool CanCompleteChord(IEnumerable<KeyChord> chords, IReadOnlyCollection<string> session)
+    {
+        var sessionSet = new HashSet<string>(session, StringComparer.OrdinalIgnoreCase);
         return chords.Any(chord =>
         {
             var keys = chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            return sequenceSet.IsSubsetOf(keys);
+            return sessionSet.IsSubsetOf(keys);
         });
     }
 
-    private static bool HasLongerPendingChord(IEnumerable<KeyChord> chords, int satisfiedSize, IReadOnlyCollection<string> sequence)
+    private static bool HasLongerPendingChord(IEnumerable<KeyChord> chords, int satisfiedSize, IReadOnlyCollection<string> session)
     {
-        var sequenceSet = new HashSet<string>(sequence, StringComparer.OrdinalIgnoreCase);
+        var sessionSet = new HashSet<string>(session, StringComparer.OrdinalIgnoreCase);
         return chords.Any(chord =>
             chord.Keys.Count > satisfiedSize
-            && sequenceSet.IsSubsetOf(chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase)));
+            && sessionSet.IsSubsetOf(chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase)));
     }
 
     private IEnumerable<KeyChord> GetAvailableChords()
