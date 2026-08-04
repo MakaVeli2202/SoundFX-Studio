@@ -101,6 +101,26 @@ public sealed class AudioDeviceService
         return null;
     }
 
+    public MMDevice? GetCaptureDevice(string? deviceId)
+    {
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            if (!string.IsNullOrWhiteSpace(deviceId))
+            {
+                var match = enumerator.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active)
+                    .FirstOrDefault(d => string.Equals(d.ID, deviceId, StringComparison.OrdinalIgnoreCase));
+                if (match is not null) return match;
+            }
+            return enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Communications)
+                ?? enumerator.GetDefaultAudioEndpoint(DataFlow.Capture, Role.Multimedia);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public string? GetDefaultDeviceId(DataFlow flow)
     {
         try

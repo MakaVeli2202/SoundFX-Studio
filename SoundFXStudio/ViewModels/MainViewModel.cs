@@ -36,6 +36,9 @@ public sealed class MainViewModel : ObservableObject
     private readonly SoundLibraryViewModel _soundLibraryViewModel;
     private readonly KeyboardViewModel _keyboardViewModel;
     private AppConfig _config = new();
+
+    public event Action? VoiceChangerToggleRequested;
+
     private Window? _window;
     private KeyboardKey? _selectedKey;
     private string? _selectedKeyId;
@@ -63,6 +66,7 @@ public sealed class MainViewModel : ObservableObject
     private bool _isSoundboardActive = true;
     private DateTime _lastTogglePress = DateTime.MinValue;
     private string _currentPage = "Home";
+    private string _settingsSection = "General";
     private KeyboardLayoutMode _detectedKeyboardLayout = KeyboardLayoutMode.EnglishUS;
 
     public MainViewModel(ILogService? logService = null)
@@ -77,6 +81,8 @@ public sealed class MainViewModel : ObservableObject
         Categories = new ObservableCollection<Category>();
         OutputDevices = new ObservableCollection<AudioDeviceInfo>();
         InputDevices = new ObservableCollection<AudioDeviceInfo>();
+        Keybindings = new ObservableCollection<KeybindingItem>();
+        AvailableKeybindActions = new ObservableCollection<string>();
 
         _detectedKeyboardLayout = ResolveWindowsKeyboardLayout(System.Windows.Input.InputLanguageManager.Current.CurrentInputLanguage);
 
@@ -185,6 +191,7 @@ public sealed class MainViewModel : ObservableObject
         ClearSelectedSoundBindingCommand = new RelayCommand(_ => ClearSelectedSoundBinding(), _ => SelectedSound is not null);
         SetSoundHotkeyCommand = new RelayCommand(parameter => SetSoundHotkey(parameter), parameter => ResolveSound(parameter) is not null);
         Load();
+        InitializeKeybindings();
         UpdateTitle();
 
         _keyboardViewModel.RebuildKeyboard();
@@ -564,6 +571,109 @@ public sealed class MainViewModel : ObservableObject
         set => SetProperty(ref _currentPage, value);
     }
 
+    public string SettingsSection
+    {
+        get => _settingsSection;
+        set => SetProperty(ref _settingsSection, value);
+    }
+
+    public ObservableCollection<KeybindingItem> Keybindings { get; }
+
+    public ObservableCollection<string> AvailableKeybindActions { get; }
+
+    public void InitializeKeybindings()
+    {
+        Keybindings.Clear();
+
+        AddKeybindingItemIfSet(HotkeyAction.SoundboardToggle, Settings.SoundboardToggleKey);
+        AddKeybindingItemIfSet(HotkeyAction.VoiceChangerToggle, Settings.VoiceChangerToggleKey);
+        AddKeybindingItemIfSet(HotkeyAction.MuteAll, Settings.MuteAllKey);
+        AddKeybindingItemIfSet(HotkeyAction.MuteHear, Settings.MuteHearKey);
+        AddKeybindingItemIfSet(HotkeyAction.MuteTeam, Settings.MuteTeamKey);
+        AddKeybindingItemIfSet(HotkeyAction.StopAll, Settings.StopAllKey);
+
+        RefreshAvailableKeybindActions();
+    }
+
+    private void AddKeybindingItemIfSet(HotkeyAction action, string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return;
+        }
+
+        Keybindings.Add(new KeybindingItem(action, key.Trim()));
+    }
+
+    public void RefreshAvailableKeybindActions()
+    {
+        AvailableKeybindActions.Clear();
+
+        foreach (var action in new[] { HotkeyAction.MuteAll, HotkeyAction.MuteHear, HotkeyAction.MuteTeam, HotkeyAction.StopAll, HotkeyAction.SoundboardToggle, HotkeyAction.VoiceChangerToggle })
+        {
+            if (Keybindings.All(item => item.Action != action))
+            {
+                AvailableKeybindActions.Add(KeybindingItem.GetActionName(action));
+            }
+        }
+    }
+
+    public void AddKeybinding(HotkeyAction action, string key)
+    {
+        if (Keybindings.Any(item => item.Action == action))
+        {
+            return;
+        }
+
+        Keybindings.Add(new KeybindingItem(action, key.Trim()));
+        SetKeybindingSettings(action, key);
+        Save();
+        RegisterMuteHotkeys();
+        RefreshAvailableKeybindActions();
+    }
+
+    public void RemoveKeybinding(KeybindingItem item)
+    {
+        Keybindings.Remove(item);
+        SetKeybindingSettings(item.Action, string.Empty);
+        Save();
+        RegisterMuteHotkeys();
+        RefreshAvailableKeybindActions();
+    }
+
+    public void UpdateKeybindingKey(KeybindingItem item, string key)
+    {
+        item.Key = key.Trim();
+        SetKeybindingSettings(item.Action, item.Key);
+        Save();
+        RegisterMuteHotkeys();
+    }
+
+    private void SetKeybindingSettings(HotkeyAction action, string key)
+    {
+        switch (action)
+        {
+            case HotkeyAction.SoundboardToggle:
+                Settings.SoundboardToggleKey = key;
+                break;
+            case HotkeyAction.VoiceChangerToggle:
+                Settings.VoiceChangerToggleKey = key;
+                break;
+            case HotkeyAction.MuteAll:
+                Settings.MuteAllKey = key;
+                break;
+            case HotkeyAction.MuteHear:
+                Settings.MuteHearKey = key;
+                break;
+            case HotkeyAction.MuteTeam:
+                Settings.MuteTeamKey = key;
+                break;
+            case HotkeyAction.StopAll:
+                Settings.StopAllKey = key;
+                break;
+        }
+    }
+
     public AppSettings Settings => _config.Settings;
 
     internal Profile? ActiveProfile => Profiles.FirstOrDefault(item => string.Equals(item.Id, _config.ActiveProfileId, StringComparison.OrdinalIgnoreCase)) ?? Profiles.FirstOrDefault();
@@ -581,6 +691,11 @@ public sealed class MainViewModel : ObservableObject
 
     private void HandleGlobalKey(Key key, bool isKeyDown)
     {
+        if (HandleVoiceChangerToggleKey(key, isKeyDown))
+        {
+            return;
+        }
+
         if (HandleSoundboardToggleKey(key, isKeyDown))
         {
             return;
@@ -592,6 +707,23 @@ public sealed class MainViewModel : ObservableObject
         }
 
         _keyboardViewModel.HandlePhysicalKey(key, isKeyDown);
+    }
+
+    private bool HandleVoiceChangerToggleKey(Key key, bool isKeyDown)
+    {
+        var toggleKey = ParseToggleKey(Settings.VoiceChangerToggleKey);
+        if (!toggleKey.HasValue || key != toggleKey.Value)
+        {
+            return false;
+        }
+
+        if (!isKeyDown)
+        {
+            return true;
+        }
+
+        VoiceChangerToggleRequested?.Invoke();
+        return true;
     }
 
     private bool HandleSoundboardToggleKey(Key key, bool isKeyDown)
@@ -655,16 +787,17 @@ public sealed class MainViewModel : ObservableObject
         _triggerService.RegisterMuteHotkeys(Settings.MuteAllKey, Settings.MuteHearKey, Settings.MuteTeamKey, Settings.StopAllKey);
     }
 
-    public int GetVoiceChangerMicIndex()
+    public string? GetVoiceChangerMicId()
     {
         var micId = Settings.MicrophoneDeviceId;
-        if (!string.IsNullOrWhiteSpace(micId))
+        if (!string.IsNullOrWhiteSpace(micId)
+            && InputDevices.Any(d => string.Equals(d.Id, micId, StringComparison.OrdinalIgnoreCase)))
         {
-            var idx = InputDevices.ToList().FindIndex(d => string.Equals(d.Id, micId, StringComparison.OrdinalIgnoreCase));
-            if (idx >= 0) return idx;
+            return micId;
         }
-        var def = InputDevices.FirstOrDefault(d => d.IsDefaultCommunication || d.IsDefault);
-        return def is not null ? InputDevices.IndexOf(def) : (InputDevices.Count > 0 ? 0 : -1);
+        var def = InputDevices.FirstOrDefault(d => d.IsDefaultCommunication || d.IsDefault)
+            ?? InputDevices.FirstOrDefault();
+        return def?.Id;
     }
 
     private void ShowSoundboardNotification()
@@ -702,8 +835,7 @@ public sealed class MainViewModel : ObservableObject
     private static Key? ParseToggleKey(string keyName)
     {
         if (string.IsNullOrWhiteSpace(keyName)) return null;
-        if (Enum.TryParse<Key>(keyName.Trim(), ignoreCase: true, out var key)) return key;
-        return null;
+        return HotkeyService.TryParseKey(keyName, out var key) ? key : null;
     }
 
     public void HandlePreviewKeyDown(System.Windows.Input.KeyEventArgs e)
@@ -728,6 +860,15 @@ public sealed class MainViewModel : ObservableObject
                 OnToggleKeyPressed();
             }
             e.Handled = true;
+            return;
+        }
+
+        if (_triggerService.TryHandleBareMuteKey(e.Key))
+        {
+            if (!e.IsRepeat)
+            {
+                e.Handled = true;
+            }
             return;
         }
 
@@ -2285,6 +2426,7 @@ public sealed class MainViewModel : ObservableObject
     internal void Refresh()
     {
         Load();
+        InitializeKeybindings();
         _triggerService.RegisterGlobalHotkeys();
     }
 

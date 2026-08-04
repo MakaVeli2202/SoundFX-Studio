@@ -17,7 +17,7 @@
 
     <Window.Resources>
         <SolidColorBrush x:Key="Muted" Color="#7A8AAA"/>
-        <SolidColorBrush x:Key="Cyan" Color="#00D8FF"/>
+        <SolidColorBrush x:Key="Cyan" Color="#8B5CF6"/>
         <SolidColorBrush x:Key="DarkBg" Color="#0A1222"/>
         <SolidColorBrush x:Key="CardBg" Color="#0F1A2E"/>
         <SolidColorBrush x:Key="CardBorder" Color="#253A5A"/>
@@ -136,8 +136,8 @@
     <Border Background="{StaticResource DarkBg}" CornerRadius="24" ClipToBounds="True" BorderThickness="2">
         <Border.BorderBrush>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="#00D8FF" Offset="0"/>
-                <GradientStop Color="#FF44CC" Offset="1"/>
+                <GradientStop Color="#8B5CF6" Offset="0"/>
+                <GradientStop Color="#7C3AED" Offset="1"/>
             </LinearGradientBrush>
         </Border.BorderBrush>
 

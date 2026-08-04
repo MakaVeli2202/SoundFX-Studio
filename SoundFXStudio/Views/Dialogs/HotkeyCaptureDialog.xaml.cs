@@ -1,35 +1,77 @@
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace SoundFXStudio.Views.Dialogs;
 
-public partial class HotkeyCaptureDialog : Window, INotifyPropertyChanged
+public partial class HotkeyCaptureDialog : Window
 {
-    private bool _isRecording;
     private bool _hasCapturedShortcut;
-    private string _capturedHotkey = string.Empty;
 
     public HotkeyCaptureDialog(string? initialHotkey = null)
     {
         InitializeComponent();
-        DataContext = this;
-        CapturedHotkey = string.IsNullOrWhiteSpace(initialHotkey) ? "Press Record" : initialHotkey.Trim().ToUpperInvariant();
+        _hasCapturedShortcut = !string.IsNullOrWhiteSpace(initialHotkey);
+        if (_hasCapturedShortcut)
+        {
+            UpdateDisplay(initialHotkey!.Trim().ToUpperInvariant());
+            SaveButton.IsEnabled = true;
+            ClearButton.IsEnabled = true;
+            InstructionText.Text = "Shortcut loaded. Press a key to change it, or Save to confirm.";
+        }
+
+        Loaded += (_, _) =>
+        {
+            Keyboard.Focus(this);
+            StartListeningAnimation();
+        };
     }
 
-    public string CapturedHotkey
+    public string CapturedHotkey { get; private set; } = string.Empty;
+
+    private void StartListeningAnimation()
     {
-        get => _capturedHotkey;
-        private set => SetProperty(ref _capturedHotkey, value);
+        var pulse = new DoubleAnimation
+        {
+            From = 0.3,
+            To = 1.0,
+            Duration = new Duration(TimeSpan.FromMilliseconds(800)),
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever
+        };
+        KeyDisplayBorder.BeginAnimation(OpacityProperty, pulse);
     }
 
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    private void Window_Loaded(object sender, RoutedEventArgs e)
+    private void StopListeningAnimation()
     {
-        RecordButton.Focus();
-        Keyboard.Focus(RecordButton);
+        KeyDisplayBorder.BeginAnimation(OpacityProperty, null);
+        KeyDisplayBorder.Opacity = 1.0;
+    }
+
+    private void UpdateDisplay(string hotkey)
+    {
+        var parts = hotkey.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var modifiers = parts.Where(part => part is "CTRL" or "SHIFT" or "ALT" or "WIN").ToList();
+        var keyParts = parts.Where(part => part is not ("CTRL" or "SHIFT" or "ALT" or "WIN")).ToList();
+
+        ModifierText.Text = modifiers.Count > 0 ? string.Join(" + ", modifiers) : string.Empty;
+        CapturedKeyText.Text = keyParts.Count > 0 ? string.Join(" + ", keyParts) : hotkey;
+        CapturedHotkey = hotkey;
+        _hasCapturedShortcut = true;
+        SaveButton.IsEnabled = true;
+        ClearButton.IsEnabled = true;
+        StopListeningAnimation();
+        InstructionText.Text = "Press Save to confirm, or Clear to reset.";
+
+        var flash = new ColorAnimation
+        {
+            To = Color.FromRgb(0x00, 0xD8, 0xFF),
+            Duration = new Duration(TimeSpan.FromMilliseconds(300)),
+            AutoReverse = true
+        };
+        KeyDisplayBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x33, 0x70, 0xAF));
+        KeyDisplayBorder.BorderBrush.BeginAnimation(SolidColorBrush.ColorProperty, flash);
     }
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -41,24 +83,29 @@ public partial class HotkeyCaptureDialog : Window, INotifyPropertyChanged
         DragMove();
     }
 
-    private void RecordButton_Click(object sender, RoutedEventArgs e)
+    private void SaveButton_Click(object sender, RoutedEventArgs e)
     {
-        _isRecording = true;
-        _hasCapturedShortcut = false;
-        DoneButton.IsEnabled = false;
-        CapturedHotkey = "Listening...";
-        Keyboard.Focus(RecordButton);
-    }
-
-    private void DoneButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (!_hasCapturedShortcut || string.IsNullOrWhiteSpace(CapturedHotkey) || string.Equals(CapturedHotkey, "Listening...", StringComparison.OrdinalIgnoreCase))
+        if (!_hasCapturedShortcut || string.IsNullOrWhiteSpace(CapturedHotkey))
         {
             return;
         }
 
         DialogResult = true;
         Close();
+    }
+
+    private void ClearButton_Click(object sender, RoutedEventArgs e)
+    {
+        ModifierText.Text = string.Empty;
+        CapturedKeyText.Text = "Listening...";
+        ChordHintText.Text = string.Empty;
+        CapturedHotkey = string.Empty;
+        _hasCapturedShortcut = false;
+        SaveButton.IsEnabled = false;
+        ClearButton.IsEnabled = false;
+        InstructionText.Text = "Press a key combination to assign...";
+        KeyDisplayBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x33, 0x70, 0xAF));
+        StartListeningAnimation();
     }
 
     private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -83,13 +130,8 @@ public partial class HotkeyCaptureDialog : Window, INotifyPropertyChanged
 
         if (_hasCapturedShortcut && e.Key == Key.Return)
         {
-            DoneButton_Click(sender, new RoutedEventArgs());
+            SaveButton_Click(sender, new RoutedEventArgs());
             e.Handled = true;
-            return;
-        }
-
-        if (!_isRecording)
-        {
             return;
         }
 
@@ -191,20 +233,7 @@ public partial class HotkeyCaptureDialog : Window, INotifyPropertyChanged
         };
 
         parts.Add(keyText);
-        CapturedHotkey = string.Join("+", parts);
-        _hasCapturedShortcut = true;
-        _isRecording = false;
-        DoneButton.IsEnabled = true;
-        DoneButton.Focus();
+        UpdateDisplay(string.Join("+", parts));
         e.Handled = true;
-    }
-
-    private void SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
-    {
-        if (!Equals(field, value))
-        {
-            field = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
     }
 }

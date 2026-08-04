@@ -155,14 +155,24 @@ public class ConfigService
         config.Actions ??= new();
         config.Combos ??= new();
         config.KeyChords ??= new();
-        config.Playlists ??= new();
-        config.Macros ??= new();
-        config.RoutingPresets ??= new();
         config.Profiles ??= new();
         config.Categories ??= new();
         config.Settings ??= new AppSettings();
         config.Settings.KeyboardCalibration ??= new KeyboardCalibrationSettings();
         config.Settings.KeyboardCalibration.KeyOverrides ??= new Dictionary<string, KeyCalibrationOverrideSettings>();
+
+        if (string.IsNullOrWhiteSpace(config.Settings.VoiceChangerPresetId))
+        {
+            config.Settings.VoiceChangerPresetId = "normal";
+            migrated = true;
+        }
+
+        if (Math.Abs(config.Settings.FormantShift) < 0.01f)
+        {
+            config.Settings.FormantShift = 1f;
+            migrated = true;
+        }
+
         migrated |= MigrateLegacyKeyboardCalibration(config.Settings.KeyboardCalibration, config.Settings.KeyboardLayout);
         if (config.Settings.KeyboardCalibration.KeyboardWindowScale < 0.5)
         {

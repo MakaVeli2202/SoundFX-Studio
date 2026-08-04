@@ -16,7 +16,7 @@
     </WindowChrome.WindowChrome>
 
     <Border Background="#070E18"
-            BorderBrush="#5580CFFF" BorderThickness="1"
+            BorderBrush="#558B5CF6" BorderThickness="1"
             CornerRadius="16">
         <Grid>
             <Grid.RowDefinitions>
@@ -60,24 +60,24 @@
                 <TextBlock Text="This plays back the EXACT mix your mic sends to Discord (VoiceMeeter B1) — your voice + all your soundboard/app audio — through your speakers or headphones."
                            Foreground="#C7CEEA" FontSize="12.5" TextWrapping="Wrap" LineHeight="20"/>
 
-                <Border Background="#1400D8FF" CornerRadius="8" Padding="10,8" Margin="0,12,0,0">
+                <Border Background="#148B5CF6" CornerRadius="8" Padding="10,8" Margin="0,12,0,0">
                     <TextBlock Text="Tip: use headphones so your mic doesn't pick the monitor up and create an echo."
                                Foreground="#8891B8" FontSize="11" TextWrapping="Wrap"/>
                 </Border>
 
                 <TextBlock Text="What to hear" Foreground="#8891B8" FontSize="11" FontWeight="Bold" Margin="0,18,0,6"/>
                 <ComboBox x:Name="ModeCombo" Height="34"
-                          Background="#44111A2E" BorderBrush="#5580CFFF"
+                          Background="#44111A2E" BorderBrush="#558B5CF6"
                           Foreground="White" FontSize="12"
                           SelectionChanged="ModeCombo_SelectionChanged"/>
 
                 <TextBlock Text="Monitor from (mic mix — VoiceMeeter B1)" Foreground="#8891B8" FontSize="11" FontWeight="Bold" Margin="0,14,0,4"/>
                 <ComboBox x:Name="CaptureCombo" Height="32" DisplayMemberPath="Name"
-                          Background="#44111A2E" BorderBrush="#5580CFFF" Foreground="White" FontSize="12"/>
+                          Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White" FontSize="12"/>
 
                 <TextBlock Text="Play through" Foreground="#8891B8" FontSize="11" FontWeight="Bold" Margin="0,12,0,4"/>
                 <ComboBox x:Name="PlaybackCombo" Height="32" DisplayMemberPath="Name"
-                          Background="#44111A2E" BorderBrush="#5580CFFF" Foreground="White" FontSize="12"/>
+                          Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White" FontSize="12"/>
 
                 <TextBlock Text="Volume" Foreground="#8891B8" FontSize="11" FontWeight="Bold" Margin="0,14,0,4"/>
                 <Slider x:Name="VolumeSlider" Minimum="0" Maximum="1" Value="0.8"
@@ -112,8 +112,8 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="#442A4580"/>
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#00D8FF"/>
+                                            <Setter TargetName="Bd" Property="Background" Value="#442A2A66"/>
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#8B5CF6"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -125,13 +125,13 @@
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="Bd" CornerRadius="10"
-                                            Background="#222A4580" BorderBrush="#5580CFFF" BorderThickness="1">
+                                            Background="#222A2A66" BorderBrush="#558B5CF6" BorderThickness="1">
                                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="#442A4580"/>
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#00D8FF"/>
+                                            <Setter TargetName="Bd" Property="Background" Value="#442A2A66"/>
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#8B5CF6"/>
                                         </Trigger>
                                         <Trigger Property="IsEnabled" Value="False">
                                             <Setter TargetName="Bd" Property="Background" Value="#11222233"/>

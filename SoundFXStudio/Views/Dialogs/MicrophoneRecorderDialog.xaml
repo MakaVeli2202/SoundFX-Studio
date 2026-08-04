@@ -14,8 +14,8 @@
     <Border Background="#081428" CornerRadius="28" ClipToBounds="True">
         <Border.BorderBrush>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="#00D8FF" Offset="0"/>
-                <GradientStop Color="#FF44CC" Offset="1"/>
+                <GradientStop Color="#8B5CF6" Offset="0"/>
+                <GradientStop Color="#7C3AED" Offset="1"/>
             </LinearGradientBrush>
         </Border.BorderBrush>
         <Border.BorderThickness>2</Border.BorderThickness>
@@ -27,32 +27,32 @@
                 <RowDefinition Height="60"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" CornerRadius="24" Background="#66081428" BorderBrush="#5580CFFF" BorderThickness="1">
+            <Border Grid.Row="0" CornerRadius="24" Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                         <Image Source="/Assets/UI/MainDashboardLogo.png" Height="40" Stretch="Uniform"/>
                         <StackPanel Margin="12,0,0,0">
-                            <TextBlock Text="SOUNDFX STUDIO" Foreground="#00D8FF" FontWeight="Bold"/>
+                            <TextBlock Text="SOUNDFX STUDIO" Foreground="#8B5CF6" FontWeight="Bold"/>
                             <TextBlock Text="Record Audio" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
                         </StackPanel>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <Border Grid.Row="1" CornerRadius="24" Background="#66081428" BorderBrush="#5580CFFF" BorderThickness="1" Margin="0,12,0,12">
+            <Border Grid.Row="1" CornerRadius="24" Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1" Margin="0,12,0,12">
                 <StackPanel Margin="20" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <Border x:Name="StatusCircle" Width="80" Height="80" CornerRadius="40"
-                            Background="#1A2A4580" BorderBrush="#5580CFFF" BorderThickness="2"
+                            Background="#1A2A2A66" BorderBrush="#558B5CF6" BorderThickness="2"
                             HorizontalAlignment="Center" Margin="0,0,0,16">
                         <TextBlock x:Name="StatusIcon" Text="&#x1F3A4;" FontSize="36"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <TextBlock x:Name="StatusText" Text="Ready to record" FontSize="16" Foreground="#A1B2D2"
                                HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                    <TextBlock x:Name="TimerText" Text="00:00" FontSize="28" FontWeight="Bold" Foreground="#00D8FF"
+                    <TextBlock x:Name="TimerText" Text="00:00" FontSize="28" FontWeight="Bold" Foreground="#8B5CF6"
                                HorizontalAlignment="Center"/>
                     <TextBox x:Name="NameBox" Text="Mic Recording" Width="260"
-                             Background="#22000000" BorderBrush="#3370AFFF" BorderThickness="1" Foreground="White"
+                             Background="#22000000" BorderBrush="#338B5CF6" BorderThickness="1" Foreground="White"
                              Padding="6,4" FontSize="13" HorizontalAlignment="Center" Margin="0,12,0,0"
                              Visibility="Collapsed"/>
                 </StackPanel>
@@ -66,7 +66,7 @@
                             <Setter Property="Height" Value="36"/>
                             <Setter Property="Foreground" Value="White"/>
                             <Setter Property="Background" Value="#22112233"/>
-                            <Setter Property="BorderBrush" Value="#3370AFFF"/>
+                            <Setter Property="BorderBrush" Value="#338B5CF6"/>
                             <Setter Property="BorderThickness" Value="1"/>
                             <Setter Property="Cursor" Value="Hand"/>
                             <Setter Property="Template">
@@ -80,8 +80,8 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#00D8FF"/>
-                                                <Setter TargetName="Bd" Property="Background" Value="#2200D8FF"/>
+                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#8B5CF6"/>
+                                                <Setter TargetName="Bd" Property="Background" Value="#228B5CF6"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -94,8 +94,8 @@
                         Visibility="Collapsed" Click="SaveButton_Click">
                     <Button.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#00D8FF" Offset="0"/>
-                            <GradientStop Color="#FF44CC" Offset="1"/>
+                            <GradientStop Color="#8B5CF6" Offset="0"/>
+                            <GradientStop Color="#7C3AED" Offset="1"/>
                         </LinearGradientBrush>
                     </Button.Background>
                     <Button.Style>
@@ -129,7 +129,7 @@
                             <Setter Property="Height" Value="36"/>
                             <Setter Property="Foreground" Value="White"/>
                             <Setter Property="Background" Value="#22112233"/>
-                            <Setter Property="BorderBrush" Value="#3370AFFF"/>
+                            <Setter Property="BorderBrush" Value="#338B5CF6"/>
                             <Setter Property="BorderThickness" Value="1"/>
                             <Setter Property="Cursor" Value="Hand"/>
                             <Setter Property="Template">
@@ -143,8 +143,8 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#00D8FF"/>
-                                                <Setter TargetName="Bd" Property="Background" Value="#2200D8FF"/>
+                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#8B5CF6"/>
+                                                <Setter TargetName="Bd" Property="Background" Value="#228B5CF6"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>

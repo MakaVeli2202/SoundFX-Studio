@@ -1,5 +1,6 @@
 ﻿using SoundFXStudio.Models;
 using SoundFXStudio.Services;
+using SoundFXStudio.Services.DSP;
 using SoundFXStudio.ViewModels;
 using SoundFXStudio.Views;
 using SoundFXStudio.Views.Dialogs;
@@ -20,6 +21,7 @@ public partial class MainWindow : Window
     private KeyboardCalibrationWindow? _keyboardCalibrationWindow;
     private KeyboardWindow? _keyboardWindow;
     private VoiceChangerService? _voiceChanger;
+    private bool _loadingVoiceChangerUi;
 
     public MainWindow(ILogService? logService = null)
     {
@@ -35,50 +37,153 @@ public partial class MainWindow : Window
 
     private void SetupVoiceChangerAndMuteHotkeys()
     {
-        VoiceChangerToggleBtn.Click += (_, _) =>
-        {
-            if (_voiceChanger is { IsRunning: true })
-            {
-                _voiceChanger.Stop();
-                _voiceChanger.Dispose();
-                _voiceChanger = null;
-                VoiceChangerToggleBtn.Content = "Start Voice Changer";
-                VoiceChangerStatus.Text = "Stopped";
-                VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xE8, 0x55, 0x55));
-                return;
-            }
-
-            var micIdx = ViewModel.GetVoiceChangerMicIndex();
-            if (micIdx < 0)
-            {
-                ViewModel.StatusText = "No input device available for voice changer.";
-                return;
-            }
-
-            var pitch = ViewModel.Settings.PitchShift;
-            _voiceChanger = new VoiceChangerService();
-            _voiceChanger.Start(micIdx, micIdx, pitch);
-            VoiceChangerToggleBtn.Content = "Stop Voice Changer";
-            VoiceChangerStatus.Text = "Running";
-            VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
-            ViewModel.StatusText = "Voice changer started";
-        };
-
-        ActivationKeyBox.LostFocus += (_, _) => { ViewModel.Save(); };
-        MuteAllKeyBox.LostFocus += (_, _) => { ViewModel.Save(); ViewModel.RegisterMuteHotkeys(); };
-        MuteHearKeyBox.LostFocus += (_, _) => { ViewModel.Save(); ViewModel.RegisterMuteHotkeys(); };
-        MuteTeamKeyBox.LostFocus += (_, _) => { ViewModel.Save(); ViewModel.RegisterMuteHotkeys(); };
-        StopAllKeyBox.LostFocus += (_, _) => { ViewModel.Save(); ViewModel.RegisterMuteHotkeys(); };
+        VoiceChangerToggleBtn.Click += (_, _) => ToggleVoiceChanger();
 
         ShowWizardOnStartupCheck.Checked += (_, _) => ViewModel.Save();
         ShowWizardOnStartupCheck.Unchecked += (_, _) => ViewModel.Save();
         StartMinimizedCheck.Checked += (_, _) => ViewModel.Save();
         StartMinimizedCheck.Unchecked += (_, _) => ViewModel.Save();
+
+        SetupVoiceChangerPresets();
     }
 
-    private void CaptureMuteKey(string propertyName, Action<string> setter, string current)
+    private void ToggleVoiceChanger()
     {
-        var dialog = new HotkeyCaptureDialog(current)
+        if (_voiceChanger is { IsRunning: true })
+        {
+            _voiceChanger.Stop();
+            _voiceChanger.Dispose();
+            _voiceChanger = null;
+            VoiceChangerToggleBtn.Content = "Start Voice Changer";
+            VoiceChangerStatus.Text = "Stopped";
+            VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+
+        var micId = ViewModel.GetVoiceChangerMicId();
+        if (string.IsNullOrWhiteSpace(micId))
+        {
+            ViewModel.StatusText = "No input device available for voice changer.";
+            return;
+        }
+
+        var pitch = ViewModel.Settings.PitchShift;
+        var outIdx = GetVoiceChangerOutputIndex();
+        _voiceChanger = new VoiceChangerService();
+        PresetManager.Apply(PresetManager.GetById(ViewModel.Settings.VoiceChangerPresetId), _voiceChanger);
+        _voiceChanger.SetFormant(ViewModel.Settings.FormantShift);
+        _voiceChanger.Start(micId, outIdx, pitch);
+        VoiceChangerToggleBtn.Content = "Stop Voice Changer";
+        VoiceChangerStatus.Text = "Running";
+        VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
+        ViewModel.StatusText = outIdx > 0
+            ? "Voice changer started -> VoiceMeeter Input"
+            : "Voice changer started (default output)";
+    }
+
+    private static int GetVoiceChangerOutputIndex()
+    {
+        for (int i = 0; i < WaveOut.DeviceCount; i++)
+        {
+            var name = WaveOut.GetCapabilities(i).ProductName;
+            if (name.Contains("Voicemeeter", StringComparison.OrdinalIgnoreCase)
+                && name.Contains("Input", StringComparison.OrdinalIgnoreCase)
+                && !name.Contains("Aux", StringComparison.OrdinalIgnoreCase)
+                && !name.Contains("Virtual", StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    private void SetupVoiceChangerPresets()
+    {
+        var settings = ViewModel.Settings;
+
+        _loadingVoiceChangerUi = true;
+
+        VoiceChangerPresetCombo.ItemsSource = PresetManager.Presets;
+        VoiceChangerPresetCombo.DisplayMemberPath = nameof(VoiceChangerPreset.Name);
+        VoiceChangerPresetCombo.SelectedItem = PresetManager.GetById(settings.VoiceChangerPresetId);
+
+        FormantSlider.Value = Math.Clamp(settings.FormantShift, 0.5, 2.0);
+        FormantValueText.Text = $"{FormantSlider.Value:F2}x";
+
+        _loadingVoiceChangerUi = false;
+
+        VoiceChangerPresetCombo.SelectionChanged += (_, _) =>
+        {
+            if (_loadingVoiceChangerUi || VoiceChangerPresetCombo.SelectedItem is not VoiceChangerPreset preset)
+            {
+                return;
+            }
+
+            settings.VoiceChangerPresetId = preset.Id;
+            PitchSlider.Value = preset.PitchSemitones;
+            FormantSlider.Value = preset.FormantShift;
+            if (_voiceChanger is { IsRunning: true })
+            {
+                PresetManager.Apply(preset, _voiceChanger);
+            }
+            ViewModel.Save();
+        };
+
+        FormantSlider.ValueChanged += (_, _) =>
+        {
+            if (_loadingVoiceChangerUi)
+            {
+                return;
+            }
+
+            var val = Math.Round(FormantSlider.Value / 0.05) * 0.05;
+            if (Math.Abs(FormantSlider.Value - val) > 0.001) FormantSlider.Value = val;
+            FormantValueText.Text = $"{val:F2}x";
+            settings.FormantShift = (float)val;
+            _voiceChanger?.SetFormant((float)val);
+            ViewModel.Save();
+        };
+    }
+
+    private void SettingsSectionButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: string section })
+        {
+            ViewModel.SettingsSection = section;
+        }
+    }
+
+    private void AddBindingButton_Click(object sender, RoutedEventArgs e)
+    {
+        AddBindingPanel.Visibility = Visibility.Visible;
+        if (ViewModel.AvailableKeybindActions.Count > 0)
+        {
+            AddBindingActionCombo.SelectedIndex = 0;
+        }
+        AddBindingActionCombo.Focus();
+    }
+
+    private void AddBindingCancelButton_Click(object sender, RoutedEventArgs e)
+    {
+        AddBindingPanel.Visibility = Visibility.Collapsed;
+    }
+
+    private void AddBindingRecordButton_Click(object sender, RoutedEventArgs e)
+    {
+        var actionName = AddBindingActionCombo.SelectedItem as string;
+        if (string.IsNullOrWhiteSpace(actionName))
+        {
+            ViewModel.StatusText = "Select an action first.";
+            return;
+        }
+
+        var action = KeybindingItem.ParseAction(actionName);
+        if (action is null)
+        {
+            return;
+        }
+
+        var dialog = new HotkeyCaptureDialog
         {
             Owner = this
         };
@@ -88,23 +193,46 @@ public partial class MainWindow : Window
             return;
         }
 
-        setter(dialog.CapturedHotkey);
-        ViewModel.Save();
-        ViewModel.RegisterMuteHotkeys();
-        ViewModel.StatusText = $"{propertyName} key set to {dialog.CapturedHotkey}";
+        ViewModel.AddKeybinding(action.Value, dialog.CapturedHotkey);
+        AddBindingPanel.Visibility = Visibility.Collapsed;
+        ViewModel.StatusText = $"{actionName} bound to {dialog.CapturedHotkey}";
     }
 
-    private void CaptureMuteAllButton_Click(object sender, RoutedEventArgs e)
-        => CaptureMuteKey("All", value => ViewModel.Settings.MuteAllKey = value, ViewModel.Settings.MuteAllKey);
+    private void KeybindingChangeButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: KeybindingItem item })
+        {
+            var dialog = new HotkeyCaptureDialog(item.Key)
+            {
+                Owner = this
+            };
 
-    private void CaptureMuteHearButton_Click(object sender, RoutedEventArgs e)
-        => CaptureMuteKey("Hear", value => ViewModel.Settings.MuteHearKey = value, ViewModel.Settings.MuteHearKey);
+            if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.CapturedHotkey))
+            {
+                return;
+            }
 
-    private void CaptureMuteTeamButton_Click(object sender, RoutedEventArgs e)
-        => CaptureMuteKey("Team", value => ViewModel.Settings.MuteTeamKey = value, ViewModel.Settings.MuteTeamKey);
+            ViewModel.UpdateKeybindingKey(item, dialog.CapturedHotkey);
+            ViewModel.StatusText = $"{item.ActionName} key changed to {dialog.CapturedHotkey}";
+        }
+    }
 
-    private void CaptureStopAllButton_Click(object sender, RoutedEventArgs e)
-        => CaptureMuteKey("Stop All", value => ViewModel.Settings.StopAllKey = value, ViewModel.Settings.StopAllKey);
+    private void KeybindingDeleteButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: KeybindingItem item })
+        {
+            ViewModel.RemoveKeybinding(item);
+            ViewModel.StatusText = $"{item.ActionName} keybinding removed.";
+        }
+    }
+
+    private void UpdateNoKeybindingsVisibility()
+    {
+        if (NoKeybindingsText is not null)
+        {
+            NoKeybindingsText.Visibility = ViewModel.Keybindings.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -195,6 +323,9 @@ public partial class MainWindow : Window
         ViewModel.AttachWindow(this);
         PopulateAudioCombos();
         SetupVoiceChangerAndMuteHotkeys();
+        ViewModel.VoiceChangerToggleRequested += () => Dispatcher.Invoke(ToggleVoiceChanger);
+        ViewModel.Keybindings.CollectionChanged += (_, _) => UpdateNoKeybindingsVisibility();
+        UpdateNoKeybindingsVisibility();
     }
 
     private void PopulateAudioCombos()
@@ -212,10 +343,10 @@ public partial class MainWindow : Window
         SpeakersComboBox.SelectedItem ??= outputs.FirstOrDefault();
         MicrophoneComboBox.SelectedItem ??= inputs.FirstOrDefault();
 
-        ActivationModeCombo.SelectedIndex = settings.HotkeyHoldMode ? 0 : 1;
-        ActivationModeCombo.SelectionChanged += (_, _) =>
+        KeybindHoldModeCombo.SelectedIndex = settings.HotkeyHoldMode ? 0 : 1;
+        KeybindHoldModeCombo.SelectionChanged += (_, _) =>
         {
-            settings.HotkeyHoldMode = ActivationModeCombo.SelectedIndex == 0;
+            settings.HotkeyHoldMode = KeybindHoldModeCombo.SelectedIndex == 0;
             ViewModel.Save();
         };
 
@@ -405,18 +536,6 @@ public partial class MainWindow : Window
         ViewModel.AddSoundFromDetails(details);
     }
 
-    private void MainWindow_OpenSoundSettings(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo("control", "mmsys.cpl,,1") { UseShellExecute = true });
-        }
-        catch
-        {
-            ViewModel.StatusText = "Could not open Windows Sound settings.";
-        }
-    }
-
     private void OpenCalibrationButton_Click(object sender, RoutedEventArgs e)
     {
         if (_keyboardCalibrationWindow is { IsLoaded: true })
@@ -492,18 +611,6 @@ public partial class MainWindow : Window
     private void RerunWizard_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.OpenSetupWizard(this);
-    }
-
-    private void OpenAppVolumeButton_Click(object sender, RoutedEventArgs e)
-    {
-        try { Process.Start(new ProcessStartInfo("ms-settings:apps-volume") { UseShellExecute = true }); }
-        catch { try { Process.Start(new ProcessStartInfo("sndvol.exe") { UseShellExecute = true }); } catch { } }
-    }
-
-    private void OpenSound_Click(object sender, RoutedEventArgs e)
-    {
-        try { Process.Start(new ProcessStartInfo("control", "mmsys.cpl") { UseShellExecute = true }); }
-        catch { }
     }
 
 }

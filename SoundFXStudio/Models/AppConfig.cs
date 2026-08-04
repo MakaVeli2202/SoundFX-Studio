@@ -15,12 +15,6 @@ public class AppConfig : ObservableObject
 
     public ObservableCollection<KeyChord> KeyChords { get; set; } = new();
 
-    public ObservableCollection<PlaylistDefinition> Playlists { get; set; } = new();
-
-    public ObservableCollection<MacroDefinition> Macros { get; set; } = new();
-
-    public ObservableCollection<AudioRoutingPreset> RoutingPresets { get; set; } = new();
-
     public ObservableCollection<Profile> Profiles { get; set; } = new();
 
     public ObservableCollection<Category> Categories { get; set; } = new();

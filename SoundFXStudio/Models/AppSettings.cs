@@ -34,6 +34,8 @@ public class AppSettings : ObservableObject
     private int _micDeviceIndex = -1;
     private string _micDeviceName = string.Empty;
     private float _pitchShift;
+    private float _formantShift = 1f;
+    private string _voiceChangerPresetId = "normal";
     private bool _voicePassthroughAutoStart;
     private bool _gamingAudioActive;
     private string _savedConsoleMicId = string.Empty;
@@ -53,6 +55,7 @@ public class AppSettings : ObservableObject
     private string _muteHearKey = string.Empty;
     private string _muteTeamKey = string.Empty;
     private string _stopAllKey = string.Empty;
+    private string _voiceChangerToggleKey = string.Empty;
     private bool _showAllStrips;
 
     public string InputDeviceId
@@ -213,6 +216,18 @@ public class AppSettings : ObservableObject
         set => SetProperty(ref _pitchShift, value);
     }
 
+    public float FormantShift
+    {
+        get => _formantShift;
+        set => SetProperty(ref _formantShift, value);
+    }
+
+    public string VoiceChangerPresetId
+    {
+        get => _voiceChangerPresetId;
+        set => SetProperty(ref _voiceChangerPresetId, string.IsNullOrWhiteSpace(value) ? "normal" : value);
+    }
+
     public bool VoicePassthroughAutoStart
     {
         get => _voicePassthroughAutoStart;
@@ -305,6 +320,12 @@ public class AppSettings : ObservableObject
     {
         get => _stopAllKey;
         set => SetProperty(ref _stopAllKey, value);
+    }
+
+    public string VoiceChangerToggleKey
+    {
+        get => _voiceChangerToggleKey;
+        set => SetProperty(ref _voiceChangerToggleKey, value);
     }
 
     public bool ShowAllStrips

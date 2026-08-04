@@ -85,7 +85,7 @@
                                 <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
                                 <Setter TargetName="GlowLayer" Property="Effect">
                                     <Setter.Value>
-                                        <effects:DropShadowEffect Color="#FF4D8D" BlurRadius="10" ShadowDepth="0" Opacity="0.7" />
+                                        <effects:DropShadowEffect Color="#A78BFA" BlurRadius="10" ShadowDepth="0" Opacity="0.7" />
                                     </Setter.Value>
                                 </Setter>
                             </DataTrigger>
@@ -97,7 +97,7 @@
                                 <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
                                 <Setter TargetName="GlowLayer" Property="Margin" Value="0" />
                                 <Setter TargetName="GlowLayer" Property="CornerRadius" Value="10" />
-                                <Setter TargetName="GlowLayer" Property="BorderBrush" Value="#FF4D8D" />
+                                <Setter TargetName="GlowLayer" Property="BorderBrush" Value="#A78BFA" />
                                 <Setter TargetName="GlowLayer" Property="BorderThickness" Value="2" />
                                 <Setter TargetName="GlowLayer" Property="Effect" Value="{x:Null}" />
                             </MultiDataTrigger>
@@ -204,7 +204,7 @@
                                                             <Condition Binding="{Binding IsSelected}" Value="True"/>
                                                             <Condition Binding="{Binding CalibrationSelectionHighlight, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True"/>
                                                         </MultiDataTrigger.Conditions>
-                                                        <Setter Property="BorderBrush" Value="#FF4D8D"/>
+                                                        <Setter Property="BorderBrush" Value="#A78BFA"/>
                                                         <Setter Property="BorderThickness" Value="2"/>
                                                     </MultiDataTrigger>
                                                 </Style.Triggers>

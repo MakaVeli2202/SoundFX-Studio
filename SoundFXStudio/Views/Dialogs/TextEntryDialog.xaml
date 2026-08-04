@@ -29,7 +29,7 @@
                     Value="#66081428"/>
 
             <Setter Property="BorderBrush"
-                    Value="#5580CFFF"/>
+                    Value="#558B5CF6"/>
 
             <Setter Property="BorderThickness"
                     Value="1"/>
@@ -46,7 +46,7 @@
                     Value="#22112233"/>
 
             <Setter Property="BorderBrush"
-                    Value="#3370AFFF"/>
+                    Value="#338B5CF6"/>
 
             <Setter Property="BorderThickness"
                     Value="1"/>
@@ -81,11 +81,11 @@
 
                                 <Setter TargetName="ButtonBorder"
                                         Property="BorderBrush"
-                                        Value="#00D8FF"/>
+                                        Value="#8B5CF6"/>
 
                                 <Setter TargetName="ButtonBorder"
                                         Property="Background"
-                                        Value="#2200D8FF"/>
+                                        Value="#228B5CF6"/>
 
                             </Trigger>
 
@@ -94,7 +94,7 @@
 
                                 <Setter TargetName="ButtonBorder"
                                         Property="Background"
-                                        Value="#33FF44CC"/>
+                                        Value="#338B5CF6"/>
 
                             </Trigger>
 
@@ -119,10 +119,10 @@
             <LinearGradientBrush StartPoint="0,0"
                                  EndPoint="1,0">
 
-                <GradientStop Color="#00D8FF"
+                <GradientStop Color="#8B5CF6"
                               Offset="0"/>
 
-                <GradientStop Color="#FF44CC"
+                <GradientStop Color="#7C3AED"
                               Offset="1"/>
 
             </LinearGradientBrush>
@@ -169,7 +169,7 @@
                         <StackPanel Margin="14,0,0,0">
 
                             <TextBlock Text="SOUNDFX STUDIO"
-                                       Foreground="#00D8FF"
+                                       Foreground="#8B5CF6"
                                        FontWeight="Bold"/>
 
                             <TextBlock Text="{Binding DialogTitle}"
@@ -187,7 +187,7 @@
                             Margin="0,10,10,10"
                             Content="&#x2715;"
                             Background="#55203030"
-                            BorderBrush="#FF5A7A"
+                            BorderBrush="#8B5CF6"
                             Foreground="White"
                             Click="CloseButton_Click"/>
 
@@ -214,7 +214,7 @@
                              VerticalContentAlignment="Center"
                              Padding="10,0"
                              Background="#22112233"
-                             BorderBrush="#3370AFFF"
+                             BorderBrush="#338B5CF6"
                              BorderThickness="1"
                              Foreground="{StaticResource TextBrush}"/>
 
@@ -252,9 +252,9 @@
                         <LinearGradientBrush StartPoint="0,0"
                                              EndPoint="1,0">
 
-                            <GradientStop Color="#00D8FF"/>
+                            <GradientStop Color="#8B5CF6"/>
 
-                            <GradientStop Color="#FF44CC"/>
+                            <GradientStop Color="#7C3AED"/>
 
                         </LinearGradientBrush>
 

@@ -12,7 +12,6 @@
   <ItemGroup>
     <None Remove="Assets\UI\HeroSection.png" />
     <None Remove="Assets\UI\MainDashboardLogo.png" />
-    <None Remove="Assets\UI\MainWindowBackground.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,7 +30,6 @@
     <Resource Include="Assets\UI\MainDashboardLogo.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Assets\UI\MainWindowBackground.png" />
   </ItemGroup>
 
   <ItemGroup>

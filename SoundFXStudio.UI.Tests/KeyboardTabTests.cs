@@ -13,12 +13,10 @@ public class KeyboardTabTests
     private void NavigateToKeyboardTab()
     {
         var win = _app.GetMainWindow();
-        var tab = win.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
-        Assert.NotNull(tab);
-        var kbTab = tab.FindFirstDescendant(cf =>
-            cf.ByControlType(ControlType.TabItem).And(cf.ByName("Keyboard")));
-        Assert.NotNull(kbTab);
-        kbTab.Click();
+        var homeButton = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByName("Home")));
+        Assert.NotNull(homeButton);
+        homeButton.Click();
         Thread.Sleep(500);
     }
 

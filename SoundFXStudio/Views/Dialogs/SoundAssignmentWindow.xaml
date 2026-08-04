@@ -18,14 +18,14 @@
         <Style x:Key="GlassPanel" TargetType="Border">
             <Setter Property="CornerRadius" Value="24"/>
             <Setter Property="Background" Value="#66081428"/>
-            <Setter Property="BorderBrush" Value="#5580CFFF"/>
+            <Setter Property="BorderBrush" Value="#558B5CF6"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <Style x:Key="CyberButton" TargetType="Button">
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Background" Value="#22112233"/>
-            <Setter Property="BorderBrush" Value="#3370AFFF"/>
+            <Setter Property="BorderBrush" Value="#338B5CF6"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Height" Value="40"/>
@@ -40,11 +40,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#00D8FF"/>
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#2200D8FF"/>
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#8B5CF6"/>
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#228B5CF6"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#33FF44CC"/>
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#338B5CF6"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -56,8 +56,8 @@
     <Border Background="#081428" CornerRadius="28" ClipToBounds="True">
         <Border.BorderBrush>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="#00D8FF" Offset="0"/>
-                <GradientStop Color="#FF44CC" Offset="1"/>
+                <GradientStop Color="#8B5CF6" Offset="0"/>
+                <GradientStop Color="#7C3AED" Offset="1"/>
             </LinearGradientBrush>
         </Border.BorderBrush>
         <Border.BorderThickness>2</Border.BorderThickness>
@@ -80,13 +80,13 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                         <Image Source="/Assets/UI/MainDashboardLogo.png" Height="50" Stretch="Uniform"/>
                         <StackPanel Margin="14,0,0,0">
-                            <TextBlock Text="SOUNDFX STUDIO" Foreground="#00D8FF" FontWeight="Bold"/>
+                            <TextBlock Text="SOUNDFX STUDIO" Foreground="#8B5CF6" FontWeight="Bold"/>
                             <TextBlock Text="Sound Details" FontSize="22" FontWeight="SemiBold" Foreground="White"/>
                         </StackPanel>
                     </StackPanel>
 
                     <Button Grid.Column="1" Width="40" Height="40" Margin="0,10,10,10"
-                            Content="&#x2715;" Background="#55203030" BorderBrush="#FF5A7A"
+                            Content="&#x2715;" Background="#55203030" BorderBrush="#8B5CF6"
                             Foreground="White" Click="CloseButton_Click"/>
                 </Grid>
             </Border>
@@ -105,7 +105,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="FilePathBox" IsReadOnly="True" Text="{Binding FilePath, Mode=OneWay}"
-                                     Height="36" Padding="10,6" Background="#22112233" BorderBrush="#3370AFFF"
+                                     Height="36" Padding="10,6" Background="#22112233" BorderBrush="#338B5CF6"
                                      BorderThickness="1" Foreground="{StaticResource TextBrush}" Margin="0,0,10,0"/>
                             <Button Grid.Column="1" Content="Browse" Width="100" Height="36"
                                     Click="BrowseButton_Click" Style="{StaticResource CyberButton}"/>
@@ -118,7 +118,7 @@
                                 <TextBlock Text="(label on keyboard button)" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="8,2,0,0"/>
                             </StackPanel>
                             <TextBox x:Name="NameBox" Text="{Binding Name}" Height="36" Padding="10,6"
-                                     Background="#22112233" BorderBrush="#3370AFFF" BorderThickness="1"
+                                     Background="#22112233" BorderBrush="#338B5CF6" BorderThickness="1"
                                      Foreground="{StaticResource TextBrush}"/>
                         </StackPanel>
 
@@ -133,7 +133,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="ChordKeyBox" IsReadOnly="True"
                                          Text="{Binding ChordKeyDisplay, Mode=OneWay}" Height="36" Padding="10,6"
-                                         Background="#22112233" BorderBrush="#3370AFFF" BorderThickness="1"
+                                         Background="#22112233" BorderBrush="#338B5CF6" BorderThickness="1"
                                          Foreground="{StaticResource TextBrush}" Margin="0,0,10,0"/>
                                 <Button Grid.Column="1" Content="Capture" Width="100" Height="36"
                                         Click="CaptureChordKey_Click" Style="{StaticResource CyberButton}"/>
@@ -149,7 +149,7 @@
                                     <ColumnDefinition Width="50"/>
                                 </Grid.ColumnDefinitions>
                                 <Slider Minimum="0" Maximum="100" Value="{Binding VolumePercent}"
-                                        Margin="0,0,10,0" VerticalAlignment="Center" Foreground="#00D8FF"/>
+                                        Margin="0,0,10,0" VerticalAlignment="Center" Foreground="#8B5CF6"/>
                                 <TextBlock Grid.Column="1" Text="{Binding VolumePercent, StringFormat='0%'}"
                                            Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" TextAlignment="Right"/>
                             </Grid>
@@ -172,7 +172,7 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <Border Background="#0A0F18" CornerRadius="8" Height="96" BorderBrush="#3370AFFF"
+                                    <Border Background="#0A0F18" CornerRadius="8" Height="96" BorderBrush="#338B5CF6"
                                             BorderThickness="1" ClipToBounds="True">
                                         <Grid>
                                             <Image Source="{Binding ImagePath, Mode=OneWay}" Stretch="Uniform"/>
@@ -197,7 +197,7 @@
 
                                     <StackPanel Grid.Column="1" Margin="12,0,0,0">
                                         <TextBox x:Name="ImagePathBox" IsReadOnly="True" Text="{Binding ImagePath, Mode=OneWay}"
-                                                 Height="34" Padding="10,6" Background="#22112233" BorderBrush="#3370AFFF"
+                                                 Height="34" Padding="10,6" Background="#22112233" BorderBrush="#338B5CF6"
                                                  BorderThickness="1" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8"/>
                                         <StackPanel Orientation="Horizontal">
                                             <Button Content="Choose" Width="90" Height="34"
@@ -222,8 +222,8 @@
                         Click="SaveButton_Click">
                     <Button.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#00D8FF"/>
-                            <GradientStop Color="#FF44CC"/>
+                            <GradientStop Color="#8B5CF6"/>
+                            <GradientStop Color="#7C3AED"/>
                         </LinearGradientBrush>
                     </Button.Background>
                 </Button>

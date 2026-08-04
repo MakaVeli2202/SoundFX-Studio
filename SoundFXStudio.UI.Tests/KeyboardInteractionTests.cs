@@ -13,13 +13,17 @@ public class KeyboardInteractionTests
     private void NavigateToKeyboardTab()
     {
         var win = _app.GetMainWindow();
+        var homeButton = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByName("Home")));
+        Assert.NotNull(homeButton);
+        homeButton.Click();
+        Thread.Sleep(500);
+
         var openBtn = win.FindFirstDescendant(cf =>
             cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("OpenKeyboardButton")))
             ?? win.FindFirstDescendant(cf =>
                 cf.ByControlType(ControlType.Button).And(cf.ByName("Open Keyboard")));
         Assert.NotNull(openBtn);
-        openBtn.Click();
-        Thread.Sleep(500);
     }
 
     private void OpenFloatingKeyboard()
@@ -66,18 +70,6 @@ public class KeyboardInteractionTests
             ?? win.FindFirstDescendant(cf =>
                 cf.ByControlType(ControlType.Button).And(cf.ByName("Open Keyboard")));
         Assert.NotNull(openBtn);
-    }
-
-    [Fact]
-    public void KeyboardTab_HasDescriptionText()
-    {
-        NavigateToKeyboardTab();
-        var win = _app.GetMainWindow();
-        var texts = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Text));
-        var desc = texts.FirstOrDefault(t =>
-            t.Name.Contains("Floating", StringComparison.OrdinalIgnoreCase)
-            || t.Name.Contains("Keyboard", StringComparison.OrdinalIgnoreCase));
-        Assert.NotNull(desc);
     }
 
     [Fact]

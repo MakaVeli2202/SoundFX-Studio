@@ -13,12 +13,10 @@ public class SettingsLayoutTests
     private void NavigateToSettings()
     {
         var win = _app.GetMainWindow();
-        var tab = win.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
-        Assert.NotNull(tab);
-        var settingsTab = tab.FindFirstDescendant(cf =>
-            cf.ByControlType(ControlType.TabItem).And(cf.ByName("Settings")));
-        Assert.NotNull(settingsTab);
-        settingsTab.Click();
+        var settingsButton = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByName("Settings")));
+        Assert.NotNull(settingsButton);
+        settingsButton.Click();
         Thread.Sleep(500);
     }
 
@@ -35,6 +33,7 @@ public class SettingsLayoutTests
     public void Settings_HasGeneralSection()
     {
         NavigateToSettings();
+        NavigateToGeneralSection();
         var win = _app.GetMainWindow();
         var general = win.FindFirstDescendant(cf =>
             cf.ByControlType(ControlType.Text).And(cf.ByAutomationId("SettingsGeneralHeader")))
@@ -54,10 +53,27 @@ public class SettingsLayoutTests
         Assert.NotNull(audio);
     }
 
+    private void NavigateToSettingsSection(string automationId)
+    {
+        var win = _app.GetMainWindow();
+        var sectionButton = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId(automationId)));
+        Assert.NotNull(sectionButton);
+        sectionButton.Click();
+        Thread.Sleep(500);
+    }
+
+    private void NavigateToAudioSection() => NavigateToSettingsSection("SettingsSectionAudioButton");
+
+    private void NavigateToGeneralSection() => NavigateToSettingsSection("SettingsSectionGeneralButton");
+
+    private void NavigateToKeybindsSection() => NavigateToSettingsSection("SettingsSectionKeybindsButton");
+
     [Fact]
     public void Settings_HasOutputDeviceComboBox()
     {
         NavigateToSettings();
+        NavigateToAudioSection();
         var win = _app.GetMainWindow();
         var combos = win.FindAllDescendants(cf => cf.ByControlType(ControlType.ComboBox));
         Assert.True(combos.Length >= 2, "Settings should have output + input device combos");
@@ -67,6 +83,7 @@ public class SettingsLayoutTests
     public void Settings_HasCheckBoxes()
     {
         NavigateToSettings();
+        NavigateToGeneralSection();
         var win = _app.GetMainWindow();
         var checkboxes = win.FindAllDescendants(cf => cf.ByControlType(ControlType.CheckBox));
         Assert.True(checkboxes.Length > 0, "Settings should have toggle checkboxes");
@@ -76,6 +93,7 @@ public class SettingsLayoutTests
     public void Settings_HasKeyboardShortcutsSection()
     {
         NavigateToSettings();
+        NavigateToKeybindsSection();
         var win = _app.GetMainWindow();
         var texts = win.FindAllDescendants(cf => cf.ByControlType(ControlType.Text));
         var shortcuts = texts.FirstOrDefault(t =>
@@ -88,9 +106,21 @@ public class SettingsLayoutTests
     public void Settings_HasSetupWizardButton()
     {
         NavigateToSettings();
+        NavigateToAudioSection();
         var win = _app.GetMainWindow();
         var wizardBtn = win.FindFirstDescendant(cf =>
             cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("SettingsOpenAudioSetupWizardButton")));
         Assert.NotNull(wizardBtn);
+    }
+
+    [Fact]
+    public void Settings_HasAddBindingButton()
+    {
+        NavigateToSettings();
+        NavigateToKeybindsSection();
+        var win = _app.GetMainWindow();
+        var addBtn = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId("SettingsAddBindingButton")));
+        Assert.NotNull(addBtn);
     }
 }

@@ -175,6 +175,25 @@ public sealed class TriggerService : IDisposable
         RegisterGlobalHotkeys();
     }
 
+    public bool TryHandleBareMuteKey(Key key)
+    {
+        if (!_bareMuteKeys.TryGetValue(key, out var muteAction))
+        {
+            return false;
+        }
+
+        switch (muteAction)
+        {
+            case HkMuteAll: App.ToggleMuteAll(); break;
+            case HkMuteHear: App.ToggleMuteHear(); break;
+            case HkMuteTeam: App.ToggleMuteTeam(); break;
+            case HkStopAll:
+                (System.Windows.Application.Current.MainWindow?.DataContext as ViewModels.MainViewModel)?.StopAllSounds();
+                break;
+        }
+        return true;
+    }
+
     public void RegisterGlobalHotkeys()
     {
         ThrowIfDisposed();
@@ -248,8 +267,7 @@ public sealed class TriggerService : IDisposable
         key = Key.None;
         if (string.IsNullOrWhiteSpace(hotkeyText)) return false;
         if (hotkeyText.Contains('+')) return false;
-        if (Enum.TryParse<Key>(hotkeyText.Trim(), ignoreCase: true, out key)) return true;
-        return false;
+        return HotkeyService.TryParseKey(hotkeyText, out key);
     }
 
     private void RegisterMuteBareKey(string actionId, string? hotkeyText, Key parsedKey)

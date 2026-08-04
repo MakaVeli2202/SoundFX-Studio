@@ -13,19 +13,32 @@ public class SettingsTabTests
     private void NavigateToSettings()
     {
         var win = _app.GetMainWindow();
-        var tab = win.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
-        Assert.NotNull(tab);
-        var settingsTab = tab.FindFirstDescendant(cf =>
-            cf.ByControlType(ControlType.TabItem).And(cf.ByName("Settings")));
-        Assert.NotNull(settingsTab);
-        settingsTab.Click();
+        var settingsButton = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByName("Settings")));
+        Assert.NotNull(settingsButton);
+        settingsButton.Click();
         Thread.Sleep(500);
     }
+
+    private void NavigateToSettingsSection(string automationId)
+    {
+        var win = _app.GetMainWindow();
+        var sectionButton = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByAutomationId(automationId)));
+        Assert.NotNull(sectionButton);
+        sectionButton.Click();
+        Thread.Sleep(500);
+    }
+
+    private void NavigateToAudioSection() => NavigateToSettingsSection("SettingsSectionAudioButton");
+
+    private void NavigateToGeneralSection() => NavigateToSettingsSection("SettingsSectionGeneralButton");
 
     [Fact]
     public void SettingsTab_HasGeneralSection()
     {
         NavigateToSettings();
+        NavigateToGeneralSection();
         var win = _app.GetMainWindow();
         var general = win.FindFirstDescendant(cf =>
             cf.ByControlType(ControlType.Text).And(cf.ByAutomationId("SettingsGeneralHeader")))
@@ -49,6 +62,7 @@ public class SettingsTabTests
     public void SettingsTab_HasDeviceComboBoxes()
     {
         NavigateToSettings();
+        NavigateToAudioSection();
         var win = _app.GetMainWindow();
         var combos = win.FindAllDescendants(cf => cf.ByControlType(ControlType.ComboBox));
         Assert.True(combos.Length >= 2, "Settings should have at least output + input device combos");

@@ -13,12 +13,10 @@ public class LibraryTabTests
     private void NavigateToLibrary()
     {
         var win = _app.GetMainWindow();
-        var tab = win.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
-        Assert.NotNull(tab);
-        var libraryTab = tab.FindFirstDescendant(cf =>
-            cf.ByControlType(ControlType.TabItem).And(cf.ByName("Library")));
-        Assert.NotNull(libraryTab);
-        libraryTab.Click();
+        var libraryButton = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByName("Sound Library")));
+        Assert.NotNull(libraryButton);
+        libraryButton.Click();
         Thread.Sleep(500);
     }
 

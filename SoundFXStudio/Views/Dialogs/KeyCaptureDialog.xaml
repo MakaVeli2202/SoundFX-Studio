@@ -15,8 +15,8 @@
     <Border Background="#081428" CornerRadius="28" ClipToBounds="True" BorderThickness="2">
         <Border.BorderBrush>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="#00D8FF" Offset="0"/>
-                <GradientStop Color="#FF44CC" Offset="1"/>
+                <GradientStop Color="#8B5CF6" Offset="0"/>
+                <GradientStop Color="#7C3AED" Offset="1"/>
             </LinearGradientBrush>
         </Border.BorderBrush>
 
@@ -27,31 +27,31 @@
                 <RowDefinition Height="60"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" CornerRadius="24" Background="#66081428" BorderBrush="#5580CFFF" BorderThickness="1">
+            <Border Grid.Row="0" CornerRadius="24" Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                         <Image Source="/Assets/UI/MainDashboardLogo.png" Height="40" Stretch="Uniform"/>
                         <StackPanel Margin="12,0,0,0">
-                            <TextBlock Text="SOUNDFX STUDIO" Foreground="#00D8FF" FontWeight="Bold"/>
+                            <TextBlock Text="SOUNDFX STUDIO" Foreground="#8B5CF6" FontWeight="Bold"/>
                             <TextBlock Text="Assign to Key" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
                         </StackPanel>
                     </StackPanel>
                     <Button x:Name="CloseButton" Width="36" Height="36" Content="&#x2715;"
-                            Background="#55203030" BorderBrush="#FF5A7A" Foreground="White"
+                            Background="#55203030" BorderBrush="#8B5CF6" Foreground="White"
                             HorizontalAlignment="Right" Margin="0,8,8,8"
                             Click="CancelButton_Click"/>
                 </Grid>
             </Border>
 
-            <Border Grid.Row="1" CornerRadius="24" Background="#66081428" BorderBrush="#5580CFFF" BorderThickness="1" Margin="0,12,0,12">
+            <Border Grid.Row="1" CornerRadius="24" Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1" Margin="0,12,0,12">
                 <StackPanel Margin="20" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock x:Name="InstructionText" Text="Press a key to assign..." FontSize="14" Foreground="#A1B2D2"
                                HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                    <Border x:Name="KeyDisplayBorder" Background="#22000000" BorderBrush="#3370AFFF" BorderThickness="1" CornerRadius="14" Padding="28,16" MinHeight="96" VerticalAlignment="Center">
+                    <Border x:Name="KeyDisplayBorder" Background="#22000000" BorderBrush="#338B5CF6" BorderThickness="1" CornerRadius="14" Padding="28,16" MinHeight="96" VerticalAlignment="Center">
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock x:Name="ModifierText" Text="" FontSize="15" Foreground="#FF44CC"
+                            <TextBlock x:Name="ModifierText" Text="" FontSize="15" Foreground="#7C3AED"
                                        HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                            <TextBlock x:Name="CapturedKeyText" Text="-" FontSize="34" FontWeight="Bold" Foreground="#00D8FF"
+                            <TextBlock x:Name="CapturedKeyText" Text="-" FontSize="34" FontWeight="Bold" Foreground="#8B5CF6"
                                        HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="330"/>
                         </StackPanel>
                     </Border>
@@ -65,8 +65,8 @@
                         IsEnabled="False" Click="SaveButton_Click">
                     <Button.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#00D8FF" Offset="0"/>
-                            <GradientStop Color="#FF44CC" Offset="1"/>
+                            <GradientStop Color="#8B5CF6" Offset="0"/>
+                            <GradientStop Color="#7C3AED" Offset="1"/>
                         </LinearGradientBrush>
                     </Button.Background>
                     <Button.Style>
@@ -103,7 +103,7 @@
                             <Setter Property="Height" Value="36"/>
                             <Setter Property="Foreground" Value="#DDEAFF"/>
                             <Setter Property="Background" Value="#22112233"/>
-                            <Setter Property="BorderBrush" Value="#5580CFFF"/>
+                            <Setter Property="BorderBrush" Value="#558B5CF6"/>
                             <Setter Property="BorderThickness" Value="1"/>
                             <Setter Property="Cursor" Value="Hand"/>
                             <Setter Property="Template">
@@ -117,8 +117,8 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#00D8FF"/>
-                                                <Setter TargetName="Bd" Property="Background" Value="#2200D8FF"/>
+                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#8B5CF6"/>
+                                                <Setter TargetName="Bd" Property="Background" Value="#228B5CF6"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -133,7 +133,7 @@
                             <Setter Property="Height" Value="36"/>
                             <Setter Property="Foreground" Value="#DDEAFF"/>
                             <Setter Property="Background" Value="#22112233"/>
-                            <Setter Property="BorderBrush" Value="#5580CFFF"/>
+                            <Setter Property="BorderBrush" Value="#558B5CF6"/>
                             <Setter Property="BorderThickness" Value="1"/>
                             <Setter Property="Cursor" Value="Hand"/>
                             <Setter Property="Template">
@@ -147,8 +147,8 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#00D8FF"/>
-                                                <Setter TargetName="Bd" Property="Background" Value="#2200D8FF"/>
+                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#8B5CF6"/>
+                                                <Setter TargetName="Bd" Property="Background" Value="#228B5CF6"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>

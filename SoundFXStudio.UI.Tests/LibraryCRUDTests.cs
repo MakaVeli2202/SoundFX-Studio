@@ -13,12 +13,10 @@ public class LibraryCRUDTests
     private void NavigateToLibrary()
     {
         var win = _app.GetMainWindow();
-        var tab = win.FindFirstDescendant(cf => cf.ByControlType(ControlType.Tab));
-        Assert.NotNull(tab);
-        var libraryTab = tab.FindFirstDescendant(cf =>
-            cf.ByControlType(ControlType.TabItem).And(cf.ByName("Library")));
-        Assert.NotNull(libraryTab);
-        libraryTab.Click();
+        var libraryButton = win.FindFirstDescendant(cf =>
+            cf.ByControlType(ControlType.Button).And(cf.ByName("Sound Library")));
+        Assert.NotNull(libraryButton);
+        libraryButton.Click();
         Thread.Sleep(500);
     }
 
@@ -69,24 +67,6 @@ public class LibraryCRUDTests
         var deleteBtn = buttons.FirstOrDefault(b =>
             b.Name.Contains("Delete", StringComparison.OrdinalIgnoreCase));
         Assert.NotNull(deleteBtn);
-    }
-
-    [Fact]
-    public void Library_HasCategoryFilter()
-    {
-        NavigateToLibrary();
-        var win = _app.GetMainWindow();
-        var combos = win.FindAllDescendants(cf => cf.ByControlType(ControlType.ComboBox));
-        Assert.True(combos.Length > 0, "Library should have category filter combo");
-    }
-
-    [Fact]
-    public void Library_HasFavoritesCheckbox()
-    {
-        NavigateToLibrary();
-        var win = _app.GetMainWindow();
-        var checkboxes = win.FindAllDescendants(cf => cf.ByControlType(ControlType.CheckBox));
-        Assert.True(checkboxes.Length > 0, "Library should have favorites checkbox");
     }
 
     [Fact]

@@ -141,7 +141,7 @@ public sealed class HotkeyService : IDisposable
         return key != Key.None;
     }
 
-    private static bool TryParseKey(string input, out Key key)
+    public static bool TryParseKey(string input, out Key key)
     {
         key = Key.None;
         var normalized = input.Trim().ToUpperInvariant();
@@ -158,29 +158,56 @@ public sealed class HotkeyService : IDisposable
                 }, ignoreCase: true);
                 return true;
             }
+
+            key = ch switch
+            {
+                '`' => Key.OemTilde,
+                '-' => Key.OemMinus,
+                '=' => Key.OemPlus,
+                '[' => Key.OemOpenBrackets,
+                ']' => Key.Oem6,
+                '\\' => Key.Oem5,
+                ';' => Key.Oem1,
+                '\'' => Key.Oem7,
+                ',' => Key.OemComma,
+                '.' => Key.OemPeriod,
+                '/' => Key.OemQuestion,
+                '+' => Key.Add,
+                '*' => Key.Multiply,
+                _ => Key.None
+            };
+            return key != Key.None;
         }
 
-        return Enum.TryParse(normalized, true, out key)
-               || normalized switch
-               {
-                   "NUMPAD1" => TrySetKey(Key.NumPad1, out key),
-                   "NUMPAD2" => TrySetKey(Key.NumPad2, out key),
-                   "NUMPAD3" => TrySetKey(Key.NumPad3, out key),
-                   "NUMPAD4" => TrySetKey(Key.NumPad4, out key),
-                   "NUMPAD5" => TrySetKey(Key.NumPad5, out key),
-                   "NUMPAD6" => TrySetKey(Key.NumPad6, out key),
-                   "NUMPAD7" => TrySetKey(Key.NumPad7, out key),
-                   "NUMPAD8" => TrySetKey(Key.NumPad8, out key),
-                   "NUMPAD9" => TrySetKey(Key.NumPad9, out key),
-                   "NUMPAD0" => TrySetKey(Key.NumPad0, out key),
-                   _ => false
-               };
-    }
+        switch (normalized)
+        {
+            case "NUMPAD1": key = Key.NumPad1; return true;
+            case "NUMPAD2": key = Key.NumPad2; return true;
+            case "NUMPAD3": key = Key.NumPad3; return true;
+            case "NUMPAD4": key = Key.NumPad4; return true;
+            case "NUMPAD5": key = Key.NumPad5; return true;
+            case "NUMPAD6": key = Key.NumPad6; return true;
+            case "NUMPAD7": key = Key.NumPad7; return true;
+            case "NUMPAD8": key = Key.NumPad8; return true;
+            case "NUMPAD9": key = Key.NumPad9; return true;
+            case "NUMPAD0": key = Key.NumPad0; return true;
+            case "BACKSPACE": key = Key.Back; return true;
+            case "ESC": key = Key.Escape; return true;
+            case "ENTER": key = Key.Return; return true;
+            case "CAPS LOCK": key = Key.CapsLock; return true;
+            case "PRINT SCREEN": key = Key.PrintScreen; return true;
+            case "SCROLL LOCK": key = Key.Scroll; return true;
+            case "NUM LOCK": key = Key.NumLock; return true;
+            case "PAGE UP": key = Key.PageUp; return true;
+            case "PAGE DOWN": key = Key.PageDown; return true;
+            case "MENU": key = Key.Apps; return true;
+            case "PAUSE": key = Key.Pause; return true;
+            case "SPACE": key = Key.Space; return true;
+            case "TAB": key = Key.Tab; return true;
+            case "OEM102": key = Key.Oem102; return true;
+        }
 
-    private static bool TrySetKey(Key value, out Key key)
-    {
-        key = value;
-        return true;
+        return Enum.TryParse(normalized, true, out key);
     }
 
     private static string Normalize(string hotkeyText) => string.Join("+", hotkeyText.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(part => part.Trim().ToUpperInvariant()));

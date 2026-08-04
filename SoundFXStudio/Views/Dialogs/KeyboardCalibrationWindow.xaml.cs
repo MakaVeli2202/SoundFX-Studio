@@ -25,7 +25,6 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private readonly ObservableCollection<KeyCalibrationItem> _keyItems = new();
 
     private bool _suppressUpdates;
-    private bool _suppressJsonSync;
 
     private double _previewKeyUnit = 43;
     private double _previewGapX = 3;
@@ -440,11 +439,7 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
         ApplyPerKeyOverrides();
         RefreshPreview();
-
-        if (!_suppressJsonSync)
-        {
-            RefreshPerKeyOverridesJsonFromItems();
-        }
+        RefreshPerKeyOverridesJsonFromItems();
 
         PersistCalibrationLive();
     }
@@ -763,99 +758,6 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         }
 
         item.Reset();
-    }
-
-    private void ApplyPerKeyJson_Click(object sender, RoutedEventArgs e)
-    {
-        if (!TryParsePerKeyOverridesJson(out var parsed, out var error))
-        {
-            JsonEditorStatus = error;
-            return;
-        }
-
-        _suppressUpdates = true;
-        _suppressJsonSync = true;
-        try
-        {
-            foreach (var item in _keyItems)
-            {
-                item.Reset();
-            }
-
-            foreach (var entry in parsed)
-            {
-                var item = _keyItems.FirstOrDefault(i => string.Equals(i.KeyId, entry.Key, StringComparison.OrdinalIgnoreCase));
-                if (item is null)
-                {
-                    continue;
-                }
-
-                var value = entry.Value;
-                item.OffsetX = value.OffsetX;
-                item.OffsetY = value.OffsetY;
-                item.WidthAdjustment = value.WidthAdjustment;
-                item.HeightAdjustment = value.HeightAdjustment;
-                item.InnerInsetAdjustmentPercent = value.InnerInsetAdjustmentPercent;
-                item.InnerInsetXAdjustmentPercent = value.InnerInsetXAdjustmentPercent;
-                item.InnerInsetYAdjustmentPercent = value.InnerInsetYAdjustmentPercent;
-                item.InnerOffsetXAdjustmentPercent = value.InnerOffsetXAdjustmentPercent;
-                item.InnerOffsetYAdjustmentPercent = value.InnerOffsetYAdjustmentPercent;
-            }
-        }
-        finally
-        {
-            _suppressJsonSync = false;
-            _suppressUpdates = false;
-        }
-
-        ApplyAllCalibration();
-        RefreshPreview();
-        RefreshPerKeyOverridesJsonFromItems();
-        JsonEditorStatus = "Applied";
-    }
-
-    private void RevertPerKeyJson_Click(object sender, RoutedEventArgs e)
-    {
-        RefreshPerKeyOverridesJsonFromItems();
-        JsonEditorStatus = "Reverted";
-    }
-
-    private bool TryParsePerKeyOverridesJson(out Dictionary<string, KeyCalibrationOverrideSettings> parsed, out string error)
-    {
-        parsed = new Dictionary<string, KeyCalibrationOverrideSettings>(StringComparer.OrdinalIgnoreCase);
-        error = string.Empty;
-
-        var text = PerKeyOverridesJson?.Trim();
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return true;
-        }
-
-        try
-        {
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var result = JsonSerializer.Deserialize<Dictionary<string, KeyCalibrationOverrideSettings>>(text, options)
-                         ?? new Dictionary<string, KeyCalibrationOverrideSettings>(StringComparer.OrdinalIgnoreCase);
-
-            var keySet = _keyItems.Select(item => item.KeyId).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            foreach (var entry in result)
-            {
-                if (!keySet.Contains(entry.Key))
-                {
-                    error = $"Unknown key id: {entry.Key}";
-                    return false;
-                }
-
-                parsed[entry.Key] = entry.Value ?? new KeyCalibrationOverrideSettings();
-            }
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            error = $"Invalid JSON: {ex.Message}";
-            return false;
-        }
     }
 
     private void RefreshPerKeyOverridesJsonFromItems()

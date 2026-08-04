@@ -17,12 +17,6 @@ public class Profile : ObservableObject
 
     public ObservableCollection<KeyChord> KeyChords { get; set; } = new();
 
-    public ObservableCollection<PlaylistDefinition> Playlists { get; set; } = new();
-
-    public ObservableCollection<MacroDefinition> Macros { get; set; } = new();
-
-    public ObservableCollection<AudioRoutingPreset> RoutingPresets { get; set; } = new();
-
     public string Id
     {
         get => _id;

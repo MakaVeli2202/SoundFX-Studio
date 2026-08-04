@@ -106,47 +106,4 @@ public sealed class VoicemeeterService
             return false;
         }
     }
-
-    /// <summary>
-    /// Gets the Voicemeeter installation path from registry
-    /// </summary>
-    public static string? GetVoicemeeterInstallPath()
-    {
-        try
-        {
-            using var key = Registry.LocalMachine.OpenSubKey(@"Software\VB-Audio\Voicemeeter", false);
-            var path = key?.GetValue("InstallPath") as string;
-            if (!string.IsNullOrEmpty(path))
-                return path;
-
-            // Try Voicemeeter Potato
-            using var keyPotato = Registry.LocalMachine.OpenSubKey(@"Software\VB-Audio\VoicemeeterPotato", false);
-            var potatoPath = keyPotato?.GetValue("InstallPath") as string;
-            if (!string.IsNullOrEmpty(potatoPath))
-                return potatoPath;
-
-            // Fallback to common paths
-            var commonPaths = new[]
-            {
-                @"C:\Program Files (x86)\VB\Voicemeeter",
-                @"C:\Program Files\VB\Voicemeeter",
-                @"C:\Program Files (x86)\VB-Audio\Voicemeeter",
-                @"C:\Program Files\VB-Audio\Voicemeeter",
-                @"C:\Program Files (x86)\VB-Audio\VoicemeeterPotato",
-                @"C:\Program Files\VB-Audio\VoicemeeterPotato",
-            };
-
-            foreach (var commonPath in commonPaths)
-            {
-                if (System.IO.Directory.Exists(commonPath))
-                    return commonPath;
-            }
-        }
-        catch
-        {
-            // Ignore exceptions
-        }
-
-        return null;
-    }
 }
