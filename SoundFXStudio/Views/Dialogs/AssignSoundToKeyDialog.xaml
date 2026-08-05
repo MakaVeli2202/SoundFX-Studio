@@ -182,7 +182,6 @@
                     </StackPanel>
 
                     <Button Grid.Column="1"
-                            Width="40"
                             Height="40"
                             Margin="0,10,10,10"
                             Content="&#x2715;"
@@ -320,13 +319,11 @@
                         VerticalAlignment="Center">
 
                 <Button Content="Cancel"
-                        Width="120"
                         Margin="0,0,10,0"
                         Style="{StaticResource GlassButton}"
                         Click="CancelButton_Click"/>
 
                 <Button Content="Assign"
-                        Width="140"
                         FontWeight="Bold"
                         Foreground="#081428"
                         Click="AssignButton_Click">

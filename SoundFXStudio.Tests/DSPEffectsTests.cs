@@ -65,7 +65,7 @@ public class DSPEffectsTests
 
         var echoRegion = data.AsSpan(500, 12000);
         Assert.True(MaxAbs(echoRegion) > 1e-3, "reverb produced no tail");
-        Assert.False(data.Any(float.IsNaN));
+        Assert.DoesNotContain(float.NaN, data);
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class DSPEffectsTests
         chorus.Process(data);
 
         var tail = data.AsSpan(24000);
-        Assert.False(data.Any(float.IsNaN));
+        Assert.DoesNotContain(float.NaN, data);
         Assert.True(MeanAbs(tail) > 0.05, "chorus produced no output");
         Assert.True(MaxAbs(tail) <= 0.6, $"chorus too loud, max={MaxAbs(tail)}");
     }

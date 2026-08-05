@@ -180,6 +180,28 @@ public class ConfigService
             migrated = true;
         }
 
+        var calibration = config.Settings.KeyboardCalibration;
+        if (calibration.OpenKeyboardButtonWidth < 100 || calibration.OpenKeyboardButtonWidth > 600)
+        {
+            calibration.OpenKeyboardButtonWidth = 275;
+            migrated = true;
+        }
+        if (calibration.OpenKeyboardButtonHeight < 20 || calibration.OpenKeyboardButtonHeight > 200)
+        {
+            calibration.OpenKeyboardButtonHeight = 54;
+            migrated = true;
+        }
+        if (calibration.OpenKeyboardButtonX < 0 || calibration.OpenKeyboardButtonX > 1500)
+        {
+            calibration.OpenKeyboardButtonX = 52;
+            migrated = true;
+        }
+        if (calibration.OpenKeyboardButtonY < 0 || calibration.OpenKeyboardButtonY > 1200)
+        {
+            calibration.OpenKeyboardButtonY = 218;
+            migrated = true;
+        }
+
         migrated |= MigrateLegacySoundAssignments(config);
 
         if (config.Profiles.Count == 0)
@@ -249,6 +271,10 @@ public class ConfigService
         MergeIfDefault(target, source, defaults, cal => cal.InnerSectionOffsetXPercent, (cal, v) => cal.InnerSectionOffsetXPercent = v);
         MergeIfDefault(target, source, defaults, cal => cal.InnerSectionOffsetYPercent, (cal, v) => cal.InnerSectionOffsetYPercent = v);
         MergeIfDefault(target, source, defaults, cal => cal.KeyboardWindowScale, (cal, v) => cal.KeyboardWindowScale = v);
+        MergeIfDefault(target, source, defaults, cal => cal.OpenKeyboardButtonX, (cal, v) => cal.OpenKeyboardButtonX = v);
+        MergeIfDefault(target, source, defaults, cal => cal.OpenKeyboardButtonY, (cal, v) => cal.OpenKeyboardButtonY = v);
+        MergeIfDefault(target, source, defaults, cal => cal.OpenKeyboardButtonWidth, (cal, v) => cal.OpenKeyboardButtonWidth = v);
+        MergeIfDefault(target, source, defaults, cal => cal.OpenKeyboardButtonHeight, (cal, v) => cal.OpenKeyboardButtonHeight = v);
 
         MergeIfDefault(target, source, defaults, cal => cal.CapsLockIndicatorOffsetX, (cal, v) => cal.CapsLockIndicatorOffsetX = v);
         MergeIfDefault(target, source, defaults, cal => cal.CapsLockIndicatorOffsetY, (cal, v) => cal.CapsLockIndicatorOffsetY = v);

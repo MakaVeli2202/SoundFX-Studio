@@ -37,7 +37,7 @@
                             <TextBlock Text="Capture Hotkey" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
                         </StackPanel>
                     </StackPanel>
-                    <Button x:Name="CancelButton" Width="36" Height="36" Content="&#x2715;"
+                    <Button x:Name="CancelButton" Height="36" Content="&#x2715;"
                             Background="#55203030" BorderBrush="#8B5CF6" Foreground="White"
                             HorizontalAlignment="Right" Margin="0,8,8,8"
                             Click="CancelButton_Click"/>
@@ -64,7 +64,7 @@
 
             <!-- FOOTER -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <Button x:Name="SaveButton" Content="Save" Width="100" Margin="0,0,10,0" IsDefault="True"
+                <Button x:Name="SaveButton" Content="Save" Margin="0,0,10,0" IsDefault="True"
                         IsEnabled="False" Click="SaveButton_Click">
                     <Button.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -100,7 +100,7 @@
                         </Style>
                     </Button.Style>
                 </Button>
-                <Button x:Name="ClearButton" Content="Clear" Width="90" Margin="0,0,10,0" IsEnabled="False" Click="ClearButton_Click">
+                <Button x:Name="ClearButton" Content="Clear" Margin="0,0,10,0" IsEnabled="False" Click="ClearButton_Click">
                     <Button.Style>
                         <Style TargetType="Button">
                             <Setter Property="Height" Value="36"/>
@@ -130,7 +130,7 @@
                         </Style>
                     </Button.Style>
                 </Button>
-                <Button Content="Cancel" Width="100" IsCancel="True" Click="CancelButton_Click">
+                <Button Content="Cancel" IsCancel="True" Click="CancelButton_Click">
                     <Button.Style>
                         <Style TargetType="Button">
                             <Setter Property="Height" Value="36"/>

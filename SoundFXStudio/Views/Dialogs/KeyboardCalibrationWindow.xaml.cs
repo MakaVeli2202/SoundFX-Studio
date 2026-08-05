@@ -46,6 +46,11 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private double _previewScrollLockIndicatorOffsetX = 1359;
     private double _previewScrollLockIndicatorOffsetY = 252;
 
+    private double _previewOpenKeyboardButtonX = 52;
+    private double _previewOpenKeyboardButtonY = 218;
+    private double _previewOpenKeyboardButtonWidth = 275;
+    private double _previewOpenKeyboardButtonHeight = 54;
+
     private KeyCalibrationItem? _selectedKeyItem;
     private string _perKeyOverridesJson = "{}";
     private string _jsonEditorStatus = "Ready";
@@ -183,6 +188,30 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     {
         get => _previewScrollLockIndicatorOffsetY;
         set => SetAndApply(ref _previewScrollLockIndicatorOffsetY, value);
+    }
+
+    public double OpenKeyboardButtonX
+    {
+        get => _previewOpenKeyboardButtonX;
+        set => SetAndApply(ref _previewOpenKeyboardButtonX, Math.Clamp(value, 0, 1500));
+    }
+
+    public double OpenKeyboardButtonY
+    {
+        get => _previewOpenKeyboardButtonY;
+        set => SetAndApply(ref _previewOpenKeyboardButtonY, Math.Clamp(value, 0, 1200));
+    }
+
+    public double OpenKeyboardButtonWidth
+    {
+        get => _previewOpenKeyboardButtonWidth;
+        set => SetAndApply(ref _previewOpenKeyboardButtonWidth, Math.Clamp(value, 100, 600));
+    }
+
+    public double OpenKeyboardButtonHeight
+    {
+        get => _previewOpenKeyboardButtonHeight;
+        set => SetAndApply(ref _previewOpenKeyboardButtonHeight, Math.Clamp(value, 20, 200));
     }
 
     public KeyCalibrationItem? SelectedKeyItem
@@ -327,6 +356,10 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             _previewNumLockIndicatorOffsetY = NormalizeLampY(settings.NumLockIndicatorOffsetY);
             _previewScrollLockIndicatorOffsetX = settings.ScrollLockIndicatorOffsetX;
             _previewScrollLockIndicatorOffsetY = NormalizeLampY(settings.ScrollLockIndicatorOffsetY);
+            _previewOpenKeyboardButtonX = settings.OpenKeyboardButtonX;
+            _previewOpenKeyboardButtonY = settings.OpenKeyboardButtonY;
+            _previewOpenKeyboardButtonWidth = settings.OpenKeyboardButtonWidth;
+            _previewOpenKeyboardButtonHeight = settings.OpenKeyboardButtonHeight;
 
             GetClusterItem(KeyboardCluster.EscCluster).OffsetX = settings.EscOffsetX;
             GetClusterItem(KeyboardCluster.EscCluster).OffsetY = settings.EscOffsetY;
@@ -398,6 +431,10 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         OnPropertyChanged(nameof(NumLockIndicatorOffsetY));
         OnPropertyChanged(nameof(ScrollLockIndicatorOffsetX));
         OnPropertyChanged(nameof(ScrollLockIndicatorOffsetY));
+        OnPropertyChanged(nameof(OpenKeyboardButtonX));
+        OnPropertyChanged(nameof(OpenKeyboardButtonY));
+        OnPropertyChanged(nameof(OpenKeyboardButtonWidth));
+        OnPropertyChanged(nameof(OpenKeyboardButtonHeight));
 
         RefreshPerKeyOverridesJsonFromItems();
     }
@@ -598,6 +635,10 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         calibration.NumLockIndicatorOffsetY = NumLockIndicatorOffsetY;
         calibration.ScrollLockIndicatorOffsetX = ScrollLockIndicatorOffsetX;
         calibration.ScrollLockIndicatorOffsetY = ScrollLockIndicatorOffsetY;
+        calibration.OpenKeyboardButtonX = OpenKeyboardButtonX;
+        calibration.OpenKeyboardButtonY = OpenKeyboardButtonY;
+        calibration.OpenKeyboardButtonWidth = OpenKeyboardButtonWidth;
+        calibration.OpenKeyboardButtonHeight = OpenKeyboardButtonHeight;
 
         calibration.EscOffsetX = GetClusterItem(KeyboardCluster.EscCluster).OffsetX;
         calibration.EscOffsetY = GetClusterItem(KeyboardCluster.EscCluster).OffsetY;
@@ -686,6 +727,10 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             _previewNumLockIndicatorOffsetY = 252;
             _previewScrollLockIndicatorOffsetX = 1359;
             _previewScrollLockIndicatorOffsetY = 252;
+            _previewOpenKeyboardButtonX = 52;
+            _previewOpenKeyboardButtonY = 218;
+            _previewOpenKeyboardButtonWidth = 275;
+            _previewOpenKeyboardButtonHeight = 54;
 
             foreach (var cluster in _clusterItems)
             {
@@ -723,6 +768,10 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         OnPropertyChanged(nameof(NumLockIndicatorOffsetY));
         OnPropertyChanged(nameof(ScrollLockIndicatorOffsetX));
         OnPropertyChanged(nameof(ScrollLockIndicatorOffsetY));
+        OnPropertyChanged(nameof(OpenKeyboardButtonX));
+        OnPropertyChanged(nameof(OpenKeyboardButtonY));
+        OnPropertyChanged(nameof(OpenKeyboardButtonWidth));
+        OnPropertyChanged(nameof(OpenKeyboardButtonHeight));
 
         ApplyAllCalibration();
         RefreshPreview();
@@ -758,6 +807,28 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         }
 
         item.Reset();
+    }
+
+    private void ResetOpenKeyboardButton_Click(object sender, RoutedEventArgs e)
+    {
+        _suppressUpdates = true;
+        try
+        {
+            _previewOpenKeyboardButtonX = 52;
+            _previewOpenKeyboardButtonY = 218;
+            _previewOpenKeyboardButtonWidth = 275;
+            _previewOpenKeyboardButtonHeight = 54;
+        }
+        finally
+        {
+            _suppressUpdates = false;
+        }
+
+        OnPropertyChanged(nameof(OpenKeyboardButtonX));
+        OnPropertyChanged(nameof(OpenKeyboardButtonY));
+        OnPropertyChanged(nameof(OpenKeyboardButtonWidth));
+        OnPropertyChanged(nameof(OpenKeyboardButtonHeight));
+        PersistCalibrationLive();
     }
 
     private void RefreshPerKeyOverridesJsonFromItems()

@@ -15,6 +15,10 @@ public class KeyboardCalibrationSettings
     public double InnerSectionOffsetXPercent { get; set; }
     public double InnerSectionOffsetYPercent { get; set; }
     public double KeyboardWindowScale { get; set; } = 0.85;
+    public double OpenKeyboardButtonX { get; set; } = 52;
+    public double OpenKeyboardButtonY { get; set; } = 218;
+    public double OpenKeyboardButtonWidth { get; set; } = 275;
+    public double OpenKeyboardButtonHeight { get; set; } = 54;
     public bool DebugCalibration { get; set; }
 
     public double CapsLockIndicatorOffsetX { get; set; } = 1235;

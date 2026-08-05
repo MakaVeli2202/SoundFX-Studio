@@ -312,6 +312,15 @@ public partial class MainWindow : Window
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         Title = ViewModel.WindowTitle;
+
+        var calibration = ViewModel.Settings.KeyboardCalibration;
+        if (calibration is not null)
+        {
+            OpenKeyboardOverlayButton.Width = calibration.OpenKeyboardButtonWidth;
+            OpenKeyboardOverlayButton.Height = calibration.OpenKeyboardButtonHeight;
+            OpenKeyboardOverlayButton.Margin = new Thickness(calibration.OpenKeyboardButtonX, calibration.OpenKeyboardButtonY, 0, 0);
+        }
+
         ViewModel.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName == nameof(MainViewModel.WindowTitle))

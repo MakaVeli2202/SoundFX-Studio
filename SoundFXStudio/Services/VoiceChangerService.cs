@@ -1,3 +1,4 @@
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using SoundFXStudio.Services.DSP;
@@ -165,7 +166,7 @@ public sealed class VoiceChangerService : IDisposable
         }
     }
 
-    private void OnWasapiDataAvailable(object? sender, WasapiCaptureEventArgs e)
+    private void OnWasapiDataAvailable(object? sender, WaveInEventArgs e)
     {
         _buffer?.AddSamples(e.Buffer, 0, e.BytesRecorded);
     }

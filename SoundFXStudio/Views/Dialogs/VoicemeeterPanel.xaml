@@ -179,7 +179,7 @@
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
-                    <Button x:Name="ResetBothBtn" Content="Reset Both" Width="110"
+                    <Button x:Name="ResetBothBtn" Content="Reset Both"
                             Background="#331E0E12" BorderBrush="#F43F5E" Foreground="#FECDD3"
                             BorderThickness="1" Cursor="Hand" FontWeight="SemiBold" FontSize="11" Padding="12,6"
                             ToolTip="Remove selection from both Hardware Input 1 and Hardware Output — no device selected"

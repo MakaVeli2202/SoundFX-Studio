@@ -37,7 +37,7 @@
                         </Border>
                     </StackPanel>
                     <Button HorizontalAlignment="Right" VerticalAlignment="Center"
-                            Click="Done_Click" Cursor="Hand" Width="30" Height="30">
+                            Click="Done_Click" Cursor="Hand" Height="30">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="Bd" Background="Transparent" CornerRadius="7">
@@ -100,7 +100,7 @@
                                VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,10"/>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button x:Name="CloseBtn" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                Content="Close" Click="Done_Click" Cursor="Hand" Width="90" Height="40"
+                                Content="Close" Click="Done_Click" Cursor="Hand" Height="40"
                                 Margin="0,0,10,0"
                                 Background="#22112233" BorderBrush="#3A5A8A" Foreground="#A1B2D2"
                                 FontWeight="SemiBold" FontSize="12">
@@ -120,7 +120,7 @@
                             </Button.Template>
                         </Button>
                         <Button x:Name="StartBtn" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                Content="Start" Click="StartStop_Click" Cursor="Hand" Width="140" Height="40"
+                                Content="Start" Click="StartStop_Click" Cursor="Hand" Height="40"
                                 FontWeight="SemiBold" FontSize="13" Foreground="White">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
