@@ -44,12 +44,12 @@
                     <ControlTemplate TargetType="Button">
 
                         <Border x:Name="HoverBorder"
-                        CornerRadius="10"
-                        Background="Transparent"
-                        BorderBrush="Transparent"
-                        BorderThickness="0">
+                        CornerRadius="14"
+                        Background="#33081428"
+                        BorderBrush="#5508A0F0"
+                        BorderThickness="1">
 
-                            <ContentPresenter/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                         </Border>
 
@@ -60,11 +60,11 @@
 
                                 <Setter TargetName="HoverBorder"
                                 Property="Background"
-                                Value="#118B5CF6"/>
+                                Value="#558B5CF6"/>
 
                                 <Setter TargetName="HoverBorder"
                                 Property="BorderBrush"
-                                Value="#33AAFFFF"/>
+                                Value="#AAFFFF"/>
 
                                 <Setter TargetName="HoverBorder"
                                 Property="BorderThickness"
@@ -77,7 +77,7 @@
 
                                 <Setter TargetName="HoverBorder"
                                 Property="Background"
-                                Value="#228B5CF6"/>
+                                Value="#888B5CF6"/>
 
                             </Trigger>
 
@@ -415,7 +415,8 @@
             </Image>
 
             <!-- Dashboard Hero Section -->
-            <Border Width="930"
+            <Border x:Name="HeroSectionBorder"
+                    Width="930"
                     Height="520"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Top"
@@ -441,11 +442,16 @@
                             Width="275"
                             Height="54"
                             HorizontalAlignment="Left"
-                            VerticalAlignment="Top"
-                            Margin="52,218,0,0"
+                            VerticalAlignment="Center"
+                            Margin="52,-15,0,0"
                             AutomationProperties.Name="Open Keyboard"
                             AutomationProperties.AutomationId="OpenKeyboardButton"
-                            Click="OpenKeyboardWindowButton_Click"/>
+                            Click="OpenKeyboardWindowButton_Click">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE765;" FontFamily="Segoe Fluent Icons" FontSize="18" Foreground="#EAF1FF" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBlock Text="Open Keyboard" FontSize="15" FontWeight="SemiBold" Foreground="#EAF1FF" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                 </Grid>
             </Border>
 
@@ -465,20 +471,110 @@
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
-                <Grid>
-                    <TextBlock Text="EFFECTS"
-                               Foreground="#8B5CF6"
-                               FontSize="24"
-                               FontWeight="Bold"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               Margin="0,-40,0,0"/>
-                    <TextBlock Text="Coming Soon"
-                               Foreground="#A1B2D2"
-                               FontSize="16"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               Margin="0,20,0,0"/>
+                <Grid Margin="18">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- HEADER -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <TextBlock Text="&#xEC4A;" FontFamily="Segoe Fluent Icons" FontSize="20" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <StackPanel>
+                            <TextBlock Text="VOICE CHANGER" Foreground="#8B5CF6" FontSize="20" FontWeight="Bold"/>
+                            <TextBlock Text="Real-time mic effects. Pick your mic in Settings, then start here."
+                                       Foreground="#7F899C" FontSize="11"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- LEFT: MASTER CARD -->
+                        <Border Grid.Column="0" Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
+                                CornerRadius="14" Padding="16" Margin="0,0,8,0">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="&#xE7BF;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="MASTER" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="Turn the voice changer on or off. It routes your microphone through SoundFX in real time."
+                                           Foreground="#A1B2D2" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+                                <Button x:Name="VoiceChangerToggleBtn"
+                                        Content="Start Voice Changer"
+                                        Height="38" HorizontalAlignment="Left" Padding="18,0"
+                                        Background="#222A2A66" BorderBrush="#558B5CF6" Foreground="White"
+                                        BorderThickness="1" Cursor="Hand" FontSize="12" FontWeight="SemiBold"/>
+                                <Border Margin="0,12,0,0" Background="#1AFFFFFF" CornerRadius="5" Padding="10,4" HorizontalAlignment="Left">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border x:Name="VoiceChangerStatusDot" Width="8" Height="8" CornerRadius="4" Background="#E85555" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock x:Name="VoiceChangerStatus" Text="Stopped"
+                                                   Foreground="#E85555" FontSize="12" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- RIGHT: CONTROLS CARD -->
+                        <Border Grid.Column="1" Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
+                                CornerRadius="14" Padding="16" Margin="8,0,0,0">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <TextBlock Text="&#xEC4A;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="PRESET" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="Starting point for pitch and formant." Foreground="#A1B2D2" FontSize="10.5" Margin="0,0,0,6"/>
+                                <ComboBox x:Name="VoiceChangerPresetCombo" Height="30" HorizontalAlignment="Stretch"
+                                          Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White" FontSize="12"
+                                          BorderThickness="1" Padding="6,1" Margin="0,0,0,14"/>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <TextBlock Text="&#xE790;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="PITCH" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="Shift your voice up or down in semitones." Foreground="#A1B2D2" FontSize="10.5" Margin="0,0,0,4"/>
+                                <Grid Margin="0,0,0,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Slider x:Name="PitchSlider" Grid.Column="0"
+                                            Minimum="-12" Maximum="12" SmallChange="0.5" LargeChange="1"
+                                            TickFrequency="2" TickPlacement="BottomRight"
+                                            VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <Border Grid.Column="1" Background="#1AFFFFFF" CornerRadius="5" Padding="8,3">
+                                        <TextBlock x:Name="PitchValueText" Text="0.0 st"
+                                                   Foreground="White" FontSize="11" FontWeight="Bold"
+                                                   MinWidth="40" TextAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <TextBlock Text="&#xE7F4;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="FORMANT" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="Change voice character without pitch." Foreground="#A1B2D2" FontSize="10.5" Margin="0,0,0,4"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Slider x:Name="FormantSlider" Grid.Column="0"
+                                            Minimum="0.5" Maximum="2.0" SmallChange="0.05" LargeChange="0.1"
+                                            VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <Border Grid.Column="1" Background="#1AFFFFFF" CornerRadius="5" Padding="8,3">
+                                        <TextBlock x:Name="FormantValueText" Text="1.00x"
+                                                   Foreground="White" FontSize="11" FontWeight="Bold"
+                                                   MinWidth="40" TextAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
                 </Grid>
             </Border>
 
@@ -855,24 +951,6 @@
                                     </StackPanel>
                                 </Button>
 
-                                <Button x:Name="SettingsSectionVoiceButton" Tag="VoiceChanger" Click="SettingsSectionButton_Click">
-                                    <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource SettingsSectionButton}">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding SettingsSection}" Value="VoiceChanger">
-                                                    <Setter Property="Background" Value="#228B5CF6"/>
-                                                    <Setter Property="BorderBrush" Value="#8B5CF6"/>
-                                                    <Setter Property="Foreground" Value="#FFFFFF"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Button.Style>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xEC4A;" FontFamily="Segoe Fluent Icons" FontSize="13" Width="26" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Voice Changer" FontSize="12" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-
                                 <Button x:Name="SettingsSectionAdvancedButton" Tag="Advanced" Click="SettingsSectionButton_Click">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource SettingsSectionButton}">
@@ -1011,28 +1089,6 @@
                                                 </StackPanel>
                                             </Border>
                                         </Grid>
-
-                                        <Border Background="#66081428" BorderBrush="#558B5CF6"
-                                                BorderThickness="1" CornerRadius="12" Padding="14,12">
-                                            <StackPanel>
-                                                <TextBlock Text="PITCH SHIFT" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <Slider x:Name="PitchSlider" Grid.Column="0"
-                                                            Minimum="-12" Maximum="12" SmallChange="0.5" LargeChange="1"
-                                                            TickFrequency="2" TickPlacement="BottomRight"
-                                                            VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                    <Border Grid.Column="1" Background="#1AFFFFFF" CornerRadius="5" Padding="8,3">
-                                                        <TextBlock x:Name="PitchValueText" Text="0.0 st"
-                                                                   Foreground="White" FontSize="11" FontWeight="Bold"
-                                                                   MinWidth="40" TextAlignment="Center"/>
-                                                    </Border>
-                                                </Grid>
-                                            </StackPanel>
-                                        </Border>
                                     </StackPanel>
                                 </Border>
 
@@ -1184,71 +1240,6 @@
                                                        Foreground="#7F899C" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Grid>
                                     </Grid>
-                                </Border>
-
-                                <!-- ══ VOICE CHANGER ══ -->
-                                <Border>
-                                    <Border.Style>
-                                        <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding SettingsSection}" Value="VoiceChanger">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <StackPanel Margin="18">
-                                        <TextBlock Text="VOICE CHANGER" Foreground="#8B5CF6" FontSize="13" FontWeight="Bold"
-                                                   Margin="0,0,0,4"/>
-                                        <TextBlock Foreground="#7F899C" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,14"
-                                                   Text="Mic passthrough with real-time pitch. Routes your mic through SoundFX."/>
-
-                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
-                                                CornerRadius="12" Padding="14,12">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <Button x:Name="VoiceChangerToggleBtn"
-                                                        Content="Start Voice Changer"
-                                                        Height="32" Width="190" HorizontalAlignment="Left"
-                                                        Background="#222A2A66" BorderBrush="#558B5CF6" Foreground="White"
-                                                        BorderThickness="1" Cursor="Hand" FontSize="12"/>
-                                                <Border Grid.Column="1" Background="#1AFFFFFF" CornerRadius="5" Padding="8,3" VerticalAlignment="Center">
-                                                    <TextBlock x:Name="VoiceChangerStatus" Text="Stopped"
-                                                               Foreground="#E85555" FontSize="11" FontWeight="Bold"
-                                                               MinWidth="60" TextAlignment="Center"/>
-                                                </Border>
-                                            </Grid>
-                                        </Border>
-
-                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
-                                                CornerRadius="12" Padding="14,12" Margin="0,12,0,0">
-                                            <StackPanel>
-                                                <TextBlock Text="PRESET" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
-                                                <ComboBox x:Name="VoiceChangerPresetCombo" Height="28" HorizontalAlignment="Left" Width="220"
-                                                          Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White" FontSize="12"
-                                                          BorderThickness="1" Padding="6,1"/>
-                                                <TextBlock Text="FORMANT SHIFT" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,12,0,6"/>
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <Slider x:Name="FormantSlider" Grid.Column="0"
-                                                            Minimum="0.5" Maximum="2.0" SmallChange="0.05" LargeChange="0.1"
-                                                            VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                    <Border Grid.Column="1" Background="#1AFFFFFF" CornerRadius="5" Padding="8,3">
-                                                        <TextBlock x:Name="FormantValueText" Text="1.00x"
-                                                                   Foreground="White" FontSize="11" FontWeight="Bold"
-                                                                   MinWidth="40" TextAlignment="Center"/>
-                                                    </Border>
-                                                </Grid>
-                                            </StackPanel>
-                                        </Border>
-                                    </StackPanel>
                                 </Border>
 
                                 <!-- ══ ADVANCED ══ -->

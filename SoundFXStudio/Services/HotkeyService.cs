@@ -100,6 +100,61 @@ public sealed class HotkeyService : IDisposable
         return IntPtr.Zero;
     }
 
+    public static bool TryParseHotkey(string? hotkeyText, out Key key, out ModifierKeys modifiers)
+    {
+        key = Key.None;
+        modifiers = ModifierKeys.None;
+
+        if (!TryParse(hotkeyText, out key, out var rawModifiers))
+        {
+            return false;
+        }
+
+        if ((rawModifiers & ModControl) != 0) modifiers |= ModifierKeys.Control;
+        if ((rawModifiers & ModAlt) != 0) modifiers |= ModifierKeys.Alt;
+        if ((rawModifiers & ModShift) != 0) modifiers |= ModifierKeys.Shift;
+        if ((rawModifiers & ModWin) != 0) modifiers |= ModifierKeys.Windows;
+        return true;
+    }
+
+    public static bool TryParseChord(string? hotkeyText, out Key first, out Key second)
+    {
+        first = Key.None;
+        second = Key.None;
+
+        if (string.IsNullOrWhiteSpace(hotkeyText))
+        {
+            return false;
+        }
+
+        var parts = hotkeyText.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length != 2)
+        {
+            return false;
+        }
+
+        foreach (var part in parts)
+        {
+            if (IsModifierPart(part))
+            {
+                return false;
+            }
+        }
+
+        if (!TryParseKey(parts[0], out first) || !TryParseKey(parts[1], out second))
+        {
+            return false;
+        }
+
+        return first != Key.None && second != Key.None;
+    }
+
+    private static bool IsModifierPart(string part) => part.ToUpperInvariant() switch
+    {
+        "CTRL" or "CONTROL" or "ALT" or "SHIFT" or "WIN" or "WINDOWS" => true,
+        _ => false
+    };
+
     private static bool TryParse(string? hotkeyText, out Key key, out uint modifiers)
     {
         key = Key.None;

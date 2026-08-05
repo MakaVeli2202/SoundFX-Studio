@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -688,6 +689,10 @@ public sealed class MainViewModel : ObservableObject
     }
 
     private bool _toggleKeyDown;
+    private bool _voiceChangerToggleKeyDown;
+
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int vKey);
 
     private void HandleGlobalKey(Key key, bool isKeyDown)
     {
@@ -711,20 +716,81 @@ public sealed class MainViewModel : ObservableObject
 
     private bool HandleVoiceChangerToggleKey(Key key, bool isKeyDown)
     {
-        var toggleKey = ParseToggleKey(Settings.VoiceChangerToggleKey);
-        if (!toggleKey.HasValue || key != toggleKey.Value)
+        if (HotkeyService.TryParseChord(Settings.VoiceChangerToggleKey, out var firstChordKey, out var secondChordKey))
+        {
+            if (key != firstChordKey && key != secondChordKey)
+            {
+                return false;
+            }
+
+            if (isKeyDown)
+            {
+                if (!_voiceChangerToggleKeyDown
+                    && ((key == firstChordKey && IsKeyDown(secondChordKey))
+                        || (key == secondChordKey && IsKeyDown(firstChordKey))))
+                {
+                    _voiceChangerToggleKeyDown = true;
+                    VoiceChangerToggleRequested?.Invoke();
+                }
+            }
+            else
+            {
+                _voiceChangerToggleKeyDown = false;
+            }
+
+            return true;
+        }
+
+        if (!TryParseToggleHotkey(Settings.VoiceChangerToggleKey, out var toggleKey, out var requiredModifiers))
         {
             return false;
         }
 
-        if (!isKeyDown)
+        if (key != toggleKey)
         {
-            return true;
+            return false;
         }
 
-        VoiceChangerToggleRequested?.Invoke();
+        if (isKeyDown)
+        {
+            if (!_voiceChangerToggleKeyDown && ModifiersMatch(requiredModifiers))
+            {
+                _voiceChangerToggleKeyDown = true;
+                VoiceChangerToggleRequested?.Invoke();
+            }
+        }
+        else
+        {
+            _voiceChangerToggleKeyDown = false;
+        }
+
         return true;
     }
+
+    private static bool TryParseToggleHotkey(string? keyName, out Key key, out ModifierKeys modifiers)
+        => HotkeyService.TryParseHotkey(keyName, out key, out modifiers);
+
+    private static bool ModifiersMatch(ModifierKeys required)
+    {
+        if (required == ModifierKeys.None)
+        {
+            return !IsModifierDown(Key.LeftCtrl) && !IsModifierDown(Key.RightCtrl)
+                && !IsModifierDown(Key.LeftAlt) && !IsModifierDown(Key.RightAlt)
+                && !IsModifierDown(Key.LeftShift) && !IsModifierDown(Key.RightShift)
+                && !IsModifierDown(Key.LWin) && !IsModifierDown(Key.RWin);
+        }
+
+        return (IsModifierDown(Key.LeftCtrl) || IsModifierDown(Key.RightCtrl)) == required.HasFlag(ModifierKeys.Control)
+            && (IsModifierDown(Key.LeftAlt) || IsModifierDown(Key.RightAlt)) == required.HasFlag(ModifierKeys.Alt)
+            && (IsModifierDown(Key.LeftShift) || IsModifierDown(Key.RightShift)) == required.HasFlag(ModifierKeys.Shift)
+            && (IsModifierDown(Key.LWin) || IsModifierDown(Key.RWin)) == required.HasFlag(ModifierKeys.Windows);
+    }
+
+    private static bool IsModifierDown(Key key)
+        => (GetAsyncKeyState(KeyInterop.VirtualKeyFromKey(key)) & 0x8000) != 0;
+
+    private static bool IsKeyDown(Key key)
+        => (GetAsyncKeyState(KeyInterop.VirtualKeyFromKey(key)) & 0x8000) != 0;
 
     private bool HandleSoundboardToggleKey(Key key, bool isKeyDown)
     {
@@ -789,15 +855,87 @@ public sealed class MainViewModel : ObservableObject
 
     public string? GetVoiceChangerMicId()
     {
+        var physical = InputDevices.ToList();
         var micId = Settings.MicrophoneDeviceId;
         if (!string.IsNullOrWhiteSpace(micId)
-            && InputDevices.Any(d => string.Equals(d.Id, micId, StringComparison.OrdinalIgnoreCase)))
+            && physical.Any(d => string.Equals(d.Id, micId, StringComparison.OrdinalIgnoreCase)))
         {
             return micId;
         }
-        var def = InputDevices.FirstOrDefault(d => d.IsDefaultCommunication || d.IsDefault)
-            ?? InputDevices.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(Settings.TalkDeviceName))
+        {
+            var byName = physical.FirstOrDefault(d =>
+                string.Equals(d.Name, Settings.TalkDeviceName, StringComparison.OrdinalIgnoreCase)
+                || d.Name.StartsWith(Settings.TalkDeviceName, StringComparison.OrdinalIgnoreCase));
+            if (byName is not null)
+            {
+                return byName.Id;
+            }
+        }
+        var def = physical.FirstOrDefault(d => d.IsDefaultCommunication || d.IsDefault)
+            ?? physical.FirstOrDefault();
         return def?.Id;
+    }
+
+    private Dictionary<int, float>? _voiceChangerMicB1Snapshot;
+
+    public void BeginVoiceChangerDryMicMute()
+    {
+        _voiceChangerMicB1Snapshot = null;
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                using var vm = new VoicemeeterRemote();
+                if (!vm.TryConnect())
+                {
+                    return;
+                }
+
+                int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
+                var snapshot = new Dictionary<int, float>();
+                for (int i = 0; i < firstVirtual; i++)
+                {
+                    snapshot[i] = vm.GetFloat($"Strip[{i}].B1");
+                    vm.SetFloat($"Strip[{i}].B1", 0);
+                }
+                _voiceChangerMicB1Snapshot = snapshot;
+            }
+            catch
+            {
+                _voiceChangerMicB1Snapshot = null;
+            }
+        });
+    }
+
+    public void EndVoiceChangerDryMicMute()
+    {
+        var snapshot = _voiceChangerMicB1Snapshot;
+        _voiceChangerMicB1Snapshot = null;
+        if (snapshot is null || snapshot.Count == 0)
+        {
+            return;
+        }
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                using var vm = new VoicemeeterRemote();
+                if (!vm.TryConnect())
+                {
+                    return;
+                }
+
+                foreach (var kv in snapshot)
+                {
+                    vm.SetFloat($"Strip[{kv.Key}].B1", kv.Value);
+                }
+            }
+            catch
+            {
+            }
+        });
     }
 
     private void ShowSoundboardNotification()
@@ -863,6 +1001,11 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
+        if (HandleVoiceChangerToggleKey(e.Key, isKeyDown: true))
+        {
+            return;
+        }
+
         if (_triggerService.TryHandleBareMuteKey(e.Key))
         {
             if (!e.IsRepeat)
@@ -887,6 +1030,11 @@ public sealed class MainViewModel : ObservableObject
                 IsSoundboardActive = false;
             }
             e.Handled = true;
+            return;
+        }
+
+        if (HandleVoiceChangerToggleKey(e.Key, isKeyDown: false))
+        {
             return;
         }
 

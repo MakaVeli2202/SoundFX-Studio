@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace SoundFXStudio.Views.Dialogs;
 
@@ -54,11 +55,14 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private KeyCalibrationItem? _selectedKeyItem;
     private string _perKeyOverridesJson = "{}";
     private string _jsonEditorStatus = "Ready";
+    private bool _overlayButtonSelected = true;
+    private Border? _overlayPreviewRect;
 
     public KeyboardCalibrationWindow()
     {
         InitializeComponent();
         DataContext = this;
+        Loaded += (_, _) => UpdateOverlayPreview();
 
         _config = _configService.Load();
         _noopCommand = new RelayCommand(SelectPreviewKey);
@@ -488,6 +492,50 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         ApplyClusterCalibration();
         ApplySpecialOverrides();
         ApplyPerKeyOverrides();
+        UpdateOverlayPreview();
+    }
+
+    private void UpdateOverlayPreview()
+    {
+        if (OverlayPreviewHost is null)
+        {
+            return;
+        }
+
+        const double hostWidth = 310;
+        var scale = hostWidth / 930.0;
+        OverlayPreviewButton.Width = Math.Max(8, OpenKeyboardButtonWidth * scale);
+        OverlayPreviewButton.Height = Math.Max(6, OpenKeyboardButtonHeight * scale);
+        OverlayPreviewButton.Margin = new Thickness(OpenKeyboardButtonX * scale, OpenKeyboardButtonY * scale, 0, 0);
+        _overlayPreviewRect = OverlayPreviewButton.Template?.FindName("OverlayPreviewRect", OverlayPreviewButton) as Border;
+        UpdateOverlayPreviewHighlight();
+    }
+
+    private void UpdateOverlayPreviewHighlight()
+    {
+        if (_overlayPreviewRect is null)
+        {
+            return;
+        }
+
+        if (_overlayButtonSelected)
+        {
+            _overlayPreviewRect.BorderBrush = new SolidColorBrush(Color.FromRgb(0xA7, 0x8B, 0xFA));
+            _overlayPreviewRect.BorderThickness = new Thickness(2);
+            _overlayPreviewRect.Background = new SolidColorBrush(Color.FromArgb(0x22, 0xA7, 0x8B, 0xFA));
+        }
+        else
+        {
+            _overlayPreviewRect.BorderBrush = new SolidColorBrush(Color.FromArgb(0x66, 0xAA, 0xFF, 0xFF));
+            _overlayPreviewRect.BorderThickness = new Thickness(1);
+            _overlayPreviewRect.Background = new SolidColorBrush(Color.FromArgb(0x33, 0x00, 0x00, 0x00));
+        }
+    }
+
+    private void OverlayPreviewButton_Click(object sender, RoutedEventArgs e)
+    {
+        _overlayButtonSelected = !_overlayButtonSelected;
+        UpdateOverlayPreviewHighlight();
     }
 
     private void ApplyClusterCalibration()

@@ -173,6 +173,12 @@ public class ConfigService
             migrated = true;
         }
 
+        if (string.IsNullOrWhiteSpace(config.Settings.VoiceChangerToggleKey))
+        {
+            config.Settings.VoiceChangerToggleKey = "C+V";
+            migrated = true;
+        }
+
         migrated |= MigrateLegacyKeyboardCalibration(config.Settings.KeyboardCalibration, config.Settings.KeyboardLayout);
         if (config.Settings.KeyboardCalibration.KeyboardWindowScale < 0.5)
         {

@@ -87,6 +87,14 @@ public sealed class VoicemeeterRemote : IDisposable
         return LoggedIn;
     }
 
+    public bool TryConnect()
+    {
+        if (!Available && !Load()) return false;
+        int r = _login!();
+        LoggedIn = r >= 0;
+        return LoggedIn;
+    }
+
     public bool IsDirty() => Available && _dirty!() > 0;
 
     public int Edition()

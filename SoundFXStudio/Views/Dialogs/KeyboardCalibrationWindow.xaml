@@ -695,6 +695,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
@@ -722,7 +723,38 @@
                             </ScrollViewer>
                         </Border>
 
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                        <Border Grid.Row="2" Margin="0,0,0,10" Background="#0D1525" BorderBrush="#1A2A45" BorderThickness="1" CornerRadius="12" Padding="10">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="Open Keyboard Button" FontWeight="Bold" FontSize="14" Foreground="{StaticResource Cyan}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Click the rectangle to select, then tweak it below" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                </StackPanel>
+                                <Grid x:Name="OverlayPreviewHost" Width="310" Height="173" Background="#060C18" ClipToBounds="True" HorizontalAlignment="Left">
+                                    <Image Source="/Assets/UI/HeroSection.png" Stretch="Uniform" Opacity="0.35"/>
+                                    <Button x:Name="OverlayPreviewButton"
+                                            Click="OverlayPreviewButton_Click"
+                                            Cursor="Hand"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Top">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="OverlayPreviewRect" CornerRadius="6" Background="#33000000" BorderBrush="#33AAFFFF" BorderThickness="1">
+                                                    <ContentPresenter/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="OverlayPreviewRect" Property="BorderBrush" Value="#88AAFFFF"/>
+                                                        <Setter TargetName="OverlayPreviewRect" Property="Background" Value="#22FFFFFF"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
                             <Button Style="{StaticResource ActionBtn}" Content="Reset All" Margin="0,0,10,0" Click="ResetAll_Click"/>
                             <Button Style="{StaticResource ActionBtn}" Content="💾 Save" Margin="0,0,10,0" Click="SavePermanently_Click"/>
                             <Button Style="{StaticResource ActionBtn}" Content="Close" Click="CloseButton_Click"/>

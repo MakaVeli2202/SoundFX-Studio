@@ -55,7 +55,7 @@ public class AppSettings : ObservableObject
     private string _muteHearKey = string.Empty;
     private string _muteTeamKey = string.Empty;
     private string _stopAllKey = string.Empty;
-    private string _voiceChangerToggleKey = string.Empty;
+    private string _voiceChangerToggleKey = "C+V";
     private bool _showAllStrips;
 
     public string InputDeviceId

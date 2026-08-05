@@ -54,9 +54,11 @@ public partial class MainWindow : Window
             _voiceChanger.Stop();
             _voiceChanger.Dispose();
             _voiceChanger = null;
+            ViewModel.EndVoiceChangerDryMicMute();
             VoiceChangerToggleBtn.Content = "Start Voice Changer";
             VoiceChangerStatus.Text = "Stopped";
             VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xE8, 0x55, 0x55));
+            VoiceChangerStatusDot.Background = new SolidColorBrush(Color.FromRgb(0xE8, 0x55, 0x55));
             return;
         }
 
@@ -67,15 +69,26 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (!ViewModel.Settings.SetupCompleted)
+        {
+            ViewModel.StatusText = "Voice changer is not configured yet. Run the Audio Setup wizard first.";
+            VoiceChangerStatus.Text = "Not configured";
+            VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
+            VoiceChangerStatusDot.Background = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
+            return;
+        }
+
         var pitch = ViewModel.Settings.PitchShift;
         var outIdx = GetVoiceChangerOutputIndex();
         _voiceChanger = new VoiceChangerService();
         PresetManager.Apply(PresetManager.GetById(ViewModel.Settings.VoiceChangerPresetId), _voiceChanger);
         _voiceChanger.SetFormant(ViewModel.Settings.FormantShift);
         _voiceChanger.Start(micId, outIdx, pitch);
+        ViewModel.BeginVoiceChangerDryMicMute();
         VoiceChangerToggleBtn.Content = "Stop Voice Changer";
         VoiceChangerStatus.Text = "Running";
         VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
+        VoiceChangerStatusDot.Background = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
         ViewModel.StatusText = outIdx > 0
             ? "Voice changer started -> VoiceMeeter Input"
             : "Voice changer started (default output)";
@@ -318,7 +331,9 @@ public partial class MainWindow : Window
         {
             OpenKeyboardOverlayButton.Width = calibration.OpenKeyboardButtonWidth;
             OpenKeyboardOverlayButton.Height = calibration.OpenKeyboardButtonHeight;
-            OpenKeyboardOverlayButton.Margin = new Thickness(calibration.OpenKeyboardButtonX, calibration.OpenKeyboardButtonY, 0, 0);
+            var heroHeight = HeroSectionBorder.ActualHeight > 0 ? HeroSectionBorder.ActualHeight : 520;
+            var y = calibration.OpenKeyboardButtonY - (heroHeight - calibration.OpenKeyboardButtonHeight) / 2;
+            OpenKeyboardOverlayButton.Margin = new Thickness(calibration.OpenKeyboardButtonX, y, 0, 0);
         }
 
         ViewModel.PropertyChanged += (_, args) =>
@@ -386,6 +401,7 @@ public partial class MainWindow : Window
         _voiceChanger?.Stop();
         _voiceChanger?.Dispose();
         _voiceChanger = null;
+        ViewModel.EndVoiceChangerDryMicMute();
 
         if (_keyboardWindow is { IsLoaded: true })
         {

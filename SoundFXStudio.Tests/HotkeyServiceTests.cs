@@ -1,4 +1,5 @@
 using System.Windows.Input;
+using SoundFXStudio.Models;
 using SoundFXStudio.Services;
 using Xunit;
 
@@ -60,5 +61,56 @@ public class HotkeyServiceTests
     {
         var parsed = HotkeyService.TryParseKey(input, out _);
         Assert.False(parsed);
+    }
+
+    [Theory]
+    [InlineData("CTRL+V", Key.V, ModifierKeys.Control)]
+    [InlineData("Ctrl + V", Key.V, ModifierKeys.Control)]
+    [InlineData("INSERT", Key.Insert, ModifierKeys.None)]
+    [InlineData("ALT+SHIFT+F13", Key.F13, ModifierKeys.Alt | ModifierKeys.Shift)]
+    [InlineData("WIN+SHIFT+T", Key.T, ModifierKeys.Windows | ModifierKeys.Shift)]
+    [InlineData("F9", Key.F9, ModifierKeys.None)]
+    public void TryParseHotkey_ReturnsKeyAndModifiers(string input, Key expectedKey, ModifierKeys expectedModifiers)
+    {
+        var parsed = HotkeyService.TryParseHotkey(input, out var key, out var modifiers);
+        Assert.True(parsed);
+        Assert.Equal(expectedKey, key);
+        Assert.Equal(expectedModifiers, modifiers);
+    }
+
+    [Theory]
+    [InlineData("C+V", Key.C, Key.V)]
+    [InlineData("c + v", Key.C, Key.V)]
+    [InlineData("A+B", Key.A, Key.B)]
+    [InlineData("F1+F2", Key.F1, Key.F2)]
+    [InlineData("NUMPAD0+NUMPAD9", Key.NumPad0, Key.NumPad9)]
+    public void TryParseChord_TwoBareKeys_ReturnsKeys(string input, Key expectedFirst, Key expectedSecond)
+    {
+        var parsed = HotkeyService.TryParseChord(input, out var first, out var second);
+        Assert.True(parsed);
+        Assert.Equal(expectedFirst, first);
+        Assert.Equal(expectedSecond, second);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("  ")]
+    [InlineData("V")]
+    [InlineData("CTRL+V")]
+    [InlineData("C+V+Q")]
+    [InlineData("CTRL+SHIFT+F13")]
+    public void TryParseChord_InvalidInput_ReturnsFalse(string input)
+    {
+        var parsed = HotkeyService.TryParseChord(input, out _, out _);
+        Assert.False(parsed);
+    }
+
+    [Fact]
+    public void VoiceChangerToggleKey_Default_ParsesToChord()
+    {
+        var parsed = HotkeyService.TryParseChord(new Models.AppSettings().VoiceChangerToggleKey, out var first, out var second);
+        Assert.True(parsed);
+        Assert.Equal(Key.C, first);
+        Assert.Equal(Key.V, second);
     }
 }
