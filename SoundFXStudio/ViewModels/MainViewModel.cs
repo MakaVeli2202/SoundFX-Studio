@@ -794,8 +794,12 @@ public sealed class MainViewModel : ObservableObject
 
     private bool HandleSoundboardToggleKey(Key key, bool isKeyDown)
     {
-        var toggleKey = ParseToggleKey(Settings.SoundboardToggleKey);
-        if (!toggleKey.HasValue || key != toggleKey.Value)
+        if (!HotkeyService.TryParseHotkey(Settings.SoundboardToggleKey, out var toggleKey, out var requiredModifiers))
+        {
+            return false;
+        }
+
+        if (key != toggleKey)
         {
             return false;
         }
@@ -806,6 +810,12 @@ public sealed class MainViewModel : ObservableObject
             {
                 return true;
             }
+
+            if (requiredModifiers != ModifierKeys.None && !ModifiersMatch(requiredModifiers))
+            {
+                return true;
+            }
+
             _toggleKeyDown = true;
             OnToggleKeyPressed();
             return true;
@@ -970,12 +980,6 @@ public sealed class MainViewModel : ObservableObject
         GC.SuppressFinalize(this);
     }
 
-    private static Key? ParseToggleKey(string keyName)
-    {
-        if (string.IsNullOrWhiteSpace(keyName)) return null;
-        return HotkeyService.TryParseKey(keyName, out var key) ? key : null;
-    }
-
     public void HandlePreviewKeyDown(System.Windows.Input.KeyEventArgs e)
     {
         if (IsAssignMode)
@@ -990,13 +994,8 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        var toggleKey = ParseToggleKey(Settings.SoundboardToggleKey);
-        if (toggleKey.HasValue && e.Key == toggleKey.Value)
+        if (HandleSoundboardToggleKey(e.Key, isKeyDown: true))
         {
-            if (!e.IsRepeat)
-            {
-                OnToggleKeyPressed();
-            }
             e.Handled = true;
             return;
         }
@@ -1006,12 +1005,13 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        if (_triggerService.TryHandleBareMuteKey(e.Key))
+        if (_triggerService.IsBareMuteKey(e.Key))
         {
             if (!e.IsRepeat)
             {
-                e.Handled = true;
+                _triggerService.TryHandleBareMuteKey(e.Key);
             }
+            e.Handled = true;
             return;
         }
 
@@ -1022,13 +1022,8 @@ public sealed class MainViewModel : ObservableObject
 
     public void HandlePreviewKeyUp(System.Windows.Input.KeyEventArgs e)
     {
-        var toggleKey = ParseToggleKey(Settings.SoundboardToggleKey);
-        if (toggleKey.HasValue && e.Key == toggleKey.Value)
+        if (HandleSoundboardToggleKey(e.Key, isKeyDown: false))
         {
-            if (Settings.HotkeyHoldMode)
-            {
-                IsSoundboardActive = false;
-            }
             e.Handled = true;
             return;
         }

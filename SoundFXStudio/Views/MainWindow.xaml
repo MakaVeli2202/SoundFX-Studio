@@ -516,6 +516,26 @@
                                                    Foreground="#E85555" FontSize="12" FontWeight="Bold"/>
                                     </StackPanel>
                                 </Border>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                                    <TextBlock Text="&#xE7C1;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="MONITOR" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="Hear exactly what your mic sends to Discord (VoiceMeeter B1) while you talk."
+                                           Foreground="#A1B2D2" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                <Button x:Name="TeamMonitorToggleBtn"
+                                        Content="Hear What People Hear"
+                                        Height="34" HorizontalAlignment="Left" Padding="14,0"
+                                        Background="#222A2A66" BorderBrush="#558B5CF6" Foreground="White"
+                                        BorderThickness="1" Cursor="Hand" FontSize="11.5" FontWeight="SemiBold"
+                                        Click="TeamMonitorToggle_Click"/>
+                                <Border Margin="0,10,0,0" Background="#1AFFFFFF" CornerRadius="5" Padding="10,4" HorizontalAlignment="Left">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border x:Name="TeamMonitorStatusDot" Width="8" Height="8" CornerRadius="4" Background="#98A0C0" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock x:Name="TeamMonitorStatus" Text="Off"
+                                                   Foreground="#98A0C0" FontSize="11" FontWeight="Bold"/>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
                         </Border>
 
@@ -1045,10 +1065,16 @@
                                                                Text="Set hear/talk devices, route apps through Voicemeeter, or reset routing."/>
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Button x:Name="TeamMonitorBtn" Content="Hear What People Hear"
+                                                            AutomationProperties.AutomationId="SettingsHearPeopleButton"
+                                                            Style="{StaticResource SettingsButton}"
+                                                            FontWeight="SemiBold"
+                                                            Click="TeamMonitorButton_Click"/>
                                                     <Button x:Name="RerunWizardBtn" Content="Open Setup Wizard"
                                                             AutomationProperties.AutomationId="SettingsOpenAudioSetupWizardButton"
                                                             Style="{StaticResource SettingsButton}"
                                                             FontWeight="SemiBold"
+                                                            Margin="8,0,0,0"
                                                             Click="RerunWizard_Click"/>
                                                     <Button x:Name="MixerBtn" Content="Sound Mixer"
                                                             Style="{StaticResource SettingsButton}"

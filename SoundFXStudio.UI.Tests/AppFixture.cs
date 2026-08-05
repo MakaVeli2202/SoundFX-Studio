@@ -68,9 +68,7 @@ public class AppFixture : IDisposable
                 if (appMainWindow != null)
                 {
                     if (IsMainWindow(appMainWindow))
-                    {
                         return appMainWindow;
-                    }
                 }
 
                 var windows = App.GetAllTopLevelWindows(Automation);

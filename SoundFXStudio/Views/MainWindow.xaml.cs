@@ -6,6 +6,7 @@ using SoundFXStudio.Views;
 using SoundFXStudio.Views.Dialogs;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -21,6 +22,7 @@ public partial class MainWindow : Window
     private KeyboardCalibrationWindow? _keyboardCalibrationWindow;
     private KeyboardWindow? _keyboardWindow;
     private VoiceChangerService? _voiceChanger;
+    private TeamMonitorService? _teamMonitor;
     private bool _loadingVoiceChangerUi;
 
     public MainWindow(ILogService? logService = null)
@@ -401,6 +403,8 @@ public partial class MainWindow : Window
         _voiceChanger?.Stop();
         _voiceChanger?.Dispose();
         _voiceChanger = null;
+        _teamMonitor?.Dispose();
+        _teamMonitor = null;
         ViewModel.EndVoiceChangerDryMicMute();
 
         if (_keyboardWindow is { IsLoaded: true })
@@ -636,6 +640,74 @@ public partial class MainWindow : Window
     private void RerunWizard_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.OpenSetupWizard(this);
+    }
+
+    private void TeamMonitorButton_Click(object sender, RoutedEventArgs e)
+    {
+        var monitor = new Views.Dialogs.TeamMonitorWindow { Owner = this };
+        monitor.Show();
+    }
+
+    private void TeamMonitorToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (_teamMonitor is { IsRunning: true })
+        {
+            _teamMonitor.Stop();
+            TeamMonitorToggleBtn.Content = "Hear What People Hear";
+            SetInlineMonitorStatus("Off", "#98A0C0");
+            return;
+        }
+
+        var devices = new AudioDeviceService();
+        var captures = devices.GetAllInputDevices();
+        var playbacks = devices.GetAllOutputDevices();
+
+        var capture = captures.FirstOrDefault(d =>
+            d.Name.Contains("Voicemeeter", StringComparison.OrdinalIgnoreCase)
+            && d.Name.Contains("B1", StringComparison.OrdinalIgnoreCase)
+            && !d.Name.Contains("Aux", StringComparison.OrdinalIgnoreCase)
+            && !d.Name.Contains("Virtual", StringComparison.OrdinalIgnoreCase));
+
+        var config = new ConfigService().Load();
+        var saved = !string.IsNullOrWhiteSpace(config.Settings.HearDeviceName)
+            ? config.Settings.HearDeviceName
+            : config.Settings.SpeakersDeviceName;
+        var playback = playbacks.FirstOrDefault(d => d.Name == saved)
+            ?? playbacks.FirstOrDefault(d => d.IsDefaultCommunication)
+            ?? playbacks.FirstOrDefault(d => d.IsDefault)
+            ?? playbacks.FirstOrDefault();
+
+        if (capture is null || playback is null)
+        {
+            SetInlineMonitorStatus("✗ VoiceMeeter B1 or playback device not found", "#F43F5E");
+            return;
+        }
+
+        int capIdx = TeamMonitorService.ResolveWaveInIndex(capture.Name);
+        int outIdx = TeamMonitorService.ResolveWaveOutIndex(playback.Name);
+        if (capIdx < 0 || outIdx < 0)
+        {
+            SetInlineMonitorStatus("✗ Monitor source unavailable to the mixer", "#F43F5E");
+            return;
+        }
+
+        _teamMonitor ??= new TeamMonitorService();
+        if (!_teamMonitor.Start(capIdx, outIdx, TeamMonitorService.SimMode.None))
+        {
+            SetInlineMonitorStatus($"✗ {_teamMonitor.LastError}", "#F43F5E");
+            return;
+        }
+
+        TeamMonitorToggleBtn.Content = "Stop Monitor";
+        SetInlineMonitorStatus("Listening — this is what people hear", "#10B981");
+    }
+
+    private void SetInlineMonitorStatus(string text, string color)
+    {
+        TeamMonitorStatus.Text = text;
+        var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(color));
+        TeamMonitorStatus.Foreground = brush;
+        TeamMonitorStatusDot.Background = brush;
     }
 
 }

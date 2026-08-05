@@ -101,16 +101,23 @@ public sealed class VoiceChangerService : IDisposable
 
         _effectProvider = new EffectSampleProvider(_formantShifter, Chain);
 
-        _waveOut = new WaveOutEvent
-        {
-            DeviceNumber = outputDeviceIndex
-        };
-
-        _waveOut.Init(_effectProvider);
-
-        _waveOut.Play();
-
         IsRunning = true;
+        try
+        {
+            _waveOut = new WaveOutEvent
+            {
+                DeviceNumber = outputDeviceIndex
+            };
+
+            _waveOut.Init(_effectProvider);
+
+            _waveOut.Play();
+        }
+        catch
+        {
+            Stop();
+            throw;
+        }
     }
 
     public void Stop()

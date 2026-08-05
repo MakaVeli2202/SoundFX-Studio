@@ -36,6 +36,7 @@ public sealed class TriggerService : IDisposable
     private Action<Key, bool>? _handlePhysicalKey;
     private bool _disposed;
     private readonly Dictionary<Key, string> _bareMuteKeys = new();
+    private readonly HashSet<Key> _heldMuteKeys = new();
     private Timer? _chordTimer;
     private KeyAssignment? _chordPendingAssignment;
     private Key _chordPendingKey;
@@ -142,18 +143,21 @@ public sealed class TriggerService : IDisposable
 
             if (_bareMuteKeys.TryGetValue(args.Key, out var muteAction))
             {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                if (_heldMuteKeys.Add(args.Key))
                 {
-                    switch (muteAction)
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
-                        case HkMuteAll: App.ToggleMuteAll(); break;
-                        case HkMuteHear: App.ToggleMuteHear(); break;
-                        case HkMuteTeam: App.ToggleMuteTeam(); break;
-                        case HkStopAll:
-                            (System.Windows.Application.Current.MainWindow?.DataContext as ViewModels.MainViewModel)?.StopAllSounds();
-                            break;
-                    }
-                });
+                        switch (muteAction)
+                        {
+                            case HkMuteAll: App.ToggleMuteAll(); break;
+                            case HkMuteHear: App.ToggleMuteHear(); break;
+                            case HkMuteTeam: App.ToggleMuteTeam(); break;
+                            case HkStopAll:
+                                (System.Windows.Application.Current.MainWindow?.DataContext as ViewModels.MainViewModel)?.StopAllSounds();
+                                break;
+                        }
+                    });
+                }
                 return;
             }
 
@@ -167,6 +171,8 @@ public sealed class TriggerService : IDisposable
                 return;
             }
 
+            _heldMuteKeys.Remove(args.Key);
+
             handlePhysicalKey(args.Key, false);
         };
         _keyboardHookService.KeyUp += _keyboardUpHandler;
@@ -174,6 +180,8 @@ public sealed class TriggerService : IDisposable
         _keyboardHookService.Attach();
         RegisterGlobalHotkeys();
     }
+
+    public bool IsBareMuteKey(Key key) => _bareMuteKeys.ContainsKey(key);
 
     public bool TryHandleBareMuteKey(Key key)
     {
@@ -236,6 +244,12 @@ public sealed class TriggerService : IDisposable
                 _logService?.Warning($"Hotkey Registration Failed: {assignment.HotkeyText}");
             }
         }
+
+        var settings = _getConfig().Settings;
+        if (settings is not null)
+        {
+            RegisterMuteHotkeys(settings.MuteAllKey, settings.MuteHearKey, settings.MuteTeamKey, settings.StopAllKey);
+        }
     }
 
     private static bool IsBareKey(string hotkeyText)
@@ -272,10 +286,15 @@ public sealed class TriggerService : IDisposable
 
     private void RegisterMuteBareKey(string actionId, string? hotkeyText, Key parsedKey)
     {
-        foreach (var kv in _bareMuteKeys.Where(kv => kv.Value == actionId).ToList())
-            _bareMuteKeys.Remove(kv.Key);
+        RemoveMuteBareKey(actionId);
         if (parsedKey != Key.None)
             _bareMuteKeys[parsedKey] = actionId;
+    }
+
+    private void RemoveMuteBareKey(string actionId)
+    {
+        foreach (var kv in _bareMuteKeys.Where(kv => kv.Value == actionId).ToList())
+            _bareMuteKeys.Remove(kv.Key);
     }
 
     public void RegisterMuteHotkeys(string muteAllKey, string muteHearKey, string muteTeamKey, string stopAllKey)
@@ -290,22 +309,34 @@ public sealed class TriggerService : IDisposable
         if (TryParseBareKey(muteAllKey, out var allKey))
             RegisterMuteBareKey(HkMuteAll, muteAllKey, allKey);
         else if (!string.IsNullOrWhiteSpace(muteAllKey))
+        {
+            RemoveMuteBareKey(HkMuteAll);
             _hotkeyService.Register(HkMuteAll, muteAllKey);
+        }
 
         if (TryParseBareKey(muteHearKey, out var hearKey))
             RegisterMuteBareKey(HkMuteHear, muteHearKey, hearKey);
         else if (!string.IsNullOrWhiteSpace(muteHearKey))
+        {
+            RemoveMuteBareKey(HkMuteHear);
             _hotkeyService.Register(HkMuteHear, muteHearKey);
+        }
 
         if (TryParseBareKey(muteTeamKey, out var teamKey))
             RegisterMuteBareKey(HkMuteTeam, muteTeamKey, teamKey);
         else if (!string.IsNullOrWhiteSpace(muteTeamKey))
+        {
+            RemoveMuteBareKey(HkMuteTeam);
             _hotkeyService.Register(HkMuteTeam, muteTeamKey);
+        }
 
         if (TryParseBareKey(stopAllKey, out var stopKey))
             RegisterMuteBareKey(HkStopAll, stopAllKey, stopKey);
         else if (!string.IsNullOrWhiteSpace(stopAllKey))
+        {
+            RemoveMuteBareKey(HkStopAll);
             _hotkeyService.Register(HkStopAll, stopAllKey);
+        }
     }
 
     private const string HkMuteAll = "_mute_all";
