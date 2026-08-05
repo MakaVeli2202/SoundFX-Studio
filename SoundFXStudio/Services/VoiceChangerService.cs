@@ -11,8 +11,7 @@ public sealed class VoiceChangerService : IDisposable
     private WaveInEvent? _waveIn;
     private WaveOutEvent? _waveOut;
     private BufferedWaveProvider? _buffer;
-    private SmbPitchShiftingSampleProvider? _pitchShifter;
-    private FormantShiftSampleProvider? _formantShifter;
+    private VoiceTransformSampleProvider? _transform;
     private EffectSampleProvider? _effectProvider;
     private float _pitchSemitones;
     private float _formantShift = 1f;
@@ -89,17 +88,21 @@ public sealed class VoiceChangerService : IDisposable
             sampleProvider = _buffer.ToSampleProvider();
         }
 
-        _pitchShifter = new SmbPitchShiftingSampleProvider(sampleProvider)
+        int rate = _capture?.WaveFormat.SampleRate
+                   ?? _waveIn?.WaveFormat.SampleRate
+                   ?? 0;
+        if (rate > 0)
         {
-            PitchFactor = SemitonesToFactor(_pitchSemitones)
+            SetChainSampleRate(rate);
+        }
+
+        _transform = new VoiceTransformSampleProvider(sampleProvider)
+        {
+            PitchFactor = SemitonesToFactor(_pitchSemitones),
+            FormantFactor = _formantShift
         };
 
-        _formantShifter = new FormantShiftSampleProvider(_pitchShifter)
-        {
-            Factor = _formantShift
-        };
-
-        _effectProvider = new EffectSampleProvider(_formantShifter, Chain);
+        _effectProvider = new EffectSampleProvider(_transform, Chain);
 
         IsRunning = true;
         try
@@ -150,26 +153,56 @@ public sealed class VoiceChangerService : IDisposable
         }
 
         _buffer = null;
-        _pitchShifter = null;
-        _formantShifter = null;
+        _transform = null;
         _effectProvider = null;
     }
 
     public void SetPitch(float semitones)
     {
         _pitchSemitones = semitones;
-        if (_pitchShifter is not null)
+        if (_transform is not null)
         {
-            _pitchShifter.PitchFactor = SemitonesToFactor(semitones);
+            _transform.PitchFactor = SemitonesToFactor(semitones);
         }
     }
 
     public void SetFormant(float factor)
     {
         _formantShift = factor;
-        if (_formantShifter is not null)
+        if (_transform is not null)
         {
-            _formantShifter.Factor = factor;
+            _transform.FormantFactor = factor;
+        }
+    }
+
+    private void SetChainSampleRate(int sampleRate)
+    {
+        foreach (var effect in Chain.Effects)
+        {
+            switch (effect)
+            {
+                case NoiseGateEffect noiseGate:
+                    noiseGate.SampleRate = sampleRate;
+                    break;
+                case LimiterEffect limiter:
+                    limiter.SampleRate = sampleRate;
+                    break;
+                case CompressorEffect compressor:
+                    compressor.SampleRate = sampleRate;
+                    break;
+                case DistortionEffect distortion:
+                    distortion.SampleRate = sampleRate;
+                    break;
+                case ReverbEffect reverb:
+                    reverb.SampleRate = sampleRate;
+                    break;
+                case RobotEffect robot:
+                    robot.SampleRate = sampleRate;
+                    break;
+                case ChorusEffect chorus:
+                    chorus.SampleRate = sampleRate;
+                    break;
+            }
         }
     }
 

@@ -56,7 +56,12 @@ public partial class MainWindow : Window
             _voiceChanger.Stop();
             _voiceChanger.Dispose();
             _voiceChanger = null;
-            ViewModel.EndVoiceChangerDryMicMute();
+        ViewModel.EndVoiceChangerDryMicMute();
+        ViewModel.EndVoiceChangerMonitorMute();
+            if (_teamMonitor is not { IsRunning: true })
+            {
+                ViewModel.EndVoiceChangerMonitorMute();
+            }
             VoiceChangerToggleBtn.Content = "Start Voice Changer";
             VoiceChangerStatus.Text = "Stopped";
             VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xE8, 0x55, 0x55));
@@ -121,6 +126,7 @@ public partial class MainWindow : Window
         VoiceChangerPresetCombo.ItemsSource = PresetManager.Presets;
         VoiceChangerPresetCombo.DisplayMemberPath = nameof(VoiceChangerPreset.Name);
         VoiceChangerPresetCombo.SelectedItem = PresetManager.GetById(settings.VoiceChangerPresetId);
+        PresetSummaryText.Text = BuildPresetSummary(PresetManager.GetById(settings.VoiceChangerPresetId));
 
         FormantSlider.Value = Math.Clamp(settings.FormantShift, 0.5, 2.0);
         FormantValueText.Text = $"{FormantSlider.Value:F2}x";
@@ -135,6 +141,7 @@ public partial class MainWindow : Window
             }
 
             settings.VoiceChangerPresetId = preset.Id;
+            PresetSummaryText.Text = BuildPresetSummary(preset);
             PitchSlider.Value = preset.PitchSemitones;
             FormantSlider.Value = preset.FormantShift;
             if (_voiceChanger is { IsRunning: true })
@@ -158,6 +165,27 @@ public partial class MainWindow : Window
             _voiceChanger?.SetFormant((float)val);
             ViewModel.Save();
         };
+    }
+
+    private static string BuildPresetSummary(VoiceChangerPreset preset)
+    {
+        var parts = new List<string>();
+        if (Math.Abs(preset.PitchSemitones) > 0.01f)
+        {
+            parts.Add($"Pitch {(preset.PitchSemitones > 0 ? "+" : "")}{preset.PitchSemitones} st");
+        }
+        if (Math.Abs(preset.FormantShift - 1f) > 0.01f)
+        {
+            parts.Add($"Formant {preset.FormantShift:F2}x");
+        }
+        if (preset.RobotEnabled) parts.Add("Robot");
+        if (preset.DistortionEnabled) parts.Add("Distortion");
+        if (preset.ReverbEnabled) parts.Add("Reverb");
+        if (preset.ChorusEnabled) parts.Add("Chorus");
+        if (preset.CompressorEnabled) parts.Add("Compressor");
+        if (preset.LimiterEnabled) parts.Add("Limiter");
+        if (preset.NoiseGateEnabled) parts.Add("Noise gate");
+        return parts.Count > 0 ? string.Join(" \u00B7 ", parts) : "Clean voice";
     }
 
     private void SettingsSectionButton_Click(object sender, RoutedEventArgs e)
@@ -655,6 +683,7 @@ public partial class MainWindow : Window
             _teamMonitor.Stop();
             TeamMonitorToggleBtn.Content = "Hear What People Hear";
             SetInlineMonitorStatus("Off", "#98A0C0");
+            ViewModel.EndVoiceChangerMonitorMute();
             return;
         }
 
@@ -700,6 +729,7 @@ public partial class MainWindow : Window
 
         TeamMonitorToggleBtn.Content = "Stop Monitor";
         SetInlineMonitorStatus("Listening — this is what people hear", "#10B981");
+        ViewModel.BeginVoiceChangerMonitorMute();
     }
 
     private void SetInlineMonitorStatus(string text, string color)

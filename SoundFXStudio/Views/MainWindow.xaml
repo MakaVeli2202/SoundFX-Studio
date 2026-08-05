@@ -550,7 +550,9 @@
                                 <TextBlock Text="Starting point for pitch and formant." Foreground="#A1B2D2" FontSize="10.5" Margin="0,0,0,6"/>
                                 <ComboBox x:Name="VoiceChangerPresetCombo" Height="30" HorizontalAlignment="Stretch"
                                           Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White" FontSize="12"
-                                          BorderThickness="1" Padding="6,1" Margin="0,0,0,14"/>
+                                          BorderThickness="1" Padding="6,1" Margin="0,0,0,4"
+                                          DisplayMemberPath="Name"/>
+                                <TextBlock x:Name="PresetSummaryText" Foreground="#A1B2D2" FontSize="10" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                     <TextBlock Text="&#xE790;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>

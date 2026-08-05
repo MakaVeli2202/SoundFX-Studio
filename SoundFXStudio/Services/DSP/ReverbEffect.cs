@@ -13,7 +13,7 @@ public sealed class ReverbEffect : IAudioEffect
 
     public ReverbEffect(int sampleRate = 48000)
     {
-        SampleRate = sampleRate;
+        _sampleRate = sampleRate;
         _combBuffers = new float[]?[CombDelaysSec.Length];
         _allpassBuffers = new float[]?[AllpassDelaysSec.Length];
         _combIndex = new int[CombDelaysSec.Length];
@@ -26,7 +26,22 @@ public sealed class ReverbEffect : IAudioEffect
 
     public bool IsEnabled { get; set; }
 
-    public int SampleRate { get; set; }
+    private int _sampleRate;
+
+    public int SampleRate
+    {
+        get => _sampleRate;
+        set
+        {
+            if (value <= 0 || value == _sampleRate)
+            {
+                return;
+            }
+            _sampleRate = value;
+            Allocate();
+            Reset();
+        }
+    }
 
     public double Mix { get; set; } = 0.35;
 

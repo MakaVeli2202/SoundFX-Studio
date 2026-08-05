@@ -49,7 +49,7 @@ public class PresetManagerTests
         PresetManager.Apply(preset, service);
 
         Assert.Equal(8f, service.PitchSemitones);
-        Assert.Equal(1.45f, service.FormantShift);
+        Assert.Equal(1.3f, service.FormantShift);
         Assert.False(service.Chain.Get<ReverbEffect>()!.IsEnabled);
         Assert.False(service.Chain.Get<RobotEffect>()!.IsEnabled);
         Assert.False(service.Chain.Get<DistortionEffect>()!.IsEnabled);
@@ -66,8 +66,8 @@ public class PresetManagerTests
 
         Assert.True(service.Chain.Get<DistortionEffect>()!.IsEnabled);
         Assert.Equal(5f, service.Chain.Get<DistortionEffect>()!.Drive);
-        Assert.Equal(-5f, service.PitchSemitones);
-        Assert.Equal(0.7f, service.FormantShift);
+        Assert.Equal(-6f, service.PitchSemitones);
+        Assert.Equal(0.8f, service.FormantShift);
     }
 
     [Fact]

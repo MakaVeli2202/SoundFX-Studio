@@ -1,7 +1,7 @@
-using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.UIA3;
+using System.Runtime.InteropServices;
 
 namespace SoundFXStudio.UI.Tests;
 
@@ -20,7 +20,6 @@ public class KeyboardTests : IDisposable
     public void Dispose()
     {
         try { CloseAllKeyboardWindows(); } catch { }
-        try { RestoreMainWindow(); } catch { }
     }
 
     private static bool WaitUntil(Func<bool> condition, int timeoutMs = 5000, int intervalMs = 100)
@@ -42,79 +41,6 @@ public class KeyboardTests : IDisposable
     }
 
     private Window MainWindow() => _app.GetMainWindow();
-
-    private static bool IsMainWindow(Window w) =>
-        (w.Name ?? string.Empty).Contains("SoundFX Studio", StringComparison.OrdinalIgnoreCase);
-
-    private Window? FindKeyboardWindow()
-    {
-        try
-        {
-            foreach (var w in _app.App.GetAllTopLevelWindows(_automation))
-            {
-                if (!IsMainWindow(w))
-                {
-                    return w;
-                }
-            }
-        }
-        catch { }
-        return null;
-    }
-
-    private void CloseKeyboardWindow(Window kb)
-    {
-        try
-        {
-            kb.Patterns.Window.Pattern?.SetWindowVisualState(WindowVisualState.Minimized);
-        }
-        catch { }
-
-        try { kb.Close(); } catch { }
-
-        try
-        {
-            kb.Patterns.Window.Pattern?.Close();
-        }
-        catch { }
-    }
-
-    private void CloseAllKeyboardWindows()
-    {
-        while (true)
-        {
-            var kb = FindKeyboardWindow();
-            if (kb is null)
-            {
-                return;
-            }
-            CloseKeyboardWindow(kb);
-            if (!WaitUntil(() => FindKeyboardWindow() is null, 3000))
-            {
-                return;
-            }
-        }
-    }
-
-    private void RestoreMainWindow()
-    {
-        try
-        {
-            var deadline = DateTime.UtcNow.AddSeconds(2);
-            while (DateTime.UtcNow < deadline)
-            {
-                var main = _app.App.GetAllTopLevelWindows(_automation).FirstOrDefault(IsMainWindow);
-                if (main is not null)
-                {
-                    try { main.Focus(); } catch { }
-                    try { main.SetForeground(); } catch { }
-                    return;
-                }
-                Thread.Sleep(100);
-            }
-        }
-        catch { }
-    }
 
     private void NavigateToHome()
     {
@@ -149,14 +75,72 @@ public class KeyboardTests : IDisposable
         Assert.NotNull(openBtn);
         openBtn!.Click();
 
-        Window? kb = null;
-        WaitUntil(() => (kb = FindKeyboardWindow()) != null);
-        Assert.NotNull(kb);
-        return kb!;
+        IntPtr hwnd = IntPtr.Zero;
+        WaitUntil(() => (hwnd = FindKeyboardHwnd()) != IntPtr.Zero);
+        Assert.NotEqual(IntPtr.Zero, hwnd);
+        return _automation.FromHandle(hwnd).AsWindow();
     }
 
     private static AutomationElement[] KeyButtons(Window kb) =>
         kb.FindAllDescendants(cf => cf.ByControlType(ControlType.Button));
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumWindowsProc callback, IntPtr lParam);
+    private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetWindowText(IntPtr hWnd, char[] text, int maxCount);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    private const uint WM_CLOSE = 0x0010;
+
+    private static IntPtr FindKeyboardHwnd()
+    {
+        var found = IntPtr.Zero;
+        EnumWindows((h, l) =>
+        {
+            if (IsWindowVisible(h))
+            {
+                var buf = new char[256];
+                GetWindowText(h, buf, 256);
+                if (new string(buf).TrimEnd('\0') == "Keyboard")
+                {
+                    found = h;
+                    return false;
+                }
+            }
+            return true;
+        }, IntPtr.Zero);
+        return found;
+    }
+
+    private static void CloseKeyboardHwnd(IntPtr hwnd) =>
+        SendMessage(hwnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+
+    private void CloseAllKeyboardWindows()
+    {
+        while (true)
+        {
+            var hwnd = FindKeyboardHwnd();
+            if (hwnd == IntPtr.Zero)
+            {
+                return;
+            }
+            CloseKeyboardHwnd(hwnd);
+            if (!WaitUntil(() => !IsWindow(hwnd), 3000))
+            {
+                return;
+            }
+        }
+    }
 
     [Fact]
     public void KeyboardTab_HasOpenKeyboardButton()

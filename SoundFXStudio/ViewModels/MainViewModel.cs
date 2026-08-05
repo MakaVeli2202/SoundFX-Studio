@@ -887,7 +887,8 @@ public sealed class MainViewModel : ObservableObject
         return def?.Id;
     }
 
-    private Dictionary<int, float>? _voiceChangerMicB1Snapshot;
+    private Dictionary<string, float>? _voiceChangerMicB1Snapshot;
+    private Dictionary<string, float>? _voiceChangerMonitorSnapshot;
 
     public void BeginVoiceChangerDryMicMute()
     {
@@ -903,10 +904,14 @@ public sealed class MainViewModel : ObservableObject
                 }
 
                 int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
-                var snapshot = new Dictionary<int, float>();
+                var snapshot = new Dictionary<string, float>();
                 for (int i = 0; i < firstVirtual; i++)
                 {
-                    snapshot[i] = vm.GetFloat($"Strip[{i}].B1");
+                    snapshot[$"Strip[{i}].A1"] = vm.GetFloat($"Strip[{i}].A1");
+                    snapshot[$"Strip[{i}].A2"] = vm.GetFloat($"Strip[{i}].A2");
+                    snapshot[$"Strip[{i}].B1"] = vm.GetFloat($"Strip[{i}].B1");
+                    vm.SetFloat($"Strip[{i}].A1", 0);
+                    vm.SetFloat($"Strip[{i}].A2", 0);
                     vm.SetFloat($"Strip[{i}].B1", 0);
                 }
                 _voiceChangerMicB1Snapshot = snapshot;
@@ -939,7 +944,65 @@ public sealed class MainViewModel : ObservableObject
 
                 foreach (var kv in snapshot)
                 {
-                    vm.SetFloat($"Strip[{kv.Key}].B1", kv.Value);
+                    vm.SetFloat(kv.Key, kv.Value);
+                }
+            }
+            catch
+            {
+            }
+        });
+    }
+
+    public void BeginVoiceChangerMonitorMute()
+    {
+        _voiceChangerMonitorSnapshot = null;
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                using var vm = new VoicemeeterRemote();
+                if (!vm.TryConnect())
+                {
+                    return;
+                }
+
+                int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
+                var snapshot = new Dictionary<string, float>
+                {
+                    [$"Strip[{firstVirtual}].A1"] = vm.GetFloat($"Strip[{firstVirtual}].A1")
+                };
+                vm.SetFloat($"Strip[{firstVirtual}].A1", 0);
+                _voiceChangerMonitorSnapshot = snapshot;
+            }
+            catch
+            {
+                _voiceChangerMonitorSnapshot = null;
+            }
+        });
+    }
+
+    public void EndVoiceChangerMonitorMute()
+    {
+        var snapshot = _voiceChangerMonitorSnapshot;
+        _voiceChangerMonitorSnapshot = null;
+        if (snapshot is null || snapshot.Count == 0)
+        {
+            return;
+        }
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                using var vm = new VoicemeeterRemote();
+                if (!vm.TryConnect())
+                {
+                    return;
+                }
+
+                foreach (var kv in snapshot)
+                {
+                    vm.SetFloat($"Strip[{kv.Key}].A1", kv.Value);
                 }
             }
             catch

@@ -16,7 +16,7 @@ public static class PresetManager
         new()
         {
             Id = "deepmale", Name = "Deep Male",
-            PitchSemitones = -3f, FormantShift = 0.85f,
+            PitchSemitones = -4f, FormantShift = 0.9f,
             NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
             CompressorEnabled = true, CompressorThresholdDb = -20f, CompressorRatio = 4f,
             LimiterEnabled = true
@@ -24,7 +24,7 @@ public static class PresetManager
         new()
         {
             Id = "female", Name = "Female",
-            PitchSemitones = 4f, FormantShift = 1.2f,
+            PitchSemitones = 5f, FormantShift = 1.2f,
             NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
             CompressorEnabled = true, CompressorThresholdDb = -18f, CompressorRatio = 3f,
             LimiterEnabled = true
@@ -32,15 +32,15 @@ public static class PresetManager
         new()
         {
             Id = "robot", Name = "Robot",
-            PitchSemitones = 0f, FormantShift = 1.5f,
+            PitchSemitones = 0f, FormantShift = 1f,
             NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
-            RobotEnabled = true, RobotFrequencyHz = 30f,
+            RobotEnabled = true, RobotFrequencyHz = 120f,
             LimiterEnabled = true
         },
         new()
         {
             Id = "demon", Name = "Demon",
-            PitchSemitones = -5f, FormantShift = 0.7f,
+            PitchSemitones = -6f, FormantShift = 0.8f,
             NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
             DistortionEnabled = true, DistortionDrive = 5f,
             LimiterEnabled = true
@@ -48,7 +48,7 @@ public static class PresetManager
         new()
         {
             Id = "anime", Name = "Anime",
-            PitchSemitones = 7f, FormantShift = 1.35f,
+            PitchSemitones = 6f, FormantShift = 1.2f,
             NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
             ChorusEnabled = true, ChorusMix = 0.3f,
             LimiterEnabled = true
@@ -64,7 +64,7 @@ public static class PresetManager
         new()
         {
             Id = "chipmunk", Name = "Chipmunk",
-            PitchSemitones = 8f, FormantShift = 1.45f,
+            PitchSemitones = 8f, FormantShift = 1.3f,
             NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
             LimiterEnabled = true
         }

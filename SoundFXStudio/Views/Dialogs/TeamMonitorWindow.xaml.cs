@@ -8,6 +8,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
+using SoundFXStudio.ViewModels;
 
 namespace SoundFXStudio.Views.Dialogs;
 
@@ -156,6 +157,7 @@ public partial class TeamMonitorWindow : Window
                 ? "\n(Opus simulation on — add headphones + press Stop when done.)"
                 : "\n(Press Stop when done.)");
         DevicesText.Text = BuildDevicesLine();
+        OwnerViewModel?.BeginVoiceChangerMonitorMute();
     }
 
     private void ModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -171,6 +173,7 @@ public partial class TeamMonitorWindow : Window
         StartBtn.Content = "Start";
         MonitorStatus.Text = "Stopped.";
         MonitorStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x98, 0xA0, 0xC0));
+        OwnerViewModel?.EndVoiceChangerMonitorMute();
     }
 
     private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -184,6 +187,9 @@ public partial class TeamMonitorWindow : Window
 
     private void Window_Closed(object sender, EventArgs e)
     {
+        OwnerViewModel?.EndVoiceChangerMonitorMute();
         _monitor.Dispose();
     }
+
+    private MainViewModel? OwnerViewModel => (Owner as MainWindow)?.DataContext as MainViewModel;
 }

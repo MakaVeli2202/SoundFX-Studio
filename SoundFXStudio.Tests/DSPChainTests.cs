@@ -135,6 +135,49 @@ public class DSPChainTests
         Assert.Equal(new[] { 0.25f, -0.5f, 0.75f, -1.0f, 0.5f }, output);
     }
 
+    [Fact]
+    public void VoiceTransform_Neutral_PassesThrough()
+    {
+        var source = new FixedSource(new[] { 0.25f, -0.5f, 0.75f, -1.0f, 0.5f });
+        var transform = new VoiceTransformSampleProvider(source);
+
+        var output = new float[5];
+        var read = transform.Read(output, 0, output.Length);
+
+        Assert.Equal(5, read);
+        Assert.Equal(new[] { 0.25f, -0.5f, 0.75f, -1.0f, 0.5f }, output);
+    }
+
+    [Fact]
+    public void VoiceTransform_ChangedFactors_ProducesNonSilentOutput()
+    {
+        var source = new LoopingSource(Sine(0.5f, 4096));
+        var transform = new VoiceTransformSampleProvider(source)
+        {
+            PitchFactor = SemitonesToFactor(4f),
+            FormantFactor = 1.2f
+        };
+
+        var output = new float[8192];
+        float max = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            transform.Read(output, 0, output.Length);
+            for (int j = 0; j < output.Length; j++)
+            {
+                max = Math.Max(max, Math.Abs(output[j]));
+            }
+        }
+
+        Assert.True(max > 1e-3f, $"expected audible output, got {max}");
+        Assert.All(output, v => Assert.True(float.IsFinite(v), "output must be finite"));
+    }
+
+    private static float SemitonesToFactor(float semitones)
+    {
+        return MathF.Pow(2f, semitones / 12f);
+    }
+
     private static float[] Sine(float amplitude, int length, float freq = 220f, int sampleRate = 48000)
     {
         var data = new float[length];
@@ -223,6 +266,25 @@ public class DSPChainTests
                 written++;
             }
             return written;
+        }
+    }
+
+    private sealed class LoopingSource : ISampleProvider
+    {
+        private readonly float[] _samples;
+        private int _index;
+
+        public LoopingSource(float[] samples) => _samples = samples;
+
+        public WaveFormat WaveFormat => WaveFormat.CreateIeeeFloatWaveFormat(48000, 1);
+
+        public int Read(float[] buffer, int offset, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                buffer[offset + i] = _samples[_index++ % _samples.Length];
+            }
+            return count;
         }
     }
 }

@@ -6,6 +6,8 @@ public class VoiceChangerPreset
 
     public string Name { get; set; } = string.Empty;
 
+    public override string ToString() => string.IsNullOrWhiteSpace(Name) ? Id : Name;
+
     public float PitchSemitones { get; set; }
 
     public float FormantShift { get; set; } = 1f;
