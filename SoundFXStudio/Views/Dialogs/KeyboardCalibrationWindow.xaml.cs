@@ -949,6 +949,12 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             return;
         }
 
+        // Hold Shift for coarse movement while default clicks stay precise.
+        if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+        {
+            delta *= 5;
+        }
+
         property.SetValue(target, current + delta);
     }
 
