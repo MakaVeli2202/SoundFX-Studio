@@ -69,9 +69,8 @@ public sealed class VoiceTransformSampleProvider : ISampleProvider
             return;
         }
 
-        _stage = new SmbPitchShiftingSampleProvider(_source)
-        {
-            PitchFactor = effective
-        };
+        // fftSize 4096 keeps voice frequency resolution; osamp 8 (vs default 4)
+        // halves phase-vocoder smearing for a cleaner, less "phasey" result.
+        _stage = new SmbPitchShiftingSampleProvider(_source, 4096, 8, effective);
     }
 }
