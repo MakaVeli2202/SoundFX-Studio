@@ -65,7 +65,6 @@ public sealed class MainViewModel : ObservableObject
     private bool _isLoading;
     private bool _isAssignMode;
     private bool _isSoundboardActive = true;
-    private DateTime _lastTogglePress = DateTime.MinValue;
     private string _currentPage = "Home";
     private string _settingsSection = "General";
     private KeyboardLayoutMode _detectedKeyboardLayout = KeyboardLayoutMode.EnglishUS;
@@ -831,24 +830,6 @@ public sealed class MainViewModel : ObservableObject
 
     private void OnToggleKeyPressed()
     {
-        var now = DateTime.UtcNow;
-        if ((now - _lastTogglePress).TotalMilliseconds < 400)
-        {
-            Settings.HotkeyHoldMode = !Settings.HotkeyHoldMode;
-            _lastTogglePress = DateTime.MinValue;
-            if (Settings.HotkeyHoldMode)
-            {
-                IsSoundboardActive = false;
-            }
-            else
-            {
-                IsSoundboardActive = true;
-            }
-            ShowSoundboardNotification();
-            return;
-        }
-        _lastTogglePress = now;
-
         IsSoundboardActive = Settings.HotkeyHoldMode || !IsSoundboardActive;
     }
 

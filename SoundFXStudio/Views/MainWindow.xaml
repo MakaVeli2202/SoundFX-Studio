@@ -447,7 +447,7 @@
 
             <!-- Dashboard Hero Section -->
                 <Border x:Name="HeroSectionBorder"
-                    Height="290"
+                    Height="520"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Top"
                     Margin="300,70,35,0">
@@ -478,16 +478,16 @@
                         </Grid>
                     </Border>
 
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left" Margin="48,0,0,0" MaxWidth="430">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Left" Margin="56,0,0,0" MaxWidth="460">
                         <TextBlock Text="SOUNDBOARD" Foreground="#97B6D5" FontSize="12" FontWeight="Bold"/>
                         <TextBlock Text="Fast trigger control"
                                    Foreground="#EAF1FF"
-                                   FontSize="30"
+                                   FontSize="34"
                                    FontWeight="SemiBold"
                                    Margin="0,8,0,0"/>
                         <TextBlock Text="Same hero feel, cleaner layout and better spacing."
                                    Foreground="#B7C7DD"
-                                   FontSize="13"
+                                   FontSize="14"
                                    Margin="0,10,0,0"
                                    TextWrapping="Wrap"/>
                         <Button x:Name="OpenKeyboardOverlayButton"
@@ -509,7 +509,7 @@
             </Border>
 
             <!-- Effects Page -->
-                <Border Height="620"
+                    <Border Height="700"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Top"
                     Margin="300,70,35,0">
@@ -653,7 +653,7 @@
             </Border>
 
             <!-- Library Page (tile grid) — MyBoard design with dark theme -->
-                <Border Height="620"
+                    <Border Height="700"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Top"
                     Margin="300,70,35,0">
@@ -937,7 +937,7 @@
             </Border>
 
             <!-- Settings Page -->
-                    <Border Height="640"
+                        <Border Height="700"
                         HorizontalAlignment="Stretch"
                     VerticalAlignment="Top"
                         Margin="300,70,35,0">
@@ -953,21 +953,21 @@
                 </Border.Style>
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="178"/>
+                            <ColumnDefinition Width="190"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- ═══ SETTINGS SECTION RAIL ═══ -->
                         <Border Grid.Column="0" Background="#0C1424" BorderBrush="#1B3157"
                                 BorderThickness="1" CornerRadius="14" Margin="12,12,6,12">
-                            <StackPanel Margin="10">
+                            <StackPanel Margin="12">
                                 <TextBlock Text="SETTINGS"
                                            Foreground="#8B5CF6"
-                                           FontSize="16"
+                                           FontSize="18"
                                            FontWeight="Bold"
                                            Margin="8,4,0,12"/>
                                 <TextBlock Text="Tune audio routing, hotkeys and general behavior."
-                                           Foreground="#7F899C" FontSize="10.5" TextWrapping="Wrap" Margin="8,0,4,12"/>
+                                           Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="8,0,4,12"/>
 
                                 <Button x:Name="SettingsSectionGeneralButton" Tag="General" Click="SettingsSectionButton_Click">
                                     <Button.Style>
@@ -983,7 +983,7 @@
                                     </Button.Style>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE8A5;" FontFamily="Segoe Fluent Icons" FontSize="13" Width="26" VerticalAlignment="Center"/>
-                                        <TextBlock Text="General" FontSize="12" VerticalAlignment="Center"/>
+                                        <TextBlock Text="General" FontSize="13" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
 
@@ -1001,7 +1001,7 @@
                                     </Button.Style>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE8D6;" FontFamily="Segoe Fluent Icons" FontSize="13" Width="26" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Audio" FontSize="12" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Audio" FontSize="13" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
 
@@ -1019,7 +1019,7 @@
                                     </Button.Style>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE765;" FontFamily="Segoe Fluent Icons" FontSize="13" Width="26" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Keybinds" FontSize="12" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Keybinds" FontSize="13" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
 
@@ -1037,7 +1037,7 @@
                                     </Button.Style>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE7C4;" FontFamily="Segoe Fluent Icons" FontSize="13" Width="26" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Advanced" FontSize="12" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Advanced" FontSize="13" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                             </StackPanel>
@@ -1060,15 +1060,15 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <StackPanel Margin="18">
+                                    <StackPanel Margin="24">
                                         <TextBlock x:Name="SettingsGeneralHeader"
-                                                   Text="GENERAL" Foreground="#8B5CF6" FontSize="13" FontWeight="Bold"
+                                                   Text="GENERAL" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold"
                                                    Margin="0,0,0,4"/>
-                                        <TextBlock Foreground="#7F899C" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,14"
+                                        <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
                                                    Text="Startup and app behavior."/>
 
                                         <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
-                                                CornerRadius="12" Padding="14,12">
+                                            CornerRadius="12" Padding="18,16">
                                             <StackPanel>
                                                 <CheckBox x:Name="ShowWizardOnStartupCheck"
                                                           Content="Show setup wizard on startup"
@@ -1078,7 +1078,7 @@
                                                           Content="Start minimized to tray"
                                                           IsChecked="{Binding Settings.StartMinimized, Mode=TwoWay}"
                                                           Foreground="#DDEAFF" FontSize="12"/>
-                                                <TextBlock Foreground="#7F899C" FontSize="10.5" TextWrapping="Wrap" Margin="0,12,0,0"
+                                                <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"
                                                            Text="Voicemeeter hear/talk selection, routing and reset live in the Setup Wizard."/>
                                             </StackPanel>
                                         </Border>
@@ -1097,15 +1097,15 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <StackPanel Margin="18">
+                                    <StackPanel Margin="24">
                                         <TextBlock x:Name="SettingsAudioHeader"
-                                                   Text="AUDIO DEVICES" Foreground="#8B5CF6" FontSize="13" FontWeight="Bold"
+                                                   Text="AUDIO DEVICES" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold"
                                                    Margin="0,0,0,4"/>
-                                        <TextBlock Foreground="#7F899C" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,14"
+                                        <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
                                                    Text="Where SoundFX plays sounds and where your voice comes from."/>
 
                                         <Border Background="#66081428" BorderBrush="#558B5CF6"
-                                                BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,14">
+                                            BorderThickness="1" CornerRadius="12" Padding="18,16" Margin="0,0,0,16">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
@@ -1185,16 +1185,16 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <Grid Margin="18">
+                                    <Grid Margin="24">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="*"/>
                                         </Grid.RowDefinitions>
 
                                         <StackPanel>
-                                            <TextBlock Text="KEYBINDS (HOTKEYS)" Foreground="#8B5CF6" FontSize="13" FontWeight="Bold"
+                                            <TextBlock Text="KEYBINDS (HOTKEYS)" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold"
                                                        Margin="0,0,0,4"/>
-                                            <TextBlock Foreground="#7F899C" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,14"
+                                            <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
                                                        Text="Global shortcuts for mute actions and the soundboard toggle."/>
 
                                             <Button x:Name="AddBindingButton"
@@ -1240,9 +1240,9 @@
                                                 </StackPanel>
                                             </Button>
 
-                                            <Border x:Name="AddBindingPanel" Visibility="Collapsed"
+                                                <Border x:Name="AddBindingPanel" Visibility="Collapsed"
                                                     Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
-                                                    CornerRadius="12" Padding="14,12" Margin="0,0,0,12">
+                                                    CornerRadius="12" Padding="18,16" Margin="0,0,0,14">
                                                 <StackPanel>
                                                     <TextBlock Text="Choose an action:" Foreground="#DDEAFF" FontSize="11" Margin="0,0,0,6"/>
                                                     <ComboBox x:Name="AddBindingActionCombo" Height="30"
@@ -1264,7 +1264,7 @@
                                                 </StackPanel>
                                             </Border>
 
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                                                 <TextBlock Text="Activation:" Foreground="#A1B2D2" FontSize="11" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                                 <ComboBox x:Name="KeybindHoldModeCombo" Width="200" Height="30" FontSize="12"
                                                           Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White"
@@ -1335,14 +1335,14 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <StackPanel Margin="18">
-                                        <TextBlock Text="ADVANCED" Foreground="#8B5CF6" FontSize="13" FontWeight="Bold"
+                                    <StackPanel Margin="24">
+                                        <TextBlock Text="ADVANCED" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold"
                                                    Margin="0,0,0,4"/>
-                                        <TextBlock Foreground="#7F899C" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,14"
+                                        <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
                                                    Text="Keyboard layout and calibration."/>
 
                                         <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
-                                                CornerRadius="12" Padding="14,12" Margin="0,0,0,12">
+                                            CornerRadius="12" Padding="18,16" Margin="0,0,0,14">
                                             <StackPanel>
                                                 <TextBlock Text="KEYBOARD LAYOUT" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                                                 <ComboBox ItemsSource="{Binding KeyboardLayoutOptions}"
@@ -1354,7 +1354,7 @@
                                         </Border>
 
                                         <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
-                                                CornerRadius="12" Padding="14,12">
+                                            CornerRadius="12" Padding="18,16">
                                             <StackPanel>
                                                 <TextBlock Text="KEYBOARD CALIBRATION" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                                                 <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,8"
