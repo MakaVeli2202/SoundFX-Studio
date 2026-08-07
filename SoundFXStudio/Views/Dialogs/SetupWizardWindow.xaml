@@ -222,6 +222,32 @@
                                     </Button.Template>
                             </Button>
 
+                                <Button x:Name="WizardConfigureVmOnlyBtn"
+                                        Content="Configure Voicemeeter Only"
+                                        Margin="8,0,0,0"
+                                        Click="WizardConfigureVmOnly_Click"
+                                        Height="36"
+                                        Background="#222A2A66" BorderBrush="#10B981"
+                                        Foreground="White" Cursor="Hand" FontSize="12">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#442A2A66"/>
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+
                             <Button x:Name="WizardResetWindowsBtn"
                                     Content="Reset Windows Settings"
                                     Margin="8,0,0,0"

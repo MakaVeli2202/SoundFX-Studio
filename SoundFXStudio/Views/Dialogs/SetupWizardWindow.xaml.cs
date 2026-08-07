@@ -50,13 +50,73 @@ public partial class SetupWizardWindow : Window
             VmDetectText.Text = "✓ Voicemeeter detected";
             VmDetectText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81));
             WizardAutoSetupBtn.IsEnabled = true;
+            WizardConfigureVmOnlyBtn.IsEnabled = true;
         }
         else
         {
             VmDetectText.Text = "✗ Voicemeeter not installed — install it for best routing";
             VmDetectText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF4, 0x3F, 0x5E));
             WizardAutoSetupBtn.IsEnabled = false;
+            WizardConfigureVmOnlyBtn.IsEnabled = false;
         }
+    }
+
+    private async void WizardConfigureVmOnly_Click(object sender, RoutedEventArgs e)
+    {
+        var hear = WizardHearCombo.SelectedItem as AudioDeviceInfo;
+        var talk = WizardTalkCombo.SelectedItem as AudioDeviceInfo;
+        if (hear is null || talk is null) { VmSetupStatus.Text = "Select both devices first."; return; }
+
+        if (!VoicemeeterRemote.IsInstalled()) { VmSetupStatus.Text = "✗ Voicemeeter not installed."; return; }
+
+        WizardAutoSetupBtn.IsEnabled = false;
+        WizardConfigureVmOnlyBtn.IsEnabled = false;
+        VmSetupStatus.Text = "Configuring Voicemeeter only…";
+        VmSetupStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x98, 0xA0, 0xC0));
+        Mouse.OverrideCursor = Cursors.Wait;
+
+        string result;
+        try
+        {
+            var (applied, diagnostics) = await Task.Run(() =>
+            {
+                using var vm = new VoicemeeterRemote();
+                if (!vm.Login()) return (false, "Login failed.");
+                bool ok = vm.ApplyRouting(hear.Name, talk.Name);
+                string diag = vm.LastDiagnostics;
+                vm.Dispose();
+                return (ok, diag);
+            });
+
+            if (applied)
+            {
+                _config.Settings.HearDeviceName = hear.Name;
+                _config.Settings.TalkDeviceName = talk.Name;
+                _config.Settings.SpeakersDeviceName = hear.Name;
+                _config.Settings.VoicemeeterDetected = true;
+                _configService.Save(_config);
+
+                result = $"✓ Voicemeeter configured only:\n   Hear: {hear.Name}\n   Talk: {talk.Name}\n   Windows defaults unchanged.";
+            }
+            else
+            {
+                result = "✗ Setup failed: could not configure Voicemeeter.\n   Check Hear/Talk device names and retry.";
+                if (!string.IsNullOrWhiteSpace(diagnostics))
+                    result += $"\n\n{diagnostics}";
+            }
+        }
+        catch (Exception ex)
+        {
+            result = $"✗ Setup failed: {ex.Message}";
+        }
+
+        Mouse.OverrideCursor = null;
+        WizardAutoSetupBtn.IsEnabled = true;
+        WizardConfigureVmOnlyBtn.IsEnabled = true;
+        VmSetupStatus.Text = result;
+        VmSetupStatus.Foreground = new System.Windows.Media.SolidColorBrush(result.StartsWith("✓")
+            ? System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)
+            : System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
     }
 
     private async void WizardAutoSetup_Click(object sender, RoutedEventArgs e)
