@@ -20,11 +20,33 @@ public partial class SetupWizardWindow : Window
         _config = _configService.Load();
         Loaded += SetupWizardWindow_Loaded;
         Closed += (_, _) => { _stateTimer?.Stop(); _vm.Dispose(); };
+        PreviewMouseLeftButtonDown += TryDragWindow;
     }
 
-    private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    private void TryDragWindow(object sender, MouseButtonEventArgs e)
     {
-        if (e.ClickCount == 2) return;
+        if (e.ClickCount == 2)
+        {
+            return;
+        }
+
+        var source = e.OriginalSource as DependencyObject;
+        while (source is not null)
+        {
+            if (source is System.Windows.Controls.Primitives.ButtonBase
+                or System.Windows.Controls.TextBox
+                or System.Windows.Controls.ComboBox
+                or System.Windows.Controls.Slider
+                or System.Windows.Controls.CheckBox
+                or System.Windows.Controls.ListBox
+                or System.Windows.Controls.Primitives.ScrollBar)
+            {
+                return;
+            }
+
+            source = System.Windows.Media.VisualTreeHelper.GetParent(source);
+        }
+
         DragMove();
     }
 
@@ -70,9 +92,25 @@ public partial class SetupWizardWindow : Window
         WizardB1Status.Foreground = new System.Windows.Media.SolidColorBrush(color);
     }
 
+    private void SetA1Status(string text, System.Windows.Media.Color color)
+    {
+        WizardA1Status.Text = text;
+        WizardA1Status.Foreground = new System.Windows.Media.SolidColorBrush(color);
+    }
+
+    private void SetVirtualB1Status(string text, System.Windows.Media.Color color)
+    {
+        WizardVirtualB1Status.Text = text;
+        WizardVirtualB1Status.Foreground = new System.Windows.Media.SolidColorBrush(color);
+    }
+
     private readonly VoicemeeterRemote _vm = new();
     private bool _suppressB1;
+    private bool _suppressA1;
+    private bool _suppressVirtualB1;
     private System.Windows.Threading.DispatcherTimer? _stateTimer;
+
+    private int VirtualInputStrip => _vm.LoggedIn ? _vm.FirstVirtualStrip(_vm.StripCount()) : -1;
 
     private void WizardB1Toggle_Checked(object sender, RoutedEventArgs e)
     {
@@ -90,18 +128,66 @@ public partial class SetupWizardWindow : Window
         SetB1Status("B1 OFF — mic blocked from Discord/teams", System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
     }
 
+    private void WizardA1Toggle_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressA1) return;
+        if (App.IsVoiceChangerRunning)
+        {
+            _suppressA1 = true;
+            WizardA1ToggleBtn.IsChecked = false;
+            _suppressA1 = false;
+            SetA1Status("A1 OFF — locked while voice changer is running", System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+        if (!EnsureVmConnected()) return;
+        _vm.SetFloat($"Strip[{VirtualInputStrip}].A1", 1);
+        SetA1Status("A1 ON — processed voice goes to speakers", System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81));
+    }
+
+    private void WizardA1Toggle_Unchecked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressA1) return;
+        if (!EnsureVmConnected()) return;
+        _vm.SetFloat($"Strip[{VirtualInputStrip}].A1", 0);
+        SetA1Status("A1 OFF — processed voice muted from speakers", System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+    }
+
+    private void WizardVirtualB1Toggle_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressVirtualB1) return;
+        if (!EnsureVmConnected()) return;
+        _vm.SetFloat($"Strip[{VirtualInputStrip}].B1", 1);
+        SetVirtualB1Status("Virtual B1 ON — processed voice goes to Discord/teams", System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81));
+    }
+
+    private void WizardVirtualB1Toggle_Unchecked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressVirtualB1) return;
+        if (!EnsureVmConnected()) return;
+        _vm.SetFloat($"Strip[{VirtualInputStrip}].B1", 0);
+        SetVirtualB1Status("Virtual B1 OFF — processed voice blocked from Discord/teams", System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+    }
+
     private bool EnsureVmConnected()
     {
         if (_vm.LoggedIn) return true;
         if (!_vm.Login())
         {
-            SetB1Status(_vm.Available
+            var message = _vm.Available
                 ? "✗ Voicemeeter not running — start it first"
-                : "✗ Voicemeeter not installed", System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+                : "✗ Voicemeeter not installed";
+            SetB1Status(message, System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+            SetA1Status(message, System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+            SetVirtualB1Status(message, System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
             return false;
         }
         _stateTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
-        _stateTimer.Tick += (_, _) => { if (_vm.IsDirty()) RefreshB1State(); };
+        _stateTimer.Tick += (_, _) =>
+        {
+            RefreshB1State();
+            RefreshA1State();
+            RefreshVirtualB1State();
+        };
         _stateTimer.Start();
         return true;
     }
@@ -115,6 +201,44 @@ public partial class SetupWizardWindow : Window
         SetB1Status(on
             ? "B1 ON — mic goes to Discord/teams"
             : "B1 OFF — mic blocked from Discord/teams", on
+            ? System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)
+            : System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+    }
+
+    private void RefreshA1State()
+    {
+        bool vcRunning = App.IsVoiceChangerRunning;
+        if (vcRunning)
+        {
+            _suppressA1 = true;
+            WizardA1ToggleBtn.IsChecked = false;
+            _suppressA1 = false;
+            WizardA1ToggleBtn.IsEnabled = false;
+            SetA1Status("A1 OFF — voice changer is running", System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+
+        WizardA1ToggleBtn.IsEnabled = true;
+        bool on = _vm.LoggedIn && _vm.GetFloat($"Strip[{VirtualInputStrip}].A1") >= 0.5f;
+        _suppressA1 = true;
+        WizardA1ToggleBtn.IsChecked = on;
+        _suppressA1 = false;
+        SetA1Status(on
+            ? "A1 ON — processed voice goes to speakers"
+            : "A1 OFF — processed voice muted from speakers", on
+            ? System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)
+            : System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+    }
+
+    private void RefreshVirtualB1State()
+    {
+        bool on = _vm.LoggedIn && _vm.GetFloat($"Strip[{VirtualInputStrip}].B1") >= 0.5f;
+        _suppressVirtualB1 = true;
+        WizardVirtualB1ToggleBtn.IsChecked = on;
+        _suppressVirtualB1 = false;
+        SetVirtualB1Status(on
+            ? "Virtual B1 ON — processed voice goes to Discord/teams"
+            : "Virtual B1 OFF — processed voice blocked from Discord/teams", on
             ? System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)
             : System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
     }
@@ -150,8 +274,19 @@ public partial class SetupWizardWindow : Window
         _config.Settings.MicrophoneDeviceId = vmOutputId;
         _configService.Save(_config);
 
+        var virtualB1Activated = false;
+        if (EnsureVmConnected() && _vm.GetFloat($"Strip[{VirtualInputStrip}].B1") < 0.5f)
+        {
+            _vm.SetFloat($"Strip[{VirtualInputStrip}].B1", 1);
+            _vm.IsDirty();
+            virtualB1Activated = true;
+            RefreshVirtualB1State();
+        }
+
         VmSetupStatus.Text = verified
-            ? "✓ Input routed to VoiceMeeter Output (B1). Output device left unchanged."
+            ? virtualB1Activated
+                ? "✓ Input routed to VoiceMeeter Output (B1). Virtual Input B1 also enabled."
+                : "✓ Input routed to VoiceMeeter Output (B1). Output device left unchanged."
             : "⚠ Input device setting was attempted, but Windows did not confirm VoiceMeeter Output (B1). Output device left unchanged.";
         VmSetupStatus.Foreground = new System.Windows.Media.SolidColorBrush(verified
             ? System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)

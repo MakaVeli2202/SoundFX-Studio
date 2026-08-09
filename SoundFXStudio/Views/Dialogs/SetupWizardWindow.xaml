@@ -87,7 +87,7 @@
             <Border Grid.Row="0"
                     Style="{StaticResource GlassPanel}">
 
-                <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <Grid>
 
                     <Grid.ColumnDefinitions>
 
@@ -343,6 +343,100 @@
                                     </ToggleButton>
                                     <TextBlock x:Name="WizardB1Status"
                                                Text="B1: unknown"
+                                               VerticalAlignment="Center"
+                                               Margin="12,0,0,0"
+                                               Foreground="#8891B8"
+                                               FontSize="12"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#22081428" CornerRadius="12" Padding="14,12" Margin="0,12,0,0"
+                                BorderBrush="#338B5CF6" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="VIRTUAL INPUT STRIP A1 (processed voice → speakers)"
+                                           Foreground="#C9D7F0" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ToggleButton x:Name="WizardA1ToggleBtn"
+                                                  Content="Speakers (Virtual Input A1)"
+                                                  ClickMode="Press"
+                                                  Checked="WizardA1Toggle_Checked"
+                                                  Unchecked="WizardA1Toggle_Unchecked"
+                                                  Height="36"
+                                                  Background="#222A2A66" BorderBrush="#10B981"
+                                                  Foreground="#A7F3D0" Cursor="Hand" FontWeight="SemiBold" FontSize="12"
+                                                  ToolTip="Routes the Voicemeeter virtual input to A1 (what you hear through your speakers/headphones)">
+                                        <ToggleButton.Template>
+                                            <ControlTemplate TargetType="ToggleButton">
+                                                <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </ToggleButton.Template>
+                                    </ToggleButton>
+                                    <TextBlock x:Name="WizardA1Status"
+                                               Text="A1: unknown"
+                                               VerticalAlignment="Center"
+                                               Margin="12,0,0,0"
+                                               Foreground="#8891B8"
+                                               FontSize="12"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="#22081428" CornerRadius="12" Padding="14,12" Margin="0,12,0,0"
+                                BorderBrush="#338B5CF6" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="VIRTUAL INPUT STRIP B1 (processed voice → Discord/teams)"
+                                           Foreground="#C9D7F0" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ToggleButton x:Name="WizardVirtualB1ToggleBtn"
+                                                  Content="Teammates (Virtual Input B1)"
+                                                  ClickMode="Press"
+                                                  Checked="WizardVirtualB1Toggle_Checked"
+                                                  Unchecked="WizardVirtualB1Toggle_Unchecked"
+                                                  Height="36"
+                                                  Background="#222A2A66" BorderBrush="#10B981"
+                                                  Foreground="#A7F3D0" Cursor="Hand" FontWeight="SemiBold" FontSize="12"
+                                                  ToolTip="Routes the Voicemeeter virtual input to B1 (what teammates hear in Discord/teams)">
+                                        <ToggleButton.Template>
+                                            <ControlTemplate TargetType="ToggleButton">
+                                                <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </ToggleButton.Template>
+                                    </ToggleButton>
+                                    <TextBlock x:Name="WizardVirtualB1Status"
+                                               Text="Virtual B1: unknown"
                                                VerticalAlignment="Center"
                                                Margin="12,0,0,0"
                                                Foreground="#8891B8"

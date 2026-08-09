@@ -83,6 +83,8 @@ public partial class App : Application
         return true;
     }
 
+    public static bool IsVoiceChangerRunning { get; set; }
+
     private void App_Startup(object sender, StartupEventArgs e)
     {
         _logService.Info($"App Version: {Assembly.GetExecutingAssembly().GetName().Version}");

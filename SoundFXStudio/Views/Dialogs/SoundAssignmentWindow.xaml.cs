@@ -76,7 +76,8 @@ public partial class SoundAssignmentWindow : Window
 
     private void CaptureChordKey_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new KeyCaptureDialog(chordMode: true)
+        var dlg = new KeyCaptureDialog(chordMode: true,
+            existingKeys: DataContext is SoundAssignmentViewModel existingVm ? existingVm.ChordKeys : null)
         {
             Owner = this
         };

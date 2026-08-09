@@ -492,6 +492,7 @@ public sealed class SoundLibraryViewModel
             .Select(NormalizeChordToken)
             .Where(token => !string.IsNullOrWhiteSpace(token))
             .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(3)
             .ToList();
 
         var soundAction = EnsureSoundAction(sound);

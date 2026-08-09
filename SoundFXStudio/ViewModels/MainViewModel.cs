@@ -875,6 +875,8 @@ public sealed class MainViewModel : ObservableObject
     {
         public required int StripIndex { get; init; }
         public required float PreviousB1 { get; init; }
+        public required int ProcessedStripIndex { get; init; }
+        public required float PreviousVirtualA1 { get; init; }
         public required string MicDeviceId { get; init; }
         public required string MicDeviceName { get; init; }
     }
@@ -969,10 +971,26 @@ public sealed class MainViewModel : ObservableObject
                 }
             }
 
+            var virtualA1Param = $"Strip[{processedStripIndex}].A1";
+            var previousVirtualA1 = vm.GetFloat(virtualA1Param);
+            if (previousVirtualA1 >= 0.5f)
+            {
+                var setA1Result = TrySetFloatVerified(vm, virtualA1Param, 0f, out var disabledA1);
+                if (!setA1Result)
+                {
+                    _ = TrySetFloatVerified(vm, micB1Param, previousB1, out _);
+                    error = $"Voice changer routing failed: unable to disable virtual input A1 (strip={processedStripIndex}, target=0, readBack={disabledA1:0.##}).";
+                    _logService?.Warning(error);
+                    return false;
+                }
+            }
+
             _voiceChangerMicSnapshot = new VoiceChangerDryMicSnapshot
             {
                 StripIndex = micStripIndex,
                 PreviousB1 = previousB1,
+                ProcessedStripIndex = processedStripIndex,
+                PreviousVirtualA1 = previousVirtualA1,
                 MicDeviceId = micDeviceId,
                 MicDeviceName = micDeviceName
             };
@@ -1019,6 +1037,18 @@ public sealed class MainViewModel : ObservableObject
                 error = $"Voice changer routing restore failed: strip {snapshot.StripIndex} B1 restore mismatch (target={snapshot.PreviousB1:0.##}, readBack={restoredB1:0.##}).";
                 _logService?.Warning(error);
                 return false;
+            }
+
+            var virtualA1Param = $"Strip[{snapshot.ProcessedStripIndex}].A1";
+            if (snapshot.PreviousVirtualA1 >= 0.5f)
+            {
+                var restoreA1Result = TrySetFloatVerified(vm, virtualA1Param, snapshot.PreviousVirtualA1, out var restoredA1);
+                if (!restoreA1Result)
+                {
+                    error = $"Voice changer routing restore failed: virtual strip {snapshot.ProcessedStripIndex} A1 restore mismatch (target={snapshot.PreviousVirtualA1:0.##}, readBack={restoredA1:0.##}).";
+                    _logService?.Warning(error);
+                    return false;
+                }
             }
 
             _voiceChangerMicSnapshot = null;
@@ -1868,6 +1898,7 @@ public sealed class MainViewModel : ObservableObject
             .Select(NormalizeChordToken)
             .Where(token => !string.IsNullOrWhiteSpace(token))
             .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(3)
             .ToList();
 
         var soundAction = EnsureSoundAction(sound);

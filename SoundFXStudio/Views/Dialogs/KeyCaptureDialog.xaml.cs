@@ -9,14 +9,41 @@ public partial class KeyCaptureDialog : Window
 {
     private bool _captured;
 
-    public KeyCaptureDialog(bool chordMode = false)
+    public KeyCaptureDialog(bool chordMode = false, IReadOnlyList<string>? existingKeys = null)
     {
         ChordMode = chordMode;
         InitializeComponent();
+        if (existingKeys is not null)
+        {
+            foreach (var keyName in existingKeys)
+            {
+                if (!string.IsNullOrWhiteSpace(keyName))
+                {
+                    KeyNames.Add(keyName.Trim().ToUpperInvariant());
+                }
+            }
+        }
+
         Loaded += (_, _) =>
         {
-            Keyboard.Focus(this);
-            StartListeningAnimation();
+            if (KeyNames.Count > 0)
+            {
+                _captured = true;
+                CapturedKeyName = KeyNames[0];
+                CapturedChordKeyName = KeyNames.Count > 1 ? KeyNames[^1] : string.Empty;
+                SaveButton.IsEnabled = true;
+                ClearButton.IsEnabled = true;
+                StopListeningAnimation();
+                UpdateDisplay();
+                InstructionText.Text = ChordMode
+                    ? $"Current binding: {string.Join(" + ", KeyNames)}. Press keys to add (max 3), or Backspace to remove one."
+                    : "Press Save to confirm, or Clear to reset.";
+            }
+            else
+            {
+                Keyboard.Focus(this);
+                StartListeningAnimation();
+            }
         };
     }
 
@@ -108,6 +135,12 @@ public partial class KeyCaptureDialog : Window
 
         if (ChordMode && _captured)
         {
+            if (KeyNames.Count >= 3)
+            {
+                InstructionText.Text = "Maximum 3 keys reached — press Save, or Backspace to remove one.";
+                return;
+            }
+
             CapturedChordKey = key;
             CapturedChordKeyName = name;
             KeyNames.Add(name);
@@ -150,7 +183,11 @@ public partial class KeyCaptureDialog : Window
         }
         CapturedKeyText.Text = string.Join(" + ", parts);
 
-        if (ChordMode && parts.Count > 1)
+        if (ChordMode && parts.Count >= 3)
+        {
+            ChordHintText.Text = "Maximum 3 keys reached — press Save or Backspace to remove one.";
+        }
+        else if (ChordMode && parts.Count > 1)
         {
             ChordHintText.Text = $"Chord: press {string.Join(" + ", parts)} together";
         }

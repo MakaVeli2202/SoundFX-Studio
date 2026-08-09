@@ -23,7 +23,6 @@ public partial class MainWindow : Window
     private KeyboardWindow? _keyboardWindow;
     private VoiceChangerService? _voiceChanger;
     private TeamMonitorService? _teamMonitor;
-    private bool? _voiceChangerTeammatesB1Snapshot;
     private bool _loadingVoiceChangerUi;
 
     public MainWindow(ILogService? logService = null)
@@ -57,6 +56,7 @@ public partial class MainWindow : Window
             _voiceChanger.Stop();
             _voiceChanger.Dispose();
             _voiceChanger = null;
+            App.IsVoiceChangerRunning = false;
             if (!ViewModel.TryRestoreVoiceChangerRouting(out var restoreError))
             {
                 ViewModel.StatusText = restoreError;
@@ -66,7 +66,6 @@ public partial class MainWindow : Window
             {
                 ViewModel.EndVoiceChangerMonitorMute();
             }
-            RestoreTeammatesInputB1();
             VoiceChangerToggleBtn.Content = "Start Voice Changer";
             VoiceChangerStatus.Text = "Stopped";
             VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xE8, 0x55, 0x55));
@@ -101,30 +100,20 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (!SnapshotTeammatesInputB1())
-        {
-            ViewModel.StatusText = "Voice changer started, but could not read the current teammates B1 state.";
-        }
-
-        if (!SetTeammatesInputB1(false))
-        {
-            ViewModel.StatusText = "Voice changer routing failed: could not disable teammates B1.";
-            return;
-        }
-
         try
         {
             _voiceChanger = new VoiceChangerService();
             PresetManager.Apply(PresetManager.GetById(ViewModel.Settings.VoiceChangerPresetId), _voiceChanger);
             _voiceChanger.SetFormant(ViewModel.Settings.FormantShift);
             _voiceChanger.Start(micId, outIdx, pitch);
+            App.IsVoiceChangerRunning = true;
         }
         catch (Exception ex)
         {
             _voiceChanger?.Dispose();
             _voiceChanger = null;
+            App.IsVoiceChangerRunning = false;
             ViewModel.TryRestoreVoiceChangerRouting(out var restoreError);
-            RestoreTeammatesInputB1();
             ViewModel.StatusText = string.IsNullOrWhiteSpace(restoreError)
                 ? $"Voice changer failed to start: {ex.Message}"
                 : $"Voice changer failed to start: {ex.Message} | {restoreError}";
@@ -140,48 +129,6 @@ public partial class MainWindow : Window
         VoiceChangerStatusDot.Background = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
         ViewModel.StatusText = $"Voice changer started -> {outputDeviceName} ({outputDeviceId})";
         ToastWindow.Show("Voice Changer", "Running", true);
-    }
-
-    private bool SnapshotTeammatesInputB1()
-    {
-        try
-        {
-            using var vm = App.Vm();
-            if (vm is null)
-            {
-                return false;
-            }
-
-            _voiceChangerTeammatesB1Snapshot = vm.GetFloat("Strip[0].B1") >= 0.5f;
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private bool SetTeammatesInputB1(bool on)
-    {
-        try
-        {
-            return App.SetInputStripB1(on);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private void RestoreTeammatesInputB1()
-    {
-        if (_voiceChangerTeammatesB1Snapshot is not bool on)
-        {
-            return;
-        }
-
-        _ = SetTeammatesInputB1(on);
-        _voiceChangerTeammatesB1Snapshot = null;
     }
 
     private void SetupVoiceChangerPresets()
@@ -498,10 +445,10 @@ public partial class MainWindow : Window
         _voiceChanger?.Stop();
         _voiceChanger?.Dispose();
         _voiceChanger = null;
+        App.IsVoiceChangerRunning = false;
         _teamMonitor?.Dispose();
         _teamMonitor = null;
         ViewModel.TryRestoreVoiceChangerRouting(out _);
-        RestoreTeammatesInputB1();
 
         if (_keyboardWindow is { IsLoaded: true })
         {
@@ -567,7 +514,7 @@ public partial class MainWindow : Window
         var sound = GetSoundFromMenu(sender);
         if (sound is null) return;
 
-        var dialog = new KeyCaptureDialog(chordMode: true)
+        var dialog = new KeyCaptureDialog(chordMode: true, existingKeys: ViewModel.GetChordKeysForSound(sound))
         {
             Owner = this
         };

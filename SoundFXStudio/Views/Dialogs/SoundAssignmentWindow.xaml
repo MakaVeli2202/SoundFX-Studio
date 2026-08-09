@@ -125,7 +125,7 @@
                         <!-- Chord Key -->
                         <StackPanel Margin="0,0,0,14">
                             <TextBlock Text="Chord Sequence (optional)" FontWeight="Bold" Foreground="{StaticResource TextBrush}" Margin="0,0,0,6"/>
-                            <TextBlock Text="Set a two-key combo: press first key, then second key within 1s" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="0,0,0,8"/>
+                            <TextBlock Text="Set a key combo (up to 3 keys): press keys in sequence within 1s" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="0,0,0,8"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
