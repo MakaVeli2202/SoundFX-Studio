@@ -11,6 +11,9 @@ using Microsoft.Win32;
 
 namespace SoundFXStudio.Services;
 
+/// <summary>
+/// Thin wrapper around the Voicemeeter native API used by the audio routing and mixer UI.
+/// </summary>
 public sealed class VoicemeeterRemote : IDisposable
 {
     [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int DLogin();
@@ -71,6 +74,9 @@ public sealed class VoicemeeterRemote : IDisposable
     [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hwnd, int cmd);
     private const int SW_HIDE = 0;
 
+    /// <summary>
+    /// Connects to the local Voicemeeter instance and prepares the session for parameter access.
+    /// </summary>
     public bool Login()
     {
         if (!Available && !Load()) return false;
@@ -87,6 +93,9 @@ public sealed class VoicemeeterRemote : IDisposable
         return LoggedIn;
     }
 
+    /// <summary>
+    /// Attempts a lightweight connection without forcing the Voicemeeter UI to be shown.
+    /// </summary>
     public bool TryConnect()
     {
         if (!Available && !Load()) return false;
@@ -129,6 +138,9 @@ public sealed class VoicemeeterRemote : IDisposable
         return _setS!(param, value);
     }
 
+    /// <summary>
+    /// Applies the selected microphone and output routing to the Voicemeeter strips and buses.
+    /// </summary>
     public bool ApplyRouting(string hearDevice, string talkDevice)
     {
         LastDiagnostics = "";
@@ -169,6 +181,9 @@ public sealed class VoicemeeterRemote : IDisposable
         return ok;
     }
 
+    /// <summary>
+    /// Clears the selected devices from Voicemeeter and reports any read-back issues.
+    /// </summary>
     public string ResetRouting(IReadOnlyCollection<string>? currentInputNames = null,
                                IReadOnlyCollection<string>? currentOutputNames = null)
     {

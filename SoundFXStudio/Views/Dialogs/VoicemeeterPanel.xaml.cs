@@ -51,12 +51,14 @@ public partial class VoicemeeterPanel : Window
 
         if (!VoicemeeterRemote.IsInstalled())
         {
+            ConnectionStateText.Text = "Unavailable";
             StatusText.Text = "Voicemeeter isn't installed yet.";
             OpenVmBtn.Content = "Install Voicemeeter";
             return;
         }
         if (!_vm.Login())
         {
+            ConnectionStateText.Text = "Not connected";
             StatusText.Text = "Couldn't connect to Voicemeeter — click Open Voicemeeter, then reopen this.";
             return;
         }
@@ -72,6 +74,7 @@ public partial class VoicemeeterPanel : Window
         _vuTimer.Tick += (_, _) => UpdateMeters();
         _vuTimer.Start();
 
+        ConnectionStateText.Text = "Connected";
         StatusText.Text = "Connected to Voicemeeter";
     }
 
@@ -98,6 +101,27 @@ public partial class VoicemeeterPanel : Window
             StripsPanel.Children.Add(BuildCard(name, hint, ui));
             _strips.Add(ui);
         }
+
+        if (_strips.Count == 0)
+        {
+            StripsPanel.Children.Add(new Border
+            {
+                Background = new SolidColorBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF)),
+                BorderBrush = new SolidColorBrush(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(14),
+                Padding = new Thickness(18),
+                Margin = new Thickness(0, 0, 0, 10),
+                Child = new StackPanel
+                {
+                    Children =
+                    {
+                        new TextBlock { Text = "No strips available", Foreground = Brushes.White, FontSize = 14, FontWeight = FontWeights.SemiBold },
+                        new TextBlock { Text = "Voicemeeter is running, but there are no available strips to display yet.", Foreground = new SolidColorBrush(Color.FromRgb(0x98, 0xA0, 0xC0)), FontSize = 12, Margin = new Thickness(0, 4, 0, 0), TextWrapping = TextWrapping.Wrap }
+                    }
+                }
+            });
+        }
     }
 
     private Border BuildCard(string name, string hint, StripUi ui)
@@ -107,8 +131,19 @@ public partial class VoicemeeterPanel : Window
         grid.RowDefinitions.Add(new RowDefinition());
         grid.RowDefinitions.Add(new RowDefinition());
 
-        var header = new StackPanel { Orientation = Orientation.Horizontal };
-        var titleStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        var header = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+        var titleRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 4) };
+        var badge = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(999),
+            Padding = new Thickness(8, 3, 8, 3),
+            Margin = new Thickness(8, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        badge.Child = new TextBlock { Text = ui.Virtual ? "App / soundboard" : "Mic / input", Foreground = new SolidColorBrush(Color.FromRgb(0x98, 0xA0, 0xC0)), FontSize = 10, FontWeight = FontWeights.SemiBold };
 
         ui.Name = new TextBox
         {
@@ -119,15 +154,16 @@ public partial class VoicemeeterPanel : Window
         };
         ui.Name.LostFocus += (_, _) => CommitRename(ui);
         ui.Name.KeyDown += (_, ev) => { if (ev.Key == Key.Return) { CommitRename(ui); Keyboard.ClearFocus(); ev.Handled = true; } };
-        titleStack.Children.Add(ui.Name);
-        titleStack.Children.Add(new TextBlock { Text = hint, Foreground = new SolidColorBrush(Color.FromRgb(0x8A, 0x92, 0xB8)), FontSize = 10.5 });
-        header.Children.Add(titleStack);
+        titleRow.Children.Add(ui.Name);
+        titleRow.Children.Add(badge);
+        header.Children.Add(titleRow);
+        header.Children.Add(new TextBlock { Text = hint, Foreground = new SolidColorBrush(Color.FromRgb(0x8A, 0x92, 0xB8)), FontSize = 10.5, Margin = new Thickness(0, 2, 0, 0) });
         Grid.SetRow(header, 0);
         grid.Children.Add(header);
 
         ui.VuTrack = new Border
         {
-            Height = 6, CornerRadius = new CornerRadius(3), Margin = new Thickness(0, 12, 0, 0),
+            Height = 6, CornerRadius = new CornerRadius(3), Margin = new Thickness(0, 4, 0, 0),
             Background = new SolidColorBrush(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF)),
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
@@ -138,15 +174,18 @@ public partial class VoicemeeterPanel : Window
             Background = new LinearGradientBrush(
                 Color.FromRgb(0x10, 0xB9, 0x81), Color.FromRgb(0xF4, 0x3F, 0x5E), 0),
         };
-        var vuHost = new Grid { Margin = new Thickness(0, 12, 0, 0) };
+        var vuHost = new Grid { Margin = new Thickness(0, 8, 0, 0) };
         ui.VuTrack.Margin = new Thickness(0);
         vuHost.Children.Add(ui.VuTrack);
         vuHost.Children.Add(ui.VuFill);
         Grid.SetRow(vuHost, 1);
         grid.Children.Add(vuHost);
 
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 12, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        var row = new Grid { Margin = new Thickness(0, 10, 0, 0) };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
+        var toggles = new WrapPanel { VerticalAlignment = VerticalAlignment.Center };
         ui.Hear = MakeToggle("You hear", 0x35, 0x35, 0xD0);
         ui.Hear.Checked   += (_, _) => { if (!ui.Suppress) _vm.SetFloat($"Strip[{ui.Index}].A1", 1); };
         ui.Hear.Unchecked += (_, _) => { if (!ui.Suppress) _vm.SetFloat($"Strip[{ui.Index}].A1", 0); };
@@ -159,15 +198,18 @@ public partial class VoicemeeterPanel : Window
         ui.Mute.Checked   += (_, _) => { if (!ui.Suppress) _vm.SetFloat($"Strip[{ui.Index}].Mute", 1); };
         ui.Mute.Unchecked += (_, _) => { if (!ui.Suppress) _vm.SetFloat($"Strip[{ui.Index}].Mute", 0); };
 
-        row.Children.Add(ui.Hear);
-        row.Children.Add(ui.Team);
-        row.Children.Add(ui.Mute);
+        toggles.Children.Add(ui.Hear);
+        toggles.Children.Add(ui.Team);
+        toggles.Children.Add(ui.Mute);
+        Grid.SetColumn(toggles, 0);
+        row.Children.Add(toggles);
 
         var volWrap = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0) };
         volWrap.Children.Add(new TextBlock { Text = "Gain", Foreground = new SolidColorBrush(Color.FromRgb(0x98, 0xA0, 0xC0)), FontSize = 11, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
         ui.Vol = new Slider { Minimum = -40, Maximum = 12, Width = 90, VerticalAlignment = VerticalAlignment.Center };
         ui.Vol.ValueChanged += (_, ev) => { if (!ui.Suppress) _vm.SetFloat($"Strip[{ui.Index}].Gain", (float)ev.NewValue); };
         volWrap.Children.Add(ui.Vol);
+        Grid.SetColumn(volWrap, 1);
         row.Children.Add(volWrap);
 
         Grid.SetRow(row, 2);
@@ -178,7 +220,7 @@ public partial class VoicemeeterPanel : Window
             Background = new SolidColorBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF)),
             BorderBrush = new SolidColorBrush(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(12),
+            CornerRadius = new CornerRadius(14),
             Padding = new Thickness(14),
             Margin = new Thickness(0, 0, 0, 10),
             Child = grid,

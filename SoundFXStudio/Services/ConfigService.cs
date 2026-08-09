@@ -5,6 +5,10 @@ using System.Text.Json.Serialization;
 
 namespace SoundFXStudio.Services;
 
+/// <summary>
+/// Loads and saves the application's persistent configuration while preserving
+/// backward compatibility for older versions of the settings file.
+/// </summary>
 public class ConfigService
 {
     private readonly string _configPath;
@@ -25,6 +29,9 @@ public class ConfigService
         _backupPath = Path.Combine(folder, "config.backup.json");
     }
 
+    /// <summary>
+    /// Loads the persisted configuration, falling back to defaults when the file is missing or invalid.
+    /// </summary>
     public AppConfig Load()
     {
         if (!File.Exists(_configPath))
@@ -84,6 +91,9 @@ public class ConfigService
         }
     }
 
+    /// <summary>
+    /// Persists the supplied configuration and writes a backup copy before overwriting the active file.
+    /// </summary>
     public void Save(AppConfig config)
     {
         try
@@ -109,6 +119,9 @@ public class ConfigService
         }
     }
 
+    /// <summary>
+    /// Returns the writable application data folder used for configuration, sounds, and images.
+    /// </summary>
     public string GetAppFolder()
     {
         var folder = Path.Combine(

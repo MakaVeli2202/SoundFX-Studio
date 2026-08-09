@@ -198,8 +198,9 @@ public partial class App : Application
 
             _logService.Info("Application Shutdown Complete");
         }
-        catch
+        catch (Exception ex)
         {
+            _logService.Error("Application shutdown failed", ex);
         }
         finally
         {

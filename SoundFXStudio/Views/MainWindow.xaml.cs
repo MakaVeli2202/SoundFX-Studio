@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Automation;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
@@ -382,7 +383,10 @@ public partial class MainWindow : Window
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        Title = ViewModel.WindowTitle;
+        Title = "SoundFX Studio";
+        AutomationProperties.SetAutomationId(this, "MainWindow");
+        AutomationProperties.SetName(this, "SoundFX Studio");
+        UpdateCurrentPageDisplay();
 
         var calibration = ViewModel.Settings.KeyboardCalibration;
         if (calibration is not null)
@@ -400,6 +404,10 @@ public partial class MainWindow : Window
             {
                 Title = ViewModel.WindowTitle;
             }
+            else if (args.PropertyName == nameof(MainViewModel.CurrentPage))
+            {
+                UpdateCurrentPageDisplay();
+            }
         };
 
         ViewModel.AttachWindow(this);
@@ -408,6 +416,23 @@ public partial class MainWindow : Window
         ViewModel.VoiceChangerToggleRequested += () => Dispatcher.Invoke(ToggleVoiceChanger);
         ViewModel.Keybindings.CollectionChanged += (_, _) => UpdateNoKeybindingsVisibility();
         UpdateNoKeybindingsVisibility();
+    }
+
+    private void UpdateCurrentPageDisplay()
+    {
+        if (CurrentPageText is null)
+        {
+            return;
+        }
+
+        CurrentPageText.Text = ViewModel.CurrentPage switch
+        {
+            "Home" => "Home",
+            "SoundLibrary" => "Sound Library",
+            "Effects" => "Voice Changer",
+            "Settings" => "Settings",
+            _ => ViewModel.CurrentPage
+        };
     }
 
     private void PopulateAudioCombos()
@@ -673,21 +698,25 @@ public partial class MainWindow : Window
     private void NavigateHome_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.CurrentPage = "Home";
+        UpdateCurrentPageDisplay();
     }
 
     private void NavigateSoundLibrary_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.CurrentPage = "SoundLibrary";
+        UpdateCurrentPageDisplay();
     }
 
     private void NavigateEffects_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.CurrentPage = "Effects";
+        UpdateCurrentPageDisplay();
     }
 
     private void NavigateSettings_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.CurrentPage = "Settings";
+        UpdateCurrentPageDisplay();
     }
 
     private void MixerButton_Click(object sender, RoutedEventArgs e)

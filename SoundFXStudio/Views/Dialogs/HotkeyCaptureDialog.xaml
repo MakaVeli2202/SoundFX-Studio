@@ -12,7 +12,7 @@
         PreviewKeyDown="Window_PreviewKeyDown"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
-    <Border Background="#081428" CornerRadius="28" ClipToBounds="True" BorderThickness="2">
+    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="28" ClipToBounds="True" BorderThickness="2">
         <Border.BorderBrush>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                 <GradientStop Color="#8B5CF6" Offset="0"/>
@@ -28,7 +28,7 @@
             </Grid.RowDefinitions>
 
             <!-- HEADER -->
-            <Border Grid.Row="0" CornerRadius="24" Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1">
+            <Border Grid.Row="0" CornerRadius="24" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderAccentBrush}" BorderThickness="1">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                         <Image Source="/Assets/UI/MainDashboardLogo.png" Height="40" Stretch="Uniform"/>
@@ -45,7 +45,7 @@
             </Border>
 
             <!-- CONTENT -->
-            <Border Grid.Row="1" CornerRadius="24" Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1" Margin="0,12,0,12">
+            <Border Grid.Row="1" CornerRadius="24" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderAccentBrush}" BorderThickness="1" Margin="0,12,0,12">
                 <StackPanel Margin="20" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock x:Name="InstructionText" Text="Press a key combination to assign..." FontSize="14" Foreground="#A1B2D2"
                                HorizontalAlignment="Center" Margin="0,0,0,12"/>

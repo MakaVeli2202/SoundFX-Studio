@@ -26,7 +26,7 @@
                     Value="#66081428"/>
 
             <Setter Property="BorderBrush"
-                    Value="#558B5CF6"/>
+                    Value="{StaticResource BorderAccentBrush}"/>
 
             <Setter Property="BorderThickness"
                     Value="1"/>
@@ -34,22 +34,8 @@
         </Style>
 
         <Style x:Key="CyberButton"
-               TargetType="Button">
-
-            <Setter Property="Foreground"
-                    Value="White"/>
-
-            <Setter Property="Background"
-                    Value="#22112233"/>
-
-            <Setter Property="BorderBrush"
-                    Value="#338B5CF6"/>
-
-            <Setter Property="BorderThickness"
-                    Value="1"/>
-
-            <Setter Property="Cursor"
-                    Value="Hand"/>
+               TargetType="Button"
+               BasedOn="{StaticResource SecondaryActionButtonStyle}">
 
             <Setter Property="Height"
                     Value="42"/>
@@ -108,7 +94,7 @@
                         <StackPanel Margin="16,0,0,0">
 
                             <TextBlock Text="AUDIO SETUP WIZARD"
-                                       Foreground="#8B5CF6"
+                                       Foreground="{StaticResource AccentBlueBrush}"
                                        FontSize="22"
                                        FontWeight="Bold"/>
 
@@ -124,7 +110,7 @@
                             Margin="0,10,10,10"
                             Content="&#x2715;"
                             Background="#55203030"
-                            BorderBrush="#8B5CF6"
+                            BorderBrush="{StaticResource BorderAccentBrush}"
                             Foreground="White"
                             Click="CloseButton_Click"/>
 
@@ -154,21 +140,21 @@
                     <StackPanel Margin="16">
 
                         <TextBlock Text="VOICEMEETER AUTO-SETUP"
-                                   Foreground="#8B5CF6"
+                                   Foreground="{StaticResource AccentBlueBrush}"
                                    FontSize="18"
                                    FontWeight="Bold"
                                    Margin="0,0,0,12"/>
 
                         <Border Background="#148B5CF6" CornerRadius="8" Padding="10,7" Margin="0,0,0,12">
                             <TextBlock x:Name="VmDetectText" Text="Checking for Voicemeeter..."
-                                       Foreground="#8891B8" FontSize="12"/>
+                                       Foreground="{StaticResource TextMutedBrush}" FontSize="12"/>
                         </Border>
 
                         <Border Background="#22081428" CornerRadius="12" Padding="14,12" Margin="0,0,0,10"
                                 BorderBrush="#338B5CF6" BorderThickness="1">
                             <StackPanel>
                                 <TextBlock Text="WHAT YOU HEAR WITH (headphones)"
-                                           Foreground="#C9D7F0" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                           Foreground="{StaticResource UiTextBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
                                 <ComboBox x:Name="WizardHearCombo"
                                           Height="32"
                                           DisplayMemberPath="Name"
@@ -181,7 +167,7 @@
                                 BorderBrush="#338B5CF6" BorderThickness="1">
                             <StackPanel>
                                 <TextBlock Text="WHAT YOU TALK WITH (microphone)"
-                                           Foreground="#C9D7F0" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                           Foreground="{StaticResource UiTextBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
                                 <ComboBox x:Name="WizardTalkCombo"
                                           Height="32"
                                           DisplayMemberPath="Name"
@@ -242,13 +228,13 @@
 
                         <TextBlock x:Name="VmSetupStatus"
                                    Margin="0,8,0,0"
-                                   Foreground="#10B981"
+                                   Foreground="{StaticResource AccentGreenBrush}"
                                    FontSize="10.5" TextWrapping="Wrap"
                                    FontFamily="Consolas"/>
 
                         <TextBlock x:Name="WizardStatusText"
                                    Margin="0,12,0,0"
-                                   Foreground="#8B5CF6"
+                                   Foreground="{StaticResource AccentBlueBrush}"
                                    TextWrapping="Wrap"/>
 
                     </StackPanel>

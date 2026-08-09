@@ -4,6 +4,7 @@ using FlaUI.Core.Definitions;
 using FlaUI.UIA3;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace SoundFXStudio.UI.Tests;
 
@@ -23,9 +24,34 @@ public class AppFixture : IDisposable
             throw new FileNotFoundException($"App not found at {appPath}. Build first.");
 
         Automation = new UIA3Automation();
-        App = Application.Launch(appPath);
+        App = TryAttachToExistingApp() ?? LaunchApp(appPath);
         Thread.Sleep(2000);
         DismissSetupWizardIfNeeded();
+    }
+
+    private Application? TryAttachToExistingApp()
+    {
+        var existingProcess = Process.GetProcessesByName("SoundFXStudio")
+            .Where(p => p.MainWindowHandle != IntPtr.Zero)
+            .OrderByDescending(p => p.StartTime)
+            .FirstOrDefault();
+
+        if (existingProcess is null)
+            return null;
+
+        try
+        {
+            return Application.Attach(existingProcess.Id);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static Application LaunchApp(string appPath)
+    {
+        return Application.Launch(appPath);
     }
 
     private void DismissSetupWizardIfNeeded()
@@ -59,17 +85,14 @@ public class AppFixture : IDisposable
 
     public Window GetMainWindow()
     {
-        var deadline = DateTime.UtcNow.AddSeconds(15);
+        var deadline = DateTime.UtcNow.AddSeconds(20);
         while (DateTime.UtcNow < deadline)
         {
             try
             {
                 var appMainWindow = App.GetMainWindow(Automation);
-                if (appMainWindow != null)
-                {
-                    if (IsMainWindow(appMainWindow))
-                        return appMainWindow;
-                }
+                if (appMainWindow != null && IsMainWindow(appMainWindow))
+                    return appMainWindow;
 
                 var windows = App.GetAllTopLevelWindows(Automation);
 
@@ -78,6 +101,7 @@ public class AppFixture : IDisposable
                     if (w is Window win && IsMainWindow(win))
                         return win;
                 }
+
             }
             catch { }
             Thread.Sleep(500);

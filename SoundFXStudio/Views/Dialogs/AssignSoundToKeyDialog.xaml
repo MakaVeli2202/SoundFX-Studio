@@ -24,10 +24,10 @@
                     Value="24"/>
 
             <Setter Property="Background"
-                    Value="#66081428"/>
+                    Value="{StaticResource SurfaceRaisedBrush}"/>
 
             <Setter Property="BorderBrush"
-                    Value="#558B5CF6"/>
+                    Value="{StaticResource BorderAccentBrush}"/>
 
             <Setter Property="BorderThickness"
                     Value="1"/>
@@ -108,7 +108,7 @@
 
     </Window.Resources>
 
-    <Border Background="#081428"
+    <Border Background="{StaticResource SurfaceBrush}"
             CornerRadius="28"
             ClipToBounds="True">
 

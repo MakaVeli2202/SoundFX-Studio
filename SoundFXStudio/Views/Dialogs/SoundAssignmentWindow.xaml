@@ -17,8 +17,8 @@
 
         <Style x:Key="GlassPanel" TargetType="Border">
             <Setter Property="CornerRadius" Value="24"/>
-            <Setter Property="Background" Value="#66081428"/>
-            <Setter Property="BorderBrush" Value="#558B5CF6"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderAccentBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
@@ -53,7 +53,7 @@
         </Style>
     </Window.Resources>
 
-    <Border Background="#081428" CornerRadius="28" ClipToBounds="True">
+    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="28" ClipToBounds="True">
         <Border.BorderBrush>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                 <GradientStop Color="#8B5CF6" Offset="0"/>
