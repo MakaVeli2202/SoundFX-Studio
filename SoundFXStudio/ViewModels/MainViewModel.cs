@@ -1040,15 +1040,12 @@ public sealed class MainViewModel : ObservableObject
             }
 
             var virtualA1Param = $"Strip[{snapshot.ProcessedStripIndex}].A1";
-            if (snapshot.PreviousVirtualA1 >= 0.5f)
+            var restoreA1Result = TrySetFloatVerified(vm, virtualA1Param, 1f, out var restoredA1);
+            if (!restoreA1Result)
             {
-                var restoreA1Result = TrySetFloatVerified(vm, virtualA1Param, snapshot.PreviousVirtualA1, out var restoredA1);
-                if (!restoreA1Result)
-                {
-                    error = $"Voice changer routing restore failed: virtual strip {snapshot.ProcessedStripIndex} A1 restore mismatch (target={snapshot.PreviousVirtualA1:0.##}, readBack={restoredA1:0.##}).";
-                    _logService?.Warning(error);
-                    return false;
-                }
+                error = $"Voice changer routing restore failed: virtual strip {snapshot.ProcessedStripIndex} A1 enable mismatch (target=1, readBack={restoredA1:0.##}).";
+                _logService?.Warning(error);
+                return false;
             }
 
             _voiceChangerMicSnapshot = null;
@@ -1563,8 +1560,11 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        var deviceId = Settings.OutputDeviceId;
-        var deviceIndex = ResolveOutputDeviceIndex(deviceId);
+        var deviceIndex = _audioDeviceService.ResolveVoicemeeterInputWaveOutIndex();
+        if (deviceIndex < 0)
+        {
+            deviceIndex = ResolveOutputDeviceIndex(Settings.OutputDeviceId);
+        }
 
         _audioPlayer.Play(
             sound.Id,

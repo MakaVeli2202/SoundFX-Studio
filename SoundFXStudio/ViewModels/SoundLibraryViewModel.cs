@@ -622,8 +622,11 @@ public sealed class SoundLibraryViewModel
             return;
         }
 
-        var deviceId = _getSettings().OutputDeviceId;
-        var deviceIndex = ResolveOutputDeviceIndex(deviceId);
+        var deviceIndex = new AudioDeviceService().ResolveVoicemeeterInputWaveOutIndex();
+        if (deviceIndex < 0)
+        {
+            deviceIndex = ResolveOutputDeviceIndex(_getSettings().OutputDeviceId);
+        }
 
         _audioPlayer.Play(
             sound.Id,

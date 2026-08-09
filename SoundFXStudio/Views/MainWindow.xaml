@@ -1339,7 +1339,7 @@
                                         <TextBlock Text="ADVANCED" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold"
                                                    Margin="0,0,0,4"/>
                                         <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
-                                                   Text="Keyboard layout and calibration."/>
+                                                   Text="Keyboard layout, calibration, and Voicemeeter routing."/>
 
                                         <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
                                             CornerRadius="12" Padding="18,16" Margin="0,0,0,14">
@@ -1363,6 +1363,252 @@
                                                         Style="{StaticResource SettingsButton}"
                                                         Click="OpenCalibrationButton_Click"
                                                         HorizontalAlignment="Left" Width="200"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
+                                            CornerRadius="12" Padding="18,16" Margin="0,14,0,0">
+                                            <StackPanel>
+                                                <TextBlock Text="VOICEMEETER ROUTING" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
+                                                <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,10"
+                                                           Text="Live control of Voicemeeter strips — same switches the setup wizard used to offer."/>
+
+                                                <Border Background="#22081428" CornerRadius="10" Padding="12,10" Margin="0,0,0,10"
+                                                        BorderBrush="#338B5CF6" BorderThickness="1">
+                                                    <StackPanel>
+                                                        <TextBlock Text="INPUT STRIP B1 (mic → Discord/teams)"
+                                                                   Foreground="#C9D7F0" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <ToggleButton x:Name="AdvancedB1ToggleBtn"
+                                                                          Content="Teammates (Input B1)"
+                                                                          ClickMode="Press"
+                                                                          Checked="AdvancedB1Toggle_Checked"
+                                                                          Unchecked="AdvancedB1Toggle_Unchecked"
+                                                                          Height="34"
+                                                                          Background="#222A2A66" BorderBrush="#10B981"
+                                                                          Foreground="#A7F3D0" Cursor="Hand" FontWeight="SemiBold" FontSize="12"
+                                                                          ToolTip="Routes Input 1 to B1 — what people hear in Discord/teams">
+                                                                <ToggleButton.Template>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsChecked" Value="True">
+                                                                                <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                                            </Trigger>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                                            </Trigger>
+                                                                            <Trigger Property="IsEnabled" Value="False">
+                                                                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </ToggleButton.Template>
+                                                            </ToggleButton>
+                                                            <TextBlock x:Name="AdvancedB1Status" Text="B1: unknown"
+                                                                       VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#8891B8" FontSize="12"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Border Background="#22081428" CornerRadius="10" Padding="12,10" Margin="0,0,0,10"
+                                                        BorderBrush="#338B5CF6" BorderThickness="1">
+                                                    <StackPanel>
+                                                        <TextBlock Text="VIRTUAL INPUT STRIP A1 (processed voice → speakers)"
+                                                                   Foreground="#C9D7F0" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <ToggleButton x:Name="AdvancedA1ToggleBtn"
+                                                                          Content="Speakers (Virtual Input A1)"
+                                                                          ClickMode="Press"
+                                                                          Checked="AdvancedA1Toggle_Checked"
+                                                                          Unchecked="AdvancedA1Toggle_Unchecked"
+                                                                          Height="34"
+                                                                          Background="#222A2A66" BorderBrush="#10B981"
+                                                                          Foreground="#A7F3D0" Cursor="Hand" FontWeight="SemiBold" FontSize="12"
+                                                                          ToolTip="Routes the Voicemeeter virtual input to A1 — what you hear through your speakers/headphones">
+                                                                <ToggleButton.Template>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsChecked" Value="True">
+                                                                                <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                                            </Trigger>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                                            </Trigger>
+                                                                            <Trigger Property="IsEnabled" Value="False">
+                                                                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </ToggleButton.Template>
+                                                            </ToggleButton>
+                                                            <TextBlock x:Name="AdvancedA1Status" Text="A1: unknown"
+                                                                       VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#8891B8" FontSize="12"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Border Background="#22081428" CornerRadius="10" Padding="12,10" Margin="0,0,0,10"
+                                                        BorderBrush="#338B5CF6" BorderThickness="1">
+                                                    <StackPanel>
+                                                        <TextBlock Text="VIRTUAL INPUT STRIP B1 (processed voice → Discord/teams)"
+                                                                   Foreground="#C9D7F0" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <ToggleButton x:Name="AdvancedVirtualB1ToggleBtn"
+                                                                          Content="Teammates (Virtual Input B1)"
+                                                                          ClickMode="Press"
+                                                                          Checked="AdvancedVirtualB1Toggle_Checked"
+                                                                          Unchecked="AdvancedVirtualB1Toggle_Unchecked"
+                                                                          Height="34"
+                                                                          Background="#222A2A66" BorderBrush="#10B981"
+                                                                          Foreground="#A7F3D0" Cursor="Hand" FontWeight="SemiBold" FontSize="12"
+                                                                          ToolTip="Routes the Voicemeeter virtual input to B1 — what teammates hear in Discord/teams">
+                                                                <ToggleButton.Template>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsChecked" Value="True">
+                                                                                <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                                            </Trigger>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                                            </Trigger>
+                                                                            <Trigger Property="IsEnabled" Value="False">
+                                                                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </ToggleButton.Template>
+                                                            </ToggleButton>
+                                                            <TextBlock x:Name="AdvancedVirtualB1Status" Text="Virtual B1: unknown"
+                                                                       VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#8891B8" FontSize="12"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                                    <Button x:Name="AdvancedConfigureVmOnlyBtn"
+                                                            Content="Configure Voicemeeter Only"
+                                                            Click="AdvancedConfigureVmOnly_Click"
+                                                            Height="34"
+                                                            Background="#222A2A66" BorderBrush="#10B981"
+                                                            Foreground="White" Cursor="Hand" FontSize="12">
+                                                        <Button.Template>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                                                        BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="Bd" Property="Background" Value="#442A2A66"/>
+                                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsEnabled" Value="False">
+                                                                        <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Button.Template>
+                                                    </Button>
+                                                    <Button x:Name="AdvancedRouteInputOnlyBtn"
+                                                            Content="Set Input To B1 Only"
+                                                            Margin="8,0,0,0"
+                                                            Click="AdvancedRouteInputOnly_Click"
+                                                            Height="34"
+                                                            Background="#222A2A66" BorderBrush="#F59E0B"
+                                                            Foreground="White" Cursor="Hand" FontSize="12">
+                                                        <Button.Template>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                                                        BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="Bd" Property="Background" Value="#442A2A66"/>
+                                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#F59E0B"/>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsEnabled" Value="False">
+                                                                        <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Button.Template>
+                                                    </Button>
+                                                </StackPanel>
+
+                                                <Button x:Name="AdvancedTestHearBtn"
+                                                        Content="Hear what others hear (B1 monitor)"
+                                                        Margin="0,0,0,10"
+                                                        Click="AdvancedTestHear_Click"
+                                                        Height="34"
+                                                        Background="#22112233" BorderBrush="#10B981"
+                                                        Foreground="#A7F3D0" Cursor="Hand" FontSize="12"
+                                                        ToolTip="Listen to the exact mix your mic sends to Discord (VoiceMeeter B1)">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                                                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
+                                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+
+                                                <Button x:Name="AdvancedResetWindowsBtn"
+                                                        Content="Reset Windows Settings"
+                                                        Margin="0,0,0,10"
+                                                        Click="AdvancedResetWindows_Click"
+                                                        Height="34"
+                                                        Background="#222A2A66" BorderBrush="#F43F5E"
+                                                        Foreground="White" Cursor="Hand" FontSize="12"
+                                                        ToolTip="Restore Windows sound devices and reset Voicemeeter routing">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                                                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Background" Value="#44F43F5E"/>
+                                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#F43F5E"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
+
+                                                <TextBlock x:Name="AdvancedVmStatus" Text="Voicemeeter not checked"
+                                                           Foreground="#8891B8" FontSize="12" TextWrapping="Wrap"/>
+                                                <TextBlock x:Name="AdvancedResetStatus" Text=""
+                                                           Foreground="#8891B8" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"/>
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>

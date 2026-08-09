@@ -1,4 +1,5 @@
 using NAudio.CoreAudioApi;
+using NAudio.Wave;
 using SoundFXStudio.Models;
 
 namespace SoundFXStudio.Services;
@@ -38,6 +39,36 @@ public sealed class AudioDeviceService
     public string? GetVoicemeeterInputDeviceName()
     {
         return GetVoicemeeterDeviceName(DataFlow.Render, "VoiceMeeter Input");
+    }
+
+    public int ResolveVoicemeeterInputWaveOutIndex()
+    {
+        var name = GetVoicemeeterInputDeviceName();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return -1;
+        }
+
+        try
+        {
+            var trimmed = name.Trim();
+            for (var i = 0; i < WaveOut.DeviceCount; i++)
+            {
+                var productName = WaveOut.GetCapabilities(i).ProductName;
+                var truncatedFriendly = trimmed.Length > 31 ? trimmed[..31] : trimmed;
+                if (productName.StartsWith(truncatedFriendly, StringComparison.OrdinalIgnoreCase) ||
+                    truncatedFriendly.StartsWith(productName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+        }
+        catch
+        {
+            // fall back to the default device
+        }
+
+        return -1;
     }
 
     public string? GetVoicemeeterB1Id()

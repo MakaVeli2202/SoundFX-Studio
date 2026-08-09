@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
 
 namespace SoundFXStudio;
@@ -24,6 +25,10 @@ public partial class MainWindow : Window
     private VoiceChangerService? _voiceChanger;
     private TeamMonitorService? _teamMonitor;
     private bool _loadingVoiceChangerUi;
+    private System.Windows.Threading.DispatcherTimer? _advancedVmTimer;
+    private bool _suppressB1;
+    private bool _suppressA1;
+    private bool _suppressVirtualB1;
 
     public MainWindow(ILogService? logService = null)
     {
@@ -207,6 +212,15 @@ public partial class MainWindow : Window
         if (sender is FrameworkElement { Tag: string section })
         {
             ViewModel.SettingsSection = section;
+        }
+
+        if (ViewModel.SettingsSection == "Advanced")
+        {
+            EnsureAdvancedVmTimer();
+        }
+        else
+        {
+            _advancedVmTimer?.Stop();
         }
     }
 
@@ -442,6 +456,7 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
+        _advancedVmTimer?.Stop();
         _voiceChanger?.Stop();
         _voiceChanger?.Dispose();
         _voiceChanger = null;
@@ -689,6 +704,410 @@ public partial class MainWindow : Window
     {
         var monitor = new Views.Dialogs.TeamMonitorWindow { Owner = this };
         monitor.Show();
+    }
+
+    private void EnsureAdvancedVmTimer()
+    {
+        if (_advancedVmTimer is not null)
+        {
+            _advancedVmTimer.Start();
+            RefreshAdvancedVmState();
+            return;
+        }
+
+        _advancedVmTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+        _advancedVmTimer.Tick += (_, _) => RefreshAdvancedVmState();
+        _advancedVmTimer.Start();
+        RefreshAdvancedVmState();
+    }
+
+    private void RefreshAdvancedVmState()
+    {
+        using var vm = App.Vm();
+        if (vm is null)
+        {
+            AdvancedB1ToggleBtn.IsEnabled = false;
+            AdvancedA1ToggleBtn.IsEnabled = false;
+            AdvancedVirtualB1ToggleBtn.IsEnabled = false;
+            if (!AdvancedVmStatus.Text.StartsWith("✗"))
+                SetAdvancedVmStatus("✗ Voicemeeter not running or not installed", Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+
+        int stripCount = vm.StripCount();
+        int firstVirtual = vm.FirstVirtualStrip(stripCount);
+
+        AdvancedB1ToggleBtn.IsEnabled = true;
+        bool b1 = vm.GetFloat("Strip[0].B1") >= 0.5f;
+        _suppressB1 = true;
+        AdvancedB1ToggleBtn.IsChecked = b1;
+        _suppressB1 = false;
+        SetAdvancedB1Status(b1
+            ? "B1 ON — mic goes to Discord/teams"
+            : "B1 OFF — mic blocked from Discord/teams", b1
+            ? Color.FromRgb(0x10, 0xB9, 0x81)
+            : Color.FromRgb(0xE8, 0x55, 0x55));
+
+        bool vcRunning = App.IsVoiceChangerRunning;
+        AdvancedA1ToggleBtn.IsEnabled = !vcRunning;
+        if (vcRunning)
+        {
+            _suppressA1 = true;
+            AdvancedA1ToggleBtn.IsChecked = false;
+            _suppressA1 = false;
+            SetAdvancedA1Status("A1 OFF — locked while voice changer is running", Color.FromRgb(0xE8, 0x55, 0x55));
+        }
+        else
+        {
+            bool a1 = firstVirtual >= 0 && vm.GetFloat($"Strip[{firstVirtual}].A1") >= 0.5f;
+            _suppressA1 = true;
+            AdvancedA1ToggleBtn.IsChecked = a1;
+            _suppressA1 = false;
+            SetAdvancedA1Status(a1
+                ? "A1 ON — processed voice goes to speakers"
+                : "A1 OFF — processed voice muted from speakers", a1
+                ? Color.FromRgb(0x10, 0xB9, 0x81)
+                : Color.FromRgb(0xE8, 0x55, 0x55));
+        }
+
+        AdvancedVirtualB1ToggleBtn.IsEnabled = true;
+        bool vb1 = firstVirtual >= 0 && vm.GetFloat($"Strip[{firstVirtual}].B1") >= 0.5f;
+        _suppressVirtualB1 = true;
+        AdvancedVirtualB1ToggleBtn.IsChecked = vb1;
+        _suppressVirtualB1 = false;
+        SetAdvancedVirtualB1Status(vb1
+            ? "Virtual B1 ON — processed voice goes to Discord/teams"
+            : "Virtual B1 OFF — processed voice blocked from Discord/teams", vb1
+            ? Color.FromRgb(0x10, 0xB9, 0x81)
+            : Color.FromRgb(0xE8, 0x55, 0x55));
+
+        if (AdvancedVmStatus.Text.StartsWith("✗"))
+            SetAdvancedVmStatus("Voicemeeter connected", Color.FromRgb(0x10, 0xB9, 0x81));
+    }
+
+    private void AdvancedB1Toggle_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressB1) return;
+        using var vm = App.Vm();
+        if (vm is null)
+        {
+            _suppressB1 = true;
+            AdvancedB1ToggleBtn.IsChecked = false;
+            _suppressB1 = false;
+            SetAdvancedB1Status("✗ Voicemeeter not running", Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+        vm.SetFloat("Strip[0].B1", 1);
+        SetAdvancedB1Status("B1 ON — mic goes to Discord/teams", Color.FromRgb(0x10, 0xB9, 0x81));
+    }
+
+    private void AdvancedB1Toggle_Unchecked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressB1) return;
+        using var vm = App.Vm();
+        if (vm is null)
+        {
+            _suppressB1 = true;
+            AdvancedB1ToggleBtn.IsChecked = true;
+            _suppressB1 = false;
+            SetAdvancedB1Status("✗ Voicemeeter not running", Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+        vm.SetFloat("Strip[0].B1", 0);
+        SetAdvancedB1Status("B1 OFF — mic blocked from Discord/teams", Color.FromRgb(0xE8, 0x55, 0x55));
+    }
+
+    private void AdvancedA1Toggle_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressA1) return;
+        if (App.IsVoiceChangerRunning)
+        {
+            _suppressA1 = true;
+            AdvancedA1ToggleBtn.IsChecked = false;
+            _suppressA1 = false;
+            SetAdvancedA1Status("A1 OFF — locked while voice changer is running", Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+        using var vm = App.Vm();
+        if (vm is null)
+        {
+            _suppressA1 = true;
+            AdvancedA1ToggleBtn.IsChecked = false;
+            _suppressA1 = false;
+            SetAdvancedA1Status("✗ Voicemeeter not running", Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+        int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
+        if (firstVirtual >= 0)
+        {
+            vm.SetFloat($"Strip[{firstVirtual}].A1", 1);
+            SetAdvancedA1Status("A1 ON — processed voice goes to speakers", Color.FromRgb(0x10, 0xB9, 0x81));
+        }
+    }
+
+    private void AdvancedA1Toggle_Unchecked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressA1) return;
+        using var vm = App.Vm();
+        if (vm is null)
+        {
+            _suppressA1 = true;
+            AdvancedA1ToggleBtn.IsChecked = true;
+            _suppressA1 = false;
+            SetAdvancedA1Status("✗ Voicemeeter not running", Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+        int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
+        if (firstVirtual >= 0)
+        {
+            vm.SetFloat($"Strip[{firstVirtual}].A1", 0);
+            SetAdvancedA1Status("A1 OFF — processed voice muted from speakers", Color.FromRgb(0xE8, 0x55, 0x55));
+        }
+    }
+
+    private void AdvancedVirtualB1Toggle_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressVirtualB1) return;
+        using var vm = App.Vm();
+        if (vm is null)
+        {
+            _suppressVirtualB1 = true;
+            AdvancedVirtualB1ToggleBtn.IsChecked = false;
+            _suppressVirtualB1 = false;
+            SetAdvancedVirtualB1Status("✗ Voicemeeter not running", Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+        int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
+        if (firstVirtual >= 0)
+        {
+            vm.SetFloat($"Strip[{firstVirtual}].B1", 1);
+            SetAdvancedVirtualB1Status("Virtual B1 ON — processed voice goes to Discord/teams", Color.FromRgb(0x10, 0xB9, 0x81));
+        }
+    }
+
+    private void AdvancedVirtualB1Toggle_Unchecked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressVirtualB1) return;
+        using var vm = App.Vm();
+        if (vm is null)
+        {
+            _suppressVirtualB1 = true;
+            AdvancedVirtualB1ToggleBtn.IsChecked = true;
+            _suppressVirtualB1 = false;
+            SetAdvancedVirtualB1Status("✗ Voicemeeter not running", Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+        int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
+        if (firstVirtual >= 0)
+        {
+            vm.SetFloat($"Strip[{firstVirtual}].B1", 0);
+            SetAdvancedVirtualB1Status("Virtual B1 OFF — processed voice blocked from Discord/teams", Color.FromRgb(0xE8, 0x55, 0x55));
+        }
+    }
+
+    private async void AdvancedConfigureVmOnly_Click(object sender, RoutedEventArgs e)
+    {
+        if (!VoicemeeterRemote.IsInstalled())
+        {
+            SetAdvancedVmStatus("✗ Voicemeeter not installed.", Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+
+        var configService = new ConfigService();
+        var config = configService.Load();
+        var hear = config.Settings.HearDeviceName;
+        var talk = config.Settings.TalkDeviceName;
+        if (string.IsNullOrWhiteSpace(hear) || string.IsNullOrWhiteSpace(talk))
+        {
+            SetAdvancedVmStatus("✗ No Hear/Talk devices saved — run the setup wizard first.", Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+
+        AdvancedConfigureVmOnlyBtn.IsEnabled = false;
+        AdvancedRouteInputOnlyBtn.IsEnabled = false;
+        SetAdvancedVmStatus("Configuring Voicemeeter only…", Color.FromRgb(0x98, 0xA0, 0xC0));
+        Mouse.OverrideCursor = Cursors.Wait;
+
+        string result;
+        try
+        {
+            var (applied, diagnostics) = await Task.Run(() =>
+            {
+                using var vm = new VoicemeeterRemote();
+                if (!vm.Login()) return (false, "Login failed.");
+                bool ok = vm.ApplyRouting(hear, talk);
+                string diag = vm.LastDiagnostics;
+                vm.Dispose();
+                return (ok, diag);
+            });
+
+            if (applied)
+            {
+                config.Settings.HearDeviceName = hear;
+                config.Settings.TalkDeviceName = talk;
+                config.Settings.SpeakersDeviceName = hear;
+                config.Settings.VoicemeeterDetected = true;
+                configService.Save(config);
+
+                result = $"✓ Voicemeeter configured only:\n   Hear: {hear}\n   Talk: {talk}\n   Windows defaults unchanged.";
+            }
+            else
+            {
+                result = "✗ Setup failed: could not configure Voicemeeter.\n   Check Hear/Talk device names and retry.";
+                if (!string.IsNullOrWhiteSpace(diagnostics))
+                    result += $"\n\n{diagnostics}";
+            }
+        }
+        catch (Exception ex)
+        {
+            result = $"✗ Setup failed: {ex.Message}";
+        }
+
+        Mouse.OverrideCursor = null;
+        AdvancedConfigureVmOnlyBtn.IsEnabled = true;
+        AdvancedRouteInputOnlyBtn.IsEnabled = true;
+        SetAdvancedVmStatus(result, result.StartsWith("✓")
+            ? Color.FromRgb(0x10, 0xB9, 0x81)
+            : Color.FromRgb(0xE8, 0x55, 0x55));
+    }
+
+    private void AdvancedRouteInputOnly_Click(object sender, RoutedEventArgs e)
+    {
+        if (!VoicemeeterRemote.IsInstalled())
+        {
+            SetAdvancedVmStatus("✗ Voicemeeter not installed.", Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+
+        var configService = new ConfigService();
+        var config = configService.Load();
+        var audioDeviceService = new AudioDeviceService();
+        var routing = new WindowsAudioRoutingService();
+
+        var vmOutputId = audioDeviceService.GetVoicemeeterOutputId();
+        if (string.IsNullOrWhiteSpace(vmOutputId))
+        {
+            SetAdvancedVmStatus("✗ VoiceMeeter Output (B1) not found.", Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(config.Settings.SavedDefaultCaptureId))
+        {
+            config.Settings.SavedDefaultCaptureId = audioDeviceService.GetDefaultDeviceId(DataFlow.Capture) ?? string.Empty;
+        }
+
+        var inputApplied = routing.TrySetDefaultInput(vmOutputId);
+        var reboundInput = audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
+        var verified = inputApplied && string.Equals(reboundInput, vmOutputId, StringComparison.OrdinalIgnoreCase);
+
+        config.Settings.VoicemeeterDetected = true;
+        config.Settings.InputDeviceId = vmOutputId;
+        config.Settings.MicrophoneDeviceId = vmOutputId;
+        configService.Save(config);
+
+        var virtualB1Activated = false;
+        using (var vm = App.Vm())
+        {
+            if (vm is not null)
+            {
+                int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
+                if (firstVirtual >= 0 && vm.GetFloat($"Strip[{firstVirtual}].B1") < 0.5f)
+                {
+                    vm.SetFloat($"Strip[{firstVirtual}].B1", 1);
+                    vm.IsDirty();
+                    virtualB1Activated = true;
+                }
+            }
+        }
+
+        SetAdvancedVmStatus(verified
+            ? virtualB1Activated
+                ? "✓ Windows input → VoiceMeeter Output (B1). Virtual Input B1 also enabled."
+                : "✓ Windows input → VoiceMeeter Output (B1). Output device left unchanged."
+            : "⚠ Windows input → VoiceMeeter Output (B1) not confirmed. Output device left unchanged.",
+            verified
+                ? Color.FromRgb(0x10, 0xB9, 0x81)
+                : Color.FromRgb(0xF5, 0x9E, 0x0B));
+    }
+
+    private void AdvancedTestHear_Click(object sender, RoutedEventArgs e)
+    {
+        var monitor = new Views.Dialogs.TeamMonitorWindow { Owner = this };
+        monitor.Show();
+    }
+
+    private async void AdvancedResetWindows_Click(object sender, RoutedEventArgs e)
+    {
+        var configService = new ConfigService();
+        var config = configService.Load();
+
+        string windowsResult = "Windows input device unchanged.";
+        if (!string.IsNullOrWhiteSpace(config.Settings.SavedDefaultCaptureId))
+        {
+            var routing = new WindowsAudioRoutingService();
+            bool restored = routing.TrySetDefaultInput(config.Settings.SavedDefaultCaptureId);
+            windowsResult = restored
+                ? "✓ Windows input restored to previous device"
+                : "⚠ Could not restore Windows input device";
+            config.Settings.SavedDefaultCaptureId = string.Empty;
+            configService.Save(config);
+        }
+
+        SetAdvancedResetStatus("Resetting Voicemeeter devices…", Color.FromRgb(0x98, 0xA0, 0xC0));
+        AdvancedResetWindowsBtn.IsEnabled = false;
+
+        var audioDeviceService = new AudioDeviceService();
+        string vmResult;
+        try
+        {
+            vmResult = await Task.Run(() =>
+            {
+                using var vm = new VoicemeeterRemote();
+                var inputs = audioDeviceService.GetAllInputDevices().Select(d => d.Name).ToList();
+                var outputs = audioDeviceService.GetAllOutputDevices().Select(d => d.Name).ToList();
+                return vm.ResetRouting(inputs, outputs);
+            });
+        }
+        catch (Exception ex)
+        {
+            vmResult = $"✗ Voicemeeter reset failed: {ex.Message}";
+        }
+
+        AdvancedResetWindowsBtn.IsEnabled = true;
+        SetAdvancedResetStatus($"{windowsResult}\n{vmResult}",
+            vmResult.StartsWith("✓")
+                ? Color.FromRgb(0x10, 0xB9, 0x81)
+                : Color.FromRgb(0xE8, 0x55, 0x55));
+    }
+
+    private void SetAdvancedB1Status(string text, Color color)
+    {
+        AdvancedB1Status.Text = text;
+        AdvancedB1Status.Foreground = new SolidColorBrush(color);
+    }
+
+    private void SetAdvancedA1Status(string text, Color color)
+    {
+        AdvancedA1Status.Text = text;
+        AdvancedA1Status.Foreground = new SolidColorBrush(color);
+    }
+
+    private void SetAdvancedVirtualB1Status(string text, Color color)
+    {
+        AdvancedVirtualB1Status.Text = text;
+        AdvancedVirtualB1Status.Foreground = new SolidColorBrush(color);
+    }
+
+    private void SetAdvancedVmStatus(string text, Color color)
+    {
+        AdvancedVmStatus.Text = text;
+        AdvancedVmStatus.Foreground = new SolidColorBrush(color);
+    }
+
+    private void SetAdvancedResetStatus(string text, Color color)
+    {
+        AdvancedResetStatus.Text = text;
+        AdvancedResetStatus.Foreground = new SolidColorBrush(color);
     }
 
     private void TeamMonitorToggle_Click(object sender, RoutedEventArgs e)

@@ -48,6 +48,8 @@ public sealed class AudioPlayer : IDisposable
                 _logService?.Info($"Playback Stopped: {soundId}");
             }
 
+            App.EnsureVirtualInputB1();
+
             var reader = new AudioFileReader(filePath)
             {
                 Volume = Math.Clamp(volume, 0f, 1f)

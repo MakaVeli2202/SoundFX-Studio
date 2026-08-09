@@ -51,6 +51,22 @@ public partial class App : Application
         return vm;
     }
 
+    public static bool EnsureVirtualInputB1()
+    {
+        using var vm = Vm();
+        if (vm is null) return false;
+
+        var stripCount = vm.StripCount();
+        var firstVirtual = vm.FirstVirtualStrip(stripCount);
+        if (stripCount <= 0 || firstVirtual < 0) return false;
+
+        if (vm.GetFloat($"Strip[{firstVirtual}].B1") >= 0.5f) return true;
+
+        vm.SetFloat($"Strip[{firstVirtual}].B1", 1);
+        vm.IsDirty();
+        return true;
+    }
+
     public static bool ToggleMuteAll()
     {
         using var vm = Vm(); if (vm is null) return false;
