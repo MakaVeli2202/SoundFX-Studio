@@ -197,6 +197,25 @@ public class ChordRuntimeServiceTests
         Assert.Equal(new[] { actionB.Id, actionB.Id }, executions);
     }
 
+    [Fact]
+    public async Task TwoSinglesPlusSharedChord_IAndC_FiresChord()
+    {
+        var config = BuildConfig(out var profile, out var actionI, out var actionC, out var actionChord);
+        profile.Assignments.Add(new KeyAssignment { KeyId = "I", ActionId = actionI.Id, HotkeyText = "I" });
+        profile.Assignments.Add(new KeyAssignment { KeyId = "C", ActionId = actionC.Id, HotkeyText = "C" });
+        profile.KeyChords.Add(new KeyChord { Name = "I + C", ActionId = actionChord.Id, Keys = { "I", "C" } });
+
+        var executions = new List<Guid>();
+        var service = CreateService(config, executions);
+
+        await service.HandleKeyDownAsync("I");
+        await service.HandleKeyDownAsync("C");
+        await service.HandleKeyUpAsync("C");
+        await service.HandleKeyUpAsync("I");
+
+        Assert.Equal(new[] { actionChord.Id }, executions);
+    }
+
     private static ChordRuntimeService CreateService(AppConfig config, List<Guid> executions)
     {
         return new ChordRuntimeService(

@@ -1,79 +1,268 @@
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Threading;
+using System.Windows.Media.Animation;
 
 namespace SoundFXStudio.Views.Dialogs;
 
 public sealed class ToastWindow : Window
 {
-    private readonly DispatcherTimer _fadeTimer;
-    private DateTime _startTime;
+    private const double ToastWidth = 340;
+    private const double ToastHeight = 66;
+    private const double ScreenMargin = 16;
+    private const double ToastGap = 10;
+    private static readonly List<ToastWindow> ActiveToasts = new();
+    private bool _closed;
 
-    [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr h, int a, ref int v, int s);
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr h, int attribute, ref int value, int size);
 
-    public ToastWindow(string message)
+    public ToastWindow(string title, string message, string status, Color accent)
     {
-        Width = 280;
-        Height = 56;
+        Width = ToastWidth;
+        Height = ToastHeight;
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = Brushes.Transparent;
         ShowInTaskbar = false;
+        ShowActivated = false;
         Topmost = true;
         ResizeMode = ResizeMode.NoResize;
+        Opacity = 0;
 
-        var screen = SystemParameters.WorkArea;
-        Left = screen.Right - Width - 24;
-        Top = screen.Bottom - Height - 24;
+        Content = BuildCard(title, message, status, accent);
 
-        Content = new Border
+        ActiveToasts.Insert(0, this);
+        foreach (var toast in ActiveToasts)
         {
-            Background = new SolidColorBrush(Color.FromArgb(0xCC, 0x08, 0x14, 0x28)),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(0x55, 0x80, 0xCF, 0xFF)),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(10),
-            Child = new Border
+            toast.Position();
+        }
+
+        Closed += (_, _) =>
+        {
+            _closed = true;
+            ActiveToasts.Remove(this);
+            foreach (var toast in ActiveToasts)
             {
-                Background = new SolidColorBrush(Color.FromArgb(0x14, 0x10, 0xB9, 0x81)),
-                CornerRadius = new CornerRadius(10),
-                Child = new TextBlock
-                {
-                    Text = message,
-                    Foreground = Brushes.White,
-                    FontSize = 14,
-                    FontWeight = FontWeights.Bold,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(0, 0, 0, 0),
-                }
+                toast.Position();
             }
         };
-
-        _fadeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-        _startTime = DateTime.UtcNow;
-        _fadeTimer.Tick += (_, _) =>
-        {
-            var elapsed = (DateTime.UtcNow - _startTime).TotalSeconds;
-            if (elapsed > 3.5)
-            {
-                _fadeTimer.Stop();
-                Close();
-            }
-            else if (elapsed > 2.5)
-            {
-                Opacity = 1.0 - (elapsed - 2.5) * 1.0;
-            }
-        };
-        _fadeTimer.Start();
 
         Loaded += (_, _) =>
         {
-            var h = new WindowInteropHelper(this).Handle;
-            int p = 2;
-            DwmSetWindowAttribute(h, 33, ref p, Marshal.SizeOf<int>());
+            var handle = new WindowInteropHelper(this).Handle;
+            int isDark = 1;
+            DwmSetWindowAttribute(handle, 33, ref isDark, Marshal.SizeOf<int>());
+            AnimateIn();
+            _ = ScheduleClose();
         };
+    }
+
+    public ToastWindow(string message)
+        : this("SoundFX Studio", message, "INFO", Color.FromRgb(0x5A, 0xD8, 0xFF))
+    {
+    }
+
+    public static void Show(string title, string message, bool isOn)
+    {
+        var accent = isOn
+            ? Color.FromRgb(0x10, 0xB9, 0x81)
+            : Color.FromRgb(0xF4, 0x3F, 0x5E);
+        Show(title, message, isOn ? "ON" : "OFF", accent);
+    }
+
+    public static void Show(string title, string message, string status, Color accent)
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is not null && !dispatcher.CheckAccess())
+        {
+            dispatcher.BeginInvoke(() => Show(title, message, status, accent));
+            return;
+        }
+
+        try
+        {
+            new ToastWindow(title, message, status, accent).Show();
+        }
+        catch
+        {
+        }
+    }
+
+    private static Border BuildCard(string title, string message, string status, Color accent)
+    {
+        var accentBrush = new SolidColorBrush(accent);
+
+        var bar = new Border
+        {
+            Background = accentBrush,
+            Width = 5,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+
+        var titleText = new TextBlock
+        {
+            Text = title,
+            FontSize = 14,
+            FontWeight = FontWeights.Bold,
+            Foreground = Brushes.White,
+            TextTrimming = TextTrimming.CharacterEllipsis
+        };
+
+        var messageText = new TextBlock
+        {
+            Text = message,
+            FontSize = 12.5,
+            Foreground = new SolidColorBrush(Color.FromRgb(0xC2, 0xD2, 0xEC)),
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            Margin = new Thickness(0, 2, 0, 0)
+        };
+
+        var textStack = new StackPanel
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(14, 0, 12, 0)
+        };
+        textStack.Children.Add(titleText);
+        textStack.Children.Add(messageText);
+
+        var pill = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0x33, accent.R, accent.G, accent.B)),
+            CornerRadius = new CornerRadius(9),
+            Padding = new Thickness(10, 3, 10, 3),
+            Margin = new Thickness(0, 0, 12, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new TextBlock
+            {
+                Text = status,
+                FontSize = 11,
+                FontWeight = FontWeights.Bold,
+                Foreground = accentBrush
+            }
+        };
+
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(5) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(bar, 0);
+        Grid.SetColumn(textStack, 1);
+        Grid.SetColumn(pill, 2);
+        grid.Children.Add(bar);
+        grid.Children.Add(textStack);
+        grid.Children.Add(pill);
+
+        return new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0xEE, 0x0B, 0x15, 0x28)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0x66, 0x4A, 0x63, 0x8A)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(12),
+            ClipToBounds = true,
+            Child = grid
+        };
+    }
+
+    private void Position()
+    {
+        var index = ActiveToasts.IndexOf(this);
+        if (index < 0)
+        {
+            return;
+        }
+
+        var work = SystemParameters.WorkArea;
+        Left = work.Right - Width - ScreenMargin;
+        var top = work.Bottom - (Height + ScreenMargin) * (index + 1) - ToastGap * index;
+        if (top < work.Top)
+        {
+            top = work.Top;
+        }
+
+        if (IsLoaded)
+        {
+            var animation = new DoubleAnimation(Top, top, TimeSpan.FromMilliseconds(220))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            BeginAnimation(TopProperty, animation);
+        }
+        else
+        {
+            Top = top;
+        }
+    }
+
+    private void AnimateIn()
+    {
+        if (Content is not Border root)
+        {
+            return;
+        }
+
+        var transform = new TranslateTransform { X = ToastWidth };
+        root.RenderTransform = transform;
+        root.RenderTransformOrigin = new Point(1, 0.5);
+
+        var slide = new DoubleAnimation(ToastWidth, 0, TimeSpan.FromMilliseconds(300))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        var fade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(240));
+        transform.BeginAnimation(TranslateTransform.XProperty, slide);
+        BeginAnimation(OpacityProperty, fade);
+    }
+
+    private async Task ScheduleClose()
+    {
+        try
+        {
+            await Task.Delay(3000);
+            if (_closed)
+            {
+                return;
+            }
+
+            await AnimateOut();
+        }
+        finally
+        {
+            if (!_closed)
+            {
+                Close();
+            }
+        }
+    }
+
+    private async Task AnimateOut()
+    {
+        if (Content is not Border root || root.RenderTransform is not TranslateTransform transform)
+        {
+            return;
+        }
+
+        var slide = new DoubleAnimation(transform.X, ToastWidth, TimeSpan.FromMilliseconds(260))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+        };
+        var fade = new DoubleAnimation(Opacity, 0, TimeSpan.FromMilliseconds(260));
+
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        EventHandler? handler = null;
+        handler = (_, _) =>
+        {
+            slide.Completed -= handler;
+            tcs.TrySetResult(true);
+        };
+        slide.Completed += handler;
+
+        transform.BeginAnimation(TranslateTransform.XProperty, slide);
+        BeginAnimation(OpacityProperty, fade);
+        await tcs.Task;
     }
 }

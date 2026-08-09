@@ -18,7 +18,6 @@ public partial class App : Application
     private readonly FileLogService _logService = new();
     private readonly ConfigService _configService;
     private TaskbarIcon? _trayIcon;
-    private static VoicemeeterRemote? _vmShared;
     private static readonly Mutex _singleInstanceMutex;
     private static readonly bool _isFirstInstance;
     private static EventWaitHandle? _showRequested;
@@ -43,14 +42,18 @@ public partial class App : Application
     public static VoicemeeterRemote? Vm()
     {
         if (!VoicemeeterRemote.IsInstalled()) return null;
-        _vmShared ??= new VoicemeeterRemote();
-        if (!_vmShared.LoggedIn && !_vmShared.Login()) return null;
-        return _vmShared;
+        var vm = new VoicemeeterRemote();
+        if (!vm.TryConnect())
+        {
+            vm.Dispose();
+            return null;
+        }
+        return vm;
     }
 
     public static bool ToggleMuteAll()
     {
-        var vm = Vm(); if (vm is null) return false;
+        using var vm = Vm(); if (vm is null) return false;
         bool mute = vm.AnyStripUnmuted();
         vm.SetAllStripsMute(mute);
         return mute;
@@ -58,7 +61,7 @@ public partial class App : Application
 
     public static bool ToggleMuteHear()
     {
-        var vm = Vm(); if (vm is null) return false;
+        using var vm = Vm(); if (vm is null) return false;
         bool m = !vm.GetBusMute(vm.A1Bus);
         vm.SetBusMute(vm.A1Bus, m);
         return m;
@@ -66,10 +69,18 @@ public partial class App : Application
 
     public static bool ToggleMuteTeam()
     {
-        var vm = Vm(); if (vm is null) return false;
+        using var vm = Vm(); if (vm is null) return false;
         bool m = !vm.GetBusMute(vm.B1Bus);
         vm.SetBusMute(vm.B1Bus, m);
         return m;
+    }
+
+    public static bool SetInputStripB1(bool on)
+    {
+        using var vm = Vm(); if (vm is null) return false;
+        vm.SetStripB1(0, on);
+        vm.IsDirty();
+        return true;
     }
 
     private void App_Startup(object sender, StartupEventArgs e)
@@ -153,7 +164,6 @@ public partial class App : Application
             _logService.Info("Application Shutting Down");
 
             _trayIcon?.Dispose();
-            _vmShared?.Dispose();
 
             if (MainWindow?.DataContext is IDisposable disposable)
             {

@@ -14,6 +14,7 @@ public class KeyboardKey : ObservableObject
     private string? _imagePath;
     private string? _assignedSoundId;
     private string? _assignedSoundName;
+    private string? _bindingDisplayText;
     private string? _assignmentName;
     private string _categoryAccentColor = "#00000000";
     private KeyState _state = KeyState.Empty;
@@ -137,6 +138,12 @@ public class KeyboardKey : ObservableObject
                 OnPropertyChanged(nameof(HasAssignment));
             }
         }
+    }
+
+    public string? BindingDisplayText
+    {
+        get => string.IsNullOrWhiteSpace(_bindingDisplayText) ? _assignedSoundName : _bindingDisplayText;
+        set => SetProperty(ref _bindingDisplayText, value);
     }
 
     public string? AssignmentName

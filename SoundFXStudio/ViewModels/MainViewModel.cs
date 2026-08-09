@@ -730,14 +730,15 @@ public sealed class MainViewModel : ObservableObject
                 {
                     _voiceChangerToggleKeyDown = true;
                     VoiceChangerToggleRequested?.Invoke();
+                    return true;
                 }
-            }
-            else
-            {
-                _voiceChangerToggleKeyDown = false;
+
+                return false;
             }
 
-            return true;
+            var wasActive = _voiceChangerToggleKeyDown;
+            _voiceChangerToggleKeyDown = false;
+            return wasActive;
         }
 
         if (!TryParseToggleHotkey(Settings.VoiceChangerToggleKey, out var toggleKey, out var requiredModifiers))
@@ -756,14 +757,15 @@ public sealed class MainViewModel : ObservableObject
             {
                 _voiceChangerToggleKeyDown = true;
                 VoiceChangerToggleRequested?.Invoke();
+                return true;
             }
-        }
-        else
-        {
-            _voiceChangerToggleKeyDown = false;
+
+            return false;
         }
 
-        return true;
+        var active = _voiceChangerToggleKeyDown;
+        _voiceChangerToggleKeyDown = false;
+        return active;
     }
 
     private static bool TryParseToggleHotkey(string? keyName, out Key key, out ModifierKeys modifiers)
@@ -831,6 +833,7 @@ public sealed class MainViewModel : ObservableObject
     private void OnToggleKeyPressed()
     {
         IsSoundboardActive = Settings.HotkeyHoldMode || !IsSoundboardActive;
+        ShowSoundboardNotification();
     }
 
     public void ToggleSoundboardMode()
@@ -868,70 +871,238 @@ public sealed class MainViewModel : ObservableObject
         return def?.Id;
     }
 
-    private Dictionary<string, float>? _voiceChangerMicB1Snapshot;
-    private Dictionary<string, float>? _voiceChangerMonitorSnapshot;
-
-    public void BeginVoiceChangerDryMicMute()
+    private sealed class VoiceChangerDryMicSnapshot
     {
-        _voiceChangerMicB1Snapshot = null;
-        _ = Task.Run(() =>
-        {
-            try
-            {
-                using var vm = new VoicemeeterRemote();
-                if (!vm.TryConnect())
-                {
-                    return;
-                }
-
-                int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
-                var snapshot = new Dictionary<string, float>();
-                for (int i = 0; i < firstVirtual; i++)
-                {
-                    snapshot[$"Strip[{i}].A1"] = vm.GetFloat($"Strip[{i}].A1");
-                    snapshot[$"Strip[{i}].A2"] = vm.GetFloat($"Strip[{i}].A2");
-                    snapshot[$"Strip[{i}].B1"] = vm.GetFloat($"Strip[{i}].B1");
-                    vm.SetFloat($"Strip[{i}].A1", 0);
-                    vm.SetFloat($"Strip[{i}].A2", 0);
-                    vm.SetFloat($"Strip[{i}].B1", 0);
-                }
-                _voiceChangerMicB1Snapshot = snapshot;
-            }
-            catch
-            {
-                _voiceChangerMicB1Snapshot = null;
-            }
-        });
+        public required int StripIndex { get; init; }
+        public required float PreviousB1 { get; init; }
+        public required string MicDeviceId { get; init; }
+        public required string MicDeviceName { get; init; }
     }
 
-    public void EndVoiceChangerDryMicMute()
+    private VoiceChangerDryMicSnapshot? _voiceChangerMicSnapshot;
+    private Dictionary<string, float>? _voiceChangerMonitorSnapshot;
+
+    public bool TryPrepareVoiceChangerRouting(string micDeviceId, out int outputDeviceIndex, out string outputDeviceId, out string outputDeviceName, out string error)
     {
-        var snapshot = _voiceChangerMicB1Snapshot;
-        _voiceChangerMicB1Snapshot = null;
-        if (snapshot is null || snapshot.Count == 0)
+        outputDeviceIndex = -1;
+        outputDeviceId = string.Empty;
+        outputDeviceName = string.Empty;
+        error = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(micDeviceId))
         {
-            return;
+            error = "Voice changer routing failed: microphone device is not selected.";
+            _logService?.Warning(error);
+            return false;
         }
 
-        _ = Task.Run(() =>
+        outputDeviceId = _audioDeviceService.GetVoicemeeterInputId() ?? string.Empty;
+        outputDeviceName = _audioDeviceService.GetVoicemeeterInputDeviceName() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(outputDeviceId) || string.IsNullOrWhiteSpace(outputDeviceName))
         {
-            try
-            {
-                using var vm = new VoicemeeterRemote();
-                if (!vm.TryConnect())
-                {
-                    return;
-                }
+            error = "Voice changer routing failed: Voicemeeter Input (VAIO) endpoint was not found.";
+            _logService?.Warning(error);
+            return false;
+        }
 
-                foreach (var kv in snapshot)
+        outputDeviceIndex = ResolveWaveOutIndex(outputDeviceName);
+        if (outputDeviceIndex < 0)
+        {
+            error = $"Voice changer routing failed: Voicemeeter Input endpoint '{outputDeviceName}' is not available to WaveOut.";
+            _logService?.Warning(error);
+            return false;
+        }
+
+        var micDeviceName = _audioDeviceService.GetCaptureDevice(micDeviceId)?.FriendlyName
+            ?? Settings.TalkDeviceName
+            ?? micDeviceId;
+
+        try
+        {
+            using var vm = new VoicemeeterRemote();
+            if (!vm.TryConnect())
+            {
+                error = "Voice changer routing failed: could not connect to Voicemeeter.";
+                _logService?.Warning(error);
+                return false;
+            }
+
+            var stripCount = vm.StripCount();
+            var firstVirtual = vm.FirstVirtualStrip(stripCount);
+            if (stripCount <= 0 || firstVirtual <= 0)
+            {
+                error = $"Voice changer routing failed: invalid Voicemeeter strip topology (count={stripCount}, firstVirtual={firstVirtual}).";
+                _logService?.Warning(error);
+                return false;
+            }
+
+            if (!TryResolvePhysicalMicStripIndex(vm, firstVirtual, micDeviceName, Settings.TalkDeviceName, out var micStripIndex, out var resolvedStripDevice))
+            {
+                error = $"Voice changer routing failed: could not map mic '{micDeviceName}' to a physical Voicemeeter strip.";
+                _logService?.Warning(error);
+                return false;
+            }
+
+            var micB1Param = $"Strip[{micStripIndex}].B1";
+            var previousB1 = vm.GetFloat(micB1Param);
+            var setMuteResult = TrySetFloatVerified(vm, micB1Param, 0f, out var mutedB1);
+            if (!setMuteResult)
+            {
+                _ = TrySetFloatVerified(vm, micB1Param, previousB1, out _);
+                error = $"Voice changer routing failed: unable to force dry mic strip B1 OFF (strip={micStripIndex}, target=0, readBack={mutedB1:0.##}).";
+                _logService?.Warning(error);
+                return false;
+            }
+
+            var processedStripIndex = firstVirtual;
+            var processedB1Param = $"Strip[{processedStripIndex}].B1";
+            var processedB1Before = vm.GetFloat(processedB1Param);
+            if (processedB1Before < 0.5f)
+            {
+                var processedSetOk = TrySetFloatVerified(vm, processedB1Param, 1f, out var processedB1After);
+                if (!processedSetOk)
                 {
-                    vm.SetFloat(kv.Key, kv.Value);
+                    _ = TrySetFloatVerified(vm, micB1Param, previousB1, out _);
+                    error = $"Voice changer routing failed: unable to ensure processed strip B1 ON (strip={processedStripIndex}, target=1, readBack={processedB1After:0.##}).";
+                    _logService?.Warning(error);
+                    return false;
                 }
             }
-            catch
+
+            _voiceChangerMicSnapshot = new VoiceChangerDryMicSnapshot
             {
+                StripIndex = micStripIndex,
+                PreviousB1 = previousB1,
+                MicDeviceId = micDeviceId,
+                MicDeviceName = micDeviceName
+            };
+
+            _logService?.Info(
+                $"VC START routing: mic='{micDeviceName}' id='{micDeviceId}', strip={micStripIndex} stripDevice='{resolvedStripDevice}', B1 {previousB1:0.##}->0, " +
+                $"vmInputId='{outputDeviceId}', vmInputName='{outputDeviceName}', outputIndex={outputDeviceIndex}, outputConfirmed=true, processedStrip={processedStripIndex} B1={vm.GetFloat($"Strip[{processedStripIndex}].B1"):0.##}");
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = $"Voice changer routing failed: {ex.Message}";
+            _logService?.Error(error, ex);
+            return false;
+        }
+    }
+
+    public bool TryRestoreVoiceChangerRouting(out string error)
+    {
+        error = string.Empty;
+        var snapshot = _voiceChangerMicSnapshot;
+        if (snapshot is null)
+        {
+            return true;
+        }
+
+        try
+        {
+            using var vm = new VoicemeeterRemote();
+            if (!vm.TryConnect())
+            {
+                error = "Voice changer routing restore failed: could not connect to Voicemeeter.";
+                _logService?.Warning(error);
+                return false;
             }
-        });
+
+            var micB1Param = $"Strip[{snapshot.StripIndex}].B1";
+            var currentB1 = vm.GetFloat(micB1Param);
+            var restoreResult = TrySetFloatVerified(vm, micB1Param, snapshot.PreviousB1, out var restoredB1);
+
+            if (!restoreResult)
+            {
+                error = $"Voice changer routing restore failed: strip {snapshot.StripIndex} B1 restore mismatch (target={snapshot.PreviousB1:0.##}, readBack={restoredB1:0.##}).";
+                _logService?.Warning(error);
+                return false;
+            }
+
+            _voiceChangerMicSnapshot = null;
+            _logService?.Info($"VC STOP routing: micStrip={snapshot.StripIndex}, B1 current={currentB1:0.##}, restored={restoredB1:0.##}, mic='{snapshot.MicDeviceName}' id='{snapshot.MicDeviceId}'");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = $"Voice changer routing restore failed: {ex.Message}";
+            _logService?.Error(error, ex);
+            return false;
+        }
+    }
+
+    private static bool TryResolvePhysicalMicStripIndex(VoicemeeterRemote vm, int firstVirtualStrip, string? micDeviceName, string? talkDeviceName, out int stripIndex, out string resolvedStripDevice)
+    {
+        stripIndex = -1;
+        resolvedStripDevice = string.Empty;
+
+        static string NormalizeName(string? name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return string.Empty;
+            }
+
+            return name.Trim();
+        }
+
+        static bool IsNameMatch(string left, string right)
+        {
+            if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
+            {
+                return false;
+            }
+
+            return left.Equals(right, StringComparison.OrdinalIgnoreCase)
+                || left.StartsWith(right, StringComparison.OrdinalIgnoreCase)
+                || right.StartsWith(left, StringComparison.OrdinalIgnoreCase);
+        }
+
+        var micName = NormalizeName(micDeviceName);
+        var talkName = NormalizeName(talkDeviceName);
+
+        for (int i = 0; i < firstVirtualStrip; i++)
+        {
+            var device = NormalizeName(vm.GetString($"Strip[{i}].device.name"));
+            if (IsNameMatch(device, micName) || IsNameMatch(device, talkName))
+            {
+                stripIndex = i;
+                resolvedStripDevice = device;
+                return true;
+            }
+        }
+
+        if (firstVirtualStrip == 1)
+        {
+            stripIndex = 0;
+            resolvedStripDevice = NormalizeName(vm.GetString("Strip[0].device.name"));
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TrySetFloatVerified(VoicemeeterRemote vm, string param, float target, out float readBack, int retries = 10, int delayMs = 40)
+    {
+        readBack = float.NaN;
+        for (int i = 0; i < retries; i++)
+        {
+            int rc = vm.SetFloat(param, target);
+            if (rc == 0)
+            {
+                vm.IsDirty();
+            }
+            System.Threading.Thread.Sleep(delayMs);
+            readBack = vm.GetFloat(param);
+            if (rc == 0 && Math.Abs(readBack - target) <= 0.1f)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void BeginVoiceChangerMonitorMute()
@@ -999,11 +1170,7 @@ public sealed class MainViewModel : ObservableObject
         RunOnUiThread(() =>
         {
             StatusText = $"Soundboard {status} [{mode}]";
-            _window?.Dispatcher.Invoke(() =>
-            {
-                var toast = new Views.Dialogs.ToastWindow($"Soundboard {status}\n{mode} mode");
-                toast.Show();
-            });
+            ToastWindow.Show("Soundboard Keybind", $"Listening {status} · {mode} mode", IsSoundboardActive);
         });
     }
 
@@ -1046,6 +1213,7 @@ public sealed class MainViewModel : ObservableObject
 
         if (HandleVoiceChangerToggleKey(e.Key, isKeyDown: true))
         {
+            e.Handled = true;
             return;
         }
 
@@ -1532,6 +1700,7 @@ public sealed class MainViewModel : ObservableObject
         }
         else
         {
+            ClearChordStateForSingleKeyAssignment(profile, assignment);
             assignment.SoundId = sound.Id;
             assignment.ActionId = EnsureSoundAction(sound).Id;
             assignment.HotkeyText = key.KeyName;
@@ -1630,6 +1799,7 @@ public sealed class MainViewModel : ObservableObject
         }
         else
         {
+            ClearChordStateForSingleKeyAssignment(profile, assignment);
             assignment.SoundId = sound.Id;
             assignment.ActionId = EnsureSoundAction(sound).Id;
             assignment.HotkeyText = key.KeyName;
@@ -1791,6 +1961,21 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
+    private static void ClearChordStateForSingleKeyAssignment(Profile profile, KeyAssignment assignment)
+    {
+        if (string.IsNullOrWhiteSpace(assignment.ChordKey))
+        {
+            return;
+        }
+
+        var priorActionId = assignment.ActionId;
+        assignment.ChordKey = string.Empty;
+        if (priorActionId is Guid actionId)
+        {
+            RemoveSoundChord(profile, actionId);
+        }
+    }
+
     private void MigrateLegacyChords()
     {
         foreach (var profile in _config.Profiles)
@@ -1803,14 +1988,15 @@ public sealed class MainViewModel : ObservableObject
                     continue;
                 }
 
-                if (profile.KeyChords.Any(item => item.ActionId == actionId.Value))
+                var first = NormalizeChordToken(assignment.HotkeyText);
+                var second = NormalizeChordToken(assignment.ChordKey);
+                if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second))
                 {
                     continue;
                 }
 
-                var first = NormalizeChordToken(assignment.HotkeyText);
-                var second = NormalizeChordToken(assignment.ChordKey);
-                if (string.IsNullOrWhiteSpace(first) || string.IsNullOrWhiteSpace(second))
+                var existingChord = profile.KeyChords.FirstOrDefault(item => item.ActionId == actionId.Value);
+                if (existingChord is not null)
                 {
                     continue;
                 }
@@ -1901,6 +2087,18 @@ public sealed class MainViewModel : ObservableObject
         return parts.Length == 0 ? string.Empty : parts[^1].Trim().ToUpperInvariant();
     }
 
+    private string? ResolveKeyIdFromHotkey(string? hotkeyText)
+    {
+        var keyToken = NormalizeChordToken(hotkeyText);
+        if (string.IsNullOrWhiteSpace(keyToken))
+        {
+            return null;
+        }
+
+        return KeyboardKeys.FirstOrDefault(item =>
+            string.Equals(item.KeyName, keyToken, StringComparison.OrdinalIgnoreCase))?.Id;
+    }
+
     internal void AssignSoundToKeyFromUi(SoundEntry sound, KeyboardKey key) => AssignSoundToKey(sound, key);
 
     internal void AssignSoundChordFromUi(SoundEntry sound, IReadOnlyList<string> keyNames)
@@ -1939,6 +2137,7 @@ public sealed class MainViewModel : ObservableObject
         }
         else
         {
+            ClearChordStateForSingleKeyAssignment(profile, assignment);
             assignment.SoundId = sound.Id;
             assignment.ActionId = EnsureSoundAction(sound).Id;
             assignment.HotkeyText = key.KeyName;
@@ -2029,7 +2228,7 @@ public sealed class MainViewModel : ObservableObject
             string.Equals(item.SoundId, sound.Id, StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(item.ChordKey));
         if (assignment is null)
         {
-            var keyId = KeyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, NormalizeChordToken(dialog.CapturedHotkey), StringComparison.OrdinalIgnoreCase))?.Id;
+            var keyId = ResolveKeyIdFromHotkey(dialog.CapturedHotkey);
             assignment = new KeyAssignment { KeyId = keyId ?? string.Empty, SoundId = sound.Id, ActionId = EnsureSoundAction(sound).Id };
             ActiveProfile?.Assignments.Add(assignment);
         }
@@ -2037,6 +2236,7 @@ public sealed class MainViewModel : ObservableObject
         if (assignment is not null)
         {
             assignment.HotkeyText = dialog.CapturedHotkey;
+            assignment.KeyId = ResolveKeyIdFromHotkey(dialog.CapturedHotkey) ?? assignment.KeyId;
             assignment.ActionId = EnsureSoundAction(sound).Id;
         }
 
@@ -2107,7 +2307,11 @@ public sealed class MainViewModel : ObservableObject
         var soundToAssign = SelectedSound;
         if (soundToAssign is null)
         {
-            var picker = new AssignSoundToKeyDialog(Sounds)
+            var currentlyBoundSoundId = ActiveProfile?.Assignments
+                .FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase))
+                ?.SoundId ?? key.AssignedSoundId;
+
+            var picker = new AssignSoundToKeyDialog(Sounds, currentlyBoundSoundId)
             {
                 Owner = GetDialogOwner()
             };
@@ -2130,13 +2334,15 @@ public sealed class MainViewModel : ObservableObject
         var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
         if (assignment is null)
         {
-            assignment = new KeyAssignment { KeyId = key.Id, SoundId = soundToAssign.Id, ActionId = EnsureSoundAction(soundToAssign).Id };
+            assignment = new KeyAssignment { KeyId = key.Id, SoundId = soundToAssign.Id, ActionId = EnsureSoundAction(soundToAssign).Id, HotkeyText = key.KeyName };
             profile.Assignments.Add(assignment);
         }
         else
         {
+            ClearChordStateForSingleKeyAssignment(profile, assignment);
             assignment.SoundId = soundToAssign.Id;
             assignment.ActionId = EnsureSoundAction(soundToAssign).Id;
+            assignment.HotkeyText = key.KeyName;
         }
 
         soundToAssign.AssignedKeyId = key.Id;
@@ -2441,7 +2647,10 @@ public sealed class MainViewModel : ObservableObject
             return null;
         }
 
-        return profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
+        return profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase))
+            ?? profile.Assignments.FirstOrDefault(item =>
+                string.IsNullOrWhiteSpace(item.ChordKey)
+                && string.Equals(NormalizeChordToken(item.HotkeyText), key.KeyName, StringComparison.OrdinalIgnoreCase));
     }
 
     internal KeyAssignment? GetAssignmentForKeyToken(string token)
@@ -2457,16 +2666,18 @@ public sealed class MainViewModel : ObservableObject
             return null;
         }
 
+        var normalizedToken = NormalizeChordToken(token);
+
         var direct = profile.Assignments.FirstOrDefault(item =>
             string.IsNullOrWhiteSpace(item.ChordKey)
-            && (string.Equals(item.KeyId, token, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(item.HotkeyText, token, StringComparison.OrdinalIgnoreCase)));
+            && (string.Equals(item.KeyId, normalizedToken, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(NormalizeChordToken(item.HotkeyText), normalizedToken, StringComparison.OrdinalIgnoreCase)));
         if (direct is not null)
         {
             return direct;
         }
 
-        var key = KeyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, token, StringComparison.OrdinalIgnoreCase));
+        var key = KeyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, normalizedToken, StringComparison.OrdinalIgnoreCase));
         if (key is null)
         {
             return null;
@@ -2542,6 +2753,7 @@ public sealed class MainViewModel : ObservableObject
         if (assignment is not null)
         {
             assignment.HotkeyText = SelectedSound.Hotkey;
+            assignment.KeyId = ResolveKeyIdFromHotkey(SelectedSound.Hotkey) ?? assignment.KeyId;
             assignment.ActionId = EnsureSoundAction(SelectedSound).Id;
         }
 
@@ -2892,6 +3104,16 @@ public sealed class MainViewModel : ObservableObject
     internal List<AudioDeviceInfo> GetPhysicalOutputDevices()
     {
         return OutputDevices.Where(d => !d.IsVirtual).ToList();
+    }
+
+    internal int GetVoiceChangerOutputDeviceIndex()
+    {
+        return ResolveOutputDeviceIndex(Settings.OutputDeviceId);
+    }
+
+    internal string GetVoiceChangerOutputDeviceName()
+    {
+        return ResolveDeviceName(OutputDevices, Settings.OutputDeviceId);
     }
 
     internal List<AudioDeviceInfo> GetPhysicalInputDevices()

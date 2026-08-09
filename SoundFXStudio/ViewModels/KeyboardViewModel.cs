@@ -110,9 +110,44 @@ public sealed class KeyboardViewModel
         var calibration = _getSettings().KeyboardCalibration;
         var keyOverrides = calibration?.KeyOverrides;
 
+        var assignments = profile.Assignments.ToList();
+        var placement = new Dictionary<string, KeyAssignment>(StringComparer.OrdinalIgnoreCase);
+        var claimedKeyIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var assignment in assignments.Where(item => string.IsNullOrWhiteSpace(item.ChordKey)))
+        {
+            if (string.IsNullOrWhiteSpace(assignment.KeyId))
+            {
+                continue;
+            }
+
+            if (placement.TryAdd(assignment.KeyId, assignment))
+            {
+                claimedKeyIds.Add(assignment.KeyId);
+            }
+        }
+
+        foreach (var assignment in assignments.Where(item => !string.IsNullOrWhiteSpace(item.ChordKey)))
+        {
+            var chordKeyIds = GetChordKeyIdsForAssignment(profile, assignment);
+            var displayKeyId = chordKeyIds.FirstOrDefault(id => !claimedKeyIds.Contains(id)) ?? chordKeyIds.FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(displayKeyId))
+            {
+                displayKeyId = assignment.KeyId;
+            }
+
+            if (string.IsNullOrWhiteSpace(displayKeyId))
+            {
+                continue;
+            }
+
+            placement[displayKeyId] = assignment;
+            claimedKeyIds.Add(displayKeyId);
+        }
+
         foreach (var key in _keyboardKeys)
         {
-            var assignment = profile.Assignments.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
+            var assignment = placement.TryGetValue(key.Id, out var placed) ? placed : null;
             var sound = assignment is null ? null : _sounds.FirstOrDefault(item => string.Equals(item.Id, assignment.SoundId, StringComparison.OrdinalIgnoreCase));
             var category = sound is null ? null : _categories.FirstOrDefault(item => string.Equals(item.Name, sound.Category, StringComparison.OrdinalIgnoreCase));
             var keyOverride = keyOverrides is not null && keyOverrides.TryGetValue(key.Id, out var value)
@@ -123,6 +158,7 @@ public sealed class KeyboardViewModel
             key.AssignedSoundId = assignment?.SoundId;
             key.AssignedSoundName = sound?.Name;
             key.AssignmentName = assignment?.BindingName;
+            key.BindingDisplayText = BuildBindingDisplayText(profile, assignment);
             key.CategoryAccentColor = string.IsNullOrWhiteSpace(category?.AccentColor) ? "#00000000" : category.AccentColor;
             key.InnerInsetAdjustmentPercent = keyOverride?.InnerInsetAdjustmentPercent ?? 0;
             key.InnerInsetXAdjustmentPercent = keyOverride?.InnerInsetXAdjustmentPercent ?? 0;
@@ -134,6 +170,45 @@ public sealed class KeyboardViewModel
             ApplyLockKeyVisualState(key);
             key.IsEnabled = true;
         }
+    }
+
+    private List<string> GetChordKeyIdsForAssignment(Profile profile, KeyAssignment assignment)
+    {
+        var result = new List<string>();
+        IReadOnlyList<string>? keys = null;
+
+        if (assignment.ActionId is Guid actionId)
+        {
+            keys = profile.KeyChords.FirstOrDefault(item => item.ActionId == actionId)?.Keys;
+        }
+
+        keys ??= new[] { assignment.HotkeyText, assignment.ChordKey };
+
+        foreach (var token in keys)
+        {
+            var normalizedToken = NormalizeTokenForLayout(token.Trim().ToUpperInvariant());
+            var keyboardKey = _keyboardKeys.FirstOrDefault(item => string.Equals(item.KeyName, normalizedToken, StringComparison.OrdinalIgnoreCase));
+            if (keyboardKey is not null && !result.Contains(keyboardKey.Id, StringComparer.OrdinalIgnoreCase))
+            {
+                result.Add(keyboardKey.Id);
+            }
+        }
+
+        return result;
+    }
+
+    private static string? BuildBindingDisplayText(Profile profile, KeyAssignment? assignment)
+    {
+        if (assignment is null) return null;
+        if (assignment.ActionId is Guid actionId)
+        {
+            var chordKeys = profile.KeyChords.FirstOrDefault(item => item.ActionId == actionId)?.Keys;
+            if (chordKeys is { Count: > 0 })
+            {
+                return string.Join(" + ", chordKeys);
+            }
+        }
+        return string.Join(" + ", new[] { assignment.HotkeyText, assignment.ChordKey }.Where(part => !string.IsNullOrWhiteSpace(part)));
     }
 
     public void ReleaseVisualKey(Key key)
@@ -346,9 +421,22 @@ public sealed class KeyboardViewModel
             return null;
         }
 
+        var normalizedToken = NormalizeTokenForLayout(token.Trim().ToUpperInvariant());
         return profile.Assignments.FirstOrDefault(item =>
             string.IsNullOrWhiteSpace(item.ChordKey)
-            && string.Equals(item.KeyId, token, StringComparison.OrdinalIgnoreCase));
+            && (string.Equals(item.KeyId, token, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(NormalizeChordToken(item.HotkeyText), normalizedToken, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static string NormalizeChordToken(string? token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return string.Empty;
+        }
+
+        var parts = token.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length == 0 ? string.Empty : parts[^1].Trim().ToUpperInvariant();
     }
 
     internal void ExecuteAssignmentOnce(KeyAssignment assignment)

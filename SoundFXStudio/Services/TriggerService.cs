@@ -597,11 +597,22 @@ public sealed class TriggerService : IDisposable
             return null;
         }
 
-        var normalized = token.Trim();
+        var normalized = NormalizeHotkeyToken(token);
         return profile.Assignments.FirstOrDefault(item =>
             string.IsNullOrWhiteSpace(item.ChordKey)
             && (string.Equals(item.KeyId, normalized, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(item.HotkeyText, normalized, StringComparison.OrdinalIgnoreCase)));
+                || string.Equals(NormalizeHotkeyToken(item.HotkeyText), normalized, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static string NormalizeHotkeyToken(string? hotkeyText)
+    {
+        if (string.IsNullOrWhiteSpace(hotkeyText))
+        {
+            return string.Empty;
+        }
+
+        var parts = hotkeyText.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length == 0 ? string.Empty : parts[^1].Trim().ToUpperInvariant();
     }
 
     private void HandleAssignmentTrigger(KeyboardKey? keyboardKey, KeyAssignment assignment, string triggerToken, bool isKeyDown)

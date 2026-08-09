@@ -19,6 +19,7 @@ public partial class SetupWizardWindow : Window
         InitializeComponent();
         _config = _configService.Load();
         Loaded += SetupWizardWindow_Loaded;
+        Closed += (_, _) => { _stateTimer?.Stop(); _vm.Dispose(); };
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -51,6 +52,7 @@ public partial class SetupWizardWindow : Window
             VmDetectText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81));
             WizardAutoSetupBtn.IsEnabled = true;
             WizardConfigureVmOnlyBtn.IsEnabled = true;
+            WizardRouteInputOnlyBtn.IsEnabled = true;
         }
         else
         {
@@ -58,7 +60,102 @@ public partial class SetupWizardWindow : Window
             VmDetectText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF4, 0x3F, 0x5E));
             WizardAutoSetupBtn.IsEnabled = false;
             WizardConfigureVmOnlyBtn.IsEnabled = false;
+            WizardRouteInputOnlyBtn.IsEnabled = false;
         }
+    }
+
+    private void SetB1Status(string text, System.Windows.Media.Color color)
+    {
+        WizardB1Status.Text = text;
+        WizardB1Status.Foreground = new System.Windows.Media.SolidColorBrush(color);
+    }
+
+    private readonly VoicemeeterRemote _vm = new();
+    private bool _suppressB1;
+    private System.Windows.Threading.DispatcherTimer? _stateTimer;
+
+    private void WizardB1Toggle_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressB1) return;
+        if (!EnsureVmConnected()) return;
+        _vm.SetFloat("Strip[0].B1", 1);
+        SetB1Status("B1 ON — mic goes to Discord/teams", System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81));
+    }
+
+    private void WizardB1Toggle_Unchecked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressB1) return;
+        if (!EnsureVmConnected()) return;
+        _vm.SetFloat("Strip[0].B1", 0);
+        SetB1Status("B1 OFF — mic blocked from Discord/teams", System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+    }
+
+    private bool EnsureVmConnected()
+    {
+        if (_vm.LoggedIn) return true;
+        if (!_vm.Login())
+        {
+            SetB1Status(_vm.Available
+                ? "✗ Voicemeeter not running — start it first"
+                : "✗ Voicemeeter not installed", System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+            return false;
+        }
+        _stateTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+        _stateTimer.Tick += (_, _) => { if (_vm.IsDirty()) RefreshB1State(); };
+        _stateTimer.Start();
+        return true;
+    }
+
+    private void RefreshB1State()
+    {
+        bool on = _vm.LoggedIn && _vm.GetFloat("Strip[0].B1") >= 0.5f;
+        _suppressB1 = true;
+        WizardB1ToggleBtn.IsChecked = on;
+        _suppressB1 = false;
+        SetB1Status(on
+            ? "B1 ON — mic goes to Discord/teams"
+            : "B1 OFF — mic blocked from Discord/teams", on
+            ? System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)
+            : System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+    }
+
+    private void WizardRouteInputOnly_Click(object sender, RoutedEventArgs e)
+    {
+        if (!VoicemeeterRemote.IsInstalled())
+        {
+            VmSetupStatus.Text = "✗ Voicemeeter not installed.";
+            VmSetupStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+
+        var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
+        if (string.IsNullOrWhiteSpace(vmOutputId))
+        {
+            VmSetupStatus.Text = "✗ VoiceMeeter Output (B1) not found.";
+            VmSetupStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_config.Settings.SavedDefaultCaptureId))
+        {
+            _config.Settings.SavedDefaultCaptureId = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture) ?? string.Empty;
+        }
+
+        var inputApplied = _windowsAudioRoutingService.TrySetDefaultInput(vmOutputId);
+        var reboundInput = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
+        var verified = inputApplied && string.Equals(reboundInput, vmOutputId, StringComparison.OrdinalIgnoreCase);
+
+        _config.Settings.VoicemeeterDetected = true;
+        _config.Settings.InputDeviceId = vmOutputId;
+        _config.Settings.MicrophoneDeviceId = vmOutputId;
+        _configService.Save(_config);
+
+        VmSetupStatus.Text = verified
+            ? "✓ Input routed to VoiceMeeter Output (B1). Output device left unchanged."
+            : "⚠ Input device setting was attempted, but Windows did not confirm VoiceMeeter Output (B1). Output device left unchanged.";
+        VmSetupStatus.Foreground = new System.Windows.Media.SolidColorBrush(verified
+            ? System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)
+            : System.Windows.Media.Color.FromRgb(0xF5, 0x9E, 0x0B));
     }
 
     private async void WizardConfigureVmOnly_Click(object sender, RoutedEventArgs e)

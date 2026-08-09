@@ -429,6 +429,9 @@ public sealed class VoicemeeterRemote : IDisposable
     public bool GetBusMute(int bus) => GetFloat($"Bus[{bus}].Mute") >= 0.5f;
     public void SetBusMute(int bus, bool mute) => SetFloat($"Bus[{bus}].Mute", mute ? 1 : 0);
 
+    public bool GetStripB1(int strip) => GetFloat($"Strip[{strip}].B1") >= 0.5f;
+    public void SetStripB1(int strip, bool on) => SetFloat($"Strip[{strip}].B1", on ? 1 : 0);
+
     public void SetStripLabel(int strip, string label) => SetString($"Strip[{strip}].Label", label ?? "");
 
     public bool AnyStripUnmuted()

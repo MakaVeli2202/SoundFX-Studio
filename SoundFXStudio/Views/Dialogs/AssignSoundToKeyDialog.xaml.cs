@@ -13,13 +13,18 @@ public partial class AssignSoundToKeyDialog : Window, INotifyPropertyChanged
     private string _searchText = string.Empty;
     private SoundEntry? _selectedSound;
 
-    public AssignSoundToKeyDialog(IEnumerable<SoundEntry> sounds)
+    public AssignSoundToKeyDialog(IEnumerable<SoundEntry> sounds, string? preselectedSoundId = null)
     {
         InitializeComponent();
         Sounds = new ObservableCollection<SoundEntry>(sounds.OrderBy(sound => sound.Name));
         _filteredSounds = CollectionViewSource.GetDefaultView(Sounds);
         _filteredSounds.Filter = FilterSound;
         DataContext = this;
+
+        if (!string.IsNullOrWhiteSpace(preselectedSoundId))
+        {
+            SelectedSound = Sounds.FirstOrDefault(sound => string.Equals(sound.Id, preselectedSoundId, StringComparison.OrdinalIgnoreCase));
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
