@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="SoundFX Studio Setup"
         Width="980"
-        Height="780"
+        Height="820"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         ResizeMode="NoResize"
@@ -16,36 +16,35 @@
         <SolidColorBrush x:Key="MutedBrush" Color="#9AAFD0"/>
 
         <Style x:Key="GlassPanel" TargetType="Border">
-            <Setter Property="CornerRadius" Value="24"/>
+            <Setter Property="CornerRadius" Value="22"/>
             <Setter Property="Background" Value="#C0141E2D"/>
             <Setter Property="BorderBrush" Value="#334A647F"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
-        <Style x:Key="KeycapStep" TargetType="Border">
+        <Style x:Key="InnerCard" TargetType="Border">
             <Setter Property="CornerRadius" Value="14"/>
-            <Setter Property="Padding" Value="14,12"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Background" Value="#141E2D"/>
+            <Setter Property="Background" Value="#CC141E2D"/>
             <Setter Property="BorderBrush" Value="#334A647F"/>
+            <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <Style x:Key="CyberButton" TargetType="Button">
-            <Setter Property="Height" Value="46"/>
-            <Setter Property="MinWidth" Value="190"/>
-            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="MinWidth" Value="170"/>
+            <Setter Property="Padding" Value="14,0"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Background" Value="#1A2435"/>
             <Setter Property="BorderBrush" Value="#4A00D4FF"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd"
-                                CornerRadius="12"
+                                CornerRadius="10"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}">
@@ -66,15 +65,15 @@
         </Style>
 
         <Style x:Key="HeroButton" TargetType="Button" BasedOn="{StaticResource CyberButton}">
-            <Setter Property="Height" Value="54"/>
-            <Setter Property="MinWidth" Value="240"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="MinWidth" Value="190"/>
             <Setter Property="Foreground" Value="#080D17"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" CornerRadius="13" BorderThickness="1">
+                        <Border x:Name="Bd" CornerRadius="10" BorderThickness="1">
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                     <GradientStop Color="#00D4FF" Offset="0"/>
@@ -97,6 +96,53 @@
             </Setter>
         </Style>
 
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource CyberButton}">
+            <Setter Property="Foreground" Value="#FFE3E3"/>
+            <Setter Property="Background" Value="#2B1A1A"/>
+            <Setter Property="BorderBrush" Value="#8A3A3A"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                CornerRadius="10"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#4A2020"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#E05B5B"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#5A2626"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="StepBadge" TargetType="Border">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="#B3102A3A"/>
+        </Style>
+
+        <Storyboard x:Key="StepFlowPulse" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="StepArrow1" Storyboard.TargetProperty="Opacity"
+                             From="0.3" To="1" Duration="0:0:0.9" AutoReverse="True"/>
+            <DoubleAnimation Storyboard.TargetName="StepArrow2" Storyboard.TargetProperty="Opacity"
+                             From="0.3" To="1" Duration="0:0:0.9" AutoReverse="True" BeginTime="0:0:0.45"/>
+            <DoubleAnimation Storyboard.TargetName="StepBadge2" Storyboard.TargetProperty="Opacity"
+                             From="1" To="0.75" Duration="0:0:0.9" AutoReverse="True"/>
+            <DoubleAnimation Storyboard.TargetName="StepBadge3" Storyboard.TargetProperty="Opacity"
+                             From="1" To="0.75" Duration="0:0:0.9" AutoReverse="True" BeginTime="0:0:0.45"/>
+        </Storyboard>
+
         <Storyboard x:Key="WizardPulse" RepeatBehavior="Forever" AutoReverse="True">
             <DoubleAnimation Storyboard.TargetName="WizardTopGlow"
                              Storyboard.TargetProperty="Opacity"
@@ -106,7 +152,7 @@
         </Storyboard>
     </Window.Resources>
 
-    <Border Background="#080D17" CornerRadius="30" ClipToBounds="True" BorderThickness="1">
+    <Border Background="#B3080D17" CornerRadius="30" ClipToBounds="True" BorderThickness="1">
         <Border.BorderBrush>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                 <GradientStop Color="#00D4FF" Offset="0"/>
@@ -115,266 +161,267 @@
             </LinearGradientBrush>
         </Border.BorderBrush>
 
-        <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="70" ShadowDepth="0" Opacity="0.78"/>
-        </Border.Effect>
+        <Grid>
+            <!-- Inset background image: rounded to match the window curve so edges are smooth -->
+            <Border Margin="5" CornerRadius="25">
+                <Border.Background>
+                    <ImageBrush ImageSource="/Assets/Pics/MainWindowBackground.png"
+                                Stretch="UniformToFill"
+                                Opacity="0.62"/>
+                </Border.Background>
+            </Border>
 
-        <Grid Margin="24">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="230"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="88"/>
-            </Grid.RowDefinitions>
+            <Grid Margin="22">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="100"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="88"/>
+                </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0">
-                <Border CornerRadius="26" ClipToBounds="True">
-                    <Grid>
-                        <Image Source="/Assets/UI/HeroSection.png" Stretch="UniformToFill"/>
-                        <Rectangle>
-                            <Rectangle.Fill>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#EC080D17" Offset="0"/>
-                                    <GradientStop Color="#D40C1524" Offset="0.5"/>
-                                    <GradientStop Color="#690C1524" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Rectangle.Fill>
-                        </Rectangle>
-
-                        <Grid Margin="32,24,24,24">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="SOUNDFX STUDIO" Foreground="#9CEBFF" FontSize="12" FontWeight="Bold"/>
-                                <TextBlock Text="SET UP YOUR SOUNDBOARD" Margin="0,14,0,0" Foreground="White" FontSize="36" FontWeight="Bold"/>
-                                <TextBlock Text="IN UNDER A MINUTE" Margin="0,6,0,0" Foreground="#D2E3F7" FontSize="18" FontWeight="SemiBold"/>
-                                <TextBlock Text="Have Something To Say?" Margin="0,14,0,0" Foreground="#BCD0EC" FontSize="15"/>
-                                <TextBlock Text="PRESS A KEY." Foreground="#00D4FF" FontSize="27" FontWeight="Black"/>
-                            </StackPanel>
-
-                            <Button Grid.Column="1"
-                                    Width="46"
-                                    Height="46"
-                                    VerticalAlignment="Top"
-                                    Click="CloseButton_Click"
-                                    Content="✕"
-                                    FontWeight="Bold"
-                                    Background="#261A283B"
-                                    BorderBrush="#4A00D4FF"
-                                    Foreground="White"/>
-                        </Grid>
-                    </Grid>
-                </Border>
-
-                <Border x:Name="WizardTopGlow"
-                        Margin="2"
-                        CornerRadius="26"
-                        BorderThickness="1"
-                        BorderBrush="#2C00D4FF"
-                        Opacity="0.12"
-                        IsHitTestVisible="False"/>
-            </Grid>
-
-            <Grid Grid.Row="1" Margin="0,18,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <Border Grid.Column="0" Style="{StaticResource KeycapStep}" Margin="0,0,10,0" Background="#1D00D4FF" BorderBrush="#00D4FF">
-                    <StackPanel>
-                        <TextBlock Text="[F1]" Foreground="#D8F9FF" FontFamily="Consolas" FontSize="13" FontWeight="Bold"/>
-                        <TextBlock Text="DEVICES" Margin="0,5,0,0" Foreground="White" FontSize="12.5" FontWeight="Bold"/>
+                <!-- Header -->
+                <Grid Grid.Row="0">
+                    <StackPanel VerticalAlignment="Center" Margin="10,0,0,0">
+                        <TextBlock Text="SOUNDFX STUDIO" Foreground="#9CEBFF" FontSize="10.5" FontWeight="Bold"/>
+                        <TextBlock Text="SET UP YOUR SOUNDBOARD" Margin="0,6,0,0" Foreground="White" FontSize="25" FontWeight="Bold">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="1" Opacity="0.8"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+                        <TextBlock Text="Three quick steps and you're live." Margin="0,3,0,0" Foreground="#BCD0EC" FontSize="12"/>
                     </StackPanel>
-                </Border>
 
-                <Border Grid.Column="1" Style="{StaticResource KeycapStep}" Margin="5,0" BorderBrush="#7B3FFF">
-                    <StackPanel>
-                        <TextBlock Text="[F2]" Foreground="#CBB5FF" FontFamily="Consolas" FontSize="13" FontWeight="Bold"/>
-                        <TextBlock Text="ROUTING" Margin="0,5,0,0" Foreground="#EAF1FF" FontSize="12.5" FontWeight="SemiBold"/>
+                    <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Orientation="Horizontal">
+                        <Border x:Name="VmStatusBadge" Background="#C0141E2D" BorderBrush="#334A647F"
+                                BorderThickness="1" CornerRadius="12" Padding="14,6" VerticalAlignment="Center">
+                            <Ellipse x:Name="VmStatusDot" Width="9" Height="9" Fill="#22C55E" VerticalAlignment="Center"/>
+                        </Border>
                     </StackPanel>
-                </Border>
+                </Grid>
 
-                <Border Grid.Column="2" Style="{StaticResource KeycapStep}" Margin="10,0,0,0" BorderBrush="#22C55E">
-                    <StackPanel>
-                        <TextBlock Text="[F3]" Foreground="#95EAB1" FontFamily="Consolas" FontSize="13" FontWeight="Bold"/>
-                        <TextBlock Text="READY" Margin="0,5,0,0" Foreground="#EAF1FF" FontSize="12.5" FontWeight="SemiBold"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <Border Grid.Row="2" Style="{StaticResource GlassPanel}" Margin="0,18,0,0" Padding="24">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel>
-                        <Grid Margin="0,0,0,20">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="300"/>
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0" Margin="0,0,14,0">
-                                <TextBlock Text="DEVICE SELECTION" Foreground="White" FontSize="22" FontWeight="Bold"/>
-                                <TextBlock Text="Select your output and microphone to configure SoundFX Studio routing." Margin="0,8,0,0" Foreground="{StaticResource MutedBrush}" FontSize="12.5" TextWrapping="Wrap"/>
-                            </StackPanel>
-
-                            <Border Grid.Column="1" Background="#141E2D" BorderBrush="#334A647F" BorderThickness="1" CornerRadius="16" Padding="14,12">
-                                <StackPanel>
-                                    <TextBlock Text="SYSTEM STATUS" Foreground="#00D4FF" FontSize="11" FontWeight="Bold"/>
-                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                        <Ellipse Width="8" Height="8" Fill="#22C55E" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="VmDetectText" Margin="8,0,0,0" Foreground="White" FontSize="12" Text="Checking for Voicemeeter..." TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-
-                        <Grid Margin="0,0,0,20">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <Border Grid.Column="0" Background="#141E2D" BorderBrush="#334A647F" BorderThickness="1" CornerRadius="18" Padding="20" Margin="0,0,10,0">
-                                <StackPanel>
-                                    <Border HorizontalAlignment="Left" CornerRadius="8" Padding="8,3" Background="#2100D4FF" BorderBrush="#00D4FF" BorderThickness="1">
-                                        <TextBlock Text="OUT" Foreground="#BFF4FF" FontFamily="Consolas" FontWeight="Bold" FontSize="11"/>
-                                    </Border>
-                                    <TextBlock Text="OUTPUT DEVICE" Margin="0,10,0,0" Foreground="White" FontSize="15" FontWeight="Bold"/>
-                                    <TextBlock Text="Choose what you hear through." Margin="0,6,0,12" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
-                                    <ComboBox x:Name="WizardHearCombo"
-                                              Height="46"
-                                              DisplayMemberPath="Name"
-                                              Background="#1B263A"
-                                              BorderBrush="#00D4FF"
-                                              Foreground="White"
-                                              FontSize="12.5"/>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Grid.Column="1" Background="#141E2D" BorderBrush="#334A647F" BorderThickness="1" CornerRadius="18" Padding="20" Margin="10,0,0,0">
-                                <StackPanel>
-                                    <Border HorizontalAlignment="Left" CornerRadius="8" Padding="8,3" Background="#237B3FFF" BorderBrush="#7B3FFF" BorderThickness="1">
-                                        <TextBlock Text="MIC" Foreground="#E0D2FF" FontFamily="Consolas" FontWeight="Bold" FontSize="11"/>
-                                    </Border>
-                                    <TextBlock Text="INPUT DEVICE" Margin="0,10,0,0" Foreground="White" FontSize="15" FontWeight="Bold"/>
-                                    <TextBlock Text="Choose what you talk through." Margin="0,6,0,12" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
-                                    <ComboBox x:Name="WizardTalkCombo"
-                                              Height="46"
-                                              DisplayMemberPath="Name"
-                                              Background="#1B263A"
-                                              BorderBrush="#7B3FFF"
-                                              Foreground="White"
-                                              FontSize="12.5"/>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-
-                        <Border Background="#141E2D" BorderBrush="#334A647F" BorderThickness="1" CornerRadius="18" Padding="20" Margin="0,0,0,20">
+                <!-- Content -->
+                <Border Grid.Row="1" Style="{StaticResource GlassPanel}" Margin="10,12,10,0" Padding="20,16">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel>
+                            <!-- Animated step flow: Choose Devices → Auto Configure → Ready to Play -->
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="300"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="0" Margin="0,0,14,0">
-                                    <TextBlock Text="SIGNAL FLOW" Foreground="#00D4FF" FontSize="12" FontWeight="Bold"/>
-                                    <StackPanel Margin="0,12,0,0">
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                            <Ellipse Width="9" Height="9" Fill="#22C55E" VerticalAlignment="Center"/>
-                                            <TextBlock Text="MIC" Margin="8,0,0,0" Foreground="#D6E7FA" FontFamily="Consolas" FontSize="12" FontWeight="Bold"/>
-                                        </StackPanel>
-                                        <TextBlock Text="↓" Foreground="#7B3FFF" FontSize="16" Margin="3,0,0,4"/>
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                            <Ellipse Width="9" Height="9" Fill="#00D4FF" VerticalAlignment="Center"/>
-                                            <TextBlock Text="VOICEMEETER" Margin="8,0,0,0" Foreground="#D6E7FA" FontFamily="Consolas" FontSize="12" FontWeight="Bold"/>
-                                        </StackPanel>
-                                        <TextBlock Text="↓" Foreground="#7B3FFF" FontSize="16" Margin="3,0,0,4"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Ellipse Width="9" Height="9" Fill="#22C55E" VerticalAlignment="Center"/>
-                                            <TextBlock Text="OUTPUT" Margin="8,0,0,0" Foreground="#D6E7FA" FontFamily="Consolas" FontSize="12" FontWeight="Bold"/>
-                                        </StackPanel>
-                                    </StackPanel>
+                                <!-- Step 1 -->
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                    <Border x:Name="StepBadge1" Style="{StaticResource StepBadge}" BorderBrush="#00D4FF"
+                                            HorizontalAlignment="Center">
+                                        <TextBlock Text="1" Foreground="#BFF4FF" FontSize="18" FontWeight="Black"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="CHOOSE DEVICES" Margin="0,8,0,0" Foreground="White" FontSize="12.5"
+                                               FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Pick your output &amp; mic" Margin="0,3,0,0" Foreground="{StaticResource MutedBrush}"
+                                               FontSize="10.5" HorizontalAlignment="Center"/>
                                 </StackPanel>
 
-                                <Border Grid.Column="1" Background="#111827" BorderBrush="#263648" BorderThickness="1" CornerRadius="14" Padding="14">
+                                <!-- Arrow 1 -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="14,0">
+                                    <TextBlock x:Name="StepArrow1" Text="➜" Foreground="#00D4FF" FontSize="22"
+                                               FontWeight="Bold" VerticalAlignment="Center">
+                                        <TextBlock.Effect>
+                                            <DropShadowEffect Color="#00D4FF" BlurRadius="10" ShadowDepth="0" Opacity="0.9"/>
+                                        </TextBlock.Effect>
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <!-- Step 2 -->
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                    <Border x:Name="StepBadge2" Style="{StaticResource StepBadge}" BorderBrush="#7B3FFF"
+                                            HorizontalAlignment="Center">
+                                        <Border.Effect>
+                                            <DropShadowEffect Color="#7B3FFF" BlurRadius="10" ShadowDepth="0" Opacity="0.6"/>
+                                        </Border.Effect>
+                                        <TextBlock Text="2" Foreground="#E0D2FF" FontSize="18" FontWeight="Black"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="AUTO CONFIGURE" Margin="0,8,0,0" Foreground="White" FontSize="12.5"
+                                               FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="We route your voice" Margin="0,3,0,0" Foreground="{StaticResource MutedBrush}"
+                                               FontSize="10.5" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Arrow 2 -->
+                                <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="14,0">
+                                    <TextBlock x:Name="StepArrow2" Text="➜" Foreground="#FF2DAF" FontSize="22"
+                                               FontWeight="Bold" VerticalAlignment="Center">
+                                        <TextBlock.Effect>
+                                            <DropShadowEffect Color="#FF2DAF" BlurRadius="10" ShadowDepth="0" Opacity="0.9"/>
+                                        </TextBlock.Effect>
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <!-- Step 3 -->
+                                <StackPanel Grid.Column="4" HorizontalAlignment="Center">
+                                    <Border x:Name="StepBadge3" Style="{StaticResource StepBadge}" BorderBrush="#22C55E"
+                                            HorizontalAlignment="Center">
+                                        <Border.Effect>
+                                            <DropShadowEffect Color="#22C55E" BlurRadius="10" ShadowDepth="0" Opacity="0.6"/>
+                                        </Border.Effect>
+                                        <TextBlock Text="3" Foreground="#95EAB1" FontSize="18" FontWeight="Black"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="READY TO PLAY" Margin="0,8,0,0" Foreground="White" FontSize="12.5"
+                                               FontWeight="Bold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Your soundboard is live" Margin="0,3,0,0" Foreground="{StaticResource MutedBrush}"
+                                               FontSize="10.5" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Device selection -->
+                            <Grid Margin="0,16,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0" Style="{StaticResource InnerCard}" Padding="16,13" Margin="0,0,8,0">
                                     <StackPanel>
-                                        <TextBlock Text="AUTO CONFIGURE AUDIO ROUTING" Foreground="White" FontSize="16" FontWeight="Bold"/>
-                                        <TextBlock Text="SoundFX Studio can automatically configure Voicemeeter and Windows routing." Margin="0,8,0,14" Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Button x:Name="WizardAutoSetupBtn"
-                                                    Style="{StaticResource HeroButton}"
-                                                    Width="250"
-                                                    Click="WizardAutoSetup_Click"
-                                                    Content="AUTO CONFIGURE"/>
-                                            <Button x:Name="WizardResetWindowsBtn"
-                                                    Style="{StaticResource CyberButton}"
-                                                    Width="210"
-                                                    Margin="12,0,0,0"
-                                                    Click="WizardResetWindows_Click"
-                                                    Content="RESET AUDIO"/>
-                                        </StackPanel>
+                                        <Border HorizontalAlignment="Left" CornerRadius="7" Padding="8,3"
+                                                Background="#3300D4FF" BorderBrush="#00D4FF" BorderThickness="1">
+                                            <TextBlock Text="OUT" Foreground="#BFF4FF" FontFamily="Consolas" FontWeight="Bold" FontSize="10.5"/>
+                                        </Border>
+                                        <TextBlock Text="OUTPUT DEVICE" Margin="0,7,0,0" Foreground="White" FontSize="13.5" FontWeight="Bold"/>
+                                        <TextBlock Text="Choose what you hear through." Margin="0,2,0,7" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
+                                        <ComboBox x:Name="WizardHearCombo"
+                                                  Height="38"
+                                                  DisplayMemberPath="Name"
+                                                  Background="#B31B263A"
+                                                  BorderBrush="#00D4FF"
+                                                  Foreground="White"
+                                                  FontSize="12"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Grid.Column="1" Style="{StaticResource InnerCard}" Padding="16,13" Margin="8,0,0,0">
+                                    <StackPanel>
+                                        <Border HorizontalAlignment="Left" CornerRadius="7" Padding="8,3"
+                                                Background="#337B3FFF" BorderBrush="#7B3FFF" BorderThickness="1">
+                                            <TextBlock Text="MIC" Foreground="#E0D2FF" FontFamily="Consolas" FontWeight="Bold" FontSize="10.5"/>
+                                        </Border>
+                                        <TextBlock Text="INPUT DEVICE" Margin="0,7,0,0" Foreground="White" FontSize="13.5" FontWeight="Bold"/>
+                                        <TextBlock Text="Choose what you talk through." Margin="0,2,0,7" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
+                                        <ComboBox x:Name="WizardTalkCombo"
+                                                  Height="38"
+                                                  DisplayMemberPath="Name"
+                                                  Background="#B31B263A"
+                                                  BorderBrush="#7B3FFF"
+                                                  Foreground="White"
+                                                  FontSize="12"/>
                                     </StackPanel>
                                 </Border>
                             </Grid>
-                        </Border>
 
-                        <Border Background="#0F1623" BorderBrush="#2A384E" BorderThickness="1" CornerRadius="16" Padding="16">
-                            <StackPanel>
-                                <TextBlock Text="LOG OUTPUT" Foreground="#00D4FF" FontSize="11" FontWeight="Bold"/>
-                                <TextBlock x:Name="VmSetupStatus"
-                                           Margin="0,10,0,0"
-                                           Foreground="#22C55E"
-                                           FontFamily="Consolas"
-                                           FontSize="12"
-                                           TextWrapping="Wrap"/>
-                                <TextBlock x:Name="WizardStatusText"
-                                           Margin="0,8,0,0"
-                                           Foreground="#A8C0E0"
-                                           FontFamily="Consolas"
-                                           FontSize="11.5"
-                                           TextWrapping="Wrap"/>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
+                            <!-- Auto configure group box -->
+                            <Border Style="{StaticResource InnerCard}" Margin="0,16,0,0" Padding="18,14">
+                                <StackPanel>
+                                    <TextBlock Text="AUTO CONFIGURE AUDIO ROUTING" Foreground="White" FontSize="15" FontWeight="Bold"/>
+                                    <TextBlock Text="SoundFX Studio can automatically configure Voicemeeter and Windows routing."
+                                               Margin="0,5,0,12" Foreground="{StaticResource MutedBrush}" FontSize="11.5" TextWrapping="Wrap"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Button x:Name="WizardAutoSetupBtn"
+                                                Style="{StaticResource HeroButton}"
+                                                Width="235"
+                                                Height="46"
+                                                Click="WizardAutoSetup_Click"
+                                                Content="AUTO CONFIGURE"/>
+                                        <Button x:Name="WizardResetWindowsBtn"
+                                                Style="{StaticResource DangerButton}"
+                                                Width="200"
+                                                Height="46"
+                                                Margin="12,0,0,0"
+                                                Click="WizardResetWindows_Click">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="↺" FontSize="16" VerticalAlignment="Center"/>
+                                                <TextBlock Text="RESET AUDIO" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
 
-            <Border Grid.Row="3" Margin="0,18,0,0" Background="#141E2D" BorderBrush="#263648" BorderThickness="1" CornerRadius="18" Padding="18">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                            <!-- Log output -->
+                            <Border Background="#AA0F1623" BorderBrush="#2A384E" BorderThickness="1" CornerRadius="12" Padding="14,10" Margin="0,16,0,0">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="LOG OUTPUT" Foreground="#00D4FF" FontSize="10.5" FontWeight="Bold"/>
+                                        <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
+                                            <Ellipse Width="6" Height="6" Fill="#334A647F" VerticalAlignment="Center"/>
+                                            <TextBlock Text="SYSTEM LOG" Margin="6,0,0,0" Foreground="#5A6E8A" FontSize="10" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Border Height="1" Background="#263648" Margin="0,7,0,0"/>
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="84">
+                                        <StackPanel>
+                                            <TextBlock x:Name="VmSetupStatus"
+                                                       Margin="0,7,0,0"
+                                                       Foreground="#22C55E"
+                                                       FontFamily="Consolas"
+                                                       FontSize="11.5"
+                                                       TextWrapping="Wrap"/>
+                                            <TextBlock x:Name="WizardStatusText"
+                                                       Margin="0,4,0,0"
+                                                       Foreground="#A8C0E0"
+                                                       FontFamily="Consolas"
+                                                       FontSize="11"
+                                                       TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
 
-                    <CheckBox x:Name="DontShowAgainCheckBox"
-                              VerticalAlignment="Center"
-                              Content="Don't show this setup again"
-                              Foreground="#DDEAFF"
-                              FontSize="12"/>
+                <!-- Footer -->
+                <Border Grid.Row="2" Margin="10,12,10,0" Style="{StaticResource GlassPanel}" Padding="18,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Content="OPEN WINDOWS SOUND"
-                                Width="200"
-                                Style="{StaticResource CyberButton}"
-                                Click="OpenSound_Click"/>
+                        <CheckBox x:Name="DontShowAgainCheckBox"
+                                  VerticalAlignment="Center"
+                                  Content="Don't show this setup again"
+                                  Foreground="#DDEAFF"
+                                  FontSize="12"/>
 
-                        <Button Style="{StaticResource HeroButton}"
-                                Width="230"
-                                Margin="12,0,0,0"
-                                Click="Finish_Click"
-                                Content="ENTER SOUNDFX"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="OPEN WINDOWS SOUND"
+                                    Width="185"
+                                    Style="{StaticResource CyberButton}"
+                                    Click="OpenSound_Click"/>
+
+                            <Button Style="{StaticResource HeroButton}"
+                                    Width="200"
+                                    Margin="12,0,0,0"
+                                    Click="Finish_Click"
+                                    Content="ENTER SOUNDFX"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
 
         <Border.Triggers>
             <EventTrigger RoutedEvent="FrameworkElement.Loaded">
                 <BeginStoryboard Storyboard="{StaticResource WizardPulse}"/>
+                <BeginStoryboard Storyboard="{StaticResource StepFlowPulse}"/>
             </EventTrigger>
         </Border.Triggers>
     </Border>

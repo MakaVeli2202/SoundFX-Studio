@@ -53,7 +53,7 @@
                     Value="Hand"/>
 
             <Setter Property="Height"
-                    Value="40"/>
+                    Value="42"/>
 
             <Setter Property="Template">
 
@@ -108,30 +108,9 @@
 
     </Window.Resources>
 
-    <Border Background="{StaticResource SurfaceBrush}"
+    <Border Style="{StaticResource AppWindowRoot}"
             CornerRadius="28"
-            ClipToBounds="True">
-
-        <Border.BorderBrush>
-
-            <LinearGradientBrush StartPoint="0,0"
-                                 EndPoint="1,0">
-
-                <GradientStop Color="#00D4FF"
-                              Offset="0"/>
-
-                <GradientStop Color="#7B3FFF"
-                              Offset="1"/>
-
-            </LinearGradientBrush>
-
-        </Border.BorderBrush>
-
-        <Border.BorderThickness>1.5</Border.BorderThickness>
-
-        <Border.Effect>
-            <DropShadowEffect Color="#3300D4FF" BlurRadius="34" ShadowDepth="0" Opacity="0.55"/>
-        </Border.Effect>
+            BorderThickness="1.5">
 
         <Grid Margin="18">
 
@@ -186,7 +165,7 @@
                     </StackPanel>
 
                     <Button Grid.Column="1"
-                            Height="40"
+                            Height="42"
                             Margin="0,10,10,10"
                             Content="&#x2715;"
                             Background="#55203030"
@@ -330,6 +309,7 @@
                 <Button Content="Assign"
                         FontWeight="Bold"
                         Foreground="#080D17"
+                        Height="42"
                         Click="AssignButton_Click">
 
                     <Button.Background>

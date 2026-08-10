@@ -128,30 +128,9 @@
 
     </Window.Resources>
 
-    <Border Background="#080D17"
+    <Border Style="{StaticResource AppWindowRoot}"
             CornerRadius="26"
             BorderThickness="1.5">
-
-        <Border.BorderBrush>
-
-            <LinearGradientBrush StartPoint="0,0"
-                                 EndPoint="1,0">
-
-                <GradientStop Color="#00D4FF"/>
-                <GradientStop Color="#7B3FFF"
-                              Offset="0.6"/>
-                <GradientStop Color="#FF2DAF"
-                              Offset="1"/>
-
-            </LinearGradientBrush>
-
-        </Border.BorderBrush>
-
-        <Border.Effect>
-            <DropShadowEffect Color="#5000D4FF"
-                              BlurRadius="30"
-                              ShadowDepth="0"/>
-        </Border.Effect>
 
         <Grid Margin="16">
 

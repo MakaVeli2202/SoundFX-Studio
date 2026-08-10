@@ -136,17 +136,9 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Border Background="{StaticResource DarkBg}" CornerRadius="24" ClipToBounds="True" BorderThickness="1.5">
-        <Border.BorderBrush>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="#00D4FF" Offset="0"/>
-                <GradientStop Color="#7B3FFF" Offset="1"/>
-            </LinearGradientBrush>
-        </Border.BorderBrush>
-
-        <Border.Effect>
-            <DropShadowEffect Color="#3600D4FF" BlurRadius="40" ShadowDepth="0" Opacity="0.6"/>
-        </Border.Effect>
+    <Border Style="{StaticResource AppWindowRoot}"
+            CornerRadius="24"
+            BorderThickness="1.5">
 
         <Grid>
             <Grid.RowDefinitions>

@@ -19,17 +19,9 @@
         </Storyboard>
     </Window.Resources>
 
-    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="28" ClipToBounds="True" BorderThickness="1.5">
-        <Border.BorderBrush>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="#00D4FF" Offset="0"/>
-                <GradientStop Color="#7B3FFF" Offset="1"/>
-            </LinearGradientBrush>
-        </Border.BorderBrush>
-
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="34" ShadowDepth="0" Color="#3B00D4FF" Opacity="0.55"/>
-        </Border.Effect>
+    <Border Style="{StaticResource AppWindowRoot}"
+            CornerRadius="28"
+            BorderThickness="1.5">
 
         <Grid Margin="18">
             <Grid.RowDefinitions>
@@ -48,7 +40,7 @@
                             <TextBlock Text="Capture Hotkey" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
                         </StackPanel>
                     </StackPanel>
-                    <Button x:Name="CancelButton" Height="36" Content="&#x2715;"
+                    <Button x:Name="CancelButton" Height="42" Content="&#x2715;"
                             Background="#40212A39" BorderBrush="#00D4FF" Foreground="White"
                             HorizontalAlignment="Right" Margin="0,8,8,8"
                             Click="CancelButton_Click"/>

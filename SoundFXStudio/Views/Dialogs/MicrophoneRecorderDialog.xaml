@@ -11,18 +11,9 @@
         AllowsTransparency="True"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
-    <Border Background="#080D17" CornerRadius="28" ClipToBounds="True">
-        <Border.BorderBrush>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="#00D4FF" Offset="0"/>
-                <GradientStop Color="#7B3FFF" Offset="1"/>
-            </LinearGradientBrush>
-        </Border.BorderBrush>
-        <Border.BorderThickness>1.5</Border.BorderThickness>
-
-        <Border.Effect>
-            <DropShadowEffect Color="#3300D4FF" BlurRadius="32" ShadowDepth="0" Opacity="0.52"/>
-        </Border.Effect>
+    <Border Style="{StaticResource AppWindowRoot}"
+            CornerRadius="28"
+            BorderThickness="1.5">
 
         <Grid Margin="18">
             <Grid.RowDefinitions>

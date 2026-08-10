@@ -16,12 +16,10 @@
                       UseAeroCaptionButtons="False" CornerRadius="0"/>
     </WindowChrome.WindowChrome>
 
-    <Border Background="{StaticResource SurfaceBrush}"
-            BorderBrush="#5A00D4FF" BorderThickness="1.5"
-            CornerRadius="18">
-        <Border.Effect>
-            <DropShadowEffect Color="#3300D4FF" BlurRadius="36" ShadowDepth="0" Opacity="0.55"/>
-        </Border.Effect>
+    <Border Style="{StaticResource AppWindowRoot}"
+            CornerRadius="18"
+            BorderThickness="1.5">
+
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="46"/>

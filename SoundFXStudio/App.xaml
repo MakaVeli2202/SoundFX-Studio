@@ -92,6 +92,32 @@
             <Setter Property="BorderBrush" Value="#3C526D" />
         </Style>
 
+        <!-- ═══ Shared Window Skin (Setup Wizard match) ═══ -->
+
+        <ImageBrush x:Key="AppBackgroundBrush"
+                    ImageSource="/Assets/Pics/MainWindowBackground.png"
+                    Stretch="UniformToFill"
+                    Opacity="0.55"/>
+
+        <LinearGradientBrush x:Key="AppBorderGradient" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#00D4FF" Offset="0"/>
+            <GradientStop Color="#7B3FFF" Offset="0.55"/>
+            <GradientStop Color="#FF2DAF" Offset="1"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="AppWindowRoot" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource AppBackgroundBrush}"/>
+            <Setter Property="CornerRadius" Value="28"/>
+            <Setter Property="ClipToBounds" Value="True"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AppBorderGradient}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#3300D4FF" BlurRadius="34" ShadowDepth="0" Opacity="0.5"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="WindowChromeBar" TargetType="Border">
             <Setter Property="Background" Value="#CB0E1623" />
             <Setter Property="BorderBrush" Value="#55395372" />

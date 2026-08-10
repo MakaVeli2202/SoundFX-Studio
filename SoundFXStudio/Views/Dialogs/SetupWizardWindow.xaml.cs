@@ -1,14 +1,19 @@
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using NAudio.CoreAudioApi;
 
 namespace SoundFXStudio.Views.Dialogs;
 
 public partial class SetupWizardWindow : Window
 {
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr h, int attribute, ref int value, int size);
+
     private readonly ConfigService _configService = new();
     private readonly AudioDeviceService _audioDeviceService = new();
     private readonly WindowsAudioRoutingService _windowsAudioRoutingService = new();
@@ -20,6 +25,23 @@ public partial class SetupWizardWindow : Window
         _config = _configService.Load();
         Loaded += SetupWizardWindow_Loaded;
         PreviewMouseLeftButtonDown += TryDragWindow;
+        PreviewKeyDown += SetupWizardWindow_PreviewKeyDown;
+        SourceInitialized += SetupWizardWindow_SourceInitialized;
+    }
+
+    private void SetupWizardWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Escape)
+        {
+            Close();
+        }
+    }
+
+    private void SetupWizardWindow_SourceInitialized(object? sender, EventArgs e)
+    {
+        IntPtr hwnd = new WindowInteropHelper(this).Handle;
+        int noRound = 1;
+        DwmSetWindowAttribute(hwnd, 33, ref noRound, Marshal.SizeOf<int>());
     }
 
     private void TryDragWindow(object sender, MouseButtonEventArgs e)
@@ -67,16 +89,16 @@ public partial class SetupWizardWindow : Window
 
     private void CheckVoicemeeter()
     {
+        var green = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81));
+        var red = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF4, 0x3F, 0x5E));
         if (VoicemeeterService.IsVoicemeeterInstalled())
         {
-            VmDetectText.Text = "✓ Voicemeeter detected";
-            VmDetectText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81));
+            VmStatusDot.Fill = green;
             WizardAutoSetupBtn.IsEnabled = true;
         }
         else
         {
-            VmDetectText.Text = "✗ Voicemeeter not installed — install it for best routing";
-            VmDetectText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xF4, 0x3F, 0x5E));
+            VmStatusDot.Fill = red;
             WizardAutoSetupBtn.IsEnabled = false;
         }
     }
