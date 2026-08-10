@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoundFXStudio", "SoundFXStudio\SoundFXStudio.csproj", "{0A2AFFDB-0053-47DD-ADC8-B5E382D5A2A7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoundFXStudio.Tests", "SoundFXStudio.Tests\SoundFXStudio.Tests.csproj", "{9E1F1E8B-795C-4E1D-913C-1234A2F8CD0D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoundFXStudio.UI.Tests", "SoundFXStudio.UI.Tests\SoundFXStudio.UI.Tests.csproj", "{79602F4C-E3C9-4E2C-B760-363FF36CC59D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0A2AFFDB-0053-47DD-ADC8-B5E382D5A2A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A2AFFDB-0053-47DD-ADC8-B5E382D5A2A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A2AFFDB-0053-47DD-ADC8-B5E382D5A2A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A2AFFDB-0053-47DD-ADC8-B5E382D5A2A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E1F1E8B-795C-4E1D-913C-1234A2F8CD0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E1F1E8B-795C-4E1D-913C-1234A2F8CD0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E1F1E8B-795C-4E1D-913C-1234A2F8CD0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E1F1E8B-795C-4E1D-913C-1234A2F8CD0D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79602F4C-E3C9-4E2C-B760-363FF36CC59D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79602F4C-E3C9-4E2C-B760-363FF36CC59D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79602F4C-E3C9-4E2C-B760-363FF36CC59D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79602F4C-E3C9-4E2C-B760-363FF36CC59D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -332,7 +332,7 @@ public class ConfigService
 
         while (current is not null)
         {
-            var solutionPath = Path.Combine(current.FullName, "SoundFXStudio.slnx");
+            var solutionPath = Path.Combine(current.FullName, "SoundFXStudio.sln");
             if (File.Exists(solutionPath))
             {
                 return Path.Combine(current.FullName, "SoundFXStudio", "keyboard-calibration.json");

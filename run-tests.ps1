@@ -18,7 +18,7 @@ Write-Host "=== SoundFX Studio Test Runner ===" -ForegroundColor Cyan
 
 # Build first
 Write-Host "`n[1/3] Building..." -ForegroundColor Yellow
-dotnet build "$root\SoundFXStudio.slnx" 2>$null
+dotnet build "$root\SoundFXStudio.sln" 2>$null
 if ($LASTEXITCODE -ne 0) {
     Write-Host "  Trying individual projects..." -ForegroundColor DarkYellow
     dotnet build "$root\SoundFXStudio\SoundFXStudio.csproj" --verbosity quiet
@@ -66,4 +66,6 @@ elseif ($unitResult) { Write-Host "  Unit: FAIL" -ForegroundColor Red }
 if ($uiResult -eq 0) { Write-Host "  UI:   PASS" -ForegroundColor Green }
 elseif ($uiResult) { Write-Host "  UI:   FAIL" -ForegroundColor Red }
 
-exit ($unitResult ?? 0) -bor ($uiResult ?? 0)
+if (-not $unitResult) { $unitResult = 0 }
+if (-not $uiResult) { $uiResult = 0 }
+exit ($unitResult -bor $uiResult)
