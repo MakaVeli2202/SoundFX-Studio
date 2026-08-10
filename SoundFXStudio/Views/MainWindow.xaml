@@ -321,8 +321,12 @@
     </Window.Resources>
 
     <Border Margin="10,0,10,10"
-        CornerRadius="20"
-        Background="#080D17">
+        CornerRadius="20">
+        <Border.Background>
+            <ImageBrush ImageSource="/Assets/Pics/MainWindowBackground.png"
+                        Stretch="UniformToFill"
+                        Opacity="0.55"/>
+        </Border.Background>
 
         <Border.Effect>
             <DropShadowEffect BlurRadius="50"
@@ -349,6 +353,10 @@
         <Border.BorderThickness>1.5</Border.BorderThickness>
 
         <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
             <Border x:Name="ShellGlow"
                     Margin="3"
@@ -382,13 +390,6 @@
                     </EventTrigger>
                 </Border.Triggers>
             </Border>
-
-            <!-- Dashboard Skin removed for modern clean shell -->
-                 <Image Source="/Assets/Pics/MainWindowBackground.png"
-                     Stretch="UniformToFill"
-                     Opacity="0.55"
-                     Margin="0,44,0,0"
-                     Visibility="Visible"/>
 
             <!-- Dashboard Hero Section -->
             <Border x:Name="HeroSectionBorder"
@@ -839,11 +840,7 @@
                                       ItemsSource="{Binding Categories}"
                                       DisplayMemberPath="Name"
                                       SelectedValuePath="Name"
-                                      SelectedValue="{Binding SelectedCategoryFilter, Mode=TwoWay}">
-                                <ComboBox.Items>
-                                    <ComboBoxItem Content="All"/>
-                                </ComboBox.Items>
-                            </ComboBox>
+                                      SelectedValue="{Binding SelectedCategoryFilter, Mode=TwoWay}"/>
 
                             <CheckBox Grid.Column="2"
                                       Margin="12,0,0,0"
@@ -1844,11 +1841,25 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="16,18,16,16">
 
-                        <Border Background="#111D30" BorderBrush="#2A3F5E" BorderThickness="1" CornerRadius="14" Padding="14,12" Margin="0,0,0,12">
-                            <StackPanel>
-                                <Image Source="/Assets/UI/MainDashboardLogo.png" Width="220" Height="96" HorizontalAlignment="Center"/>
-                                <TextBlock Text="SOUNDFX STUDIO" FontSize="14" FontWeight="Bold" Foreground="#EAF4FF" HorizontalAlignment="Center" Margin="0,8,0,0"/>
-                            </StackPanel>
+                        <Border Height="150"
+                                Background="#111D30"
+                                BorderBrush="#2A3F5E"
+                                BorderThickness="1"
+                                CornerRadius="14"
+                                ClipToBounds="True"
+                                Margin="0,0,0,12">
+                            <Image x:Name="SidebarLogoImage" Source="/Assets/UI/MainDashboardLogo.png" Stretch="UniformToFill">
+                                <Image.Clip>
+                                    <RectangleGeometry RadiusX="14" RadiusY="14">
+                                        <RectangleGeometry.Rect>
+                                            <MultiBinding Converter="{StaticResource SizeToRectConverter}">
+                                                <Binding ElementName="SidebarLogoImage" Path="ActualWidth"/>
+                                                <Binding ElementName="SidebarLogoImage" Path="ActualHeight"/>
+                                            </MultiBinding>
+                                        </RectangleGeometry.Rect>
+                                    </RectangleGeometry>
+                                </Image.Clip>
+                            </Image>
                         </Border>
 
                         <!-- NAVIGATION -->
@@ -1997,7 +2008,7 @@
 
 
             <!-- Footer Bar -->
-                <Border HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                <Border Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
                     Margin="35,0,35,35"
                     Background="#121E31" BorderBrush="#33507AAE" BorderThickness="1" CornerRadius="14"
                     Padding="18,10,18,10">

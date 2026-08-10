@@ -1341,6 +1341,7 @@ public sealed class MainViewModel : ObservableObject
             MigrateLegacyChords();
 
             Categories.Clear();
+            Categories.Add(new Category { Name = "All", IsBuiltIn = true });
             foreach (var category in _config.Categories)
             {
                 Categories.Add(category);
