@@ -318,8 +318,8 @@
                    Height="110"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Top"
-                    Margin="35,70,0,0"
-                   Visibility="Collapsed">
+                  Margin="35,70,0,0"
+                >
             </Image>
 
             <!-- Dashboard Hero Section -->
