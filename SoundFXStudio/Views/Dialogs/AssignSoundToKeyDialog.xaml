@@ -13,9 +13,9 @@
 
     <Window.Resources>
 
-        <SolidColorBrush x:Key="PanelBrush" Color="#66081428"/>
+        <SolidColorBrush x:Key="PanelBrush" Color="#C1141E2D"/>
         <SolidColorBrush x:Key="TextBrush" Color="#EAF1FF"/>
-        <SolidColorBrush x:Key="MutedBrush" Color="#A1B2D2"/>
+        <SolidColorBrush x:Key="MutedBrush" Color="#9AAFD0"/>
 
         <Style x:Key="GlassPanel"
                TargetType="Border">
@@ -41,10 +41,10 @@
                     Value="White"/>
 
             <Setter Property="Background"
-                    Value="#22112233"/>
+                    Value="#1F13233A"/>
 
             <Setter Property="BorderBrush"
-                    Value="#338B5CF6"/>
+                    Value="#3300D4FF"/>
 
             <Setter Property="BorderThickness"
                     Value="1"/>
@@ -79,11 +79,11 @@
 
                                 <Setter TargetName="ButtonBorder"
                                         Property="BorderBrush"
-                                        Value="#8B5CF6"/>
+                                        Value="#00D4FF"/>
 
                                 <Setter TargetName="ButtonBorder"
                                         Property="Background"
-                                        Value="#228B5CF6"/>
+                                        Value="#2A00D4FF"/>
 
                             </Trigger>
 
@@ -92,7 +92,7 @@
 
                                 <Setter TargetName="ButtonBorder"
                                         Property="Background"
-                                        Value="#338B5CF6"/>
+                                        Value="#3300D4FF"/>
 
                             </Trigger>
 
@@ -117,17 +117,21 @@
             <LinearGradientBrush StartPoint="0,0"
                                  EndPoint="1,0">
 
-                <GradientStop Color="#8B5CF6"
+                <GradientStop Color="#00D4FF"
                               Offset="0"/>
 
-                <GradientStop Color="#7C3AED"
+                <GradientStop Color="#7B3FFF"
                               Offset="1"/>
 
             </LinearGradientBrush>
 
         </Border.BorderBrush>
 
-        <Border.BorderThickness>2</Border.BorderThickness>
+        <Border.BorderThickness>1.5</Border.BorderThickness>
+
+        <Border.Effect>
+            <DropShadowEffect Color="#3300D4FF" BlurRadius="34" ShadowDepth="0" Opacity="0.55"/>
+        </Border.Effect>
 
         <Grid Margin="18">
 
@@ -169,7 +173,7 @@
                         <StackPanel Margin="14,0,0,0">
 
                             <TextBlock Text="SOUNDFX STUDIO"
-                                       Foreground="#8B5CF6"
+                                       Foreground="#00D4FF"
                                        FontWeight="Bold"/>
 
                             <TextBlock Text="Assign Sound To Key"
@@ -186,7 +190,7 @@
                             Margin="0,10,10,10"
                             Content="&#x2715;"
                             Background="#55203030"
-                            BorderBrush="#8B5CF6"
+                            BorderBrush="#00D4FF"
                             Foreground="White"
                             Click="CloseButton_Click"/>
 
@@ -203,7 +207,7 @@
                 <StackPanel Margin="16">
 
                     <TextBlock Text="Search Sounds"
-                               Foreground="#8B5CF6"
+                               Foreground="#00D4FF"
                                FontSize="15"
                                FontWeight="SemiBold"
                                Margin="0,0,0,8"/>
@@ -240,8 +244,8 @@
 
                             <DataTemplate>
 
-                                <Border Background="#22112233"
-                                        BorderBrush="#338B5CF6"
+                                <Border Background="#1F13233A"
+                                        BorderBrush="#3300D4FF"
                                         BorderThickness="1"
                                         CornerRadius="16"
                                         Margin="0,0,0,10"
@@ -325,7 +329,7 @@
 
                 <Button Content="Assign"
                         FontWeight="Bold"
-                        Foreground="#081428"
+                        Foreground="#080D17"
                         Click="AssignButton_Click">
 
                     <Button.Background>
@@ -333,10 +337,10 @@
                         <LinearGradientBrush StartPoint="0,0"
                                              EndPoint="1,0">
 
-                            <GradientStop Color="#8B5CF6"
+                            <GradientStop Color="#00D4FF"
                                           Offset="0"/>
 
-                            <GradientStop Color="#7C3AED"
+                            <GradientStop Color="#7B3FFF"
                                           Offset="1"/>
 
                         </LinearGradientBrush>

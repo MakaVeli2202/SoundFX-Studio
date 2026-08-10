@@ -12,152 +12,322 @@
         PreviewKeyDown="Window_PreviewKeyDown"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
-    <Border Background="#081428" CornerRadius="28" ClipToBounds="True" BorderThickness="2">
+    <Window.Resources>
+
+        <Storyboard x:Key="ListeningPulse"
+                    RepeatBehavior="Forever"
+                    AutoReverse="True">
+
+            <DoubleAnimation
+                Storyboard.TargetName="KeyDisplayBorder"
+                Storyboard.TargetProperty="Opacity"
+                From="0.88"
+                To="1"
+                Duration="0:0:1.2"/>
+
+        </Storyboard>
+
+        <LinearGradientBrush x:Key="PrimaryGradient"
+                             StartPoint="0,0"
+                             EndPoint="1,0">
+
+            <GradientStop Color="#00D4FF" Offset="0"/>
+            <GradientStop Color="#7B3FFF" Offset="1"/>
+
+        </LinearGradientBrush>
+
+        <Style x:Key="SecondaryButtonStyle"
+               TargetType="Button">
+
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="MinWidth" Value="85"/>
+            <Setter Property="Foreground" Value="#EAF1FF"/>
+            <Setter Property="Background" Value="#1A2336"/>
+            <Setter Property="BorderBrush" Value="#325476"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="12">
+
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+
+                            <Trigger Property="IsMouseOver"
+                                     Value="True">
+
+                                <Setter TargetName="Border"
+                                        Property="BorderBrush"
+                                        Value="#00D4FF"/>
+
+                                <Setter TargetName="Border"
+                                        Property="Background"
+                                        Value="#223149"/>
+
+                            </Trigger>
+
+                            <Trigger Property="IsPressed"
+                                     Value="True">
+
+                                <Setter TargetName="Border"
+                                        Property="Background"
+                                        Value="#162031"/>
+
+                            </Trigger>
+
+                            <Trigger Property="IsEnabled"
+                                     Value="False">
+
+                                <Setter TargetName="Border"
+                                        Property="Opacity"
+                                        Value="0.4"/>
+
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource SecondaryButtonStyle}">
+
+            <Setter Property="Foreground"
+                    Value="White"/>
+
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0"
+                                         EndPoint="1,0">
+
+                        <GradientStop Color="#00D4FF"/>
+                        <GradientStop Color="#7B3FFF"
+                                      Offset="1"/>
+
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+
+        </Style>
+
+    </Window.Resources>
+
+    <Border Background="#080D17"
+            CornerRadius="26"
+            BorderThickness="1.5">
+
         <Border.BorderBrush>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="#8B5CF6" Offset="0"/>
-                <GradientStop Color="#7C3AED" Offset="1"/>
+
+            <LinearGradientBrush StartPoint="0,0"
+                                 EndPoint="1,0">
+
+                <GradientStop Color="#00D4FF"/>
+                <GradientStop Color="#7B3FFF"
+                              Offset="0.6"/>
+                <GradientStop Color="#FF2DAF"
+                              Offset="1"/>
+
             </LinearGradientBrush>
+
         </Border.BorderBrush>
 
-        <Grid Margin="18">
+        <Border.Effect>
+            <DropShadowEffect Color="#5000D4FF"
+                              BlurRadius="30"
+                              ShadowDepth="0"/>
+        </Border.Effect>
+
+        <Grid Margin="16">
+
             <Grid.RowDefinitions>
-                <RowDefinition Height="70"/>
-                <RowDefinition Height="*"/>
                 <RowDefinition Height="60"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="50"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0" CornerRadius="24" Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1">
+            <!-- HEADER -->
+
+            <Border Grid.Row="0"
+                    Background="#111827"
+                    BorderBrush="#294563"
+                    BorderThickness="1"
+                    CornerRadius="18">
+
                 <Grid>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
-                        <Image Source="/Assets/UI/MainDashboardLogo.png" Height="40" Stretch="Uniform"/>
-                        <StackPanel Margin="12,0,0,0">
-                            <TextBlock Text="SOUNDFX STUDIO" Foreground="#8B5CF6" FontWeight="Bold"/>
-                            <TextBlock Text="Assign to Key" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
+
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="14,0">
+
+                        <Image Source="/Assets/UI/MainDashboardLogo.png"
+                               Height="30"/>
+
+                        <StackPanel Margin="10,0,0,0">
+
+                            <TextBlock Text="SOUNDFX STUDIO"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="#00D4FF"/>
+
+                            <TextBlock Text="Assign To Key"
+                                       FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="#EAF1FF"/>
+
                         </StackPanel>
+
                     </StackPanel>
-                    <Button x:Name="CloseButton" Height="36" Content="&#x2715;"
-                            Background="#55203030" BorderBrush="#8B5CF6" Foreground="White"
-                            HorizontalAlignment="Right" Margin="0,8,8,8"
-                            Click="CancelButton_Click"/>
+
+                    <Button x:Name="CloseButton"
+                            Width="34"
+                            Height="34"
+                            Content="✕"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Margin="0,0,10,0"
+                            Click="CancelButton_Click"
+                            Style="{StaticResource SecondaryButtonStyle}"/>
+
                 </Grid>
+
             </Border>
 
-            <Border Grid.Row="1" CornerRadius="24" Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1" Margin="0,12,0,12">
-                <StackPanel Margin="20" VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock x:Name="InstructionText" Text="Press a key to assign..." FontSize="14" Foreground="#A1B2D2"
-                               HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                    <Border x:Name="KeyDisplayBorder" Background="#22000000" BorderBrush="#338B5CF6" BorderThickness="1" CornerRadius="14" Padding="28,16" MinHeight="96" VerticalAlignment="Center">
+            <!-- MAIN CONTENT -->
+
+            <Border Grid.Row="1"
+                    Margin="0,12,0,12"
+                    Background="#141E2D"
+                    BorderBrush="#294563"
+                    BorderThickness="1"
+                    CornerRadius="20">
+
+                <StackPanel Margin="20"
+                            VerticalAlignment="Center">
+
+                    <TextBlock x:Name="InstructionText"
+                               Text="Press a key to assign..."
+                               HorizontalAlignment="Center"
+                               FontSize="13"
+                               Foreground="#9AAFD0"
+                               Margin="0,0,0,10"/>
+
+                    <Border x:Name="KeyDisplayBorder"
+                            Height="90"
+                            BorderThickness="2"
+                            CornerRadius="18">
+
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0"
+                                                 EndPoint="0,1">
+                                <GradientStop Color="#1B273B"/>
+                                <GradientStop Color="#111827"
+                                              Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+
+                        <Border.BorderBrush>
+                            <LinearGradientBrush StartPoint="0,0"
+                                                 EndPoint="1,0">
+                                <GradientStop Color="#00D4FF"/>
+                                <GradientStop Color="#7B3FFF"
+                                              Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.BorderBrush>
+
+                        <Border.Effect>
+                            <DropShadowEffect Color="#00D4FF"
+                                              BlurRadius="18"
+                                              ShadowDepth="0"
+                                              Opacity="0.3"/>
+                        </Border.Effect>
+
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock x:Name="ModifierText" Text="" FontSize="15" Foreground="#7C3AED"
-                                       HorizontalAlignment="Center" Margin="0,0,0,6"/>
-                            <TextBlock x:Name="CapturedKeyText" Text="-" FontSize="34" FontWeight="Bold" Foreground="#8B5CF6"
-                                       HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="330"/>
+
+                            <TextBlock x:Name="ModifierText"
+                                       HorizontalAlignment="Center"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="#7B3FFF"/>
+
+                            <TextBlock x:Name="CapturedKeyText"
+                                       Text="-"
+                                       HorizontalAlignment="Center"
+                                       FontSize="28"
+                                       FontWeight="Bold"
+                                       Foreground="#00D4FF"
+                                       Margin="0,4,0,0"/>
+
                         </StackPanel>
+
                     </Border>
-                    <TextBlock x:Name="ChordHintText" Text="" FontSize="12" Foreground="#8891B8"
-                               HorizontalAlignment="Center" Margin="0,10,0,0" TextWrapping="Wrap"/>
+
+                    <TextBlock x:Name="ChordHintText"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               Margin="0,10,0,0"
+                               FontSize="11"
+                               Foreground="#9AAFD0"/>
+
                 </StackPanel>
+
             </Border>
 
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <Button x:Name="SaveButton" Content="Save" Margin="0,0,10,0" IsDefault="True"
-                        IsEnabled="False" Click="SaveButton_Click">
-                    <Button.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#8B5CF6" Offset="0"/>
-                            <GradientStop Color="#7C3AED" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Button.Background>
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Height" Value="36"/>
-                            <Setter Property="Foreground" Value="White"/>
-                            <Setter Property="Cursor" Value="Hand"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bd" CornerRadius="14"
-                                                Background="{TemplateBinding Background}"
-                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                BorderThickness="1">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="BorderBrush" Value="White"/>
-                                            </Trigger>
-                                            <Trigger Property="IsEnabled" Value="False">
-                                                <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
-                </Button>
-                <Button x:Name="ClearButton" Content="Clear" Margin="0,0,10,0" IsEnabled="False" Click="ClearButton_Click">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Height" Value="36"/>
-                            <Setter Property="Foreground" Value="#DDEAFF"/>
-                            <Setter Property="Background" Value="#22112233"/>
-                            <Setter Property="BorderBrush" Value="#558B5CF6"/>
-                            <Setter Property="BorderThickness" Value="1"/>
-                            <Setter Property="Cursor" Value="Hand"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bd" CornerRadius="14"
-                                                Background="{TemplateBinding Background}"
-                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                BorderThickness="1">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#8B5CF6"/>
-                                                <Setter TargetName="Bd" Property="Background" Value="#228B5CF6"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
-                </Button>
-                <Button Content="Cancel" IsCancel="True" Click="CancelButton_Click">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Height" Value="36"/>
-                            <Setter Property="Foreground" Value="#DDEAFF"/>
-                            <Setter Property="Background" Value="#22112233"/>
-                            <Setter Property="BorderBrush" Value="#558B5CF6"/>
-                            <Setter Property="BorderThickness" Value="1"/>
-                            <Setter Property="Cursor" Value="Hand"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bd" CornerRadius="14"
-                                                Background="{TemplateBinding Background}"
-                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                BorderThickness="1">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="BorderBrush" Value="#8B5CF6"/>
-                                                <Setter TargetName="Bd" Property="Background" Value="#228B5CF6"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
-                </Button>
+            <!-- FOOTER -->
+
+            <StackPanel Grid.Row="2"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+
+                <Button x:Name="SaveButton"
+                        Content="Save"
+                        Margin="0,0,8,0"
+                        IsDefault="True"
+                        IsEnabled="False"
+                        Click="SaveButton_Click"
+                        Style="{StaticResource PrimaryButtonStyle}"/>
+
+                <Button x:Name="ClearButton"
+                        Content="Clear"
+                        Margin="0,0,8,0"
+                        IsEnabled="False"
+                        Click="ClearButton_Click"
+                        Style="{StaticResource SecondaryButtonStyle}"/>
+
+                <Button Content="Cancel"
+                        IsCancel="True"
+                        Click="CancelButton_Click"
+                        Style="{StaticResource SecondaryButtonStyle}"/>
+
             </StackPanel>
+
         </Grid>
+
+        <Border.Triggers>
+
+            <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+
+                <BeginStoryboard Storyboard="{StaticResource ListeningPulse}"/>
+
+            </EventTrigger>
+
+        </Border.Triggers>
+
     </Border>
+
 </Window>

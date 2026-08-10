@@ -36,7 +36,7 @@
                                     Margin="-2"
                                     CornerRadius="12"
                                     Background="Transparent"
-                                    BorderBrush="#22D3FF"
+                                    BorderBrush="#00D4FF"
                                     BorderThickness="2"
                                     Opacity="0"
                                     IsHitTestVisible="False" />
@@ -59,7 +59,7 @@
                                 <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
                                 <Setter TargetName="GlowLayer" Property="Effect">
                                     <Setter.Value>
-                                        <effects:DropShadowEffect Color="#22D3FF" BlurRadius="10" ShadowDepth="0" Opacity="0.7" />
+                                        <effects:DropShadowEffect Color="#00D4FF" BlurRadius="14" ShadowDepth="0" Opacity="0.68" />
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
@@ -68,7 +68,7 @@
                                 <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
                                 <Setter TargetName="GlowLayer" Property="Effect">
                                     <Setter.Value>
-                                        <effects:DropShadowEffect Color="#22D3FF" BlurRadius="12" ShadowDepth="0" Opacity="0.8" />
+                                        <effects:DropShadowEffect Color="#00D4FF" BlurRadius="16" ShadowDepth="0" Opacity="0.75" />
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
@@ -85,7 +85,7 @@
                                 <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
                                 <Setter TargetName="GlowLayer" Property="Effect">
                                     <Setter.Value>
-                                        <effects:DropShadowEffect Color="#A78BFA" BlurRadius="10" ShadowDepth="0" Opacity="0.7" />
+                                        <effects:DropShadowEffect Color="#7B3FFF" BlurRadius="14" ShadowDepth="0" Opacity="0.72" />
                                     </Setter.Value>
                                 </Setter>
                             </DataTrigger>
@@ -97,7 +97,7 @@
                                 <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
                                 <Setter TargetName="GlowLayer" Property="Margin" Value="0" />
                                 <Setter TargetName="GlowLayer" Property="CornerRadius" Value="10" />
-                                <Setter TargetName="GlowLayer" Property="BorderBrush" Value="#A78BFA" />
+                                <Setter TargetName="GlowLayer" Property="BorderBrush" Value="#7B3FFF" />
                                 <Setter TargetName="GlowLayer" Property="BorderThickness" Value="2" />
                                 <Setter TargetName="GlowLayer" Property="Effect" Value="{x:Null}" />
                             </MultiDataTrigger>
@@ -134,7 +134,7 @@
                                Source="/Assets/Keyboards/LEDOFF.png"
                                Opacity="1">
                                <Image.Effect>
-                                   <effects:DropShadowEffect Color="#22D3FF" BlurRadius="7" ShadowDepth="0" Opacity="0.9" />
+                                       <effects:DropShadowEffect Color="#00D4FF" BlurRadius="10" ShadowDepth="0" Opacity="0.9" />
                                </Image.Effect>
                            </Image>
                            <Image Width="34"
@@ -144,7 +144,7 @@
                                Source="/Assets/Keyboards/LEDOFF.png"
                                Opacity="1">
                                <Image.Effect>
-                                   <effects:DropShadowEffect Color="#22D3FF" BlurRadius="7" ShadowDepth="0" Opacity="0.9" />
+                                       <effects:DropShadowEffect Color="#00D4FF" BlurRadius="10" ShadowDepth="0" Opacity="0.9" />
                                </Image.Effect>
                            </Image>
                            <Image Width="34"
@@ -154,7 +154,7 @@
                                Source="/Assets/Keyboards/LEDOFF.png"
                                Opacity="1">
                                <Image.Effect>
-                                   <effects:DropShadowEffect Color="#22D3FF" BlurRadius="7" ShadowDepth="0" Opacity="0.9" />
+                                       <effects:DropShadowEffect Color="#00D4FF" BlurRadius="10" ShadowDepth="0" Opacity="0.9" />
                                </Image.Effect>
                            </Image>
                           </Canvas>
