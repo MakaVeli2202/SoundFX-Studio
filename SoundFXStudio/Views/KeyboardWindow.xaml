@@ -16,6 +16,10 @@
         MouseLeftButtonDown="KeyboardWindow_MouseLeftButtonDown">
 
     <Window.Resources>
+        <Storyboard x:Key="KeyboardHudPulse" RepeatBehavior="Forever" AutoReverse="True">
+            <DoubleAnimation Storyboard.TargetName="StatusHudGlow" Storyboard.TargetProperty="Opacity" From="0.2" To="0.4" Duration="0:0:1.9"/>
+        </Storyboard>
+
         <Style x:Key="TopBtn" TargetType="Button">
             <Setter Property="Height" Value="32"/>
             <Setter Property="Padding" Value="0"/>
@@ -61,17 +65,17 @@
                                        />
         </Viewbox>
 
-        <Border HorizontalAlignment="Left"
+                <Border HorizontalAlignment="Left"
                 VerticalAlignment="Top"
                 Margin="18"
-                Padding="14,10"
-                CornerRadius="14"
-                Background="{StaticResource SurfaceRaisedBrush}"
-                BorderBrush="{StaticResource BorderAccentBrush}"
+                Padding="16,12"
+                CornerRadius="16"
+                Background="#D4141E2D"
+                BorderBrush="#3D4C6987"
                 BorderThickness="1">
             <StackPanel>
-                <TextBlock Text="KEYBOARD" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold"/>
-                <TextBlock Text="Preview and trigger assigned sounds in one place." Foreground="#DDE7F8" FontSize="13" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                <TextBlock Text="KEYBOARD" Foreground="#00D4FF" FontSize="11" FontWeight="Bold"/>
+                <TextBlock Text="Preview and trigger assigned sounds in one place." Foreground="#DDE7F8" FontSize="13.5" FontWeight="SemiBold" Margin="0,4,0,0"/>
                 <TextBlock Text="Use the status pill to confirm whether the soundboard is live." Foreground="#8EA2C0" FontSize="11.5" Margin="0,6,0,0"/>
             </StackPanel>
         </Border>
@@ -116,18 +120,26 @@
                             </Style>
                         </Button.Style>
                     </Button>
-                    <Border Width="1" Background="#558B5CF6" Margin="8,2,8,2"/>
+                    <Border Width="1" Background="#5A00D4FF" Margin="8,2,8,2"/>
                     <Button Style="{StaticResource TopBtn}" Content="−" FontSize="16" Click="ZoomOutScale_Click"/>
                     <TextBlock x:Name="ScaleDisplay" Text="100%" VerticalAlignment="Center"
                                Width="44" TextAlignment="Center" FontSize="11" Foreground="#AABBCC"
                                FontWeight="SemiBold"/>
                     <Button Style="{StaticResource TopBtn}" Content="+" FontSize="14" Click="ZoomInScale_Click"/>
-                    <Border Width="1" Background="#558B5CF6" Margin="8,2,8,2"/>
+                    <Border Width="1" Background="#5A00D4FF" Margin="8,2,8,2"/>
                     <Button Style="{StaticResource TopBtn}" Content="&#x2715;" FontSize="12" Click="CloseButton_Click"
                             Foreground="#FF8A8A"/>
                 </StackPanel>
             </Border>
 
+            <Border x:Name="StatusHudGlow" Margin="2" CornerRadius="12" BorderBrush="#3F00D4FF" BorderThickness="1" IsHitTestVisible="False" Opacity="0.2"/>
+
         </StackPanel>
     </Grid>
+
+    <Window.Triggers>
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource KeyboardHudPulse}"/>
+        </EventTrigger>
+    </Window.Triggers>
 </Window>

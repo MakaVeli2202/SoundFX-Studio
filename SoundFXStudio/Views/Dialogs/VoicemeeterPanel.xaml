@@ -4,7 +4,7 @@
         Title="Sound Mixer"
         Width="600" Height="640"
         WindowStyle="None"
-        Background="#08091F"
+        Background="#080D17"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Loaded="Window_Loaded"
@@ -17,8 +17,11 @@
     </WindowChrome.WindowChrome>
 
     <Border Background="{StaticResource SurfaceBrush}"
-            BorderBrush="{StaticResource BorderAccentBrush}" BorderThickness="1"
-            CornerRadius="16">
+            BorderBrush="#5A00D4FF" BorderThickness="1.5"
+            CornerRadius="18">
+        <Border.Effect>
+            <DropShadowEffect Color="#3300D4FF" BlurRadius="36" ShadowDepth="0" Opacity="0.55"/>
+        </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="46"/>
@@ -30,12 +33,12 @@
             </Grid.RowDefinitions>
 
             <!-- Title -->
-            <Border Grid.Row="0" Background="{StaticResource SurfaceRaisedBrush}" CornerRadius="16,16,0,0"
+                <Border Grid.Row="0" Background="#141E2D" CornerRadius="18,18,0,0"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid Margin="18,0,10,0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Sound Mixer" Foreground="White" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <Border Background="#1AFFFFFF" CornerRadius="6" Padding="8,3" Margin="12,0,0,0"
+                        <TextBlock Text="Sound Mixer" Foreground="White" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <Border Background="#1A00D4FF" CornerRadius="6" Padding="8,3" Margin="12,0,0,0"
                                 BorderBrush="#33FFFFFF" BorderThickness="1">
                             <TextBlock Text="powered by Voicemeeter" Foreground="{StaticResource TextMutedBrush}" FontSize="9" FontWeight="Bold"/>
                         </Border>
@@ -60,7 +63,7 @@
             </Border>
 
             <!-- Session overview -->
-            <Border Grid.Row="1" Background="{StaticResource SurfaceAltBrush}" Padding="20,16">
+            <Border Grid.Row="1" Background="#111827" Padding="20,16" BorderBrush="#2B415A" BorderThickness="0,1,0,1">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -71,7 +74,7 @@
                         <TextBlock Text="Routing overview" Foreground="{StaticResource UiTextBrush}" FontSize="13" FontWeight="SemiBold"/>
                         <TextBlock Text="Review what you hear, what your team hears, and how each strip is currently routed." Foreground="{StaticResource TextMutedBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"/>
                         <Border HorizontalAlignment="Left" Background="#142AB8FF" CornerRadius="999" BorderBrush="{StaticResource AccentBlueBrush}" BorderThickness="1" Padding="10,4" Margin="0,10,0,0">
-                            <TextBlock x:Name="ConnectionStateText" Text="Connecting" Foreground="{StaticResource AccentBlueBrush}" FontSize="11" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="ConnectionStateText" Text="Connecting" Foreground="#00D4FF" FontSize="11" FontWeight="SemiBold"/>
                         </Border>
                     </StackPanel>
 
@@ -85,7 +88,7 @@
             </Border>
 
             <!-- Global quick-mute bar -->
-            <Border Grid.Row="2" Background="{StaticResource SurfaceAltBrush}" Padding="20,12">
+            <Border Grid.Row="2" Background="#101722" Padding="20,12">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -161,12 +164,12 @@
             </Border>
 
             <!-- Device actions -->
-            <Border Grid.Row="3" Background="{StaticResource SurfaceAltBrush}" Padding="20,8">
+            <Border Grid.Row="3" Background="#101722" Padding="20,8">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Device actions:" Foreground="{StaticResource TextMutedBrush}" FontSize="11"
                                VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <Button x:Name="RemoveInput1Btn" Content="Remove Input 1 device"
-                            Background="#22112233" BorderBrush="#10B981" Foreground="#A7F3D0"
+                            Background="#1F13233A" BorderBrush="#10B981" Foreground="#A7F3D0"
                             BorderThickness="1" Cursor="Hand" FontSize="11" Padding="12,6" Margin="0,0,8,0"
                             ToolTip="Unselect the microphone/device assigned to Hardware Input 1 (Strip[0]) by auto-setup"
                             Click="RemoveInput1_Click">
@@ -186,7 +189,7 @@
                         </Button.Template>
                     </Button>
                     <Button x:Name="RemoveHwOutBtn" Content="Remove Hardware Out device"
-                            Background="#22112233" BorderBrush="#10B981" Foreground="#A7F3D0"
+                            Background="#1F13233A" BorderBrush="#10B981" Foreground="#A7F3D0"
                             BorderThickness="1" Cursor="Hand" FontSize="11" Padding="12,6" Margin="0,0,8,0"
                             ToolTip="Unselect the device assigned to Hardware Output A1 (Bus[0]) by auto-setup"
                             Click="RemoveHwOut_Click">
@@ -234,12 +237,12 @@
             </ScrollViewer>
 
             <!-- Footer -->
-            <Border Grid.Row="5" Background="{StaticResource SurfaceAltBrush}" CornerRadius="0,0,16,16">
+            <Border Grid.Row="5" Background="#101722" CornerRadius="0,0,18,18">
                 <Grid Margin="20,0">
                     <TextBlock x:Name="StatusText" Foreground="{StaticResource TextMutedBrush}" FontSize="11" VerticalAlignment="Center"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button x:Name="TestHearBtn" Content="Hear what others hear"
-                                Background="#22112233" BorderBrush="#10B981" Foreground="#A7F3D0"
+                                Background="#1F13233A" BorderBrush="#10B981" Foreground="#A7F3D0"
                                 BorderThickness="1" Cursor="Hand" FontSize="12" Padding="14,7" Margin="0,0,10,0"
                                 ToolTip="Listen to the exact mix your mic sends to Discord (VoiceMeeter B1)"
                                 Click="TestHear_Click">
@@ -259,7 +262,7 @@
                             </Button.Template>
                         </Button>
                         <Button x:Name="OpenVmBtn" Content="Open Voicemeeter" 
-                                Background="#151B35" BorderBrush="#3A5A8A" Foreground="#A1B2D2"
+                                Background="#151B35" BorderBrush="#3A5A8A" Foreground="#9AAFD0"
                                 BorderThickness="1" Cursor="Hand" FontSize="12" Padding="14,7"
                                 Click="OpenVm_Click">
                             <Button.Template>
@@ -271,14 +274,14 @@
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter TargetName="Bd" Property="Background" Value="#2A2A5A8A"/>
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#8B5CF6"/>
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#00D4FF"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </Button.Template>
                         </Button>
                         <Button Content="Done"
-                                Background="#222A2A66" BorderBrush="#558B5CF6" Foreground="White"
+                                Background="#222A2A66" BorderBrush="#5A00D4FF" Foreground="White"
                                 BorderThickness="1" Cursor="Hand" FontWeight="SemiBold" FontSize="12" Padding="14,7" Margin="10,0,0,0"
                                 Click="Done_Click">
                             <Button.Template>
@@ -290,7 +293,7 @@
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter TargetName="Bd" Property="Background" Value="#442A2A66"/>
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#8B5CF6"/>
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#00D4FF"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
