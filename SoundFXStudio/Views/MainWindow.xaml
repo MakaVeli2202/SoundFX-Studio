@@ -20,9 +20,26 @@
         <converters:SizeToRectConverter x:Key="SizeToRectConverter"/>
 
         <Storyboard x:Key="LedTravelStoryboard" RepeatBehavior="Forever">
-            <DoubleAnimation Storyboard.TargetName="LedStopA" Storyboard.TargetProperty="Offset" From="-0.4" To="1.4" Duration="0:0:7"/>
-            <DoubleAnimation Storyboard.TargetName="LedStopB" Storyboard.TargetProperty="Offset" From="-0.2" To="1.6" Duration="0:0:7"/>
-            <DoubleAnimation Storyboard.TargetName="LedStopC" Storyboard.TargetProperty="Offset" From="0" To="1.8" Duration="0:0:7"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeTopA" Storyboard.TargetProperty="Offset" From="-0.2" To="1.3" Duration="0:0:5" BeginTime="0:0:0"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeTopB" Storyboard.TargetProperty="Offset" From="-0.12" To="1.38" Duration="0:0:5" BeginTime="0:0:0"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeTopC" Storyboard.TargetProperty="Offset" From="-0.08" To="1.42" Duration="0:0:5" BeginTime="0:0:0"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeTopD" Storyboard.TargetProperty="Offset" From="-0.04" To="1.46" Duration="0:0:5" BeginTime="0:0:0"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeTopE" Storyboard.TargetProperty="Offset" From="0.04" To="1.54" Duration="0:0:5" BeginTime="0:0:0"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeRightA" Storyboard.TargetProperty="Offset" From="-0.2" To="1.3" Duration="0:0:5" BeginTime="0:0:1.25"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeRightB" Storyboard.TargetProperty="Offset" From="-0.12" To="1.38" Duration="0:0:5" BeginTime="0:0:1.25"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeRightC" Storyboard.TargetProperty="Offset" From="-0.08" To="1.42" Duration="0:0:5" BeginTime="0:0:1.25"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeRightD" Storyboard.TargetProperty="Offset" From="-0.04" To="1.46" Duration="0:0:5" BeginTime="0:0:1.25"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeRightE" Storyboard.TargetProperty="Offset" From="0.04" To="1.54" Duration="0:0:5" BeginTime="0:0:1.25"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeBottomA" Storyboard.TargetProperty="Offset" From="-0.2" To="1.3" Duration="0:0:5" BeginTime="0:0:2.5"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeBottomB" Storyboard.TargetProperty="Offset" From="-0.12" To="1.38" Duration="0:0:5" BeginTime="0:0:2.5"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeBottomC" Storyboard.TargetProperty="Offset" From="-0.08" To="1.42" Duration="0:0:5" BeginTime="0:0:2.5"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeBottomD" Storyboard.TargetProperty="Offset" From="-0.04" To="1.46" Duration="0:0:5" BeginTime="0:0:2.5"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeBottomE" Storyboard.TargetProperty="Offset" From="0.04" To="1.54" Duration="0:0:5" BeginTime="0:0:2.5"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeLeftA" Storyboard.TargetProperty="Offset" From="-0.2" To="1.3" Duration="0:0:5" BeginTime="0:0:3.75"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeLeftB" Storyboard.TargetProperty="Offset" From="-0.12" To="1.38" Duration="0:0:5" BeginTime="0:0:3.75"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeLeftC" Storyboard.TargetProperty="Offset" From="-0.08" To="1.42" Duration="0:0:5" BeginTime="0:0:3.75"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeLeftD" Storyboard.TargetProperty="Offset" From="-0.04" To="1.46" Duration="0:0:5" BeginTime="0:0:3.75"/>
+            <DoubleAnimation Storyboard.TargetName="MarqueeLeftE" Storyboard.TargetProperty="Offset" From="0.04" To="1.54" Duration="0:0:5" BeginTime="0:0:3.75"/>
         </Storyboard>
 
         <Storyboard x:Key="OpenKeyboardLedRingStoryboard" RepeatBehavior="Forever">
@@ -161,7 +178,11 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid>
+                        <Grid x:Name="Root"
+                              RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Grid.RenderTransform>
                             <Border x:Name="ActiveGlow"
                                     CornerRadius="14"
                                     Margin="1"
@@ -171,6 +192,13 @@
                                 <Border.BorderBrush>
                                     <SolidColorBrush Color="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=BorderBrush.Color}"/>
                                 </Border.BorderBrush>
+                                <Border.Effect>
+                                    <effects:DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.55">
+                                        <effects:DropShadowEffect.Color>
+                                            <Binding Path="BorderBrush.Color" RelativeSource="{RelativeSource TemplatedParent}"/>
+                                        </effects:DropShadowEffect.Color>
+                                    </effects:DropShadowEffect>
+                                </Border.Effect>
                             </Border>
                             <Border x:Name="Bd" CornerRadius="12"
                                     Background="{TemplateBinding Background}"
@@ -191,30 +219,101 @@
                                 <Setter TargetName="Bd" Property="Background" Value="#15253D"/>
                                 <Setter TargetName="Bd" Property="BorderBrush" Value="#3B5E87"/>
                                 <Setter TargetName="ActiveStrip" Property="Opacity" Value="0.45"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="Background.Color" To="#15253D" Duration="0:0:0.18"/>
+                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="BorderBrush.Color" To="#3B5E87" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveStrip" Storyboard.TargetProperty="Opacity" To="0.45" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.02" Duration="0:0:0.18"/>
+                                            <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.02" Duration="0:0:0.18"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.22"/>
+                                            <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.22"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="#1D3154"/>
                                 <Setter TargetName="ActiveStrip" Property="Opacity" Value="0.8"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="0.97" Duration="0:0:0.1"/>
+                                            <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.97" Duration="0:0:0.1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.12"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="BorderBrush" Value="#00D4FF">
                                 <Setter TargetName="ActiveStrip" Property="Opacity" Value="1"/>
                                 <Setter TargetName="Bd" Property="Background" Value="#2200D4FF"/>
                                 <Setter TargetName="ActiveGlow" Property="Opacity" Value="1"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveGlow" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"/>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveStrip" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"/>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveGlow" Storyboard.TargetProperty="(Border.Effect).(effects:DropShadowEffect.Opacity)" From="0.35" To="0.75" Duration="0:0:1.1" AutoReverse="True" RepeatBehavior="Forever"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
                             </Trigger>
                             <Trigger Property="BorderBrush" Value="#A855F7">
                                 <Setter TargetName="ActiveStrip" Property="Opacity" Value="1"/>
                                 <Setter TargetName="Bd" Property="Background" Value="#22A855F7"/>
                                 <Setter TargetName="ActiveGlow" Property="Opacity" Value="1"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveGlow" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"/>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveStrip" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"/>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveGlow" Storyboard.TargetProperty="(Border.Effect).(effects:DropShadowEffect.Opacity)" From="0.35" To="0.75" Duration="0:0:1.1" AutoReverse="True" RepeatBehavior="Forever"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
                             </Trigger>
                             <Trigger Property="BorderBrush" Value="#FF4DC8">
                                 <Setter TargetName="ActiveStrip" Property="Opacity" Value="1"/>
                                 <Setter TargetName="Bd" Property="Background" Value="#22FF4DC8"/>
                                 <Setter TargetName="ActiveGlow" Property="Opacity" Value="1"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveGlow" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"/>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveStrip" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"/>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveGlow" Storyboard.TargetProperty="(Border.Effect).(effects:DropShadowEffect.Opacity)" From="0.35" To="0.75" Duration="0:0:1.1" AutoReverse="True" RepeatBehavior="Forever"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
                             </Trigger>
                             <Trigger Property="BorderBrush" Value="#FFB020">
                                 <Setter TargetName="ActiveStrip" Property="Opacity" Value="1"/>
                                 <Setter TargetName="Bd" Property="Background" Value="#22FFB020"/>
                                 <Setter TargetName="ActiveGlow" Property="Opacity" Value="1"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveGlow" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"/>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveStrip" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3"/>
+                                            <DoubleAnimation Storyboard.TargetName="ActiveGlow" Storyboard.TargetProperty="(Border.Effect).(effects:DropShadowEffect.Opacity)" From="0.35" To="0.75" Duration="0:0:1.1" AutoReverse="True" RepeatBehavior="Forever"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -370,15 +469,15 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Rectangle RadiusX="12" RadiusY="12" IsHitTestVisible="False">
+            <Rectangle Grid.RowSpan="2" RadiusX="12" RadiusY="12" IsHitTestVisible="False">
                 <Rectangle.Fill>
                     <ImageBrush ImageSource="/Assets/Pics/MainWindowBackground.png"
-                                Stretch="UniformToFill"
+                                Stretch="Fill"
                                 Opacity="0.8"/>
                 </Rectangle.Fill>
             </Rectangle>
 
-            <Rectangle RadiusX="12" RadiusY="12" Fill="#4D000000" IsHitTestVisible="False"/>
+            <Rectangle Grid.RowSpan="2" RadiusX="12" RadiusY="12" Fill="#4D000000" IsHitTestVisible="False"/>
 
             <Border x:Name="ShellGlow"
                     Margin="3"
@@ -413,6 +512,63 @@
                 </Border.Triggers>
             </Border>
 
+            <!-- Circling LED frame -->
+            <Rectangle x:Name="MarqueeTop" Height="3" Margin="3,3,3,0"
+                       VerticalAlignment="Top" HorizontalAlignment="Stretch"
+                       RadiusX="2" RadiusY="2" IsHitTestVisible="False">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop x:Name="MarqueeTopA" Color="#0000D4FF" Offset="-0.2"/>
+                        <GradientStop x:Name="MarqueeTopB" Color="#5F00D4FF" Offset="-0.12"/>
+                        <GradientStop x:Name="MarqueeTopC" Color="#FF4DEBFF" Offset="-0.08"/>
+                        <GradientStop x:Name="MarqueeTopD" Color="#5F00D4FF" Offset="-0.04"/>
+                        <GradientStop x:Name="MarqueeTopE" Color="#0000D4FF" Offset="0.04"/>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <Rectangle x:Name="MarqueeRight" Width="3" Margin="0,3,3,3"
+                       VerticalAlignment="Stretch" HorizontalAlignment="Right"
+                       RadiusX="2" RadiusY="2" IsHitTestVisible="False">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop x:Name="MarqueeRightA" Color="#0000D4FF" Offset="-0.2"/>
+                        <GradientStop x:Name="MarqueeRightB" Color="#5F00D4FF" Offset="-0.12"/>
+                        <GradientStop x:Name="MarqueeRightC" Color="#FF4DEBFF" Offset="-0.08"/>
+                        <GradientStop x:Name="MarqueeRightD" Color="#5F00D4FF" Offset="-0.04"/>
+                        <GradientStop x:Name="MarqueeRightE" Color="#0000D4FF" Offset="0.04"/>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <Rectangle x:Name="MarqueeBottom" Height="3" Margin="0,0,3,3"
+                       VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                       RadiusX="2" RadiusY="2" IsHitTestVisible="False">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="1,0" EndPoint="0,0">
+                        <GradientStop x:Name="MarqueeBottomA" Color="#0000D4FF" Offset="-0.2"/>
+                        <GradientStop x:Name="MarqueeBottomB" Color="#5F00D4FF" Offset="-0.12"/>
+                        <GradientStop x:Name="MarqueeBottomC" Color="#FF4DEBFF" Offset="-0.08"/>
+                        <GradientStop x:Name="MarqueeBottomD" Color="#5F00D4FF" Offset="-0.04"/>
+                        <GradientStop x:Name="MarqueeBottomE" Color="#0000D4FF" Offset="0.04"/>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <Rectangle x:Name="MarqueeLeft" Width="3" Margin="3,3,0,3"
+                       VerticalAlignment="Stretch" HorizontalAlignment="Left"
+                       RadiusX="2" RadiusY="2" IsHitTestVisible="False">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,1" EndPoint="0,0">
+                        <GradientStop x:Name="MarqueeLeftA" Color="#0000D4FF" Offset="-0.2"/>
+                        <GradientStop x:Name="MarqueeLeftB" Color="#5F00D4FF" Offset="-0.12"/>
+                        <GradientStop x:Name="MarqueeLeftC" Color="#FF4DEBFF" Offset="-0.08"/>
+                        <GradientStop x:Name="MarqueeLeftD" Color="#5F00D4FF" Offset="-0.04"/>
+                        <GradientStop x:Name="MarqueeLeftE" Color="#0000D4FF" Offset="0.04"/>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
             <!-- Dashboard Hero Section -->
             <Border x:Name="HeroSectionBorder"
                     MinHeight="420"
@@ -430,48 +586,29 @@
                     </Style>
                 </Border.Style>
 
-                <Grid Margin="22">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                <Grid>
+                    <Image x:Name="HeroImage"
+                           Source="/Assets/UI/HeroSection.png"
+                           Stretch="Fill">
+                        <Image.Clip>
+                            <RectangleGeometry RadiusX="26" RadiusY="26">
+                                <RectangleGeometry.Rect>
+                                    <MultiBinding Converter="{StaticResource SizeToRectConverter}">
+                                        <Binding ElementName="HeroImage" Path="ActualWidth"/>
+                                        <Binding ElementName="HeroImage" Path="ActualHeight"/>
+                                    </MultiBinding>
+                                </RectangleGeometry.Rect>
+                            </RectangleGeometry>
+                        </Image.Clip>
+                    </Image>
 
-                    <!-- HEADER -->
-                    <Grid Grid.Row="0" Margin="0,0,0,14">
+                    <Grid Margin="22">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="SOUND CONTROL"
-                                   Foreground="#00D4FF"
-                                   FontSize="24"
-                                   FontWeight="Bold"/>
-                        <TextBlock Grid.Row="1"
-                                   Text="Launch your keyboard, browse sounds, and jump into your voice pipeline from one dashboard."
-                                   Foreground="#A2B4CC"
-                                   FontSize="13"
-                                   Margin="0,4,0,0"
-                                   TextWrapping="Wrap"/>
-                    </Grid>
 
-                    <Border Grid.Row="1" CornerRadius="26" ClipToBounds="True" MinHeight="350">
-                        <Grid>
-                            <Image x:Name="HeroImage"
-                                   Source="/Assets/UI/HeroSection.png"
-                                   HorizontalAlignment="Left"
-                                   Stretch="Uniform">
-                                <Image.Clip>
-                                    <RectangleGeometry RadiusX="26" RadiusY="26">
-                                        <RectangleGeometry.Rect>
-                                            <MultiBinding Converter="{StaticResource SizeToRectConverter}">
-                                                <Binding ElementName="HeroImage" Path="ActualWidth"/>
-                                                <Binding ElementName="HeroImage" Path="ActualHeight"/>
-                                            </MultiBinding>
-                                        </RectangleGeometry.Rect>
-                                    </RectangleGeometry>
-                                </Image.Clip>
-                            </Image>
+                        <Grid Grid.Row="0">
 
                             <Button x:Name="OpenKeyboardOverlayButton"
                                     Style="{StaticResource ActionButtonStyle}"
@@ -541,9 +678,8 @@
                                 </Border.Triggers>
                             </Border>
                         </Grid>
-                    </Border>
 
-                    <Grid Grid.Row="2" Margin="0,18,0,0">
+                        <Grid Grid.Row="1" Margin="0,18,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
@@ -704,6 +840,7 @@
                         </Border>
                     </Grid>
                 </Grid>
+            </Grid>
             </Border>
 
             <!-- Effects Page -->
@@ -2017,8 +2154,8 @@
                 <Border Style="{StaticResource GlassPanel}"
                     Width="252"
                     HorizontalAlignment="Left"
-                    VerticalAlignment="Top"
-                    Margin="35,74,0,0"
+                    VerticalAlignment="Stretch"
+                    Margin="35,74,0,70"
                     ClipToBounds="True">
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -2151,7 +2288,7 @@
                                         <ColumnDefinition Width="24"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="&#xE91B;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="#2CE96E" VerticalAlignment="Center"/>
+                                    <TextBlock Text="&#xE95B;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="#2CE96E" VerticalAlignment="Center"/>
                                     <StackPanel Grid.Column="1">
                                         <TextBlock Text="Output" FontSize="10.5" Foreground="#7F899C"/>
                                         <TextBlock Text="{Binding CurrentOutputDevice}" FontSize="12.5" Foreground="#DDEAFF" TextTrimming="CharacterEllipsis"/>
@@ -2192,7 +2329,7 @@
             <!-- Footer Bar -->
                 <Border Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
                     Margin="35,0,35,35"
-                    Background="#121E31" BorderBrush="#33507AAE" BorderThickness="1" CornerRadius="14"
+                    Background="#B8121E31" BorderBrush="#33507AAE" BorderThickness="1" CornerRadius="14"
                     Padding="18,10,18,10">
                 <Grid>
                     <Grid.ColumnDefinitions>
