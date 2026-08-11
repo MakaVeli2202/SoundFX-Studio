@@ -459,7 +459,8 @@
                         <Grid>
                             <Image x:Name="HeroImage"
                                    Source="/Assets/UI/HeroSection.png"
-                                   Stretch="UniformToFill">
+                                   HorizontalAlignment="Left"
+                                   Stretch="Uniform">
                                 <Image.Clip>
                                     <RectangleGeometry RadiusX="26" RadiusY="26">
                                         <RectangleGeometry.Rect>
