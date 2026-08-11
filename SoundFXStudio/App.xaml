@@ -97,7 +97,7 @@
         <ImageBrush x:Key="AppBackgroundBrush"
                     ImageSource="/Assets/Pics/MainWindowBackground.png"
                     Stretch="UniformToFill"
-                    Opacity="0.55"/>
+                    Opacity="0.8"/>
 
         <LinearGradientBrush x:Key="AppBorderGradient" StartPoint="0,0" EndPoint="1,0">
             <GradientStop Color="#00D4FF" Offset="0"/>

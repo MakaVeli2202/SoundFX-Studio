@@ -195,29 +195,29 @@ public class ConfigService
         migrated |= MigrateLegacyKeyboardCalibration(config.Settings.KeyboardCalibration, config.Settings.KeyboardLayout);
         if (config.Settings.KeyboardCalibration.KeyboardWindowScale < 0.5)
         {
-            config.Settings.KeyboardCalibration.KeyboardWindowScale = 0.85;
+            config.Settings.KeyboardCalibration.KeyboardWindowScale = 0.8;
             migrated = true;
         }
 
         var calibration = config.Settings.KeyboardCalibration;
         if (calibration.OpenKeyboardButtonWidth < 100 || calibration.OpenKeyboardButtonWidth > 600)
         {
-            calibration.OpenKeyboardButtonWidth = 275;
+            calibration.OpenKeyboardButtonWidth = 220;
             migrated = true;
         }
         if (calibration.OpenKeyboardButtonHeight < 20 || calibration.OpenKeyboardButtonHeight > 200)
         {
-            calibration.OpenKeyboardButtonHeight = 54;
+            calibration.OpenKeyboardButtonHeight = 48;
             migrated = true;
         }
         if (calibration.OpenKeyboardButtonX < 0 || calibration.OpenKeyboardButtonX > 1500)
         {
-            calibration.OpenKeyboardButtonX = 52;
+            calibration.OpenKeyboardButtonX = 36;
             migrated = true;
         }
         if (calibration.OpenKeyboardButtonY < 0 || calibration.OpenKeyboardButtonY > 1200)
         {
-            calibration.OpenKeyboardButtonY = 218;
+            calibration.OpenKeyboardButtonY = 488;
             migrated = true;
         }
 
@@ -260,7 +260,7 @@ public class ConfigService
             MigrateLegacyKeyboardCalibration(projectCal, config.Settings.KeyboardLayout);
             if (projectCal.KeyboardWindowScale < 0.5)
             {
-                projectCal.KeyboardWindowScale = 0.85;
+                projectCal.KeyboardWindowScale = 0.8;
             }
 
             var existing = config.Settings.KeyboardCalibration ?? new KeyboardCalibrationSettings();
@@ -290,10 +290,14 @@ public class ConfigService
         MergeIfDefault(target, source, defaults, cal => cal.InnerSectionOffsetXPercent, (cal, v) => cal.InnerSectionOffsetXPercent = v);
         MergeIfDefault(target, source, defaults, cal => cal.InnerSectionOffsetYPercent, (cal, v) => cal.InnerSectionOffsetYPercent = v);
         MergeIfDefault(target, source, defaults, cal => cal.KeyboardWindowScale, (cal, v) => cal.KeyboardWindowScale = v);
-        MergeIfDefault(target, source, defaults, cal => cal.OpenKeyboardButtonX, (cal, v) => cal.OpenKeyboardButtonX = v);
-        MergeIfDefault(target, source, defaults, cal => cal.OpenKeyboardButtonY, (cal, v) => cal.OpenKeyboardButtonY = v);
-        MergeIfDefault(target, source, defaults, cal => cal.OpenKeyboardButtonWidth, (cal, v) => cal.OpenKeyboardButtonWidth = v);
-        MergeIfDefault(target, source, defaults, cal => cal.OpenKeyboardButtonHeight, (cal, v) => cal.OpenKeyboardButtonHeight = v);
+        if (source.OpenKeyboardButtonX > 0)
+            MergeIfDefault(target, source, defaults, cal => cal.OpenKeyboardButtonX, (cal, v) => cal.OpenKeyboardButtonX = v);
+        if (source.OpenKeyboardButtonY > 0)
+            MergeIfDefault(target, source, defaults, cal => cal.OpenKeyboardButtonY, (cal, v) => cal.OpenKeyboardButtonY = v);
+        if (source.OpenKeyboardButtonWidth > 0)
+            MergeIfDefault(target, source, defaults, cal => cal.OpenKeyboardButtonWidth, (cal, v) => cal.OpenKeyboardButtonWidth = v);
+        if (source.OpenKeyboardButtonHeight > 0)
+            MergeIfDefault(target, source, defaults, cal => cal.OpenKeyboardButtonHeight, (cal, v) => cal.OpenKeyboardButtonHeight = v);
 
         MergeIfDefault(target, source, defaults, cal => cal.CapsLockIndicatorOffsetX, (cal, v) => cal.CapsLockIndicatorOffsetX = v);
         MergeIfDefault(target, source, defaults, cal => cal.CapsLockIndicatorOffsetY, (cal, v) => cal.CapsLockIndicatorOffsetY = v);

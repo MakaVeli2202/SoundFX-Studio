@@ -31,6 +31,11 @@ public partial class MainWindow : Window
     private bool _suppressA1;
     private bool _suppressVirtualB1;
 
+    public (double Width, double Height) HeroOverlaySize =>
+        HeroImage.ActualWidth > 0 && HeroImage.ActualHeight > 0
+            ? (HeroImage.ActualWidth, HeroImage.ActualHeight)
+            : (998, 1024);
+
     public MainWindow(ILogService? logService = null)
     {
         InitializeComponent();
@@ -388,15 +393,8 @@ public partial class MainWindow : Window
         AutomationProperties.SetName(this, "SoundFX Studio");
         UpdateCurrentPageDisplay();
 
-        var calibration = ViewModel.Settings.KeyboardCalibration;
-        if (calibration is not null)
-        {
-            OpenKeyboardOverlayButton.Width = calibration.OpenKeyboardButtonWidth;
-            OpenKeyboardOverlayButton.Height = calibration.OpenKeyboardButtonHeight;
-            var heroHeight = HeroSectionBorder.ActualHeight > 0 ? HeroSectionBorder.ActualHeight : 520;
-            var y = calibration.OpenKeyboardButtonY - (heroHeight - calibration.OpenKeyboardButtonHeight) / 2;
-            OpenKeyboardOverlayButton.Margin = new Thickness(calibration.OpenKeyboardButtonX, y, 0, 0);
-        }
+        ApplyOpenKeyboardButtonCalibration();
+        HeroSectionBorder.SizeChanged += (_, _) => ApplyOpenKeyboardButtonCalibration();
 
         ViewModel.PropertyChanged += (_, args) =>
         {
@@ -420,19 +418,6 @@ public partial class MainWindow : Window
 
     private void UpdateCurrentPageDisplay()
     {
-        if (CurrentPageText is null)
-        {
-            return;
-        }
-
-        CurrentPageText.Text = ViewModel.CurrentPage switch
-        {
-            "Home" => "Home",
-            "SoundLibrary" => "Sound Library",
-            "Effects" => "Voice Changer",
-            "Settings" => "Settings",
-            _ => ViewModel.CurrentPage
-        };
     }
 
     private void PopulateAudioCombos()
@@ -666,9 +651,85 @@ public partial class MainWindow : Window
             Owner = this
         };
 
-        _keyboardCalibrationWindow.CalibrationSaved += (_, _) => ViewModel.RefreshCommand.Execute(null);
-        _keyboardCalibrationWindow.Closed += (_, _) => _keyboardCalibrationWindow = null;
+        _keyboardCalibrationWindow.OpenKeyboardButtonChanged += (_, _) =>
+        {
+            if (_keyboardCalibrationWindow is null)
+            {
+                return;
+            }
+
+            var calibration = ViewModel.Settings.KeyboardCalibration;
+            if (calibration is not null)
+            {
+                calibration.OpenKeyboardButtonX = _keyboardCalibrationWindow.OpenKeyboardButtonX;
+                calibration.OpenKeyboardButtonY = _keyboardCalibrationWindow.OpenKeyboardButtonY;
+                calibration.OpenKeyboardButtonWidth = _keyboardCalibrationWindow.OpenKeyboardButtonWidth;
+                calibration.OpenKeyboardButtonHeight = _keyboardCalibrationWindow.OpenKeyboardButtonHeight;
+            }
+
+            ApplyOpenKeyboardButton(
+                _keyboardCalibrationWindow.OpenKeyboardButtonX,
+                _keyboardCalibrationWindow.OpenKeyboardButtonY,
+                _keyboardCalibrationWindow.OpenKeyboardButtonWidth,
+                _keyboardCalibrationWindow.OpenKeyboardButtonHeight);
+        };
+        _keyboardCalibrationWindow.CalibrationSaved += (_, _) =>
+        {
+            ViewModel.RefreshCommand.Execute(null);
+            ApplyOpenKeyboardButtonCalibration();
+        };
+        _keyboardCalibrationWindow.Closed += (_, _) =>
+        {
+            _keyboardCalibrationWindow = null;
+            ApplyOpenKeyboardButtonCalibration();
+        };
         _keyboardCalibrationWindow.Show();
+    }
+
+    private void ApplyOpenKeyboardButtonCalibration()
+    {
+        var calibration = ViewModel.Settings.KeyboardCalibration;
+        if (calibration is null)
+        {
+            return;
+        }
+
+        ApplyOpenKeyboardButton(
+            calibration.OpenKeyboardButtonX,
+            calibration.OpenKeyboardButtonY,
+            calibration.OpenKeyboardButtonWidth,
+            calibration.OpenKeyboardButtonHeight);
+    }
+
+    private void ApplyOpenKeyboardButton(double x, double y, double width, double height)
+    {
+        var (heroWidth, heroHeight) = HeroOverlaySize;
+        if (heroWidth <= 0 || heroHeight <= 0)
+        {
+            return;
+        }
+
+        var buttonWidth = Math.Clamp(width, 20, Math.Max(20, heroWidth - 4));
+        var buttonHeight = Math.Clamp(height, 10, Math.Max(10, heroHeight - 4));
+
+        OpenKeyboardOverlayButton.Width = buttonWidth;
+        OpenKeyboardOverlayButton.Height = buttonHeight;
+        OpenKeyboardOverlayButton.HorizontalAlignment = HorizontalAlignment.Left;
+        OpenKeyboardOverlayButton.VerticalAlignment = VerticalAlignment.Top;
+        OpenKeyboardOverlayButton.Margin = new Thickness(
+            Math.Clamp(x, 0, Math.Max(0, heroWidth - buttonWidth)),
+            Math.Clamp(y, 0, Math.Max(0, heroHeight - buttonHeight)),
+            0,
+            0);
+
+        if (OpenKeyboardLedRing is not null)
+        {
+            OpenKeyboardLedRing.Width = buttonWidth;
+            OpenKeyboardLedRing.Height = buttonHeight;
+            OpenKeyboardLedRing.HorizontalAlignment = HorizontalAlignment.Left;
+            OpenKeyboardLedRing.VerticalAlignment = VerticalAlignment.Top;
+            OpenKeyboardLedRing.Margin = OpenKeyboardOverlayButton.Margin;
+        }
     }
 
     private void OpenKeyboardWindowButton_Click(object sender, RoutedEventArgs e)

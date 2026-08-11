@@ -22,7 +22,6 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private readonly KeyboardLayoutService _keyboardLayoutService = new();
     private readonly RelayCommand _noopCommand;
     private readonly ObservableCollection<ClusterCalibrationItem> _clusterItems = new();
-    private readonly ObservableCollection<SpecialKeyOverrideItem> _specialItems = new();
     private readonly ObservableCollection<KeyCalibrationItem> _keyItems = new();
 
     private bool _suppressUpdates;
@@ -40,23 +39,29 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private double _previewInnerOffsetXPercent;
     private double _previewInnerOffsetYPercent;
 
-    private double _previewCapsLockIndicatorOffsetX = 1235;
+    private double _previewCapsLockIndicatorOffsetX = 1297;
     private double _previewCapsLockIndicatorOffsetY = 252;
-    private double _previewNumLockIndicatorOffsetX = 1297;
+    private double _previewNumLockIndicatorOffsetX = 1235;
     private double _previewNumLockIndicatorOffsetY = 252;
     private double _previewScrollLockIndicatorOffsetX = 1359;
     private double _previewScrollLockIndicatorOffsetY = 252;
 
-    private double _previewOpenKeyboardButtonX = 52;
-    private double _previewOpenKeyboardButtonY = 218;
-    private double _previewOpenKeyboardButtonWidth = 275;
-    private double _previewOpenKeyboardButtonHeight = 54;
+    private double _previewOpenKeyboardButtonX = 36;
+    private double _previewOpenKeyboardButtonY = 488;
+    private double _previewOpenKeyboardButtonWidth = 220;
+    private double _previewOpenKeyboardButtonHeight = 48;
 
     private KeyCalibrationItem? _selectedKeyItem;
     private string _perKeyOverridesJson = "{}";
     private string _jsonEditorStatus = "Ready";
     private bool _overlayButtonSelected = true;
     private Border? _overlayPreviewRect;
+    private double _overlayPreviewScale = 1;
+    private bool _overlayDragActive;
+    private bool _overlayDragMoved;
+    private Point _overlayDragStart;
+    private double _overlayDragStartX;
+    private double _overlayDragStartY;
 
     public KeyboardCalibrationWindow()
     {
@@ -69,7 +74,6 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
         BuildKeyboard();
         BuildClusterItems();
-        BuildSpecialItems();
         BuildKeyItems();
         LoadFromSettings();
         ApplyAllCalibration();
@@ -78,10 +82,10 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler? CalibrationSaved;
+    public event EventHandler? OpenKeyboardButtonChanged;
 
     public ObservableCollection<KeyboardKey> KeyboardKeys { get; } = new();
     public ObservableCollection<ClusterCalibrationItem> ClusterItems => _clusterItems;
-    public ObservableCollection<SpecialKeyOverrideItem> SpecialItems => _specialItems;
     public ObservableCollection<KeyCalibrationItem> KeyItems => _keyItems;
     public ICommand KeyClickedCommand => _noopCommand;
 
@@ -287,20 +291,6 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         AddClusterItem("Numpad", KeyboardCluster.NumpadCluster);
     }
 
-    private void BuildSpecialItems()
-    {
-        _specialItems.Clear();
-        AddSpecialItem("Spacebar", "SPACE");
-        AddSpecialItem("Backspace", "BACKSPACE");
-        AddSpecialItem("Enter", "ENTER");
-        AddSpecialItem("ISO Enter", "OEM102");
-        AddSpecialItem("Left Shift", "SHIFT-L");
-        AddSpecialItem("Right Shift", "SHIFT-R");
-        AddSpecialItem("Numpad Enter", "ENTER-NUMPAD");
-        AddSpecialItem("Tab", "TAB");
-        AddSpecialItem("Caps Lock", "CAPS LOCK");
-    }
-
     private KeyboardLayoutMode GetPreviewLayoutMode()
     {
         var layoutMode = _config.Settings.KeyboardLayout;
@@ -384,15 +374,24 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             GetClusterItem(KeyboardCluster.NumpadCluster).OffsetX = settings.NumpadOffsetX;
             GetClusterItem(KeyboardCluster.NumpadCluster).OffsetY = settings.NumpadOffsetY;
 
-            SetSpecialValue("SPACE", settings.SpacebarWidthAdjustment);
-            SetSpecialValue("BACKSPACE", settings.BackspaceWidthAdjustment);
-            SetSpecialValue("ENTER", settings.EnterWidthAdjustment);
-            SetSpecialValue("OEM102", settings.IsoEnterWidthAdjustment);
-            SetSpecialValue("SHIFT-L", settings.LeftShiftWidthAdjustment);
-            SetSpecialValue("SHIFT-R", settings.RightShiftWidthAdjustment);
-            SetSpecialValue("ENTER-NUMPAD", settings.NumpadEnterWidthAdjustment);
-            SetSpecialValue("TAB", settings.TabWidthAdjustment);
-            SetSpecialValue("CAPS LOCK", settings.CapsLockWidthAdjustment);
+            GetClusterItem(KeyboardCluster.EscCluster).WidthAdjustment = settings.EscWidthAdjustment;
+            GetClusterItem(KeyboardCluster.EscCluster).HeightAdjustment = settings.EscHeightAdjustment;
+            GetClusterItem(KeyboardCluster.F1ToF4Cluster).WidthAdjustment = settings.F1ToF4WidthAdjustment;
+            GetClusterItem(KeyboardCluster.F1ToF4Cluster).HeightAdjustment = settings.F1ToF4HeightAdjustment;
+            GetClusterItem(KeyboardCluster.F5ToF8Cluster).WidthAdjustment = settings.F5ToF8WidthAdjustment;
+            GetClusterItem(KeyboardCluster.F5ToF8Cluster).HeightAdjustment = settings.F5ToF8HeightAdjustment;
+            GetClusterItem(KeyboardCluster.F9ToF12Cluster).WidthAdjustment = settings.F9ToF12WidthAdjustment;
+            GetClusterItem(KeyboardCluster.F9ToF12Cluster).HeightAdjustment = settings.F9ToF12HeightAdjustment;
+            GetClusterItem(KeyboardCluster.PrintScrollPauseCluster).WidthAdjustment = settings.PrintScrollPauseWidthAdjustment;
+            GetClusterItem(KeyboardCluster.PrintScrollPauseCluster).HeightAdjustment = settings.PrintScrollPauseHeightAdjustment;
+            GetClusterItem(KeyboardCluster.MainTypingCluster).WidthAdjustment = settings.MainTypingWidthAdjustment;
+            GetClusterItem(KeyboardCluster.MainTypingCluster).HeightAdjustment = settings.MainTypingHeightAdjustment;
+            GetClusterItem(KeyboardCluster.NavigationCluster).WidthAdjustment = settings.NavigationWidthAdjustment;
+            GetClusterItem(KeyboardCluster.NavigationCluster).HeightAdjustment = settings.NavigationHeightAdjustment;
+            GetClusterItem(KeyboardCluster.ArrowCluster).WidthAdjustment = settings.ArrowWidthAdjustment;
+            GetClusterItem(KeyboardCluster.ArrowCluster).HeightAdjustment = settings.ArrowHeightAdjustment;
+            GetClusterItem(KeyboardCluster.NumpadCluster).WidthAdjustment = settings.NumpadWidthAdjustment;
+            GetClusterItem(KeyboardCluster.NumpadCluster).HeightAdjustment = settings.NumpadHeightAdjustment;
 
             foreach (var entry in settings.KeyOverrides)
             {
@@ -450,13 +449,6 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         _clusterItems.Add(item);
     }
 
-    private void AddSpecialItem(string name, string keyId)
-    {
-        var item = new SpecialKeyOverrideItem(name, keyId);
-        item.Changed += OnSpecialItemChanged;
-        _specialItems.Add(item);
-    }
-
     private void SetAndApply(ref double field, double value, [CallerMemberName] string? propertyName = null)
     {
         if (Math.Abs(field - value) < double.Epsilon)
@@ -490,25 +482,104 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         KeyboardLayoutPanel.SetLayoutCalibration(PreviewKeyUnit, PreviewGapX, PreviewGapY, PreviewOffsetX, PreviewOffsetY);
         KeyboardLayoutPanel.ButtonScale = PreviewButtonScale;
         ApplyClusterCalibration();
-        ApplySpecialOverrides();
         ApplyPerKeyOverrides();
         UpdateOverlayPreview();
     }
 
     private void UpdateOverlayPreview()
     {
-        if (OverlayPreviewHost is null)
+        if (OverlayPreviewHost is null || OverlayPreviewStage is null)
         {
             return;
         }
 
-        const double hostWidth = 310;
-        var scale = hostWidth / 930.0;
-        OverlayPreviewButton.Width = Math.Max(8, OpenKeyboardButtonWidth * scale);
-        OverlayPreviewButton.Height = Math.Max(6, OpenKeyboardButtonHeight * scale);
+        var (heroWidth, heroHeight) = GetHeroOverlaySize();
+        if (heroWidth <= 0 || heroHeight <= 0)
+        {
+            return;
+        }
+
+        var hostWidth = OverlayPreviewHost.ActualWidth > 0 ? OverlayPreviewHost.ActualWidth : 340;
+        var hostHeight = OverlayPreviewHost.ActualHeight > 0 ? OverlayPreviewHost.ActualHeight : 190;
+        var scale = Math.Min(hostWidth / heroWidth, hostHeight / heroHeight);
+        _overlayPreviewScale = scale;
+
+        OverlayPreviewStage.Width = heroWidth * scale;
+        OverlayPreviewStage.Height = heroHeight * scale;
+        OverlayPreviewStage.Margin = new Thickness((hostWidth - heroWidth * scale) / 2, (hostHeight - heroHeight * scale) / 2, 0, 0);
+
+        OverlayPreviewButton.Width = Math.Max(6, OpenKeyboardButtonWidth * scale);
+        OverlayPreviewButton.Height = Math.Max(4, OpenKeyboardButtonHeight * scale);
         OverlayPreviewButton.Margin = new Thickness(OpenKeyboardButtonX * scale, OpenKeyboardButtonY * scale, 0, 0);
         _overlayPreviewRect = OverlayPreviewButton.Template?.FindName("OverlayPreviewRect", OverlayPreviewButton) as Border;
         UpdateOverlayPreviewHighlight();
+        OpenKeyboardButtonChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private (double Width, double Height) GetHeroOverlaySize()
+    {
+        if (Owner is MainWindow mainWindow)
+        {
+            return mainWindow.HeroOverlaySize;
+        }
+
+        return (998, 1024);
+    }
+
+    private void OverlayPreviewButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        _overlayDragActive = true;
+        _overlayDragMoved = false;
+        _overlayDragStart = e.GetPosition(OverlayPreviewHost);
+        _overlayDragStartX = OpenKeyboardButtonX;
+        _overlayDragStartY = OpenKeyboardButtonY;
+        OverlayPreviewButton.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void OverlayPreviewButton_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_overlayDragActive || _overlayPreviewScale <= 0)
+        {
+            return;
+        }
+
+        var position = e.GetPosition(OverlayPreviewHost);
+        if (!_overlayDragMoved &&
+            Math.Abs(position.X - _overlayDragStart.X) < 3 &&
+            Math.Abs(position.Y - _overlayDragStart.Y) < 3)
+        {
+            return;
+        }
+
+        _overlayDragMoved = true;
+        OpenKeyboardButtonX = _overlayDragStartX + (position.X - _overlayDragStart.X) / _overlayPreviewScale;
+        OpenKeyboardButtonY = _overlayDragStartY + (position.Y - _overlayDragStart.Y) / _overlayPreviewScale;
+        e.Handled = true;
+    }
+
+    private void OverlayPreviewButton_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_overlayDragActive)
+        {
+            return;
+        }
+
+        _overlayDragActive = false;
+        OverlayPreviewButton.ReleaseMouseCapture();
+        e.Handled = true;
+
+        if (!_overlayDragMoved)
+        {
+            OverlayPreviewButton_Click(sender, e);
+        }
+
+        PersistCalibrationLive();
     }
 
     private void UpdateOverlayPreviewHighlight()
@@ -558,17 +629,25 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             GetClusterItem(KeyboardCluster.ArrowCluster).OffsetX,
             GetClusterItem(KeyboardCluster.ArrowCluster).OffsetY,
             GetClusterItem(KeyboardCluster.NumpadCluster).OffsetX,
-            GetClusterItem(KeyboardCluster.NumpadCluster).OffsetY);
-    }
-
-    private void ApplySpecialOverrides()
-    {
-        KeyboardLayoutPanel.ClearAllSpecialKeyOverrides();
-
-        foreach (var item in _specialItems)
-        {
-            KeyboardLayoutPanel.SetSpecialKeyOverride(item.KeyId, item.WidthAdjustment);
-        }
+            GetClusterItem(KeyboardCluster.NumpadCluster).OffsetY,
+            GetClusterItem(KeyboardCluster.EscCluster).WidthAdjustment,
+            GetClusterItem(KeyboardCluster.EscCluster).HeightAdjustment,
+            GetClusterItem(KeyboardCluster.F1ToF4Cluster).WidthAdjustment,
+            GetClusterItem(KeyboardCluster.F1ToF4Cluster).HeightAdjustment,
+            GetClusterItem(KeyboardCluster.F5ToF8Cluster).WidthAdjustment,
+            GetClusterItem(KeyboardCluster.F5ToF8Cluster).HeightAdjustment,
+            GetClusterItem(KeyboardCluster.F9ToF12Cluster).WidthAdjustment,
+            GetClusterItem(KeyboardCluster.F9ToF12Cluster).HeightAdjustment,
+            GetClusterItem(KeyboardCluster.PrintScrollPauseCluster).WidthAdjustment,
+            GetClusterItem(KeyboardCluster.PrintScrollPauseCluster).HeightAdjustment,
+            GetClusterItem(KeyboardCluster.MainTypingCluster).WidthAdjustment,
+            GetClusterItem(KeyboardCluster.MainTypingCluster).HeightAdjustment,
+            GetClusterItem(KeyboardCluster.NavigationCluster).WidthAdjustment,
+            GetClusterItem(KeyboardCluster.NavigationCluster).HeightAdjustment,
+            GetClusterItem(KeyboardCluster.ArrowCluster).WidthAdjustment,
+            GetClusterItem(KeyboardCluster.ArrowCluster).HeightAdjustment,
+            GetClusterItem(KeyboardCluster.NumpadCluster).WidthAdjustment,
+            GetClusterItem(KeyboardCluster.NumpadCluster).HeightAdjustment);
     }
 
     private void ApplyPerKeyOverrides()
@@ -610,18 +689,6 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         }
 
         ApplyClusterCalibration();
-        RefreshPreview();
-        PersistCalibrationLive();
-    }
-
-    private void OnSpecialItemChanged()
-    {
-        if (_suppressUpdates)
-        {
-            return;
-        }
-
-        ApplySpecialOverrides();
         RefreshPreview();
         PersistCalibrationLive();
     }
@@ -683,10 +750,10 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         calibration.NumLockIndicatorOffsetY = NumLockIndicatorOffsetY;
         calibration.ScrollLockIndicatorOffsetX = ScrollLockIndicatorOffsetX;
         calibration.ScrollLockIndicatorOffsetY = ScrollLockIndicatorOffsetY;
-        calibration.OpenKeyboardButtonX = OpenKeyboardButtonX;
-        calibration.OpenKeyboardButtonY = OpenKeyboardButtonY;
-        calibration.OpenKeyboardButtonWidth = OpenKeyboardButtonWidth;
-        calibration.OpenKeyboardButtonHeight = OpenKeyboardButtonHeight;
+        calibration.OpenKeyboardButtonX = Math.Round(OpenKeyboardButtonX, 1);
+        calibration.OpenKeyboardButtonY = Math.Round(OpenKeyboardButtonY, 1);
+        calibration.OpenKeyboardButtonWidth = Math.Round(OpenKeyboardButtonWidth, 1);
+        calibration.OpenKeyboardButtonHeight = Math.Round(OpenKeyboardButtonHeight, 1);
 
         calibration.EscOffsetX = GetClusterItem(KeyboardCluster.EscCluster).OffsetX;
         calibration.EscOffsetY = GetClusterItem(KeyboardCluster.EscCluster).OffsetY;
@@ -707,15 +774,24 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         calibration.NumpadOffsetX = GetClusterItem(KeyboardCluster.NumpadCluster).OffsetX;
         calibration.NumpadOffsetY = GetClusterItem(KeyboardCluster.NumpadCluster).OffsetY;
 
-        calibration.SpacebarWidthAdjustment = GetSpecialValue("SPACE");
-        calibration.BackspaceWidthAdjustment = GetSpecialValue("BACKSPACE");
-        calibration.EnterWidthAdjustment = GetSpecialValue("ENTER");
-        calibration.IsoEnterWidthAdjustment = GetSpecialValue("OEM102");
-        calibration.LeftShiftWidthAdjustment = GetSpecialValue("SHIFT-L");
-        calibration.RightShiftWidthAdjustment = GetSpecialValue("SHIFT-R");
-        calibration.NumpadEnterWidthAdjustment = GetSpecialValue("ENTER-NUMPAD");
-        calibration.TabWidthAdjustment = GetSpecialValue("TAB");
-        calibration.CapsLockWidthAdjustment = GetSpecialValue("CAPS LOCK");
+        calibration.EscWidthAdjustment = GetClusterItem(KeyboardCluster.EscCluster).WidthAdjustment;
+        calibration.EscHeightAdjustment = GetClusterItem(KeyboardCluster.EscCluster).HeightAdjustment;
+        calibration.F1ToF4WidthAdjustment = GetClusterItem(KeyboardCluster.F1ToF4Cluster).WidthAdjustment;
+        calibration.F1ToF4HeightAdjustment = GetClusterItem(KeyboardCluster.F1ToF4Cluster).HeightAdjustment;
+        calibration.F5ToF8WidthAdjustment = GetClusterItem(KeyboardCluster.F5ToF8Cluster).WidthAdjustment;
+        calibration.F5ToF8HeightAdjustment = GetClusterItem(KeyboardCluster.F5ToF8Cluster).HeightAdjustment;
+        calibration.F9ToF12WidthAdjustment = GetClusterItem(KeyboardCluster.F9ToF12Cluster).WidthAdjustment;
+        calibration.F9ToF12HeightAdjustment = GetClusterItem(KeyboardCluster.F9ToF12Cluster).HeightAdjustment;
+        calibration.PrintScrollPauseWidthAdjustment = GetClusterItem(KeyboardCluster.PrintScrollPauseCluster).WidthAdjustment;
+        calibration.PrintScrollPauseHeightAdjustment = GetClusterItem(KeyboardCluster.PrintScrollPauseCluster).HeightAdjustment;
+        calibration.MainTypingWidthAdjustment = GetClusterItem(KeyboardCluster.MainTypingCluster).WidthAdjustment;
+        calibration.MainTypingHeightAdjustment = GetClusterItem(KeyboardCluster.MainTypingCluster).HeightAdjustment;
+        calibration.NavigationWidthAdjustment = GetClusterItem(KeyboardCluster.NavigationCluster).WidthAdjustment;
+        calibration.NavigationHeightAdjustment = GetClusterItem(KeyboardCluster.NavigationCluster).HeightAdjustment;
+        calibration.ArrowWidthAdjustment = GetClusterItem(KeyboardCluster.ArrowCluster).WidthAdjustment;
+        calibration.ArrowHeightAdjustment = GetClusterItem(KeyboardCluster.ArrowCluster).HeightAdjustment;
+        calibration.NumpadWidthAdjustment = GetClusterItem(KeyboardCluster.NumpadCluster).WidthAdjustment;
+        calibration.NumpadHeightAdjustment = GetClusterItem(KeyboardCluster.NumpadCluster).HeightAdjustment;
 
         calibration.KeyOverrides = _keyItems
             .Where(item => !item.IsZero())
@@ -746,7 +822,7 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
     private void PersistCalibrationLive()
     {
-        if (_suppressUpdates)
+        if (_suppressUpdates || _overlayDragActive)
         {
             return;
         }
@@ -769,25 +845,20 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             _previewInnerInsetYPercent = 20;
             _previewInnerOffsetXPercent = 0;
             _previewInnerOffsetYPercent = 0;
-            _previewCapsLockIndicatorOffsetX = 1235;
+            _previewCapsLockIndicatorOffsetX = 1297;
             _previewCapsLockIndicatorOffsetY = 252;
-            _previewNumLockIndicatorOffsetX = 1297;
+            _previewNumLockIndicatorOffsetX = 1235;
             _previewNumLockIndicatorOffsetY = 252;
             _previewScrollLockIndicatorOffsetX = 1359;
             _previewScrollLockIndicatorOffsetY = 252;
-            _previewOpenKeyboardButtonX = 52;
-            _previewOpenKeyboardButtonY = 218;
-            _previewOpenKeyboardButtonWidth = 275;
-            _previewOpenKeyboardButtonHeight = 54;
+            _previewOpenKeyboardButtonX = 36;
+            _previewOpenKeyboardButtonY = 488;
+            _previewOpenKeyboardButtonWidth = 220;
+            _previewOpenKeyboardButtonHeight = 48;
 
             foreach (var cluster in _clusterItems)
             {
                 cluster.Reset();
-            }
-
-            foreach (var special in _specialItems)
-            {
-                special.Reset();
             }
 
             foreach (var key in _keyItems)
@@ -847,25 +918,15 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         item.Reset();
     }
 
-    private void ResetSelectedSpecial_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is not FrameworkElement element || element.DataContext is not SpecialKeyOverrideItem item)
-        {
-            return;
-        }
-
-        item.Reset();
-    }
-
     private void ResetOpenKeyboardButton_Click(object sender, RoutedEventArgs e)
     {
         _suppressUpdates = true;
         try
         {
-            _previewOpenKeyboardButtonX = 52;
-            _previewOpenKeyboardButtonY = 218;
-            _previewOpenKeyboardButtonWidth = 275;
-            _previewOpenKeyboardButtonHeight = 54;
+            _previewOpenKeyboardButtonX = 36;
+            _previewOpenKeyboardButtonY = 488;
+            _previewOpenKeyboardButtonWidth = 220;
+            _previewOpenKeyboardButtonHeight = 48;
         }
         finally
         {
@@ -904,18 +965,6 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
     private ClusterCalibrationItem GetClusterItem(KeyboardCluster cluster)
         => _clusterItems.First(item => item.Cluster == cluster);
-
-    private void SetSpecialValue(string keyId, double value)
-    {
-        var item = _specialItems.FirstOrDefault(entry => string.Equals(entry.KeyId, keyId, StringComparison.OrdinalIgnoreCase));
-        if (item is not null)
-        {
-            item.WidthAdjustment = value;
-        }
-    }
-
-    private double GetSpecialValue(string keyId)
-        => _specialItems.FirstOrDefault(entry => string.Equals(entry.KeyId, keyId, StringComparison.OrdinalIgnoreCase))?.WidthAdjustment ?? 0;
 
     private void NudgeValue_Click(object sender, RoutedEventArgs e)
     {
@@ -995,6 +1044,8 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     {
         private double _offsetX;
         private double _offsetY;
+        private double _widthAdjustment;
+        private double _heightAdjustment;
 
         public ClusterCalibrationItem(string name, KeyboardCluster cluster)
         {
@@ -1010,56 +1061,19 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
         public double OffsetX { get => _offsetX; set => Set(ref _offsetX, value); }
         public double OffsetY { get => _offsetY; set => Set(ref _offsetY, value); }
+        public double WidthAdjustment { get => _widthAdjustment; set => Set(ref _widthAdjustment, value); }
+        public double HeightAdjustment { get => _heightAdjustment; set => Set(ref _heightAdjustment, value); }
 
         public void Reset()
         {
             _offsetX = 0;
             _offsetY = 0;
+            _widthAdjustment = 0;
+            _heightAdjustment = 0;
             OnPropertyChanged(nameof(OffsetX));
             OnPropertyChanged(nameof(OffsetY));
-            Changed?.Invoke();
-        }
-
-        private void Set(ref double field, double value, [CallerMemberName] string? propertyName = null)
-        {
-            if (Math.Abs(field - value) < double.Epsilon)
-            {
-                return;
-            }
-
-            field = value;
-            OnPropertyChanged(propertyName);
-            Changed?.Invoke();
-        }
-
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-    }
-
-    public sealed class SpecialKeyOverrideItem : INotifyPropertyChanged
-    {
-        private double _widthAdjustment;
-
-        public SpecialKeyOverrideItem(string name, string keyId)
-        {
-            Name = name;
-            KeyId = keyId;
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        public event Action? Changed;
-
-        public string Name { get; }
-        public string KeyId { get; }
-
-        public double WidthAdjustment { get => _widthAdjustment; set => Set(ref _widthAdjustment, value); }
-
-        public void Reset()
-        {
-            _widthAdjustment = 0;
             OnPropertyChanged(nameof(WidthAdjustment));
+            OnPropertyChanged(nameof(HeightAdjustment));
             Changed?.Invoke();
         }
 

@@ -24,13 +24,19 @@
             <DoubleAnimation Storyboard.TargetName="LedStopC" Storyboard.TargetProperty="Offset" From="0" To="1.8" Duration="0:0:7"/>
         </Storyboard>
 
+        <Storyboard x:Key="OpenKeyboardLedRingStoryboard" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetName="RingStopA" Storyboard.TargetProperty="Offset" From="1.0" To="-1.0" Duration="0:0:4"/>
+            <DoubleAnimation Storyboard.TargetName="RingStopB" Storyboard.TargetProperty="Offset" From="0.8" To="-1.2" Duration="0:0:4"/>
+            <DoubleAnimation Storyboard.TargetName="RingStopC" Storyboard.TargetProperty="Offset" From="0.6" To="-1.4" Duration="0:0:4"/>
+        </Storyboard>
+
         <Storyboard x:Key="ShellPulseStoryboard" RepeatBehavior="Forever" AutoReverse="True">
             <DoubleAnimation Storyboard.TargetName="ShellGlow" Storyboard.TargetProperty="Opacity" From="0.14" To="0.24" Duration="0:0:3.4"/>
         </Storyboard>
 
         <Style x:Key="GlassPanel" TargetType="Border">
             <Setter Property="CornerRadius" Value="22"/>
-            <Setter Property="Background" Value="#C4141E2D"/>
+            <Setter Property="Background" Value="#85141E2D"/>
             <Setter Property="BorderBrush" Value="#334A647F"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="0"/>
@@ -321,13 +327,7 @@
     </Window.Resources>
 
     <Border Margin="10,0,10,10"
-        CornerRadius="20">
-        <Border.Background>
-            <ImageBrush ImageSource="/Assets/Pics/MainWindowBackground.png"
-                        Stretch="UniformToFill"
-                        Opacity="0.55"/>
-        </Border.Background>
-
+        CornerRadius="10">
         <Border.Effect>
             <DropShadowEffect BlurRadius="50"
                           ShadowDepth="0"
@@ -357,6 +357,16 @@
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
+
+            <Rectangle RadiusX="10" RadiusY="10" IsHitTestVisible="False">
+                <Rectangle.Fill>
+                    <ImageBrush ImageSource="/Assets/Pics/MainWindowBackground.png"
+                                Stretch="UniformToFill"
+                                Opacity="0.8"/>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <Rectangle RadiusX="10" RadiusY="10" Fill="#4D000000" IsHitTestVisible="False"/>
 
             <Border x:Name="ShellGlow"
                     Margin="3"
@@ -395,8 +405,8 @@
             <Border x:Name="HeroSectionBorder"
                     MinHeight="420"
                     HorizontalAlignment="Stretch"
-                    VerticalAlignment="Top"
-                    Margin="308,74,40,120">
+                    VerticalAlignment="Stretch"
+                    Margin="308,74,40,0">
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -411,10 +421,29 @@
                 <Grid Margin="22">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" CornerRadius="26" ClipToBounds="True" MinHeight="350">
+                    <!-- HEADER -->
+                    <Grid Grid.Row="0" Margin="0,0,0,14">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="SOUND CONTROL"
+                                   Foreground="#00D4FF"
+                                   FontSize="24"
+                                   FontWeight="Bold"/>
+                        <TextBlock Grid.Row="1"
+                                   Text="Launch your keyboard, browse sounds, and jump into your voice pipeline from one dashboard."
+                                   Foreground="#A2B4CC"
+                                   FontSize="13"
+                                   Margin="0,4,0,0"
+                                   TextWrapping="Wrap"/>
+                    </Grid>
+
+                    <Border Grid.Row="1" CornerRadius="26" ClipToBounds="True" MinHeight="350">
                         <Grid>
                             <Image x:Name="HeroImage"
                                    Source="/Assets/UI/HeroSection.png"
@@ -437,21 +466,71 @@
                                     Height="48"
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Top"
-                                    Margin="36,100,0,0"
+                                    Margin="36,488,0,0"
                                     AutomationProperties.Name="Open Keyboard"
                                     AutomationProperties.AutomationId="OpenKeyboardButton"
                                     Click="OpenKeyboardWindowButton_Click"
-                                    Background="#CC141E2D"
-                                    BorderBrush="#00D4FF">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock Text="&#xE765;" FontFamily="Segoe Fluent Icons" FontSize="16" Foreground="#EAF1FF" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="Open Keyboard" FontSize="14" FontWeight="SemiBold" Foreground="#EAF1FF" VerticalAlignment="Center"/>
-                                </StackPanel>
+                                    Background="Transparent"
+                                    BorderBrush="#00D4FF"
+                                    BorderThickness="1"
+                                    Cursor="Hand">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Root"
+                                                CornerRadius="12"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}">
+                                            <Border.Effect>
+                                                <DropShadowEffect Color="#0000D4FF" BlurRadius="10" ShadowDepth="0" Opacity="0"/>
+                                            </Border.Effect>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Root" Property="Background" Value="#2A00D4FF"/>
+                                                <Setter TargetName="Root" Property="BorderBrush" Value="#7FDBFF"/>
+                                                <Setter TargetName="Root" Property="BorderThickness" Value="2"/>
+                                                <Setter TargetName="Root" Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect Color="#00D4FF" BlurRadius="14" ShadowDepth="0" Opacity="0.55"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
                             </Button>
+
+                            <Border x:Name="OpenKeyboardLedRing"
+                                    Width="220"
+                                    Height="48"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Margin="36,488,0,0"
+                                    CornerRadius="12"
+                                    BorderThickness="2"
+                                    IsHitTestVisible="False"
+                                    SnapsToDevicePixels="True">
+                                <Border.BorderBrush>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop x:Name="RingStopA" Color="#0000D4FF" Offset="1.0"/>
+                                        <GradientStop x:Name="RingStopB" Color="#D000D4FF" Offset="0.8"/>
+                                        <GradientStop x:Name="RingStopC" Color="#00FF2DAF" Offset="0.6"/>
+                                    </LinearGradientBrush>
+                                </Border.BorderBrush>
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#2900D4FF" BlurRadius="10" ShadowDepth="0" Opacity="0.5"/>
+                                </Border.Effect>
+                                <Border.Triggers>
+                                    <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                        <BeginStoryboard Storyboard="{StaticResource OpenKeyboardLedRingStoryboard}"/>
+                                    </EventTrigger>
+                                </Border.Triggers>
+                            </Border>
                         </Grid>
                     </Border>
 
-                    <Grid Grid.Row="1" Margin="0,18,0,0">
+                    <Grid Grid.Row="2" Margin="0,18,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
@@ -460,6 +539,7 @@
 
                         <Border Grid.Column="0"
                                 Style="{StaticResource SurfaceCardStyle}"
+                                Background="#9C141E2D"
                                 Margin="0,0,8,0"
                                 Padding="16">
                             <Button Style="{StaticResource SecondaryActionButtonStyle}"
@@ -486,6 +566,7 @@
 
                         <Border Grid.Column="1"
                                 Style="{StaticResource SurfaceCardStyle}"
+                                Background="#9C141E2D"
                                 Margin="8,0,8,0"
                                 Padding="16">
                             <Button Style="{StaticResource SecondaryActionButtonStyle}"
@@ -512,6 +593,7 @@
 
                         <Border Grid.Column="2"
                                 Style="{StaticResource SurfaceCardStyle}"
+                                Background="#9C141E2D"
                                 Margin="8,0,0,0"
                                 Padding="16">
                             <Button Style="{StaticResource SecondaryActionButtonStyle}"
@@ -540,9 +622,8 @@
             </Border>
 
             <!-- Effects Page -->
-            <Border Height="700"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Top"
+            <Border HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
                     Margin="308,74,40,0">
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
@@ -582,7 +663,7 @@
                         </Border>
                     </Grid>
 
-                    <Border Grid.Row="1" Style="{StaticResource SurfaceCardStyle}" Padding="20" Margin="0,0,0,14" CornerRadius="20">
+                    <Border Grid.Row="1" Style="{StaticResource SurfaceCardStyle}" Background="#9C141E2D" Padding="20" Margin="0,0,0,14" CornerRadius="20">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -613,7 +694,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border Grid.Column="0" Style="{StaticResource SurfaceCardStyle}" Padding="20" Margin="0,0,10,0" CornerRadius="20">
+                        <Border Grid.Column="0" Style="{StaticResource SurfaceCardStyle}" Background="#9C141E2D" Padding="20" Margin="0,0,8,0" CornerRadius="20">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <TextBlock Text="&#xE7BF;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
@@ -655,7 +736,7 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Grid.Column="1" Style="{StaticResource SurfaceCardStyle}" Padding="20" Margin="10,0,0,0" CornerRadius="20">
+                        <Border Grid.Column="1" Style="{StaticResource SurfaceCardStyle}" Background="#9C141E2D" Padding="20" Margin="8,0,0,0" CornerRadius="20">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                     <TextBlock Text="&#xEC4A;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
@@ -715,9 +796,9 @@
             </Border>
 
             <!-- Library Page (tile grid) — MyBoard design with dark theme -->
-                    <Border Height="700"
+                    <Border
                     HorizontalAlignment="Stretch"
-                    VerticalAlignment="Top"
+                    VerticalAlignment="Stretch"
                     Margin="308,74,40,0">
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
@@ -913,10 +994,13 @@
                                             Command="{Binding DataContext.PlaySoundCommand, RelativeSource={RelativeSource AncestorType=Border}}"
                                             CommandParameter="{Binding}">
                                         <Grid>
-                                            <!-- keycap image area -->
-                                            <Border CornerRadius="16" ClipToBounds="True">
+                                            <!-- image fills the whole tile face, clipped to the rounded corners -->
+                                            <Border CornerRadius="15" ClipToBounds="True">
+                                                <Border.Background>
+                                                    <SolidColorBrush Color="#14000000"/>
+                                                </Border.Background>
                                                 <Grid>
-                                                    <Image Source="{Binding ImagePath}"
+                                                    <Image x:Name="TileImage" Source="{Binding ImagePath}"
                                                            Stretch="UniformToFill"
                                                            VerticalAlignment="Center"
                                                            HorizontalAlignment="Center">
@@ -932,6 +1016,16 @@
                                                                 </Style.Triggers>
                                                             </Style>
                                                         </Image.Style>
+                                                        <Image.Clip>
+                                                            <RectangleGeometry RadiusX="15" RadiusY="15">
+                                                                <RectangleGeometry.Rect>
+                                                                    <MultiBinding Converter="{StaticResource SizeToRectConverter}">
+                                                                        <Binding ElementName="TileImage" Path="ActualWidth"/>
+                                                                        <Binding ElementName="TileImage" Path="ActualHeight"/>
+                                                                    </MultiBinding>
+                                                                </RectangleGeometry.Rect>
+                                                            </RectangleGeometry>
+                                                        </Image.Clip>
                                                     </Image>
 
                                                     <!-- icon fallback when no image -->
@@ -951,16 +1045,6 @@
                                                             </Style>
                                                         </TextBlock.Style>
                                                     </TextBlock>
-
-                                                    <!-- readability gradient -->
-                                                    <Border VerticalAlignment="Bottom" Height="92">
-                                                        <Border.Background>
-                                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                                <GradientStop Color="#00000000" Offset="0"/>
-                                                                <GradientStop Color="#E0080D17" Offset="1"/>
-                                                            </LinearGradientBrush>
-                                                        </Border.Background>
-                                                    </Border>
                                                 </Grid>
                                             </Border>
 
@@ -1061,9 +1145,9 @@
             </Border>
 
             <!-- Settings Page -->
-                        <Border Height="700"
+                        <Border
                         HorizontalAlignment="Stretch"
-                    VerticalAlignment="Top"
+                    VerticalAlignment="Stretch"
                         Margin="308,74,40,0">
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
@@ -1082,7 +1166,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- ═══ SETTINGS SECTION RAIL ═══ -->
-                        <Border Grid.Column="0" Background="#0C1424" BorderBrush="#1B3157"
+                        <Border Grid.Column="0" Background="#8C0C1424" BorderBrush="#1B3157"
                                 BorderThickness="1" CornerRadius="18" Margin="14,14,8,14">
                             <StackPanel Margin="12">
                                 <TextBlock Text="SETTINGS"
@@ -1164,11 +1248,29 @@
                                         <TextBlock Text="Advanced" FontSize="13" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
+
+                                <Button x:Name="SettingsSectionCalibrationButton" Tag="Calibration" Click="SettingsSectionButton_Click">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SettingsSectionButton}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SettingsSection}" Value="Calibration">
+                                                    <Setter Property="Background" Value="#2A00D4FF"/>
+                                                    <Setter Property="BorderBrush" Value="#00D4FF"/>
+                                                    <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE9CE;" FontFamily="Segoe Fluent Icons" FontSize="13" Width="26" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Calibration" FontSize="13" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
                             </StackPanel>
                         </Border>
 
                         <!-- ═══ SETTINGS CONTENT ═══ -->
-                        <Border Grid.Column="1" Background="#0C1424" BorderBrush="#1B3157"
+                        <Border Grid.Column="1" Background="#8C0C1424" BorderBrush="#1B3157"
                             BorderThickness="1" CornerRadius="18" Margin="8,14,14,14">
                             <Grid>
 
@@ -1204,6 +1306,23 @@
                                                           Foreground="#DDEAFF" FontSize="12"/>
                                                 <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"
                                                            Text="Voicemeeter hear/talk selection, routing and reset live in the Setup Wizard."/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
+                                            CornerRadius="12" Padding="18,16" Margin="0,12,0,0">
+                                            <StackPanel>
+                                                <Grid Margin="0,0,0,6">
+                                                    <TextBlock Text="Keyboard window size" Foreground="#DDEAFF" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding KeyboardWindowScale, StringFormat='{}{0:P0}', ConverterCulture=en-US}"
+                                                               Foreground="#00D4FF" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                </Grid>
+                                                <Slider Minimum="0.5" Maximum="2.0"
+                                                        Value="{Binding KeyboardWindowScale, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                        TickFrequency="0.05" IsSnapToTickEnabled="False"
+                                                        VerticalAlignment="Center"/>
+                                                <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"
+                                                           Text="Size the Open Keyboard window. Opens at this size by default."/>
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>
@@ -1403,7 +1522,7 @@
                                             <ItemsControl x:Name="KeybindingsList" ItemsSource="{Binding Keybindings}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Border Background="#0C1424" BorderBrush="#1B3157" BorderThickness="1"
+                                                        <Border Background="#8C0C1424" BorderBrush="#1B3157" BorderThickness="1"
                                                                 CornerRadius="10" Padding="12,8" Margin="0,0,0,6">
                                                             <Grid>
                                                                 <Grid.ColumnDefinitions>
@@ -1447,6 +1566,51 @@
                                     </Grid>
                                 </Border>
 
+                                <!-- ══ CALIBRATION ══ -->
+                                <Border>
+                                    <Border.Style>
+                                        <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SettingsSection}" Value="Calibration">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel Margin="24">
+                                        <TextBlock Text="CALIBRATION" Foreground="#00D4FF" FontSize="16" FontWeight="Bold"
+                                                   Margin="0,0,0,4"/>
+                                        <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
+                                                   Text="Match the on-screen keyboard to your physical keyboard."/>
+
+                                        <Border Background="#66081428" BorderBrush="#5500D4FF" BorderThickness="1"
+                                            CornerRadius="12" Padding="18,16" Margin="0,0,0,14">
+                                            <StackPanel>
+                                                <TextBlock Text="KEYBOARD LAYOUT" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                                <ComboBox ItemsSource="{Binding KeyboardLayoutOptions}"
+                                                          SelectedItem="{Binding KeyboardLayout}"
+                                                          Height="28" HorizontalAlignment="Left" Width="220"
+                                                          Background="#44111A2E" BorderBrush="#5500D4FF" Foreground="White" FontSize="12"
+                                                          BorderThickness="1" Padding="6,1"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Background="#66081428" BorderBrush="#5500D4FF" BorderThickness="1"
+                                            CornerRadius="12" Padding="18,16">
+                                            <StackPanel>
+                                                <TextBlock Text="KEYBOARD CALIBRATION" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                                <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,8"
+                                                           Text="Adjust key positions for your physical keyboard."/>
+                                                <Button Content="Open Keyboard Calibration"
+                                                        Style="{StaticResource SettingsButton}"
+                                                        Click="OpenCalibrationButton_Click"
+                                                        HorizontalAlignment="Left" Width="200"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+
                                 <!-- ══ ADVANCED ══ -->
                                 <Border>
                                     <Border.Style>
@@ -1463,32 +1627,7 @@
                                         <TextBlock Text="ADVANCED" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold"
                                                    Margin="0,0,0,4"/>
                                         <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
-                                                   Text="Keyboard layout, calibration, and Voicemeeter routing."/>
-
-                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
-                                            CornerRadius="12" Padding="18,16" Margin="0,0,0,14">
-                                            <StackPanel>
-                                                <TextBlock Text="KEYBOARD LAYOUT" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
-                                                <ComboBox ItemsSource="{Binding KeyboardLayoutOptions}"
-                                                          SelectedItem="{Binding KeyboardLayout}"
-                                                          Height="28" HorizontalAlignment="Left" Width="220"
-                                                          Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White" FontSize="12"
-                                                          BorderThickness="1" Padding="6,1"/>
-                                            </StackPanel>
-                                        </Border>
-
-                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
-                                            CornerRadius="12" Padding="18,16">
-                                            <StackPanel>
-                                                <TextBlock Text="KEYBOARD CALIBRATION" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
-                                                <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,8"
-                                                           Text="Adjust key positions for your physical keyboard."/>
-                                                <Button Content="Open Keyboard Calibration"
-                                                        Style="{StaticResource SettingsButton}"
-                                                        Click="OpenCalibrationButton_Click"
-                                                        HorizontalAlignment="Left" Width="200"/>
-                                            </StackPanel>
-                                        </Border>
+                                                   Text="Voicemeeter routing and advanced options."/>
 
                                         <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
                                             CornerRadius="12" Padding="18,16" Margin="0,14,0,0">
@@ -1771,48 +1910,7 @@
                                FontSize="17"
                                FontWeight="Bold"/>
 
-                    <Button Grid.Column="1"
-                            Width="110"
-                            Height="32"
-                            Click="OpenCalibrationButton_Click"
-                            VerticalAlignment="Center"
-                            Margin="0,0,12,0"
-                            AutomationProperties.Name="Calibration">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Foreground" Value="White"/>
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="BorderBrush" Value="#00D4FF"/>
-                                <Setter Property="BorderThickness" Value="1"/>
-                                <Setter Property="FontSize" Value="13"/>
-                                <Setter Property="Cursor" Value="Hand"/>
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="CalBorder" CornerRadius="8"
-                                                    Background="{TemplateBinding Background}"
-                                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                                    BorderThickness="1">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="CalBorder" Property="Background" Value="#2A00D4FF"/>
-                                                    <Setter TargetName="CalBorder" Property="BorderBrush" Value="#00D4FF"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </Button.Style>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#x2699;" FontSize="13" Foreground="#00D4FF" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Calibration" FontSize="13" Foreground="#DDEAFF" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-
-                    <StackPanel Grid.Column="2"
+                    <StackPanel Grid.Column="1"
                                 Orientation="Horizontal"
                                 VerticalAlignment="Center">
                         <Button Style="{StaticResource WindowChromeButton}"
@@ -1863,15 +1961,14 @@
                         </Border>
 
                         <!-- NAVIGATION -->
-                        <TextBlock Text="WORKSPACE" FontSize="11" FontWeight="Bold" Foreground="#00D4FF" Margin="6,2,0,8"/>
-
-                        <Border Background="#0C1424" BorderBrush="#1B3157" BorderThickness="1" CornerRadius="12" Padding="12,10" Margin="0,0,0,10">
-                            <StackPanel>
-                                <TextBlock Text="Current view" Foreground="#7F899C" FontSize="10.5"/>
-                                <TextBlock x:Name="CurrentPageText" Text="Home" Foreground="#F7FAFF" FontSize="13" FontWeight="SemiBold" Margin="0,4,0,0"/>
-                                <TextBlock Text="Switch between sound control, voice tools, and settings." Foreground="#8EA2C0" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"/>
-                            </StackPanel>
-                        </Border>
+                        <Grid Margin="4,2,4,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE71D;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="#00D4FF" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Grid.Column="1" Text="NAVIGATION" FontSize="11" FontWeight="Bold" Foreground="#00D4FF" VerticalAlignment="Center"/>
+                        </Grid>
 
                         <!-- Home -->
                         <Button Click="NavigateHome_Click"
@@ -1962,14 +2059,14 @@
                         <!-- AUDIO STATUS -->
                         <TextBlock Text="AUDIO STATUS" FontSize="11" FontWeight="Bold" Foreground="#00D4FF" Margin="6,14,0,8"/>
 
-                        <Border Background="#0C1424" BorderBrush="#1B3157" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,0,0,6">
+                        <Border Background="#8C0C1424" BorderBrush="#1B3157" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,0,0,6">
                             <StackPanel>
                                 <Grid Margin="0,0,0,10">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="24"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="&#xE8C6;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="#2CE96E" VerticalAlignment="Center"/>
+                                    <TextBlock Text="&#xE983;" FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="#2CE96E" VerticalAlignment="Center"/>
                                     <StackPanel Grid.Column="1">
                                         <TextBlock Text="Output" FontSize="10.5" Foreground="#7F899C"/>
                                         <TextBlock Text="{Binding CurrentOutputDevice}" FontSize="12.5" Foreground="#DDEAFF" TextTrimming="CharacterEllipsis"/>

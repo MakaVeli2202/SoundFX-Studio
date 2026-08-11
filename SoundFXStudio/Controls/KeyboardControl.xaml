@@ -63,15 +63,6 @@
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Opacity" Value="1" />
-                                <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
-                                <Setter TargetName="GlowLayer" Property="Effect">
-                                    <Setter.Value>
-                                        <effects:DropShadowEffect Color="#00D4FF" BlurRadius="16" ShadowDepth="0" Opacity="0.75" />
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
                             <DataTrigger Binding="{Binding HasAssignment}" Value="False">
                                 <Setter Property="Opacity" Value="0.45" />
                                 <Setter TargetName="Frame" Property="Opacity" Value="0.45" />
@@ -83,11 +74,11 @@
                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                 <Setter Property="Opacity" Value="1" />
                                 <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
-                                <Setter TargetName="GlowLayer" Property="Effect">
-                                    <Setter.Value>
-                                        <effects:DropShadowEffect Color="#7B3FFF" BlurRadius="14" ShadowDepth="0" Opacity="0.72" />
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="GlowLayer" Property="Margin" Value="0" />
+                                <Setter TargetName="GlowLayer" Property="CornerRadius" Value="10" />
+                                <Setter TargetName="GlowLayer" Property="BorderBrush" Value="#7B3FFF" />
+                                <Setter TargetName="GlowLayer" Property="BorderThickness" Value="2" />
+                                <Setter TargetName="GlowLayer" Property="Effect" Value="{x:Null}" />
                             </DataTrigger>
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
@@ -101,6 +92,22 @@
                                 <Setter TargetName="GlowLayer" Property="BorderThickness" Value="2" />
                                 <Setter TargetName="GlowLayer" Property="Effect" Value="{x:Null}" />
                             </MultiDataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="Pressed">
+                                <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
+                                <Setter TargetName="GlowLayer" Property="Margin" Value="0" />
+                                <Setter TargetName="GlowLayer" Property="CornerRadius" Value="10" />
+                                <Setter TargetName="GlowLayer" Property="BorderBrush" Value="{Binding PressHighlightColor}" />
+                                <Setter TargetName="GlowLayer" Property="BorderThickness" Value="2" />
+                                <Setter TargetName="GlowLayer" Property="Effect" Value="{x:Null}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding State}" Value="Playing">
+                                <Setter TargetName="GlowLayer" Property="Opacity" Value="1" />
+                                <Setter TargetName="GlowLayer" Property="Margin" Value="0" />
+                                <Setter TargetName="GlowLayer" Property="CornerRadius" Value="10" />
+                                <Setter TargetName="GlowLayer" Property="BorderBrush" Value="{Binding PressHighlightColor}" />
+                                <Setter TargetName="GlowLayer" Property="BorderThickness" Value="2" />
+                                <Setter TargetName="GlowLayer" Property="Effect" Value="{x:Null}" />
+                            </DataTrigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.4" />
                             </Trigger>
@@ -127,36 +134,111 @@
                             Height="1024"
                             IsHitTestVisible="False"
                             Panel.ZIndex="50">
-                           <Image Width="34"
+                           <Grid Width="34"
                                Height="30"
                                Canvas.Left="{Binding DataContext.CapsLockIndicatorOffsetX, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                               Canvas.Top="{Binding DataContext.CapsLockIndicatorOffsetY, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                               Source="/Assets/Keyboards/LEDOFF.png"
-                               Opacity="1">
-                               <Image.Effect>
+                               Canvas.Top="{Binding DataContext.CapsLockIndicatorOffsetY, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                               <Image Source="/Assets/Keyboards/LEDOFF.png" Opacity="1">
+                                   <Image.Style>
+                                       <Style TargetType="Image">
+                                           <Setter Property="Visibility" Value="Visible"/>
+                                           <Style.Triggers>
+                                               <DataTrigger Binding="{Binding IsCapsLockOn, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                   <Setter Property="Visibility" Value="Collapsed"/>
+                                               </DataTrigger>
+                                           </Style.Triggers>
+                                       </Style>
+                                   </Image.Style>
+                                   <Image.Effect>
                                        <effects:DropShadowEffect Color="#00D4FF" BlurRadius="10" ShadowDepth="0" Opacity="0.9" />
-                               </Image.Effect>
-                           </Image>
-                           <Image Width="34"
+                                   </Image.Effect>
+                               </Image>
+                               <Image Source="/Assets/Keyboards/LEDON.png" Opacity="1">
+                                   <Image.Style>
+                                       <Style TargetType="Image">
+                                           <Setter Property="Visibility" Value="Collapsed"/>
+                                           <Style.Triggers>
+                                               <DataTrigger Binding="{Binding IsCapsLockOn, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                   <Setter Property="Visibility" Value="Visible"/>
+                                               </DataTrigger>
+                                           </Style.Triggers>
+                                       </Style>
+                                   </Image.Style>
+                                   <Image.Effect>
+                                       <effects:DropShadowEffect Color="#00D4FF" BlurRadius="10" ShadowDepth="0" Opacity="0.9" />
+                                   </Image.Effect>
+                               </Image>
+                           </Grid>
+                           <Grid Width="34"
                                Height="30"
                                Canvas.Left="{Binding DataContext.NumLockIndicatorOffsetX, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                               Canvas.Top="{Binding DataContext.NumLockIndicatorOffsetY, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                               Source="/Assets/Keyboards/LEDOFF.png"
-                               Opacity="1">
-                               <Image.Effect>
+                               Canvas.Top="{Binding DataContext.NumLockIndicatorOffsetY, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                               <Image Source="/Assets/Keyboards/LEDOFF.png" Opacity="1">
+                                   <Image.Style>
+                                       <Style TargetType="Image">
+                                           <Setter Property="Visibility" Value="Visible"/>
+                                           <Style.Triggers>
+                                               <DataTrigger Binding="{Binding IsNumLockOn, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                   <Setter Property="Visibility" Value="Collapsed"/>
+                                               </DataTrigger>
+                                           </Style.Triggers>
+                                       </Style>
+                                   </Image.Style>
+                                   <Image.Effect>
                                        <effects:DropShadowEffect Color="#00D4FF" BlurRadius="10" ShadowDepth="0" Opacity="0.9" />
-                               </Image.Effect>
-                           </Image>
-                           <Image Width="34"
+                                   </Image.Effect>
+                               </Image>
+                               <Image Source="/Assets/Keyboards/LEDON.png" Opacity="1">
+                                   <Image.Style>
+                                       <Style TargetType="Image">
+                                           <Setter Property="Visibility" Value="Collapsed"/>
+                                           <Style.Triggers>
+                                               <DataTrigger Binding="{Binding IsNumLockOn, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                   <Setter Property="Visibility" Value="Visible"/>
+                                               </DataTrigger>
+                                           </Style.Triggers>
+                                       </Style>
+                                   </Image.Style>
+                                   <Image.Effect>
+                                       <effects:DropShadowEffect Color="#00D4FF" BlurRadius="10" ShadowDepth="0" Opacity="0.9" />
+                                   </Image.Effect>
+                               </Image>
+                           </Grid>
+                           <Grid Width="34"
                                Height="30"
                                Canvas.Left="{Binding DataContext.ScrollLockIndicatorOffsetX, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                               Canvas.Top="{Binding DataContext.ScrollLockIndicatorOffsetY, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                               Source="/Assets/Keyboards/LEDOFF.png"
-                               Opacity="1">
-                               <Image.Effect>
+                               Canvas.Top="{Binding DataContext.ScrollLockIndicatorOffsetY, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                               <Image Source="/Assets/Keyboards/LEDOFF.png" Opacity="1">
+                                   <Image.Style>
+                                       <Style TargetType="Image">
+                                           <Setter Property="Visibility" Value="Visible"/>
+                                           <Style.Triggers>
+                                               <DataTrigger Binding="{Binding IsScrollLockOn, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                   <Setter Property="Visibility" Value="Collapsed"/>
+                                               </DataTrigger>
+                                           </Style.Triggers>
+                                       </Style>
+                                   </Image.Style>
+                                   <Image.Effect>
                                        <effects:DropShadowEffect Color="#00D4FF" BlurRadius="10" ShadowDepth="0" Opacity="0.9" />
-                               </Image.Effect>
-                           </Image>
+                                   </Image.Effect>
+                               </Image>
+                               <Image Source="/Assets/Keyboards/LEDON.png" Opacity="1">
+                                   <Image.Style>
+                                       <Style TargetType="Image">
+                                           <Setter Property="Visibility" Value="Collapsed"/>
+                                           <Style.Triggers>
+                                               <DataTrigger Binding="{Binding IsScrollLockOn, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                   <Setter Property="Visibility" Value="Visible"/>
+                                               </DataTrigger>
+                                           </Style.Triggers>
+                                       </Style>
+                                   </Image.Style>
+                                   <Image.Effect>
+                                       <effects:DropShadowEffect Color="#00D4FF" BlurRadius="10" ShadowDepth="0" Opacity="0.9" />
+                                   </Image.Effect>
+                               </Image>
+                           </Grid>
                           </Canvas>
 
             <ItemsControl ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -207,6 +289,18 @@
                                                         <Setter Property="BorderBrush" Value="#A78BFA"/>
                                                         <Setter Property="BorderThickness" Value="2"/>
                                                     </MultiDataTrigger>
+                                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                        <Setter Property="BorderBrush" Value="#A78BFA"/>
+                                                        <Setter Property="BorderThickness" Value="2"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding State}" Value="Pressed">
+                                                        <Setter Property="BorderBrush" Value="{Binding PressHighlightColor}"/>
+                                                        <Setter Property="BorderThickness" Value="2"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding State}" Value="Playing">
+                                                        <Setter Property="BorderBrush" Value="{Binding PressHighlightColor}"/>
+                                                        <Setter Property="BorderThickness" Value="2"/>
+                                                    </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
@@ -237,6 +331,29 @@
                                                                 AlignmentY="Center" />
                                                 </Border.Background>
                                             </Border>
+
+                                            <Grid Margin="4,2,4,2">
+                                                <TextBlock Text="{Binding DisplayLabel}"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           TextAlignment="Center"
+                                                           TextWrapping="NoWrap"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Opacity="1">
+                                                    <TextBlock.Foreground>
+                                                        <MultiBinding Converter="{StaticResource KeyboardLabelForegroundConverter}">
+                                                            <Binding Path="State" />
+                                                            <Binding Path="DataContext.Settings.KeyboardPressedTextColor"
+                                                                     RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                                        </MultiBinding>
+                                                    </TextBlock.Foreground>
+                                                    <TextBlock.Effect>
+                                                        <DropShadowEffect Color="#000000" BlurRadius="3" ShadowDepth="0" Opacity="0.85" />
+                                                    </TextBlock.Effect>
+                                                </TextBlock>
+                                            </Grid>
                                         </Grid>
                                     </Border>
                                 </Grid>
@@ -257,29 +374,6 @@
                                             </TextBlock.Effect>
                                         </TextBlock>
                                     </Viewbox>
-                                </Grid>
-
-                                <Grid Margin="6,4,6,4">
-                                    <TextBlock Text="{Binding DisplayLabel}"
-                                               FontSize="11"
-                                               FontWeight="SemiBold"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               TextAlignment="Center"
-                                               TextWrapping="NoWrap"
-                                               TextTrimming="CharacterEllipsis"
-                                               Opacity="1">
-                                        <TextBlock.Foreground>
-                                            <MultiBinding Converter="{StaticResource KeyboardLabelForegroundConverter}">
-                                                <Binding Path="State" />
-                                                <Binding Path="DataContext.Settings.KeyboardPressedTextColor"
-                                                         RelativeSource="{RelativeSource AncestorType=UserControl}" />
-                                            </MultiBinding>
-                                        </TextBlock.Foreground>
-                                        <TextBlock.Effect>
-                                            <DropShadowEffect Color="#000000" BlurRadius="3" ShadowDepth="0" Opacity="0.85" />
-                                        </TextBlock.Effect>
-                                    </TextBlock>
                                 </Grid>
                             </Grid>
                         </Button>

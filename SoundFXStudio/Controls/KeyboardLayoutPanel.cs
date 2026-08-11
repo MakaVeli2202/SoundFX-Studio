@@ -231,8 +231,8 @@ public sealed class KeyboardLayoutPanel : Panel
             var keyOverride = GetPerKeyOverride(key);
             var baseWidth = Math.Max(1d, (key.WidthUnits * KeyUnit) + specialOverride.WidthAdjustment + keyOverride.WidthAdjustment);
             var baseHeight = Math.Max(1d, (key.HeightUnits * KeyUnit) + keyOverride.HeightAdjustment);
-            var width = Math.Max(1d, baseWidth * ButtonScale);
-            var height = Math.Max(1d, baseHeight * ButtonScale);
+            var width = Math.Max(1d, (baseWidth * ButtonScale) + clusterCalibration.WidthAdjustment);
+            var height = Math.Max(1d, (baseHeight * ButtonScale) + clusterCalibration.HeightAdjustment);
 
             // Keep scaled keys centered within their logical slot so global spacing stays stable.
             var x = OffsetX + clusterCalibration.OffsetX + key.ColumnIndex * (KeyUnit + GapX) + keyOverride.OffsetX + ((baseWidth - width) / 2d);
@@ -258,11 +258,14 @@ public sealed class KeyboardLayoutPanel : Panel
 
     private static Size GetKeySlotSize(KeyboardKey key)
     {
+        var clusterCalibration = KeyboardClusterLayout.Get(GetCluster(key));
         var specialOverride = GetSpecialOverride(key);
         var keyOverride = GetPerKeyOverride(key);
         var baseWidth = Math.Max(1d, (key.WidthUnits * KeyUnit) + specialOverride.WidthAdjustment + keyOverride.WidthAdjustment);
         var baseHeight = Math.Max(1d, (key.HeightUnits * KeyUnit) + keyOverride.HeightAdjustment);
-        return new Size(Math.Max(1d, baseWidth * ButtonScale), Math.Max(1d, baseHeight * ButtonScale));
+        return new Size(
+            Math.Max(1d, (baseWidth * ButtonScale) + clusterCalibration.WidthAdjustment),
+            Math.Max(1d, (baseHeight * ButtonScale) + clusterCalibration.HeightAdjustment));
     }
 
     private static PerKeyOverride GetPerKeyOverride(KeyboardKey key)

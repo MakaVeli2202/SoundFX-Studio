@@ -128,6 +128,12 @@ public sealed class MainViewModel : ObservableObject
             UpdateTitle,
             RaiseSoundCollectionStats);
 
+        _keyboardViewModel.LockIndicatorStateChanged += () => RunOnUiThread(() =>
+        {
+            OnPropertyChanged(nameof(IsCapsLockOn));
+            OnPropertyChanged(nameof(IsNumLockOn));
+            OnPropertyChanged(nameof(IsScrollLockOn));
+        });
         _soundLibraryViewModel = new SoundLibraryViewModel(
             _configService,
             _audioPlayer,
@@ -328,6 +334,30 @@ public sealed class MainViewModel : ObservableObject
             OnPropertyChanged(nameof(KeyboardLayout));
         }
     }
+
+    public double KeyboardWindowScale
+    {
+        get => GetKeyboardCalibration().KeyboardWindowScale;
+        set
+        {
+            var clamped = Math.Clamp(value, 0.5, 2.0);
+            var calibration = GetKeyboardCalibration();
+            if (Math.Abs(calibration.KeyboardWindowScale - clamped) < double.Epsilon)
+            {
+                return;
+            }
+
+            calibration.KeyboardWindowScale = clamped;
+            SaveKeyboardCalibrationSettings();
+            OnPropertyChanged();
+        }
+    }
+
+    public bool IsCapsLockOn => _keyboardViewModel.IsCapsLockOn;
+
+    public bool IsNumLockOn => _keyboardViewModel.IsNumLockOn;
+
+    public bool IsScrollLockOn => _keyboardViewModel.IsScrollLockOn;
 
     public double CapsLockIndicatorOffsetX => GetKeyboardCalibration().CapsLockIndicatorOffsetX;
 
@@ -1417,7 +1447,25 @@ public sealed class MainViewModel : ObservableObject
             calibration.ArrowOffsetX,
             calibration.ArrowOffsetY,
             calibration.NumpadOffsetX,
-            calibration.NumpadOffsetY);
+            calibration.NumpadOffsetY,
+            calibration.EscWidthAdjustment,
+            calibration.EscHeightAdjustment,
+            calibration.F1ToF4WidthAdjustment,
+            calibration.F1ToF4HeightAdjustment,
+            calibration.F5ToF8WidthAdjustment,
+            calibration.F5ToF8HeightAdjustment,
+            calibration.F9ToF12WidthAdjustment,
+            calibration.F9ToF12HeightAdjustment,
+            calibration.PrintScrollPauseWidthAdjustment,
+            calibration.PrintScrollPauseHeightAdjustment,
+            calibration.MainTypingWidthAdjustment,
+            calibration.MainTypingHeightAdjustment,
+            calibration.NavigationWidthAdjustment,
+            calibration.NavigationHeightAdjustment,
+            calibration.ArrowWidthAdjustment,
+            calibration.ArrowHeightAdjustment,
+            calibration.NumpadWidthAdjustment,
+            calibration.NumpadHeightAdjustment);
 
         KeyboardLayoutPanel.ClearAllSpecialKeyOverrides();
         KeyboardLayoutPanel.SetSpecialKeyOverride("SPACE", calibration.SpacebarWidthAdjustment);

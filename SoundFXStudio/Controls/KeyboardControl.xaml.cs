@@ -57,6 +57,24 @@ public partial class KeyboardControl : UserControl
         typeof(KeyboardControl),
         new PropertyMetadata(0d));
 
+    public static readonly DependencyProperty IsCapsLockOnProperty = DependencyProperty.Register(
+        nameof(IsCapsLockOn),
+        typeof(bool),
+        typeof(KeyboardControl),
+        new PropertyMetadata(false));
+
+    public static readonly DependencyProperty IsNumLockOnProperty = DependencyProperty.Register(
+        nameof(IsNumLockOn),
+        typeof(bool),
+        typeof(KeyboardControl),
+        new PropertyMetadata(false));
+
+    public static readonly DependencyProperty IsScrollLockOnProperty = DependencyProperty.Register(
+        nameof(IsScrollLockOn),
+        typeof(bool),
+        typeof(KeyboardControl),
+        new PropertyMetadata(false));
+
     public KeyboardControl()
     {
         InitializeComponent();
@@ -135,5 +153,23 @@ public partial class KeyboardControl : UserControl
     {
         get => (double)GetValue(InnerOffsetYPercentProperty);
         set => SetValue(InnerOffsetYPercentProperty, value);
+    }
+
+    public bool IsCapsLockOn
+    {
+        get => (bool)GetValue(IsCapsLockOnProperty);
+        set => SetValue(IsCapsLockOnProperty, value);
+    }
+
+    public bool IsNumLockOn
+    {
+        get => (bool)GetValue(IsNumLockOnProperty);
+        set => SetValue(IsNumLockOnProperty, value);
+    }
+
+    public bool IsScrollLockOn
+    {
+        get => (bool)GetValue(IsScrollLockOnProperty);
+        set => SetValue(IsScrollLockOnProperty, value);
     }
 }

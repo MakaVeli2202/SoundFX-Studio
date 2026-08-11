@@ -14,16 +14,16 @@ public class KeyboardCalibrationSettings
     public double InnerSectionInsetYPercent { get; set; }
     public double InnerSectionOffsetXPercent { get; set; }
     public double InnerSectionOffsetYPercent { get; set; }
-    public double KeyboardWindowScale { get; set; } = 0.85;
-    public double OpenKeyboardButtonX { get; set; } = 52;
-    public double OpenKeyboardButtonY { get; set; } = 218;
-    public double OpenKeyboardButtonWidth { get; set; } = 275;
-    public double OpenKeyboardButtonHeight { get; set; } = 54;
+    public double KeyboardWindowScale { get; set; } = 0.8;
+    public double OpenKeyboardButtonX { get; set; } = 36;
+    public double OpenKeyboardButtonY { get; set; } = 488;
+    public double OpenKeyboardButtonWidth { get; set; } = 220;
+    public double OpenKeyboardButtonHeight { get; set; } = 48;
     public bool DebugCalibration { get; set; }
 
-    public double CapsLockIndicatorOffsetX { get; set; } = 1235;
+    public double CapsLockIndicatorOffsetX { get; set; } = 1297;
     public double CapsLockIndicatorOffsetY { get; set; } = 252;
-    public double NumLockIndicatorOffsetX { get; set; } = 1297;
+    public double NumLockIndicatorOffsetX { get; set; } = 1235;
     public double NumLockIndicatorOffsetY { get; set; } = 252;
     public double ScrollLockIndicatorOffsetX { get; set; } = 1359;
     public double ScrollLockIndicatorOffsetY { get; set; } = 252;
@@ -47,6 +47,26 @@ public class KeyboardCalibrationSettings
     public double ArrowOffsetY { get; set; }
     public double NumpadOffsetX { get; set; }
     public double NumpadOffsetY { get; set; }
+
+    // Per-cluster key size adjustments in pixels.
+    public double EscWidthAdjustment { get; set; }
+    public double EscHeightAdjustment { get; set; }
+    public double F1ToF4WidthAdjustment { get; set; }
+    public double F1ToF4HeightAdjustment { get; set; }
+    public double F5ToF8WidthAdjustment { get; set; }
+    public double F5ToF8HeightAdjustment { get; set; }
+    public double F9ToF12WidthAdjustment { get; set; }
+    public double F9ToF12HeightAdjustment { get; set; }
+    public double PrintScrollPauseWidthAdjustment { get; set; }
+    public double PrintScrollPauseHeightAdjustment { get; set; }
+    public double MainTypingWidthAdjustment { get; set; }
+    public double MainTypingHeightAdjustment { get; set; }
+    public double NavigationWidthAdjustment { get; set; }
+    public double NavigationHeightAdjustment { get; set; }
+    public double ArrowWidthAdjustment { get; set; }
+    public double ArrowHeightAdjustment { get; set; }
+    public double NumpadWidthAdjustment { get; set; }
+    public double NumpadHeightAdjustment { get; set; }
 
     // Legacy special-key width adjustments kept for migration compatibility.
     public double SpacebarWidthAdjustment { get; set; }

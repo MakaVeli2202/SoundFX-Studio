@@ -35,6 +35,8 @@ public sealed class KeyboardViewModel
     private readonly Action<Action> _runOnUiThread;
     private readonly Action _updateTitle;
     private readonly Action _raiseSoundCollectionStats;
+    public event Action? LockIndicatorStateChanged;
+
     private readonly HashSet<Key> _pressedKeys = new();
     private readonly HashSet<string> _pressedTriggerTokens = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, CancellationTokenSource> _unhighlightTimers = new();
@@ -83,6 +85,14 @@ public sealed class KeyboardViewModel
     {
         _chordRuntimeService = chordRuntimeService;
     }
+
+    public bool IsCapsLockOn => (GetKeyState(VK_CAPITAL) & 1) != 0;
+
+    public bool IsNumLockOn => (GetKeyState(VK_NUMLOCK) & 1) != 0;
+
+    public bool IsScrollLockOn => (GetKeyState(VK_SCROLL) & 1) != 0;
+
+    public void RefreshLockIndicatorStates() => LockIndicatorStateChanged?.Invoke();
 
     public void RebuildKeyboard()
     {
@@ -167,7 +177,6 @@ public sealed class KeyboardViewModel
             key.InnerOffsetYAdjustmentPercent = keyOverride?.InnerOffsetYAdjustmentPercent ?? 0;
             key.IsSelected = string.Equals(key.Id, selectedKeyId, StringComparison.OrdinalIgnoreCase);
             UpdateKeyVisualState(key);
-            ApplyLockKeyVisualState(key);
             key.IsEnabled = true;
         }
     }
@@ -235,25 +244,13 @@ public sealed class KeyboardViewModel
 
             _pressedKeys.Remove(key);
 
-            if (key == Key.CapsLock)
+            if (key is Key.CapsLock or Key.NumLock or Key.Scroll)
             {
-                bool isOn = (GetKeyState(VK_CAPITAL) & 1) != 0;
-                keyboardKey.IsSelected = isOn;
+                RefreshLockIndicatorStates();
+                return;
             }
-            else if (key == Key.NumLock)
-            {
-                bool isOn = (GetKeyState(VK_NUMLOCK) & 1) != 0;
-                keyboardKey.IsSelected = isOn;
-            }
-            else if (key == Key.Scroll)
-            {
-                bool isOn = (GetKeyState(VK_SCROLL) & 1) != 0;
-                keyboardKey.IsSelected = isOn;
-            }
-            else
-            {
-                keyboardKey.IsSelected = false;
-            }
+
+            keyboardKey.IsSelected = false;
         });
     }
 
@@ -282,6 +279,13 @@ public sealed class KeyboardViewModel
                 }
 
                 _pressedKeys.Add(key);
+
+                if (key is Key.CapsLock or Key.NumLock or Key.Scroll)
+                {
+                    _ = _chordRuntimeService?.HandleKeyDownAsync(token);
+                    return;
+                }
+
                 keyboardKey.IsSelected = true;
                 FlashKey(keyboardKey);
                 _ = _chordRuntimeService?.HandleKeyDownAsync(token);
@@ -311,25 +315,14 @@ public sealed class KeyboardViewModel
 
                 _pressedKeys.Remove(key);
 
-                if (key == Key.CapsLock)
+                if (key is Key.CapsLock or Key.NumLock or Key.Scroll)
                 {
-                    bool isOn = (GetKeyState(VK_CAPITAL) & 1) != 0;
-                    keyboardKey.IsSelected = isOn;
+                    RefreshLockIndicatorStates();
+                    _ = _chordRuntimeService?.HandleKeyUpAsync(token);
+                    return;
                 }
-                else if (key == Key.NumLock)
-                {
-                    bool isOn = (GetKeyState(VK_NUMLOCK) & 1) != 0;
-                    keyboardKey.IsSelected = isOn;
-                }
-                else if (key == Key.Scroll)
-                {
-                    bool isOn = (GetKeyState(VK_SCROLL) & 1) != 0;
-                    keyboardKey.IsSelected = isOn;
-                }
-                else
-                {
-                    keyboardKey.IsSelected = false;
-                }
+
+                keyboardKey.IsSelected = false;
 
                 _ = _chordRuntimeService?.HandleKeyUpAsync(token);
             }
@@ -344,6 +337,7 @@ public sealed class KeyboardViewModel
         }
 
         _setSelectedKey(key);
+        FlashKey(key);
 
         if (key.AssignedSoundId is null)
         {
@@ -373,22 +367,6 @@ public sealed class KeyboardViewModel
         }
 
         key.State = key.HasAssignment ? KeyState.Assigned : KeyState.Empty;
-    }
-
-    private static void ApplyLockKeyVisualState(KeyboardKey key)
-    {
-        bool isOn = key.KeyName switch
-        {
-            "CAPS LOCK" => (GetKeyState(VK_CAPITAL) & 1) != 0,
-            "NUM LOCK" => (GetKeyState(VK_NUMLOCK) & 1) != 0,
-            "SCROLL LOCK" => (GetKeyState(VK_SCROLL) & 1) != 0,
-            _ => false
-        };
-
-        if (isOn)
-        {
-            key.IsSelected = true;
-        }
     }
 
     public async Task TrackPlaybackAsync(string soundId, string? keyId)

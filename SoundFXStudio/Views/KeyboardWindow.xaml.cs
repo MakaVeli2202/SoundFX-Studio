@@ -49,11 +49,6 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
             _selectedWindowScale = clamped;
             OnPropertyChanged();
 
-            if (ScaleDisplay is not null)
-            {
-                ScaleDisplay.Text = $"{clamped * 100:F0}%";
-            }
-
             if (!_suppressSelectionEvents)
             {
                 PersistWindowScale();
@@ -214,16 +209,6 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         ViewModel?.ToggleSoundboardMode();
     }
 
-    private void ZoomInScale_Click(object sender, RoutedEventArgs e)
-    {
-        SelectedWindowScale += 0.05;
-    }
-
-    private void ZoomOutScale_Click(object sender, RoutedEventArgs e)
-    {
-        SelectedWindowScale -= 0.05;
-    }
-
     private void ReloadWindowScale()
     {
         if (ViewModel is null)
@@ -236,7 +221,7 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         _suppressSelectionEvents = true;
         try
         {
-            SelectedWindowScale = calibration.KeyboardWindowScale > 0 ? calibration.KeyboardWindowScale : 1.0;
+            SelectedWindowScale = calibration.KeyboardWindowScale > 0 ? calibration.KeyboardWindowScale : 0.8;
             PreviewButtonScale = calibration.ButtonScale > 0 ? calibration.ButtonScale : 1.0;
             PreviewInnerInsetXPercent = Math.Abs(calibration.InnerSectionInsetXPercent) > double.Epsilon ? calibration.InnerSectionInsetXPercent : calibration.InnerSectionInsetPercent;
             PreviewInnerInsetYPercent = Math.Abs(calibration.InnerSectionInsetYPercent) > double.Epsilon ? calibration.InnerSectionInsetYPercent : calibration.InnerSectionInsetPercent;
@@ -315,6 +300,7 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         var scale = Math.Min(Width / BaseKeyboardWidth, Height / BaseKeyboardHeight);
         var inset = Math.Max(8, 10 * scale);
         TopControls.Margin = new Thickness(inset, inset, inset, inset);
+        BottomControls.Margin = new Thickness(0, 0, 0, Math.Max(8, 14 * scale));
     }
 
     private void UpdateWindowClip()

@@ -62,79 +62,74 @@
                                       InnerInsetYPercent="{Binding PreviewInnerInsetYPercent, RelativeSource={RelativeSource AncestorType=Window}}"
                                       InnerOffsetXPercent="{Binding PreviewInnerOffsetXPercent, RelativeSource={RelativeSource AncestorType=Window}}"
                                       InnerOffsetYPercent="{Binding PreviewInnerOffsetYPercent, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      IsCapsLockOn="{Binding ViewModel.IsCapsLockOn, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      IsNumLockOn="{Binding ViewModel.IsNumLockOn, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      IsScrollLockOn="{Binding ViewModel.IsScrollLockOn, RelativeSource={RelativeSource AncestorType=Window}}"
                                        />
         </Viewbox>
 
-                <Border HorizontalAlignment="Left"
-                VerticalAlignment="Top"
-                Margin="18"
-                Padding="16,12"
-                CornerRadius="16"
-                Background="#D4141E2D"
-                BorderBrush="#3D4C6987"
-                BorderThickness="1">
-            <StackPanel>
-                <TextBlock Text="KEYBOARD" Foreground="#00D4FF" FontSize="11" FontWeight="Bold"/>
-                <TextBlock Text="Preview and trigger assigned sounds in one place." Foreground="#DDE7F8" FontSize="13.5" FontWeight="SemiBold" Margin="0,4,0,0"/>
-                <TextBlock Text="Use the status pill to confirm whether the soundboard is live." Foreground="#8EA2C0" FontSize="11.5" Margin="0,6,0,0"/>
-            </StackPanel>
-        </Border>
+                <Border x:Name="BottomControls"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Bottom"
+                        Margin="0,0,0,18"
+                        Padding="10,8"
+                        CornerRadius="12"
+                        Background="{StaticResource SurfaceRaisedBrush}"
+                        BorderBrush="{StaticResource BorderAccentBrush}"
+                        BorderThickness="1"
+                        Style="{StaticResource SurfaceCardStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <Border x:Name="SoundboardStatusBar" CornerRadius="5" BorderThickness="1" BorderBrush="#558B5CF6">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="#1410B981"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ViewModel.IsSoundboardActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="False">
+                                            <Setter Property="Background" Value="#14F43F5E"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock x:Name="SoundboardStatusText"
+                                       Text="{Binding ViewModel.IsSoundboardActiveText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                       Foreground="{Binding ViewModel.IsSoundboardActiveColor, RelativeSource={RelativeSource AncestorType=Window}}"
+                                       FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0"/>
+                        </Border>
+                        <Button x:Name="SoundboardToggleButton" Margin="8,0,0,0" Click="SoundboardToggleButton_Click">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource TopBtn}">
+                                    <Setter Property="Content" Value="ON"/>
+                                    <Setter Property="Foreground" Value="#10B981"/>
+                                    <Setter Property="FontSize" Value="10"/>
+                                    <Setter Property="Padding" Value="6,2"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ViewModel.IsSoundboardActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="False">
+                                            <Setter Property="Content" Value="OFF"/>
+                                            <Setter Property="Foreground" Value="#F43F5E"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+                </Border>
 
-        <!-- Top-right controls: status, scale, close -->
-        <StackPanel x:Name="TopControls"
-            HorizontalAlignment="Right"
-            VerticalAlignment="Top"
-            Margin="18">
+                <!-- Top-right controls: close -->
+                <StackPanel x:Name="TopControls"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="18">
 
-            <Border Padding="10,8" CornerRadius="12" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderAccentBrush}" BorderThickness="1" Style="{StaticResource SurfaceCardStyle}">
-                <StackPanel Orientation="Horizontal">
-                    <Border x:Name="SoundboardStatusBar" CornerRadius="5" BorderThickness="1" BorderBrush="#558B5CF6">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="Background" Value="#1410B981"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ViewModel.IsSoundboardActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="False">
-                                        <Setter Property="Background" Value="#14F43F5E"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock x:Name="SoundboardStatusText"
-                                   Text="{Binding ViewModel.IsSoundboardActiveText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                   Foreground="{Binding ViewModel.IsSoundboardActiveColor, RelativeSource={RelativeSource AncestorType=Window}}"
-                                   FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="10,0"/>
+                    <Border Padding="8,6" CornerRadius="12" Background="{StaticResource SurfaceRaisedBrush}" BorderBrush="{StaticResource BorderAccentBrush}" BorderThickness="1" Style="{StaticResource SurfaceCardStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource TopBtn}" Content="&#x2715;" FontSize="12" Click="CloseButton_Click"
+                                    Foreground="#FF8A8A"/>
+                        </StackPanel>
                     </Border>
-                    <Button x:Name="SoundboardToggleButton" Margin="8,0,0,0" Click="SoundboardToggleButton_Click">
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource TopBtn}">
-                                <Setter Property="Content" Value="ON"/>
-                                <Setter Property="Foreground" Value="#10B981"/>
-                                <Setter Property="FontSize" Value="10"/>
-                                <Setter Property="Padding" Value="6,2"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ViewModel.IsSoundboardActive, RelativeSource={RelativeSource AncestorType=Window}}" Value="False">
-                                        <Setter Property="Content" Value="OFF"/>
-                                        <Setter Property="Foreground" Value="#F43F5E"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                    <Border Width="1" Background="#5A00D4FF" Margin="8,2,8,2"/>
-                    <Button Style="{StaticResource TopBtn}" Content="−" FontSize="16" Click="ZoomOutScale_Click"/>
-                    <TextBlock x:Name="ScaleDisplay" Text="100%" VerticalAlignment="Center"
-                               Width="44" TextAlignment="Center" FontSize="11" Foreground="#AABBCC"
-                               FontWeight="SemiBold"/>
-                    <Button Style="{StaticResource TopBtn}" Content="+" FontSize="14" Click="ZoomInScale_Click"/>
-                    <Border Width="1" Background="#5A00D4FF" Margin="8,2,8,2"/>
-                    <Button Style="{StaticResource TopBtn}" Content="&#x2715;" FontSize="12" Click="CloseButton_Click"
-                            Foreground="#FF8A8A"/>
+
+                    <Border x:Name="StatusHudGlow" Margin="2" CornerRadius="12" BorderBrush="#3F00D4FF" BorderThickness="1" IsHitTestVisible="False" Opacity="0.2"/>
+
                 </StackPanel>
-            </Border>
-
-            <Border x:Name="StatusHudGlow" Margin="2" CornerRadius="12" BorderBrush="#3F00D4FF" BorderThickness="1" IsHitTestVisible="False" Opacity="0.2"/>
-
-        </StackPanel>
     </Grid>
 
     <Window.Triggers>

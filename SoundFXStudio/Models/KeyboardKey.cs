@@ -104,6 +104,26 @@ public class KeyboardKey : ObservableObject
         set => SetProperty(ref _columnIndex, value);
     }
 
+    public string PressHighlightColor { get; } = GenerateRandomHighlightColor();
+
+    private static readonly System.Random HighlightColorRandom = new();
+
+    private static string GenerateRandomHighlightColor()
+    {
+        var hue = HighlightColorRandom.NextDouble() * 360d;
+        var r = HsvChannel(hue, 5d / 3d, 0.85d);
+        var g = HsvChannel(hue, 1d / 3d, 0.85d);
+        var b = HsvChannel(hue, 0d, 0.85d);
+        return $"#{r:X2}{g:X2}{b:X2}";
+    }
+
+    private static int HsvChannel(double hue, double phase, double value)
+    {
+        var k = (phase + hue / 60d) % 6d;
+        var channel = value - value * Math.Max(0d, Math.Min(Math.Min(k, 4d - k), 1d));
+        return (int)Math.Round(channel * 255d);
+    }
+
     public string? ImagePath
     {
         get => _imagePath;
