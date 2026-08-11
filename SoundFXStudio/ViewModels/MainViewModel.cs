@@ -719,12 +719,15 @@ public sealed class MainViewModel : ObservableObject
 
     private bool _toggleKeyDown;
     private bool _voiceChangerToggleKeyDown;
+    private readonly HashSet<Key> _pressedGlobalKeys = new();
 
     [DllImport("user32.dll")]
     private static extern short GetAsyncKeyState(int vKey);
 
     private void HandleGlobalKey(Key key, bool isKeyDown)
     {
+        TrackPressedKey(key, isKeyDown);
+
         if (HandleVoiceChangerToggleKey(key, isKeyDown))
         {
             return;
@@ -755,8 +758,8 @@ public sealed class MainViewModel : ObservableObject
             if (isKeyDown)
             {
                 if (!_voiceChangerToggleKeyDown
-                    && ((key == firstChordKey && IsKeyDown(secondChordKey))
-                        || (key == secondChordKey && IsKeyDown(firstChordKey))))
+                    && ((key == firstChordKey && _pressedGlobalKeys.Contains(secondChordKey))
+                        || (key == secondChordKey && _pressedGlobalKeys.Contains(firstChordKey))))
                 {
                     _voiceChangerToggleKeyDown = true;
                     VoiceChangerToggleRequested?.Invoke();
@@ -820,8 +823,17 @@ public sealed class MainViewModel : ObservableObject
     private static bool IsModifierDown(Key key)
         => (GetAsyncKeyState(KeyInterop.VirtualKeyFromKey(key)) & 0x8000) != 0;
 
-    private static bool IsKeyDown(Key key)
-        => (GetAsyncKeyState(KeyInterop.VirtualKeyFromKey(key)) & 0x8000) != 0;
+    private void TrackPressedKey(Key key, bool isKeyDown)
+    {
+        if (isKeyDown)
+        {
+            _pressedGlobalKeys.Add(key);
+        }
+        else
+        {
+            _pressedGlobalKeys.Remove(key);
+        }
+    }
 
     private bool HandleSoundboardToggleKey(Key key, bool isKeyDown)
     {
@@ -1250,6 +1262,8 @@ public sealed class MainViewModel : ObservableObject
 
     public void HandlePreviewKeyDown(System.Windows.Input.KeyEventArgs e)
     {
+        TrackPressedKey(e.Key, isKeyDown: true);
+
         if (IsAssignMode)
         {
             if (TryResolveKeyboardKeyFromPhysicalKey(e.Key) is { } assignKey)
@@ -1291,6 +1305,8 @@ public sealed class MainViewModel : ObservableObject
 
     public void HandlePreviewKeyUp(System.Windows.Input.KeyEventArgs e)
     {
+        TrackPressedKey(e.Key, isKeyDown: false);
+
         if (HandleSoundboardToggleKey(e.Key, isKeyDown: false))
         {
             e.Handled = true;

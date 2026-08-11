@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -101,8 +102,12 @@ public partial class App : Application
 
     public static bool IsVoiceChangerRunning { get; set; }
 
-    private void App_Startup(object sender, StartupEventArgs e)
+    private async void App_Startup(object sender, StartupEventArgs e)
     {
+        var splash = new LoadingScreenWindow();
+        splash.Show();
+        await Dispatcher.Yield(DispatcherPriority.Background);
+
         _logService.Info($"App Version: {Assembly.GetExecutingAssembly().GetName().Version}");
         _logService.Info($"Operating System: {RuntimeInformation.OSDescription}");
 
@@ -134,17 +139,31 @@ public partial class App : Application
             }
         });
 
+        splash.SetStatus("Loading settings…");
         var config = _configService.Load();
         _logService.Enabled = config.Settings.EnableLogging;
 
         if (config.Settings.ShowSetupWizardOnStartup)
         {
+            splash.Close();
             var wizard = new SetupWizardWindow();
             wizard.ShowDialog();
         }
+        else
+        {
+            splash.SetStatus("Preparing dashboard…");
+        }
+
+        await Dispatcher.Yield(DispatcherPriority.Background);
 
         var mainWindow = new MainWindow(_logService);
         MainWindow = mainWindow;
+
+        if (splash.IsVisible)
+        {
+            splash.Close();
+        }
+
         mainWindow.Show();
 
         if (config.Settings.StartMinimized)
@@ -223,18 +242,23 @@ public partial class App : Application
         var dv = new DrawingVisual();
         using (var dc = dv.RenderOpen())
         {
-            dc.DrawRoundedRectangle(
-                new SolidColorBrush(Color.FromRgb(0x00, 0x80, 0xCC)),
-                null,
-                new System.Windows.Rect(0, 0, 32, 32), 7, 7);
-            var ft = new FormattedText("SF",
-                CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight,
-                new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Bold, FontStretches.Normal),
-                16,
-                new SolidColorBrush(Color.FromRgb(0xFF, 0xFF, 0xFF)),
-                96);
-            dc.DrawText(ft, new System.Windows.Point(4, 6));
+            var cyan = new SolidColorBrush(Color.FromRgb(0x00, 0xD4, 0xFF));
+            var cyanPen = new Pen(cyan, 2.0);
+            var darkFill = new SolidColorBrush(Color.FromRgb(0x0A, 0x1B, 0x30));
+
+            var band = new StreamGeometry();
+            using (var ctx = band.Open())
+            {
+                ctx.BeginFigure(new Point(5, 14), isFilled: false, isClosed: false);
+                ctx.ArcTo(new Point(27, 14), new Size(11, 11), 0,
+                    isLargeArc: false, SweepDirection.Counterclockwise,
+                    isStroked: true, isSmoothJoin: true);
+            }
+            band.Freeze();
+            dc.DrawGeometry(null, cyanPen, band);
+
+            dc.DrawRoundedRectangle(darkFill, cyanPen, new Rect(3, 13, 8, 12), 3, 3);
+            dc.DrawRoundedRectangle(darkFill, cyanPen, new Rect(21, 13, 8, 12), 3, 3);
         }
         var rtb = new RenderTargetBitmap(32, 32, 96, 96, PixelFormats.Pbgra32);
         rtb.Render(dv);

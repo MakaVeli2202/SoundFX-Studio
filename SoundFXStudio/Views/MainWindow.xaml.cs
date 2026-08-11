@@ -1056,6 +1056,7 @@ public partial class MainWindow : Window
         Mouse.OverrideCursor = null;
         AdvancedConfigureVmOnlyBtn.IsEnabled = true;
         AdvancedRouteInputOnlyBtn.IsEnabled = true;
+        ViewModel.Refresh();
         SetAdvancedVmStatus(result, result.StartsWith("✓")
             ? Color.FromRgb(0x10, 0xB9, 0x81)
             : Color.FromRgb(0xE8, 0x55, 0x55));
@@ -1094,6 +1095,8 @@ public partial class MainWindow : Window
         config.Settings.InputDeviceId = vmOutputId;
         config.Settings.MicrophoneDeviceId = vmOutputId;
         configService.Save(config);
+
+        ViewModel.Refresh();
 
         var virtualB1Activated = false;
         using (var vm = App.Vm())
