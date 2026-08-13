@@ -21,12 +21,22 @@ public class KeyboardCalibrationSettings
     public double OpenKeyboardButtonHeight { get; set; } = 48;
     public bool DebugCalibration { get; set; }
 
-    public double CapsLockIndicatorOffsetX { get; set; } = 1297;
+    public double CapsLockIndicatorOffsetX { get; set; } = 1235;
     public double CapsLockIndicatorOffsetY { get; set; } = 252;
-    public double NumLockIndicatorOffsetX { get; set; } = 1235;
+    public double NumLockIndicatorOffsetX { get; set; } = 1297;
     public double NumLockIndicatorOffsetY { get; set; } = 252;
     public double ScrollLockIndicatorOffsetX { get; set; } = 1359;
     public double ScrollLockIndicatorOffsetY { get; set; } = 252;
+
+    public double CapsLockIndicatorSize { get; set; } = 34;
+    public double NumLockIndicatorSize { get; set; } = 34;
+    public double ScrollLockIndicatorSize { get; set; } = 34;
+
+    // User-placed positions for the keyboard window floating panels (0 = auto-anchor).
+    public double SoundboardStatusPanelX { get; set; }
+    public double SoundboardStatusPanelY { get; set; }
+    public double CloseButtonPanelX { get; set; }
+    public double CloseButtonPanelY { get; set; }
 
     // Legacy cluster offsets kept for migration compatibility.
     public double EscOffsetX { get; set; }
@@ -47,6 +57,8 @@ public class KeyboardCalibrationSettings
     public double ArrowOffsetY { get; set; }
     public double NumpadOffsetX { get; set; }
     public double NumpadOffsetY { get; set; }
+    public double MainLettersOffsetX { get; set; }
+    public double MainLettersOffsetY { get; set; }
 
     // Per-cluster key size adjustments in pixels.
     public double EscWidthAdjustment { get; set; }
@@ -67,6 +79,17 @@ public class KeyboardCalibrationSettings
     public double ArrowHeightAdjustment { get; set; }
     public double NumpadWidthAdjustment { get; set; }
     public double NumpadHeightAdjustment { get; set; }
+    public double MainLettersWidthAdjustment { get; set; }
+    public double MainLettersHeightAdjustment { get; set; }
+
+    public double MainRowOffsetX1 { get; set; }
+    public double MainRowOffsetY1 { get; set; }
+    public double MainRowOffsetX2 { get; set; }
+    public double MainRowOffsetY2 { get; set; }
+    public double MainRowOffsetX3 { get; set; }
+    public double MainRowOffsetY3 { get; set; }
+    public double MainRowOffsetX4 { get; set; }
+    public double MainRowOffsetY4 { get; set; }
 
     // Legacy special-key width adjustments kept for migration compatibility.
     public double SpacebarWidthAdjustment { get; set; }

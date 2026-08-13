@@ -161,10 +161,11 @@
                             <TextBlock Text="Dial in position, spacing, keycap fit, and overlay precision." FontSize="12.5" Foreground="{StaticResource Muted}" Margin="0,2,0,0"/>
                         </StackPanel>
                     </StackPanel>
-                    <Button Grid.Column="1" Height="36" Margin="0,0,18,0"
-                            Content="&#x2715;" FontSize="16"
-                            Background="#301A2A45" BorderBrush="#4A5A7A" Foreground="White"
-                            Click="CloseButton_Click" Cursor="Hand"/>
+                    <controls:WindowControlBar Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                Margin="0,0,18,0"
+                                                ShowMinimize="False"
+                                                CloseClicked="CloseButton_Click"/>
                 </Grid>
             </Border>
 
@@ -375,58 +376,142 @@
                                 <TextBlock Text="Lock Indicators" FontSize="19" FontWeight="Bold" Foreground="{StaticResource Cyan}" Margin="0,0,0,6"/>
                                 <TextBlock Text="Position the Caps / Num / Scroll lock lights" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,0,0,14"/>
 
-                                <Border BorderBrush="#1E3050" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,8" Background="#0D1525">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="90"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Num Lock" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                                            <Button Style="{StaticResource NudgeBtn}" Content="◀" Tag="NumLockIndicatorOffsetX:-1" Click="NudgeValue_Click"/>
-                                            <TextBlock Text="{Binding NumLockIndicatorOffsetX, StringFormat='{}{0:F0}'}" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
-                                            <Button Style="{StaticResource NudgeBtn}" Content="▶" Tag="NumLockIndicatorOffsetX:1" Click="NudgeValue_Click" Margin="4,0,10,0"/>
-                                            <Button Style="{StaticResource NudgeBtn}" Content="▲" Tag="NumLockIndicatorOffsetY:-1" Click="NudgeValue_Click"/>
-                                            <TextBlock Text="{Binding NumLockIndicatorOffsetY, StringFormat='{}{0:F0}'}" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
-                                            <Button Style="{StaticResource NudgeBtn}" Content="▼" Tag="NumLockIndicatorOffsetY:1" Click="NudgeValue_Click"/>
-                                        </StackPanel>
-                                    </Grid>
+                                <Border BorderBrush="#3A5A7A" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,8" Background="#0D1525">
+                                    <StackPanel>
+                                        <TextBlock Text="All indicators (Caps / Num / Scroll)" FontWeight="SemiBold" FontSize="13" Foreground="#D7E3F5" Margin="0,0,0,8"/>
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="40"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="X" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Style="{StaticResource NudgeBtn}" Content="◀" Tag="X:-1" Click="NudgeAllLamps_Click"/>
+                                                <TextBlock Text="All" Foreground="White" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="▶" Tag="X:1" Click="NudgeAllLamps_Click"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="40"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Y" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Style="{StaticResource NudgeBtn}" Content="▲" Tag="Y:-1" Click="NudgeAllLamps_Click"/>
+                                                <TextBlock Text="All" Foreground="White" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="▼" Tag="Y:1" Click="NudgeAllLamps_Click"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="40"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Size" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Style="{StaticResource NudgeBtn}" Content="−" FontSize="18" Tag="Size:-2" Click="NudgeAllLamps_Click"/>
+                                                <TextBlock Text="All" Foreground="White" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="+" FontSize="18" Tag="Size:2" Click="NudgeAllLamps_Click"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
                                 </Border>
 
                                 <Border BorderBrush="#1E3050" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,8" Background="#0D1525">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="90"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Caps Lock" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                                            <Button Style="{StaticResource NudgeBtn}" Content="◀" Tag="CapsLockIndicatorOffsetX:-1" Click="NudgeValue_Click"/>
-                                            <TextBlock Text="{Binding CapsLockIndicatorOffsetX, StringFormat='{}{0:F0}'}" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
-                                            <Button Style="{StaticResource NudgeBtn}" Content="▶" Tag="CapsLockIndicatorOffsetX:1" Click="NudgeValue_Click" Margin="4,0,10,0"/>
-                                            <Button Style="{StaticResource NudgeBtn}" Content="▲" Tag="CapsLockIndicatorOffsetY:-1" Click="NudgeValue_Click"/>
-                                            <TextBlock Text="{Binding CapsLockIndicatorOffsetY, StringFormat='{}{0:F0}'}" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
-                                            <Button Style="{StaticResource NudgeBtn}" Content="▼" Tag="CapsLockIndicatorOffsetY:1" Click="NudgeValue_Click"/>
-                                        </StackPanel>
-                                    </Grid>
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="90"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Num Lock" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Style="{StaticResource NudgeBtn}" Content="◀" Tag="NumLockIndicatorOffsetX:-1" Click="NudgeValue_Click"/>
+                                                <TextBlock Text="{Binding NumLockIndicatorOffsetX, StringFormat='{}{0:F0}'}" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="▶" Tag="NumLockIndicatorOffsetX:1" Click="NudgeValue_Click" Margin="4,0,10,0"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="▲" Tag="NumLockIndicatorOffsetY:-1" Click="NudgeValue_Click"/>
+                                                <TextBlock Text="{Binding NumLockIndicatorOffsetY, StringFormat='{}{0:F0}'}" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="▼" Tag="NumLockIndicatorOffsetY:1" Click="NudgeValue_Click"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="90"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Size" Foreground="{StaticResource Muted}" FontSize="12" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Style="{StaticResource NudgeBtn}" Content="−" Tag="NumLockIndicatorSize:-2" Click="NudgeValue_Click"/>
+                                                <TextBlock Text="{Binding NumLockIndicatorSize, StringFormat='{}{0:F0}px'}" VerticalAlignment="Center" Width="64" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="+" Tag="NumLockIndicatorSize:2" Click="NudgeValue_Click"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border BorderBrush="#1E3050" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,8" Background="#0D1525">
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="90"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Caps Lock" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Style="{StaticResource NudgeBtn}" Content="◀" Tag="CapsLockIndicatorOffsetX:-1" Click="NudgeValue_Click"/>
+                                                <TextBlock Text="{Binding CapsLockIndicatorOffsetX, StringFormat='{}{0:F0}'}" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="▶" Tag="CapsLockIndicatorOffsetX:1" Click="NudgeValue_Click" Margin="4,0,10,0"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="▲" Tag="CapsLockIndicatorOffsetY:-1" Click="NudgeValue_Click"/>
+                                                <TextBlock Text="{Binding CapsLockIndicatorOffsetY, StringFormat='{}{0:F0}'}" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="▼" Tag="CapsLockIndicatorOffsetY:1" Click="NudgeValue_Click"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="90"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Size" Foreground="{StaticResource Muted}" FontSize="12" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Style="{StaticResource NudgeBtn}" Content="−" Tag="CapsLockIndicatorSize:-2" Click="NudgeValue_Click"/>
+                                                <TextBlock Text="{Binding CapsLockIndicatorSize, StringFormat='{}{0:F0}px'}" VerticalAlignment="Center" Width="64" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="+" Tag="CapsLockIndicatorSize:2" Click="NudgeValue_Click"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
                                 </Border>
 
                                 <Border BorderBrush="#1E3050" BorderThickness="1" CornerRadius="10" Padding="14,10" Background="#0D1525">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="90"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Scroll Lock" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                                            <Button Style="{StaticResource NudgeBtn}" Content="◀" Tag="ScrollLockIndicatorOffsetX:-1" Click="NudgeValue_Click"/>
-                                            <TextBlock Text="{Binding ScrollLockIndicatorOffsetX, StringFormat='{}{0:F0}'}" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
-                                            <Button Style="{StaticResource NudgeBtn}" Content="▶" Tag="ScrollLockIndicatorOffsetX:1" Click="NudgeValue_Click" Margin="4,0,10,0"/>
-                                            <Button Style="{StaticResource NudgeBtn}" Content="▲" Tag="ScrollLockIndicatorOffsetY:-1" Click="NudgeValue_Click"/>
-                                            <TextBlock Text="{Binding ScrollLockIndicatorOffsetY, StringFormat='{}{0:F0}'}" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
-                                            <Button Style="{StaticResource NudgeBtn}" Content="▼" Tag="ScrollLockIndicatorOffsetY:1" Click="NudgeValue_Click"/>
-                                        </StackPanel>
-                                    </Grid>
+                                    <StackPanel>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="90"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Scroll Lock" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Style="{StaticResource NudgeBtn}" Content="◀" Tag="ScrollLockIndicatorOffsetX:-1" Click="NudgeValue_Click"/>
+                                                <TextBlock Text="{Binding ScrollLockIndicatorOffsetX, StringFormat='{}{0:F0}'}" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="▶" Tag="ScrollLockIndicatorOffsetX:1" Click="NudgeValue_Click" Margin="4,0,10,0"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="▲" Tag="ScrollLockIndicatorOffsetY:-1" Click="NudgeValue_Click"/>
+                                                <TextBlock Text="{Binding ScrollLockIndicatorOffsetY, StringFormat='{}{0:F0}'}" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="▼" Tag="ScrollLockIndicatorOffsetY:1" Click="NudgeValue_Click"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="90"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Size" Foreground="{StaticResource Muted}" FontSize="12" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Style="{StaticResource NudgeBtn}" Content="−" Tag="ScrollLockIndicatorSize:-2" Click="NudgeValue_Click"/>
+                                                <TextBlock Text="{Binding ScrollLockIndicatorSize, StringFormat='{}{0:F0}px'}" VerticalAlignment="Center" Width="64" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                <Button Style="{StaticResource NudgeBtn}" Content="+" Tag="ScrollLockIndicatorSize:2" Click="NudgeValue_Click"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
                                 </Border>
                             </StackPanel>
                         </Border>
@@ -492,6 +577,53 @@
                                                         </StackPanel>
                                                     </Grid>
                                                     <Button Content="Reset" Click="ResetSelectedCluster_Click" HorizontalAlignment="Left" Margin="0,8,0,0" Height="28" Padding="14,0" FontSize="11" Cursor="Hand" Background="#1A2A45" BorderBrush="#3A5A7A" Foreground="#D7E3F5" BorderThickness="1"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 4b. LETTER ROW OFFSETS -->
+                        <Border Style="{StaticResource Card}" Padding="20" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Letter Row Offsets" FontSize="19" FontWeight="Bold" Foreground="{StaticResource Cyan}" Margin="0,0,0,6"/>
+                                <TextBlock Text="Shift each letter/symbol row left or right independently. Special keys (Tab, Caps, Shift, Ctrl, Alt, Win, Space, Enter, Backspace) are not affected." Foreground="{StaticResource Muted}" FontSize="12" Margin="0,0,0,14"/>
+
+                                <ItemsControl ItemsSource="{Binding RowItems}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="#1E3050" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,8" Background="#0D1525">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" Foreground="#D7E3F5" Margin="0,0,0,8"/>
+                                                    <Grid Margin="0,0,0,6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="40"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="X" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="◀" Tag="OffsetX:-1" Click="NudgeValue_Click"/>
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="«" Tag="X:-key" Click="NudgeRowKey_Click" Margin="4,0,0,0"/>
+                                                            <TextBlock Text="{Binding OffsetX, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="»" Tag="X:key" Click="NudgeRowKey_Click" Margin="0,0,4,0"/>
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="▶" Tag="OffsetX:1" Click="NudgeValue_Click"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="40"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="Y" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="▲" Tag="OffsetY:-1" Click="NudgeValue_Click"/>
+                                                            <TextBlock Text="{Binding OffsetY, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="▼" Tag="OffsetY:1" Click="NudgeValue_Click"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <Button Content="Reset" Click="ResetSelectedRow_Click" HorizontalAlignment="Left" Margin="0,8,0,0" Height="28" Padding="14,0" FontSize="11" Cursor="Hand" Background="#1A2A45" BorderBrush="#3A5A7A" Foreground="#D7E3F5" BorderThickness="1"/>
                                                 </StackPanel>
                                             </Border>
                                         </DataTemplate>

@@ -11,6 +11,7 @@ public sealed class ChordRuntimeService : IDisposable
     private readonly object _gate = new();
     private readonly HashSet<string> _held = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _session = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<string> _sessionSequence = new();
 
     private bool _overlap;
     private CancellationTokenSource? _timeoutCts;
@@ -42,6 +43,7 @@ public sealed class ChordRuntimeService : IDisposable
 
             _held.Add(normalizedToken);
             _session.Add(normalizedToken);
+            _sessionSequence.Add(normalizedToken);
             if (_held.Count > 1)
             {
                 _overlap = true;
@@ -50,18 +52,19 @@ public sealed class ChordRuntimeService : IDisposable
             var chords = GetAvailableChords().ToList();
 
             var satisfied = chords
-                .Where(chord => chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase).IsSubsetOf(_session))
+                .Where(chord => MultisetEqual(_sessionSequence, chord.Keys.Select(NormalizeToken).ToList()))
                 .OrderByDescending(chord => chord.Keys.Count)
                 .FirstOrDefault();
 
-            if (satisfied is not null && !HasLongerPendingChord(chords, satisfied.Keys.Count, _session))
+            if (satisfied is not null && !HasLongerPendingChord(chords, satisfied.Keys.Count, _sessionSequence))
             {
                 CancelTimeout();
                 _session.Clear();
+                _sessionSequence.Clear();
                 _overlap = false;
                 fireActionId = satisfied.ActionId;
             }
-            else if (CanCompleteChord(chords, _session))
+            else if (CanCompleteChord(chords, _sessionSequence))
             {
                 RestartTimeout(GetChordTimeoutMs());
             }
@@ -138,19 +141,19 @@ public sealed class ChordRuntimeService : IDisposable
 
         lock (_gate)
         {
-            if (token.IsCancellationRequested || _session.Count == 0)
+            if (token.IsCancellationRequested || _sessionSequence.Count == 0)
             {
                 return;
             }
 
             var overlap = _overlap;
-            var pending = _session.ToList();
+            var pending = _sessionSequence.ToList();
             _session.Clear();
+            _sessionSequence.Clear();
             _overlap = false;
 
             if (overlap)
             {
-                // Two or more keys were held together without a matching chord: play nothing.
                 return;
             }
 
@@ -195,23 +198,56 @@ public sealed class ChordRuntimeService : IDisposable
         }
     }
 
-    private static bool CanCompleteChord(IEnumerable<KeyChord> chords, IReadOnlyCollection<string> session)
+    private static bool CanCompleteChord(IEnumerable<KeyChord> chords, IReadOnlyList<string> session)
     {
-        var sessionSet = new HashSet<string>(session, StringComparer.OrdinalIgnoreCase);
+        if (session.Count == 0)
+        {
+            return false;
+        }
+
+        return chords.Any(chord => MultisetCovered(session, chord.Keys.Select(NormalizeToken).ToList()));
+    }
+
+    private static bool HasLongerPendingChord(IEnumerable<KeyChord> chords, int satisfiedSize, IReadOnlyList<string> session)
+    {
+        if (session.Count == 0)
+        {
+            return false;
+        }
+
         return chords.Any(chord =>
         {
-            var keys = chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            return sessionSet.IsSubsetOf(keys);
+            var keys = chord.Keys.Select(NormalizeToken).ToList();
+            if (keys.Count <= satisfiedSize)
+            {
+                return false;
+            }
+
+            return MultisetCovered(session, keys);
         });
     }
 
-    private static bool HasLongerPendingChord(IEnumerable<KeyChord> chords, int satisfiedSize, IReadOnlyCollection<string> session)
+    private static bool MultisetCovered(IReadOnlyList<string> session, IReadOnlyList<string> chordKeys)
     {
-        var sessionSet = new HashSet<string>(session, StringComparer.OrdinalIgnoreCase);
-        return chords.Any(chord =>
-            chord.Keys.Count > satisfiedSize
-            && sessionSet.IsSubsetOf(chord.Keys.Select(NormalizeToken).ToHashSet(StringComparer.OrdinalIgnoreCase)));
+        if (session.Count == 0 || session.Count > chordKeys.Count)
+        {
+            return false;
+        }
+
+        foreach (var group in session.GroupBy(token => NormalizeToken(token), StringComparer.OrdinalIgnoreCase))
+        {
+            var chordCount = chordKeys.Count(key => string.Equals(NormalizeToken(key), group.Key, StringComparison.OrdinalIgnoreCase));
+            if (group.Count() > chordCount)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
+
+    private static bool MultisetEqual(IReadOnlyList<string> session, IReadOnlyList<string> chordKeys)
+        => session.Count == chordKeys.Count && MultisetCovered(session, chordKeys);
 
     private IEnumerable<KeyChord> GetAvailableChords()
     {

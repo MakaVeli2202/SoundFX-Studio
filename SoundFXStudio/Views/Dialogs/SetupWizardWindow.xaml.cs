@@ -162,6 +162,7 @@ public partial class SetupWizardWindow : Window
                 }
 
                 _configService.Save(_config);
+                ToastWindow.ShowDiscordStudioTip();
             }
             else
             {

@@ -7,6 +7,7 @@ public enum KeyboardCluster
     F5ToF8Cluster,
     F9ToF12Cluster,
     PrintScrollPauseCluster,
+    MainLettersCluster,
     MainTypingCluster,
     NavigationCluster,
     ArrowCluster,
@@ -70,6 +71,10 @@ public static class KeyboardClusterLayout
         double arrowOffsetY = 0,
         double numpadOffsetX = 0,
         double numpadOffsetY = 0,
+        double mainLettersOffsetX = 0,
+        double mainLettersOffsetY = 0,
+        double mainLettersWidthAdjustment = 0,
+        double mainLettersHeightAdjustment = 0,
         double escWidthAdjustment = 0,
         double escHeightAdjustment = 0,
         double f1ToF4WidthAdjustment = 0,
@@ -98,6 +103,7 @@ public static class KeyboardClusterLayout
         ClusterCalibrations[KeyboardCluster.NavigationCluster] = new KeyboardClusterCalibration { OffsetX = navigationOffsetX, OffsetY = navigationOffsetY, WidthAdjustment = navigationWidthAdjustment, HeightAdjustment = navigationHeightAdjustment };
         ClusterCalibrations[KeyboardCluster.ArrowCluster] = new KeyboardClusterCalibration { OffsetX = arrowOffsetX, OffsetY = arrowOffsetY, WidthAdjustment = arrowWidthAdjustment, HeightAdjustment = arrowHeightAdjustment };
         ClusterCalibrations[KeyboardCluster.NumpadCluster] = new KeyboardClusterCalibration { OffsetX = numpadOffsetX, OffsetY = numpadOffsetY, WidthAdjustment = numpadWidthAdjustment, HeightAdjustment = numpadHeightAdjustment };
+        ClusterCalibrations[KeyboardCluster.MainLettersCluster] = new KeyboardClusterCalibration { OffsetX = mainLettersOffsetX, OffsetY = mainLettersOffsetY, WidthAdjustment = mainLettersWidthAdjustment, HeightAdjustment = mainLettersHeightAdjustment };
         Changed?.Invoke();
     }
 }

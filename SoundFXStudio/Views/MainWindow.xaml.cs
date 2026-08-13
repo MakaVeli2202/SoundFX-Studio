@@ -375,13 +375,15 @@ public partial class MainWindow : Window
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
-        if (!App.IsShuttingDown)
+        if (App.IsShuttingDown)
         {
-            e.Cancel = true;
-            WindowState = WindowState.Minimized;
+            base.OnClosing(e);
             return;
         }
+
+        App.RequestShutdown();
         base.OnClosing(e);
+        Dispatcher.BeginInvoke(() => Application.Current.Shutdown());
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();

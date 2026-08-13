@@ -39,7 +39,6 @@ public sealed class KeyboardViewModel
 
     private readonly HashSet<Key> _pressedKeys = new();
     private readonly HashSet<string> _pressedTriggerTokens = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, CancellationTokenSource> _unhighlightTimers = new();
     private readonly Dictionary<string, (Guid? ActionId, string? SoundId, KeyPlaybackMode KeyPlaybackMode, CancellationTokenSource? CancellationTokenSource)> _activeTriggers = new(StringComparer.OrdinalIgnoreCase);
     private ChordRuntimeService? _chordRuntimeService;
 
@@ -236,12 +235,6 @@ public sealed class KeyboardViewModel
 
         _runOnUiThread(() =>
         {
-            if (_unhighlightTimers.TryGetValue(token, out var cts))
-            {
-                cts.Cancel();
-                _unhighlightTimers.Remove(token);
-            }
-
             _pressedKeys.Remove(key);
 
             if (key is Key.CapsLock or Key.NumLock or Key.Scroll)
@@ -251,6 +244,7 @@ public sealed class KeyboardViewModel
             }
 
             keyboardKey.IsSelected = false;
+            UpdateKeyVisualState(keyboardKey);
         });
     }
 
@@ -272,12 +266,6 @@ public sealed class KeyboardViewModel
         {
             if (isKeyDown)
             {
-                if (_unhighlightTimers.TryGetValue(token, out var cts))
-                {
-                    cts.Cancel();
-                    _unhighlightTimers.Remove(token);
-                }
-
                 _pressedKeys.Add(key);
 
                 if (key is Key.CapsLock or Key.NumLock or Key.Scroll)
@@ -287,32 +275,11 @@ public sealed class KeyboardViewModel
                 }
 
                 keyboardKey.IsSelected = true;
-                FlashKey(keyboardKey);
+                keyboardKey.State = KeyState.Pressed;
                 _ = _chordRuntimeService?.HandleKeyDownAsync(token);
-
-                var unhighlightCts = new CancellationTokenSource();
-                _unhighlightTimers[token] = unhighlightCts;
-
-                Task.Delay(300, unhighlightCts.Token).ContinueWith(_ =>
-                {
-                    if (!unhighlightCts.Token.IsCancellationRequested)
-                    {
-                        _runOnUiThread(() =>
-                        {
-                            keyboardKey.IsSelected = false;
-                            _unhighlightTimers.Remove(token);
-                        });
-                    }
-                });
             }
             else
             {
-                if (_unhighlightTimers.TryGetValue(token, out var cts))
-                {
-                    cts.Cancel();
-                    _unhighlightTimers.Remove(token);
-                }
-
                 _pressedKeys.Remove(key);
 
                 if (key is Key.CapsLock or Key.NumLock or Key.Scroll)
@@ -323,7 +290,7 @@ public sealed class KeyboardViewModel
                 }
 
                 keyboardKey.IsSelected = false;
-
+                UpdateKeyVisualState(keyboardKey);
                 _ = _chordRuntimeService?.HandleKeyUpAsync(token);
             }
         });

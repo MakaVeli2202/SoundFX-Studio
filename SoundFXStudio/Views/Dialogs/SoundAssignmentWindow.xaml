@@ -1,6 +1,7 @@
 <Window x:Class="SoundFXStudio.Views.Dialogs.SoundAssignmentWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:SoundFXStudio.Controls"
         Title="Add Sound"
         Height="680"
         Width="600"
@@ -80,9 +81,11 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <Button Grid.Column="1" Height="42" Margin="0,10,10,10"
-                            Content="&#x2715;" Background="#40212A39" BorderBrush="#00D4FF"
-                            Foreground="White" Click="CloseButton_Click"/>
+                    <controls:WindowControlBar Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                Margin="0,0,10,0"
+                                                ShowMinimize="False"
+                                                CloseClicked="CloseButton_Click"/>
                 </Grid>
             </Border>
 

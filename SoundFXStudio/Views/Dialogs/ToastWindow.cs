@@ -75,6 +75,15 @@ public sealed class ToastWindow : Window
         Show(title, message, isOn ? "ON" : "OFF", accent);
     }
 
+    public static void ShowDiscordStudioTip()
+    {
+        Show(
+            "Discord Input Profile",
+            "Set Discord > Settings > Voice & Video > Input Profile to Studio for cleaner audio and fewer glitches.",
+            "TIP",
+            Color.FromRgb(0x00, 0xD4, 0xFF));
+    }
+
     public static void Show(string title, string message, string status, Color accent)
     {
         var dispatcher = Application.Current?.Dispatcher;

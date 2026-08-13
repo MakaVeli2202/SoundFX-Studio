@@ -21,7 +21,9 @@
 
     <Border Style="{StaticResource AppWindowRoot}"
             CornerRadius="28"
-            BorderThickness="1.5">
+            BorderThickness="1.5"
+            Background="#0E1729"
+            BorderBrush="#2B3E5C">
 
         <Grid Margin="18">
             <Grid.RowDefinitions>
@@ -31,7 +33,7 @@
             </Grid.RowDefinitions>
 
             <!-- HEADER -->
-            <Border Grid.Row="0" CornerRadius="22" Background="#C1141E2D" BorderBrush="#334A647F" BorderThickness="1">
+            <Border Grid.Row="0" CornerRadius="22" Background="#111C2E" BorderBrush="#2F4668" BorderThickness="1">
                 <Grid>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
                         <Image Source="/Assets/UI/MainDashboardLogo.png" Height="40" Stretch="Uniform"/>
@@ -41,23 +43,23 @@
                         </StackPanel>
                     </StackPanel>
                     <Button x:Name="CancelButton" Height="42" Content="&#x2715;"
-                            Background="#40212A39" BorderBrush="#00D4FF" Foreground="White"
+                            Background="#172336" BorderBrush="#2F4668" Foreground="White"
                             HorizontalAlignment="Right" Margin="0,8,8,8"
                             Click="CancelButton_Click"/>
                 </Grid>
             </Border>
 
             <!-- CONTENT -->
-            <Border Grid.Row="1" CornerRadius="22" Background="#C1141E2D" BorderBrush="#334A647F" BorderThickness="1" Margin="0,12,0,12">
+            <Border Grid.Row="1" CornerRadius="22" Background="#101A2B" BorderBrush="#2F4668" BorderThickness="1" Margin="0,12,0,12">
                 <StackPanel Margin="20" VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <TextBlock x:Name="InstructionText" Text="Press a key combination to assign..." FontSize="14" Foreground="#A1B2D2"
+                    <TextBlock x:Name="InstructionText" Text="Press a key combination to assign..." FontSize="14" Foreground="#A7B7D2"
                                HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                    <Border x:Name="KeyDisplayBorder" Background="#1C0F1826" BorderBrush="#7000D4FF" BorderThickness="1.5" CornerRadius="18" Padding="30,18" MinHeight="118" MinWidth="360" VerticalAlignment="Center">
+                    <Border x:Name="KeyDisplayBorder" Background="#151F2E" BorderBrush="#2E6BFF" BorderThickness="1.5" CornerRadius="18" Padding="30,18" MinHeight="118" MinWidth="360" VerticalAlignment="Center">
                         <Border.Effect>
-                            <DropShadowEffect Color="#3600D4FF" BlurRadius="14" ShadowDepth="0" Opacity="0.44"/>
+                            <DropShadowEffect Color="#1D4ED8" BlurRadius="12" ShadowDepth="0" Opacity="0.20"/>
                         </Border.Effect>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock x:Name="ModifierText" Text="" FontSize="15" Foreground="#7B3FFF"
+                            <TextBlock x:Name="ModifierText" Text="" FontSize="15" Foreground="#8BA8FF"
                                        HorizontalAlignment="Center" Margin="0,0,0,6"/>
                             <TextBlock x:Name="CapturedKeyText" Text="Listening..." FontSize="34" FontWeight="Black" Foreground="#00D4FF"
                                        HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="330"/>

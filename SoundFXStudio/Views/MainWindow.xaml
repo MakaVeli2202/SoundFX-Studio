@@ -8,8 +8,7 @@
         Icon="/Assets/SoundFXStudioLogo.png"
         Width="1366"
         Height="900"
-        Background="Transparent"
-        AllowsTransparency="True"
+        Background="#0B1226"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         ResizeMode="NoResize"
@@ -349,31 +348,45 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid>
-                            <Border x:Name="Skirt" CornerRadius="17" Margin="0,0,0,3">
+                        <Grid SnapsToDevicePixels="True">
+                            <Border x:Name="OuterShell" CornerRadius="20" Margin="0,0,0,6">
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="#1B2A4A" Offset="0"/>
-                                        <GradientStop Color="#0C1326" Offset="1"/>
+                                        <GradientStop Color="#3A5680" Offset="0"/>
+                                        <GradientStop Color="#172B4F" Offset="0.35"/>
+                                        <GradientStop Color="#0A1126" Offset="1"/>
                                     </LinearGradientBrush>
                                 </Border.Background>
                                 <Border.Effect>
-                                    <effects:DropShadowEffect Color="#000000" BlurRadius="10" ShadowDepth="3" Opacity="0.55"/>
+                                    <effects:DropShadowEffect Color="#000000" BlurRadius="14" ShadowDepth="4" Opacity="0.7"/>
                                 </Border.Effect>
+                                <Border Margin="1" CornerRadius="18" IsHitTestVisible="False">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#4A6A9E" Offset="0"/>
+                                            <GradientStop Color="#142447" Offset="0.22"/>
+                                            <GradientStop Color="#0B1226" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
                             </Border>
-                            <Border x:Name="Face" Margin="0,0,0,8" CornerRadius="15" BorderBrush="#2AFFFFFF" BorderThickness="1">
+                            <Border x:Name="InnerFace" Margin="0,0,0,10" CornerRadius="16" BorderBrush="#2AFFFFFF" BorderThickness="1">
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="#141E2D" Offset="0"/>
-                                        <GradientStop Color="#0B1322" Offset="1"/>
+                                        <GradientStop Color="#16233E" Offset="0"/>
+                                        <GradientStop Color="#0A1122" Offset="1"/>
                                     </LinearGradientBrush>
                                 </Border.Background>
                                 <Grid>
-                                    <ContentPresenter x:Name="TileContent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-                                    <Border VerticalAlignment="Top" Height="20" Margin="2,1,2,0" CornerRadius="12,12,0,0" IsHitTestVisible="False">
+                                    <Border Margin="7,7,7,9" CornerRadius="11" ClipToBounds="True" Background="#0D0A1424">
+                                        <Grid>
+                                            <ContentPresenter x:Name="TileContent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                        </Grid>
+                                    </Border>
+                                    <Border VerticalAlignment="Top" Height="14" Margin="7,7,7,0" CornerRadius="11,11,0,0" IsHitTestVisible="False" Opacity="0.4">
                                         <Border.Background>
                                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                <GradientStop Color="#18FFFFFF" Offset="0"/>
+                                                <GradientStop Color="#2AFFFFFF" Offset="0"/>
                                                 <GradientStop Color="#00FFFFFF" Offset="1"/>
                                             </LinearGradientBrush>
                                         </Border.Background>
@@ -383,16 +396,8 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Face" Property="BorderBrush" Value="#8800D4FF"/>
-                                <Setter TargetName="Face" Property="Background">
-                                    <Setter.Value>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#18243B" Offset="0"/>
-                                            <GradientStop Color="#0E1628" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Setter.Value>
-                                </Setter>
-                                <Setter TargetName="Skirt" Property="Effect">
+                                <Setter TargetName="InnerFace" Property="BorderBrush" Value="#8800D4FF"/>
+                                <Setter TargetName="OuterShell" Property="Effect">
                                     <Setter.Value>
                                         <effects:DropShadowEffect Color="#00D4FF" BlurRadius="22" ShadowDepth="0" Opacity="0.5"/>
                                     </Setter.Value>
@@ -415,7 +420,7 @@
                                 </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Face" Property="BorderBrush" Value="#FF2DAF"/>
+                                <Setter TargetName="InnerFace" Property="BorderBrush" Value="#FF2DAF"/>
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
@@ -434,7 +439,7 @@
                                 </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="Face" Property="BorderBrush" Value="#00D4FF"/>
+                                <Setter TargetName="InnerFace" Property="BorderBrush" Value="#00D4FF"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -472,8 +477,7 @@
             <Rectangle Grid.RowSpan="2" RadiusX="12" RadiusY="12" IsHitTestVisible="False">
                 <Rectangle.Fill>
                     <ImageBrush ImageSource="/Assets/Pics/MainWindowBackground.png"
-                                Stretch="Fill"
-                                Opacity="0.8"/>
+                                Stretch="Fill"/>
                 </Rectangle.Fill>
             </Rectangle>
 
@@ -574,7 +578,7 @@
                     MinHeight="420"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
-                    Margin="308,74,40,70">
+                    Margin="308,82,40,70">
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -846,7 +850,7 @@
             <!-- Effects Page -->
             <Border HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
-                    Margin="308,74,40,70">
+                    Margin="308,82,40,70">
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -871,21 +875,38 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel>
-                            <TextBlock Text="VOICE CHANGER" Foreground="#00D4FF" FontSize="24" FontWeight="Bold"/>
-                            <TextBlock Text="Route your microphone through the voice pipeline, then refine the effect with presets and tone controls."
-                                       Foreground="#A2B4CC" FontSize="13" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                            <TextBlock Text="VOICE CHANGER"
+                                       Foreground="#00D4FF"
+                                       FontSize="24"
+                                       FontWeight="Bold"/>
+                            <TextBlock Text="Route your mic through the live voice pipeline and shape the output with presets, pitch, and formant controls."
+                                       Foreground="#A2B4CC"
+                                       FontSize="13"
+                                       Margin="0,5,0,0"
+                                       TextWrapping="Wrap"/>
                         </StackPanel>
 
-                        <Border Grid.Column="1" Background="#191B2736" BorderBrush="#3300D4FF" BorderThickness="1" CornerRadius="14" Padding="14,12" MinWidth="280">
+                        <Border Grid.Column="1"
+                                Background="#191B2736"
+                                BorderBrush="#3300D4FF"
+                                BorderThickness="1"
+                                CornerRadius="14"
+                                Padding="14,12"
+                                MinWidth="280">
                             <StackPanel>
                                 <TextBlock Text="SIGNAL FLOW" Foreground="#00D4FF" FontSize="10.5" FontWeight="Bold"/>
                                 <TextBlock Text="Microphone → Voice Changer → Output" Foreground="#F7FAFF" FontSize="13.5" FontWeight="SemiBold" Margin="0,4,0,0"/>
-                                <TextBlock Text="Use the status snapshot below to confirm your current input and routing before you start." Foreground="#8EA2C0" FontSize="11.5" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                <TextBlock Text="Keep the input and output paths aligned before you start processing." Foreground="#8EA2C0" FontSize="11.5" Margin="0,6,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
                     </Grid>
 
-                    <Border Grid.Row="1" Style="{StaticResource SurfaceCardStyle}" Background="#9C141E2D" Padding="20" Margin="0,0,0,14" CornerRadius="20">
+                    <Border Grid.Row="1"
+                            Style="{StaticResource SurfaceCardStyle}"
+                            Background="#9C141E2D"
+                            Padding="20"
+                            Margin="0,0,0,14"
+                            CornerRadius="20">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -916,24 +937,40 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border Grid.Column="0" Style="{StaticResource SurfaceCardStyle}" Background="#9C141E2D" Padding="20" Margin="0,0,8,0" CornerRadius="20">
+                        <Border Grid.Column="0"
+                                Background="#1A192438"
+                                BorderBrush="#2F3E58"
+                                BorderThickness="1"
+                                Padding="20"
+                                Margin="0,0,8,0"
+                                CornerRadius="18">
                             <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <TextBlock Text="&#xE7BF;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="PRIMARY CONTROLS" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
-                                </StackPanel>
-                                <TextBlock Text="Start or stop the real-time processing pipeline and preview what your team hears." Foreground="#A1B2D2" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                                <Border Background="#161E31" BorderBrush="#2C476A" BorderThickness="1" CornerRadius="12" Padding="10,8" Margin="0,0,0,12">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE7BF;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="PRIMARY CONTROLS" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="Start or stop the real-time pipeline and monitor what your team hears." Foreground="#A1B2D2" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
                                 <Button x:Name="VoiceChangerToggleBtn"
                                         Content="Start Voice Changer"
-                                        Height="38" HorizontalAlignment="Left" Padding="18,0"
-                                        Background="{StaticResource AccentBlueBrush}" BorderBrush="{StaticResource BorderAccentBrush}" Foreground="White"
-                                        BorderThickness="1" Cursor="Hand" FontSize="12" FontWeight="SemiBold" AutomationProperties.Name="Start Voice Changer"/>
+                                        Height="38"
+                                        HorizontalAlignment="Left"
+                                        Padding="18,0"
+                                        Background="{StaticResource AccentBlueBrush}"
+                                        BorderBrush="{StaticResource BorderAccentBrush}"
+                                        Foreground="White"
+                                        BorderThickness="1"
+                                        Cursor="Hand"
+                                        FontSize="12"
+                                        FontWeight="SemiBold"
+                                        AutomationProperties.Name="Start Voice Changer"/>
+
                                 <Border Margin="0,12,0,0" Background="#1AFFFFFF" CornerRadius="8" Padding="10,6" HorizontalAlignment="Left">
                                     <StackPanel Orientation="Horizontal">
                                         <Border x:Name="VoiceChangerStatusDot" Width="8" Height="8" CornerRadius="4" Background="#E85555" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock x:Name="VoiceChangerStatus" Text="Stopped"
-                                                   Foreground="#E85555" FontSize="12" FontWeight="Bold"/>
+                                        <TextBlock x:Name="VoiceChangerStatus" Text="Stopped" Foreground="#E85555" FontSize="12" FontWeight="Bold"/>
                                     </StackPanel>
                                 </Border>
 
@@ -941,33 +978,56 @@
                                     <TextBlock Text="&#xE7C1;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Text="MONITOR" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <TextBlock Text="Hear what your mic sends to your team while you talk." Foreground="#A1B2D2" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                <TextBlock Text="Preview the route your team receives while you talk." Foreground="#A1B2D2" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
                                 <Button x:Name="TeamMonitorToggleBtn"
                                         Content="Hear What People Hear"
-                                        Height="34" HorizontalAlignment="Left" Padding="14,0"
-                                        Background="{StaticResource SurfaceAltBrush}" BorderBrush="{StaticResource BorderAccentBrush}" Foreground="White"
-                                        BorderThickness="1" Cursor="Hand" FontSize="11.5" FontWeight="SemiBold"
-                                        Click="TeamMonitorToggle_Click" AutomationProperties.Name="Hear What People Hear"/>
+                                        Height="34"
+                                        HorizontalAlignment="Left"
+                                        Padding="14,0"
+                                        Background="{StaticResource SurfaceAltBrush}"
+                                        BorderBrush="{StaticResource BorderAccentBrush}"
+                                        Foreground="White"
+                                        BorderThickness="1"
+                                        Cursor="Hand"
+                                        FontSize="11.5"
+                                        FontWeight="SemiBold"
+                                        Click="TeamMonitorToggle_Click"
+                                        AutomationProperties.Name="Hear What People Hear"/>
                                 <Border Margin="0,10,0,0" Background="#1AFFFFFF" CornerRadius="8" Padding="10,6" HorizontalAlignment="Left">
                                     <StackPanel Orientation="Horizontal">
                                         <Border x:Name="TeamMonitorStatusDot" Width="8" Height="8" CornerRadius="4" Background="#98A0C0" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock x:Name="TeamMonitorStatus" Text="Off"
-                                                   Foreground="#98A0C0" FontSize="11" FontWeight="Bold"/>
+                                        <TextBlock x:Name="TeamMonitorStatus" Text="Off" Foreground="#98A0C0" FontSize="11" FontWeight="Bold"/>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
                         </Border>
 
-                        <Border Grid.Column="1" Style="{StaticResource SurfaceCardStyle}" Background="#9C141E2D" Padding="20" Margin="8,0,0,0" CornerRadius="20">
+                        <Border Grid.Column="1"
+                                Background="#1A192438"
+                                BorderBrush="#2F3E58"
+                                BorderThickness="1"
+                                Padding="20"
+                                Margin="8,0,0,0"
+                                CornerRadius="18">
                             <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                    <TextBlock Text="&#xEC4A;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="EFFECT CONTROLS" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
-                                </StackPanel>
-                                <TextBlock Text="Choose a preset, then tune the pitch and formant to match your voice." Foreground="{StaticResource TextMutedBrush}" FontSize="10.5" Margin="0,0,0,6"/>
-                                <ComboBox x:Name="VoiceChangerPresetCombo" Height="30" HorizontalAlignment="Stretch"
-                                          Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White" FontSize="12"
-                                          BorderThickness="1" Padding="6,1" Margin="0,0,0,4"
+                                <Border Background="#161E31" BorderBrush="#2C476A" BorderThickness="1" CornerRadius="12" Padding="10,8" Margin="0,0,0,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xEC4A;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="EFFECT CONTROLS" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Text="Choose a preset, then fine-tune the pitch and formant to match your voice." Foreground="{StaticResource TextMutedBrush}" FontSize="10.5" Margin="0,0,0,6"/>
+
+                                <ComboBox x:Name="VoiceChangerPresetCombo"
+                                          Height="30"
+                                          HorizontalAlignment="Stretch"
+                                          Background="#44111A2E"
+                                          BorderBrush="#558B5CF6"
+                                          Foreground="White"
+                                          FontSize="12"
+                                          BorderThickness="1"
+                                          Padding="6,1"
+                                          Margin="0,0,0,4"
                                           DisplayMemberPath="Name"/>
                                 <TextBlock x:Name="PresetSummaryText" Foreground="{StaticResource TextMutedBrush}" FontSize="10" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
@@ -975,20 +1035,24 @@
                                     <TextBlock Text="&#xE790;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Text="PITCH" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <TextBlock Text="Shift your voice up or down in semitones." Foreground="{StaticResource TextMutedBrush}" FontSize="10.5" Margin="0,0,0,4"/>
+                                <TextBlock Text="Shift voice pitch in semitones." Foreground="{StaticResource TextMutedBrush}" FontSize="10.5" Margin="0,0,0,4"/>
                                 <Grid Margin="0,0,0,14">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <Slider x:Name="PitchSlider" Grid.Column="0"
-                                            Minimum="-12" Maximum="12" SmallChange="0.5" LargeChange="1"
-                                            TickFrequency="2" TickPlacement="BottomRight"
-                                            VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <Slider x:Name="PitchSlider"
+                                            Grid.Column="0"
+                                            Minimum="-12"
+                                            Maximum="12"
+                                            SmallChange="0.5"
+                                            LargeChange="1"
+                                            TickFrequency="2"
+                                            TickPlacement="BottomRight"
+                                            VerticalAlignment="Center"
+                                            Margin="0,0,8,0"/>
                                     <Border Grid.Column="1" Background="#1AFFFFFF" CornerRadius="5" Padding="8,3">
-                                        <TextBlock x:Name="PitchValueText" Text="0.0 st"
-                                                   Foreground="White" FontSize="11" FontWeight="Bold"
-                                                   MinWidth="40" TextAlignment="Center"/>
+                                        <TextBlock x:Name="PitchValueText" Text="0.0 st" Foreground="White" FontSize="11" FontWeight="Bold" MinWidth="40" TextAlignment="Center"/>
                                     </Border>
                                 </Grid>
 
@@ -996,19 +1060,22 @@
                                     <TextBlock Text="&#xE7F4;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Text="FORMANT" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <TextBlock Text="Change voice character without pitch." Foreground="{StaticResource TextMutedBrush}" FontSize="10.5" Margin="0,0,0,4"/>
+                                <TextBlock Text="Adjust the voice character without touching pitch." Foreground="{StaticResource TextMutedBrush}" FontSize="10.5" Margin="0,0,0,4"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <Slider x:Name="FormantSlider" Grid.Column="0"
-                                            Minimum="0.5" Maximum="2.0" SmallChange="0.05" LargeChange="0.1"
-                                            VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <Slider x:Name="FormantSlider"
+                                            Grid.Column="0"
+                                            Minimum="0.5"
+                                            Maximum="2.0"
+                                            SmallChange="0.05"
+                                            LargeChange="0.1"
+                                            VerticalAlignment="Center"
+                                            Margin="0,0,8,0"/>
                                     <Border Grid.Column="1" Background="#1AFFFFFF" CornerRadius="5" Padding="8,3">
-                                        <TextBlock x:Name="FormantValueText" Text="1.00x"
-                                                   Foreground="White" FontSize="11" FontWeight="Bold"
-                                                   MinWidth="40" TextAlignment="Center"/>
+                                        <TextBlock x:Name="FormantValueText" Text="1.00x" Foreground="White" FontSize="11" FontWeight="Bold" MinWidth="40" TextAlignment="Center"/>
                                     </Border>
                                 </Grid>
                             </StackPanel>
@@ -1021,7 +1088,7 @@
                     <Border
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
-                    Margin="308,74,40,70">
+                    Margin="308,82,40,70">
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -1159,49 +1226,45 @@
                                   VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
                                   Background="Transparent"
-                                  BorderThickness="0"
-                                  Padding="4,0,4,0">
-                        <ScrollViewer.Style>
-                            <Style TargetType="ScrollViewer">
+                                  BorderThickness="0">
+                        <ScrollViewer.Resources>
+                            <Style TargetType="ScrollBar">
+                                <Setter Property="Width" Value="9"/>
+                                <Setter Property="Background" Value="#0A1424"/>
+                                <Setter Property="Cursor" Value="Hand"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
-                                        <ControlTemplate TargetType="ScrollViewer">
-                                            <Grid>
-                                                <ScrollContentPresenter Margin="0,0,6,0"/>
-                                                <ScrollBar x:Name="PART_VerticalScrollBar"
-                                                           Value="{TemplateBinding VerticalOffset}"
-                                                           Maximum="{TemplateBinding ScrollableHeight}"
-                                                           ViewportSize="{TemplateBinding ViewportHeight}"
-                                                           Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
-                                                           Background="#0A1424"
-                                                           BorderBrush="#1B3157"
-                                                           BorderThickness="1"
-                                                           Width="8"
-                                                           Cursor="Hand">
-                                                    <ScrollBar.Template>
-                                                        <ControlTemplate TargetType="ScrollBar">
-                                                            <Grid>
-                                                                <Track x:Name="PART_Track">
-                                                                    <Track.Thumb>
-                                                                        <Thumb BorderBrush="#8B5CF6" Background="#228B5CF6" BorderThickness="1">
-                                                                            <Thumb.Template>
-                                                                                <ControlTemplate TargetType="Thumb">
-                                                                                    <Border CornerRadius="4" Background="#228B5CF6" BorderBrush="#8B5CF6" BorderThickness="1" Margin="0,1"/>
-                                                                                </ControlTemplate>
-                                                                            </Thumb.Template>
-                                                                        </Thumb>
-                                                                    </Track.Thumb>
-                                                                </Track>
-                                                            </Grid>
-                                                        </ControlTemplate>
-                                                    </ScrollBar.Template>
-                                                </ScrollBar>
+                                        <ControlTemplate TargetType="ScrollBar">
+                                            <Grid Background="#0A1424">
+                                                <Track x:Name="PART_Track"
+                                                       VerticalAlignment="Stretch"
+                                                       IsDirectionReversed="True">
+                                                    <Track.DecreaseRepeatButton>
+                                                        <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False"/>
+                                                    </Track.DecreaseRepeatButton>
+                                                    <Track.IncreaseRepeatButton>
+                                                        <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False"/>
+                                                    </Track.IncreaseRepeatButton>
+                                                    <Track.Thumb>
+                                                        <Thumb>
+                                                            <Thumb.Template>
+                                                                <ControlTemplate TargetType="Thumb">
+                                                                    <Border CornerRadius="4"
+                                                                            Background="#228B5CF6"
+                                                                            BorderBrush="#8B5CF6"
+                                                                            BorderThickness="1"
+                                                                            Margin="1,2"/>
+                                                                </ControlTemplate>
+                                                            </Thumb.Template>
+                                                        </Thumb>
+                                                    </Track.Thumb>
+                                                </Track>
                                             </Grid>
                                         </ControlTemplate>
                                     </Setter.Value>
                                 </Setter>
                             </Style>
-                        </ScrollViewer.Style>
+                        </ScrollViewer.Resources>
 
                         <ItemsControl ItemsSource="{Binding SoundsView}">
                             <ItemsControl.ItemsPanel>
@@ -1216,8 +1279,8 @@
                                             Command="{Binding DataContext.PlaySoundCommand, RelativeSource={RelativeSource AncestorType=Border}}"
                                             CommandParameter="{Binding}">
                                         <Grid>
-                                            <!-- image fills the whole tile face, clipped to the rounded corners -->
-                                            <Border CornerRadius="15" ClipToBounds="True">
+                                            <!-- image only inside the inner section, clipped to the smooth rounded corners -->
+                                            <Border CornerRadius="11" ClipToBounds="True">
                                                 <Border.Background>
                                                     <SolidColorBrush Color="#14000000"/>
                                                 </Border.Background>
@@ -1239,7 +1302,7 @@
                                                             </Style>
                                                         </Image.Style>
                                                         <Image.Clip>
-                                                            <RectangleGeometry RadiusX="15" RadiusY="15">
+                                                            <RectangleGeometry RadiusX="11" RadiusY="11">
                                                                 <RectangleGeometry.Rect>
                                                                     <MultiBinding Converter="{StaticResource SizeToRectConverter}">
                                                                         <Binding ElementName="TileImage" Path="ActualWidth"/>
@@ -1370,7 +1433,7 @@
                         <Border
                         HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
-                        Margin="308,74,40,70">
+                        Margin="308,82,40,70">
                 <Border.Style>
                     <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
                         <Setter Property="Visibility" Value="Collapsed"/>
@@ -1453,11 +1516,11 @@
                                     </StackPanel>
                                 </Button>
 
-                                <Button x:Name="SettingsSectionAdvancedButton" Tag="Advanced" Click="SettingsSectionButton_Click">
+                                <Button x:Name="SettingsSectionToolsButton" Tag="Tools" Click="SettingsSectionButton_Click">
                                     <Button.Style>
                                         <Style TargetType="Button" BasedOn="{StaticResource SettingsSectionButton}">
                                             <Style.Triggers>
-                                                <DataTrigger Binding="{Binding SettingsSection}" Value="Advanced">
+                                                <DataTrigger Binding="{Binding SettingsSection}" Value="Tools">
                                                     <Setter Property="Background" Value="#2A00D4FF"/>
                                                     <Setter Property="BorderBrush" Value="#00D4FF"/>
                                                     <Setter Property="Foreground" Value="#FFFFFF"/>
@@ -1467,25 +1530,7 @@
                                     </Button.Style>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE7C4;" FontFamily="Segoe Fluent Icons" FontSize="13" Width="26" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Advanced" FontSize="13" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-
-                                <Button x:Name="SettingsSectionCalibrationButton" Tag="Calibration" Click="SettingsSectionButton_Click">
-                                    <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource SettingsSectionButton}">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding SettingsSection}" Value="Calibration">
-                                                    <Setter Property="Background" Value="#2A00D4FF"/>
-                                                    <Setter Property="BorderBrush" Value="#00D4FF"/>
-                                                    <Setter Property="Foreground" Value="#FFFFFF"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Button.Style>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE9CE;" FontFamily="Segoe Fluent Icons" FontSize="13" Width="26" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Calibration" FontSize="13" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Tools" FontSize="13" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                             </StackPanel>
@@ -1786,6 +1831,60 @@
                                                        Foreground="#7F899C" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Grid>
                                     </Grid>
+                                </Border>
+
+                                <!-- ══ TOOLS ══ -->
+                                <Border>
+                                    <Border.Style>
+                                        <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SettingsSection}" Value="Tools">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel Margin="24">
+                                        <TextBlock Text="TOOLS" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold" Margin="0,0,0,4"/>
+                                        <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,18"
+                                                   Text="Keep the keyboard and routing utilities in one place."/>
+
+                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1" CornerRadius="12" Padding="18,16" Margin="0,0,0,14">
+                                            <StackPanel>
+                                                <TextBlock Text="KEYBOARD LAYOUT" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                                <ComboBox ItemsSource="{Binding KeyboardLayoutOptions}"
+                                                          SelectedItem="{Binding KeyboardLayout}"
+                                                          Height="32" HorizontalAlignment="Left" Width="230"
+                                                          Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White" FontSize="12"
+                                                          BorderThickness="1" Padding="6,1" Margin="0,0,0,12"/>
+                                                <Button Content="Open Keyboard Calibration"
+                                                        Style="{StaticResource SettingsButton}"
+                                                        Click="OpenCalibrationButton_Click"
+                                                        HorizontalAlignment="Left" Width="200"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1" CornerRadius="12" Padding="18,16">
+                                            <StackPanel>
+                                                <TextBlock Text="ROUTING" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                    <Button Content="Configure Voicemeeter Only"
+                                                            Click="AdvancedConfigureVmOnly_Click"
+                                                            Style="{StaticResource SettingsButton}"
+                                                            Width="190"/>
+                                                    <Button Content="Set Input To B1 Only"
+                                                            Click="AdvancedRouteInputOnly_Click"
+                                                            Style="{StaticResource SettingsButton}"
+                                                            Width="170" Margin="10,0,0,0"/>
+                                                </StackPanel>
+                                                <Button Content="Open Setup Wizard"
+                                                        Style="{StaticResource SettingsButton}"
+                                                        Click="RerunWizard_Click"
+                                                        HorizontalAlignment="Left" Width="160"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
                                 </Border>
 
                                 <!-- ══ CALIBRATION ══ -->
@@ -2114,15 +2213,16 @@
             <!-- Title Bar -->
 
                 <Border HorizontalAlignment="Stretch"
-                    Height="44"
+                    Height="52"
                     VerticalAlignment="Top"
                     Margin="0,0,0,0"
-                    Style="{StaticResource WindowChromeBar}"
+                    Background="#CB0E1623"
+                    BorderBrush="#55395372"
+                    BorderThickness="0,0,0,1"
                     CornerRadius="0">
-                <Grid Margin="18,0,14,0">
+                <Grid Margin="18,0,12,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
@@ -2132,18 +2232,10 @@
                                FontSize="17"
                                FontWeight="Bold"/>
 
-                    <StackPanel Grid.Column="1"
-                                Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <Button Style="{StaticResource WindowChromeButton}"
-                                Content="&#x2212;"
-                                FontSize="17"
-                                Click="MinimizeButton_Click"/>
-                        <Button Style="{StaticResource WindowChromeCloseButton}"
-                                Content="&#x2715;"
-                                FontSize="15"
-                                Click="CloseButton_Click"/>
-                    </StackPanel>
+                    <controls:WindowControlBar Grid.Column="1"
+                                               VerticalAlignment="Center"
+                                               MinimizeClicked="MinimizeButton_Click"
+                                               CloseClicked="CloseButton_Click"/>
                 </Grid>
             </Border>
 
@@ -2155,19 +2247,19 @@
                     Width="252"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Stretch"
-                    Margin="35,74,0,70"
+                    Margin="35,82,0,70"
                     ClipToBounds="True">
 
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="16,18,16,16">
+                <Grid>
+                    <StackPanel Margin="16,14,16,16">
 
-                        <Border Height="147"
+                        <Border Height="118"
                                 Background="#111D30"
                                 BorderBrush="#2A3F5E"
                                 BorderThickness="1"
                                 CornerRadius="14"
                                 ClipToBounds="True"
-                                Margin="0,0,0,14">
+                                Margin="0,0,0,10">
                             <Image x:Name="SidebarLogoImage" Source="/Assets/UI/MainDashboardLogo.png" Stretch="Uniform">
                                 <Image.Clip>
                                     <RectangleGeometry RadiusX="14" RadiusY="14">
@@ -2183,7 +2275,7 @@
                         </Border>
 
                         <!-- NAVIGATION -->
-                        <Grid Margin="4,2,4,10">
+                        <Grid Margin="4,0,4,8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
@@ -2276,14 +2368,14 @@
                             </StackPanel>
                         </Button>
 
-                        <Border Height="1" Background="#1B3157" Margin="6,8,6,12"/>
+                        <Border Height="1" Background="#1B3157" Margin="6,6,6,10"/>
 
                         <!-- AUDIO STATUS -->
-                        <TextBlock Text="AUDIO STATUS" FontSize="11" FontWeight="Bold" Foreground="#00D4FF" Margin="6,14,0,8"/>
+                        <TextBlock Text="AUDIO STATUS" FontSize="11" FontWeight="Bold" Foreground="#00D4FF" Margin="6,8,0,8"/>
 
-                        <Border Background="#8C0C1424" BorderBrush="#1B3157" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,0,0,6">
+                        <Border Background="#8C0C1424" BorderBrush="#1B3157" BorderThickness="1" CornerRadius="12" Padding="10,10,10,8" Margin="0,0,0,0">
                             <StackPanel>
-                                <Grid Margin="0,0,0,10">
+                                <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="24"/>
                                         <ColumnDefinition Width="*"/>
@@ -2294,7 +2386,7 @@
                                         <TextBlock Text="{Binding CurrentOutputDevice}" FontSize="12.5" Foreground="#DDEAFF" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
                                 </Grid>
-                                <Grid Margin="0,0,0,10">
+                                <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="24"/>
                                         <ColumnDefinition Width="*"/>
@@ -2305,7 +2397,7 @@
                                         <TextBlock Text="{Binding CurrentInputDevice}" FontSize="12.5" Foreground="#DDEAFF" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
                                 </Grid>
-                                <Grid Margin="0,0,0,10">
+                                <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="24"/>
                                         <ColumnDefinition Width="*"/>
@@ -2322,7 +2414,7 @@
                         </Border>
 
                     </StackPanel>
-                </ScrollViewer>
+                </Grid>
             </Border>
 
 

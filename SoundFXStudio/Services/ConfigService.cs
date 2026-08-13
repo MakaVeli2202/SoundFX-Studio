@@ -305,6 +305,14 @@ public class ConfigService
         MergeIfDefault(target, source, defaults, cal => cal.NumLockIndicatorOffsetY, (cal, v) => cal.NumLockIndicatorOffsetY = v);
         MergeIfDefault(target, source, defaults, cal => cal.ScrollLockIndicatorOffsetX, (cal, v) => cal.ScrollLockIndicatorOffsetX = v);
         MergeIfDefault(target, source, defaults, cal => cal.ScrollLockIndicatorOffsetY, (cal, v) => cal.ScrollLockIndicatorOffsetY = v);
+        MergeIfDefault(target, source, defaults, cal => cal.CapsLockIndicatorSize, (cal, v) => cal.CapsLockIndicatorSize = v);
+        MergeIfDefault(target, source, defaults, cal => cal.NumLockIndicatorSize, (cal, v) => cal.NumLockIndicatorSize = v);
+        MergeIfDefault(target, source, defaults, cal => cal.ScrollLockIndicatorSize, (cal, v) => cal.ScrollLockIndicatorSize = v);
+
+        MergeIfDefault(target, source, defaults, cal => cal.SoundboardStatusPanelX, (cal, v) => cal.SoundboardStatusPanelX = v);
+        MergeIfDefault(target, source, defaults, cal => cal.SoundboardStatusPanelY, (cal, v) => cal.SoundboardStatusPanelY = v);
+        MergeIfDefault(target, source, defaults, cal => cal.CloseButtonPanelX, (cal, v) => cal.CloseButtonPanelX = v);
+        MergeIfDefault(target, source, defaults, cal => cal.CloseButtonPanelY, (cal, v) => cal.CloseButtonPanelY = v);
 
         MergeIfDefault(target, source, defaults, cal => cal.InnerSectionInsetPercent, (cal, v) => cal.InnerSectionInsetPercent = v);
 

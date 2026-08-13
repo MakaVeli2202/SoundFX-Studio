@@ -235,7 +235,7 @@ public partial class KeyCaptureDialog : Window
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.OriginalSource is System.Windows.Shapes.Path or System.Windows.Controls.Canvas)
+        if (e.OriginalSource is DependencyObject source && DialogInteractionHelper.IsInteractiveElement(source))
             return;
         if (e.ClickCount == 2)
             return;

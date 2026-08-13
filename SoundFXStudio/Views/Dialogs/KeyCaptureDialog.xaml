@@ -130,7 +130,9 @@
 
     <Border Style="{StaticResource AppWindowRoot}"
             CornerRadius="26"
-            BorderThickness="1.5">
+            BorderThickness="1.5"
+            Background="#0D1627"
+            BorderBrush="#2C3E5B">
 
         <Grid Margin="16">
 
@@ -143,8 +145,8 @@
             <!-- HEADER -->
 
             <Border Grid.Row="0"
-                    Background="#111827"
-                    BorderBrush="#294563"
+                    Background="#111C2E"
+                    BorderBrush="#2F4668"
                     BorderThickness="1"
                     CornerRadius="18">
 
@@ -191,8 +193,8 @@
 
             <Border Grid.Row="1"
                     Margin="0,12,0,12"
-                    Background="#141E2D"
-                    BorderBrush="#294563"
+                    Background="#101A2B"
+                    BorderBrush="#2F4668"
                     BorderThickness="1"
                     CornerRadius="20">
 
@@ -209,31 +211,15 @@
                     <Border x:Name="KeyDisplayBorder"
                             Height="90"
                             BorderThickness="2"
-                            CornerRadius="18">
-
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0"
-                                                 EndPoint="0,1">
-                                <GradientStop Color="#1B273B"/>
-                                <GradientStop Color="#111827"
-                                              Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-
-                        <Border.BorderBrush>
-                            <LinearGradientBrush StartPoint="0,0"
-                                                 EndPoint="1,0">
-                                <GradientStop Color="#00D4FF"/>
-                                <GradientStop Color="#7B3FFF"
-                                              Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.BorderBrush>
+                            CornerRadius="18"
+                            Background="#151F2E"
+                            BorderBrush="#2E6BFF">
 
                         <Border.Effect>
-                            <DropShadowEffect Color="#00D4FF"
-                                              BlurRadius="18"
+                            <DropShadowEffect Color="#1D4ED8"
+                                              BlurRadius="14"
                                               ShadowDepth="0"
-                                              Opacity="0.3"/>
+                                              Opacity="0.16"/>
                         </Border.Effect>
 
                         <StackPanel VerticalAlignment="Center">

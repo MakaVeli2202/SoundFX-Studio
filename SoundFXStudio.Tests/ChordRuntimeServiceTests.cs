@@ -216,6 +216,44 @@ public class ChordRuntimeServiceTests
         Assert.Equal(new[] { actionChord.Id }, executions);
     }
 
+    [Fact]
+    public async Task SameKeyDoubleTap_UsesDistinctChordAction()
+    {
+        var config = BuildConfig(out var profile, out var actionSingle, out var actionDouble, out var _);
+        config.Settings.ChordTimeoutMs = 200;
+        profile.Assignments.Add(new KeyAssignment { KeyId = "K", ActionId = actionSingle.Id, HotkeyText = "K" });
+        profile.KeyChords.Add(new KeyChord { Name = "K + K", ActionId = actionDouble.Id, Keys = { "K", "K" } });
+
+        var executions = new List<Guid>();
+        var service = CreateService(config, executions);
+
+        await service.HandleKeyDownAsync("K");
+        await service.HandleKeyUpAsync("K");
+        await Task.Delay(50);
+        await service.HandleKeyDownAsync("K");
+        await service.HandleKeyUpAsync("K");
+        await Task.Delay(200);
+
+        Assert.Equal(new[] { actionDouble.Id }, executions);
+    }
+
+    [Fact]
+    public async Task Chord_FiresRegardlessOfPressOrder()
+    {
+        var config = BuildConfig(out var profile, out var _, out var actionB, out var _);
+        profile.KeyChords.Add(new KeyChord { Name = "E + D", ActionId = actionB.Id, Keys = { "E", "D" } });
+
+        var executions = new List<Guid>();
+        var service = CreateService(config, executions);
+
+        await service.HandleKeyDownAsync("D");
+        await service.HandleKeyDownAsync("E");
+        await service.HandleKeyUpAsync("E");
+        await service.HandleKeyUpAsync("D");
+
+        Assert.Equal(new[] { actionB.Id }, executions);
+    }
+
     private static ChordRuntimeService CreateService(AppConfig config, List<Guid> executions)
     {
         return new ChordRuntimeService(

@@ -16,6 +16,13 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
     private const double BaseKeyboardWidth = 1512.6;
     private const double BaseKeyboardHeight = 608;
     private const double BaseChamferSize = 52;
+    private const double CanvasContentOffsetX = 12.31;
+    private const double CanvasContentOffsetY = 179.69;
+    private const double EscWidthUnits = 1.25;
+    private const double StatusPanelHeight = 34;
+    private const double StatusPanelGapAboveEsc = 6;
+    private const double CloseButtonLedOffsetRight = 15;
+    private const double CloseButtonLedOffsetUp = 10;
 
     private bool _suppressSelectionEvents;
     private double _selectedWindowScale = 1.0;
@@ -24,6 +31,11 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
     private double _previewInnerInsetYPercent = 20;
     private double _previewInnerOffsetXPercent;
     private double _previewInnerOffsetYPercent;
+
+    private FrameworkElement? _draggingPanel;
+    private Point _dragStart;
+    private double _panelStartX;
+    private double _panelStartY;
 
     public KeyboardWindow()
     {
@@ -292,15 +304,169 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
 
     private void RootSurface_SizeChanged(object sender, SizeChangedEventArgs e)
     {
+        UpdateTopControlsMargin();
         UpdateWindowClip();
     }
 
     private void UpdateTopControlsMargin()
     {
         var scale = Math.Min(Width / BaseKeyboardWidth, Height / BaseKeyboardHeight);
-        var inset = Math.Max(8, 10 * scale);
-        TopControls.Margin = new Thickness(inset, inset, inset, inset);
-        BottomControls.Margin = new Thickness(0, 0, 0, Math.Max(8, 14 * scale));
+        var calibration = ViewModel?.Settings.KeyboardCalibration;
+
+        if (calibration is null)
+        {
+            var inset = Math.Max(8, 10 * scale);
+            TopControls.Margin = new Thickness(inset);
+            BottomControls.Margin = new Thickness(inset);
+            return;
+        }
+
+        // Soundboard status panel: top-left, right above the ESC key.
+        var (escX, escY) = ComputeEscTopLeft(calibration);
+        var escWinX = (escX - CanvasContentOffsetX) * scale;
+        var escWinY = (escY - CanvasContentOffsetY) * scale;
+        BottomControls.HorizontalAlignment = HorizontalAlignment.Left;
+        BottomControls.VerticalAlignment = VerticalAlignment.Top;
+        var statusX = calibration.SoundboardStatusPanelX > 0
+            ? calibration.SoundboardStatusPanelX
+            : Math.Max(8, escWinX);
+        var statusY = calibration.SoundboardStatusPanelY > 0
+            ? calibration.SoundboardStatusPanelY
+            : Math.Max(8, escWinY - StatusPanelGapAboveEsc - StatusPanelHeight);
+        BottomControls.Margin = new Thickness(statusX, statusY, 0, 0);
+
+        // Close button: anchored to the scroll lock LED, up 10 and right 15 (window px).
+        var scrollLedY = calibration.ScrollLockIndicatorOffsetY;
+        if (scrollLedY < 220)
+        {
+            scrollLedY += 70;
+        }
+
+        var ledWinX = (calibration.ScrollLockIndicatorOffsetX - CanvasContentOffsetX) * scale;
+        var ledWinY = (scrollLedY - CanvasContentOffsetY) * scale;
+        TopControls.HorizontalAlignment = HorizontalAlignment.Left;
+        TopControls.VerticalAlignment = VerticalAlignment.Top;
+        var closeX = calibration.CloseButtonPanelX > 0
+            ? calibration.CloseButtonPanelX
+            : ledWinX + CloseButtonLedOffsetRight;
+        var closeY = calibration.CloseButtonPanelY > 0
+            ? calibration.CloseButtonPanelY
+            : ledWinY - CloseButtonLedOffsetUp;
+        TopControls.Margin = new Thickness(closeX, closeY, 0, 0);
+    }
+
+    private void BottomControls_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        => StartPanelDrag(BottomControls, e);
+
+    private void TopControls_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        => StartPanelDrag(TopControls, e);
+
+    private void StartPanelDrag(FrameworkElement panel, MouseButtonEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        if (e.OriginalSource is DependencyObject source && IsInteractiveElement(source))
+        {
+            return;
+        }
+
+        _draggingPanel = panel;
+        _dragStart = e.GetPosition(RootSurface);
+        _panelStartX = panel.Margin.Left;
+        _panelStartY = panel.Margin.Top;
+        panel.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void BottomControls_MouseMove(object sender, MouseEventArgs e)
+        => DragPanel(BottomControls, e);
+
+    private void TopControls_MouseMove(object sender, MouseEventArgs e)
+        => DragPanel(TopControls, e);
+
+    private void DragPanel(FrameworkElement panel, MouseEventArgs e)
+    {
+        if (_draggingPanel is null || !ReferenceEquals(_draggingPanel, panel))
+        {
+            return;
+        }
+
+        var pos = e.GetPosition(RootSurface);
+        var x = Math.Max(0, _panelStartX + (pos.X - _dragStart.X));
+        var y = Math.Max(0, _panelStartY + (pos.Y - _dragStart.Y));
+        panel.Margin = new Thickness(x, y, 0, 0);
+        e.Handled = true;
+    }
+
+    private void BottomControls_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        => EndPanelDrag(e);
+
+    private void TopControls_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        => EndPanelDrag(e);
+
+    private void EndPanelDrag(MouseEventArgs e)
+    {
+        if (_draggingPanel is null)
+        {
+            return;
+        }
+
+        if (_draggingPanel.IsMouseCaptured)
+        {
+            _draggingPanel.ReleaseMouseCapture();
+        }
+
+        _draggingPanel = null;
+        PersistPanelPositions();
+        e.Handled = true;
+    }
+
+    private void BottomControls_MouseLeave(object sender, MouseEventArgs e)
+        => CancelPanelDrag();
+
+    private void TopControls_MouseLeave(object sender, MouseEventArgs e)
+        => CancelPanelDrag();
+
+    private void CancelPanelDrag()
+    {
+        if (_draggingPanel is not null && !_draggingPanel.IsMouseCaptured)
+        {
+            _draggingPanel = null;
+        }
+    }
+
+    private void PersistPanelPositions()
+    {
+        if (ViewModel?.Settings.KeyboardCalibration is not { } calibration)
+        {
+            return;
+        }
+
+        calibration.SoundboardStatusPanelX = Math.Max(0, BottomControls.Margin.Left);
+        calibration.SoundboardStatusPanelY = Math.Max(0, BottomControls.Margin.Top);
+        calibration.CloseButtonPanelX = Math.Max(0, TopControls.Margin.Left);
+        calibration.CloseButtonPanelY = Math.Max(0, TopControls.Margin.Top);
+        ViewModel.SaveKeyboardCalibrationSettings();
+    }
+
+    private static (double X, double Y) ComputeEscTopLeft(KeyboardCalibrationSettings calibration)
+    {
+        var keyUnit = calibration.KeyUnit > 0 ? calibration.KeyUnit : 43d;
+        var buttonScale = calibration.ButtonScale > 0 ? calibration.ButtonScale : 1d;
+
+        calibration.KeyOverrides.TryGetValue("ESC-0-0", out var escOverride);
+
+        var baseWidth = (EscWidthUnits * keyUnit) + (escOverride?.WidthAdjustment ?? 0d);
+        var baseHeight = keyUnit + (escOverride?.HeightAdjustment ?? 0d);
+        var width = Math.Max(1d, (baseWidth * buttonScale) + calibration.EscWidthAdjustment);
+        var height = Math.Max(1d, (baseHeight * buttonScale) + calibration.EscHeightAdjustment);
+
+        var x = calibration.OffsetX + calibration.EscOffsetX + (escOverride?.OffsetX ?? 0d) + ((baseWidth - width) / 2d);
+        var y = calibration.OffsetY + calibration.EscOffsetY + (escOverride?.OffsetY ?? 0d) + ((baseHeight - height) / 2d);
+        return (x, y);
     }
 
     private void UpdateWindowClip()

@@ -1,8 +1,10 @@
 using SoundFXStudio.Infrastructure;
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
+using SoundFXStudio.ViewModels;
 using Xunit;
 using System.IO;
+using System.Reflection;
 
 namespace SoundFXStudio.Tests;
 
@@ -69,6 +71,21 @@ public class IntegrationTests
         // Act & Assert
         player.Play("test-id", missingFile, 1f, PlaybackMode.Restart, -1); // Should return early, not throw
         Assert.True(true); // If we got here, no exception was thrown
+    }
+
+    [Fact]
+    public void VoiceChangerRoutingSnapshot_TracksProcessedStripState()
+    {
+        var snapshotType = typeof(MainViewModel).GetNestedType("VoiceChangerDryMicSnapshot", BindingFlags.NonPublic);
+
+        Assert.NotNull(snapshotType);
+        var previousProcessedB1 = snapshotType!.GetProperty("PreviousProcessedB1");
+        var previousVirtualA1 = snapshotType.GetProperty("PreviousVirtualA1");
+
+        Assert.NotNull(previousProcessedB1);
+        Assert.Equal(typeof(float), previousProcessedB1.PropertyType);
+        Assert.NotNull(previousVirtualA1);
+        Assert.Equal(typeof(float), previousVirtualA1.PropertyType);
     }
 
     [Fact]

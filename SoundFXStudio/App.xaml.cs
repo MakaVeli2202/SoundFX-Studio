@@ -30,6 +30,11 @@ public partial class App : Application
 
     public static bool IsShuttingDown { get; private set; }
 
+    public static void RequestShutdown()
+    {
+        IsShuttingDown = true;
+    }
+
     public App()
     {
         _configService = new ConfigService(_logService);

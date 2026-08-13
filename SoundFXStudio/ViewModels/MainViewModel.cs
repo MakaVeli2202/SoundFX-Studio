@@ -371,6 +371,12 @@ public sealed class MainViewModel : ObservableObject
 
     public double ScrollLockIndicatorOffsetY => NormalizeLampY(GetKeyboardCalibration().ScrollLockIndicatorOffsetY);
 
+    public double CapsLockIndicatorSize => GetKeyboardCalibration().CapsLockIndicatorSize;
+
+    public double NumLockIndicatorSize => GetKeyboardCalibration().NumLockIndicatorSize;
+
+    public double ScrollLockIndicatorSize => GetKeyboardCalibration().ScrollLockIndicatorSize;
+
     public KeyboardKey? SelectedKey
     {
         get => _selectedKey;
@@ -917,7 +923,9 @@ public sealed class MainViewModel : ObservableObject
     {
         public required int StripIndex { get; init; }
         public required float PreviousB1 { get; init; }
+        public required float PreviousMicA1 { get; init; }
         public required int ProcessedStripIndex { get; init; }
+        public required float PreviousProcessedB1 { get; init; }
         public required float PreviousVirtualA1 { get; init; }
         public required string MicDeviceId { get; init; }
         public required string MicDeviceName { get; init; }
@@ -989,6 +997,9 @@ public sealed class MainViewModel : ObservableObject
 
             var micB1Param = $"Strip[{micStripIndex}].B1";
             var previousB1 = vm.GetFloat(micB1Param);
+            var micA1Param = $"Strip[{micStripIndex}].A1";
+            var previousMicA1 = vm.GetFloat(micA1Param);
+
             var setMuteResult = TrySetFloatVerified(vm, micB1Param, 0f, out var mutedB1);
             if (!setMuteResult)
             {
@@ -1013,6 +1024,19 @@ public sealed class MainViewModel : ObservableObject
                 }
             }
 
+            if (previousMicA1 >= 0.5f)
+            {
+                var setMicA1Result = TrySetFloatVerified(vm, micA1Param, 0f, out var disabledMicA1);
+                if (!setMicA1Result)
+                {
+                    _ = TrySetFloatVerified(vm, micB1Param, previousB1, out _);
+                    _ = TrySetFloatVerified(vm, processedB1Param, processedB1Before, out _);
+                    error = $"Voice changer routing failed: unable to close input strip A1 (strip={micStripIndex}, target=0, readBack={disabledMicA1:0.##}).";
+                    _logService?.Warning(error);
+                    return false;
+                }
+            }
+
             var virtualA1Param = $"Strip[{processedStripIndex}].A1";
             var previousVirtualA1 = vm.GetFloat(virtualA1Param);
             if (previousVirtualA1 >= 0.5f)
@@ -1021,7 +1045,9 @@ public sealed class MainViewModel : ObservableObject
                 if (!setA1Result)
                 {
                     _ = TrySetFloatVerified(vm, micB1Param, previousB1, out _);
-                    error = $"Voice changer routing failed: unable to disable virtual input A1 (strip={processedStripIndex}, target=0, readBack={disabledA1:0.##}).";
+                    _ = TrySetFloatVerified(vm, processedB1Param, processedB1Before, out _);
+                    _ = TrySetFloatVerified(vm, micA1Param, previousMicA1, out _);
+                    error = $"Voice changer routing failed: unable to turn virtual input A1 OFF (strip={processedStripIndex}, target=0, readBack={disabledA1:0.##}).";
                     _logService?.Warning(error);
                     return false;
                 }
@@ -1031,15 +1057,17 @@ public sealed class MainViewModel : ObservableObject
             {
                 StripIndex = micStripIndex,
                 PreviousB1 = previousB1,
+                PreviousMicA1 = previousMicA1,
                 ProcessedStripIndex = processedStripIndex,
+                PreviousProcessedB1 = processedB1Before,
                 PreviousVirtualA1 = previousVirtualA1,
                 MicDeviceId = micDeviceId,
                 MicDeviceName = micDeviceName
             };
 
             _logService?.Info(
-                $"VC START routing: mic='{micDeviceName}' id='{micDeviceId}', strip={micStripIndex} stripDevice='{resolvedStripDevice}', B1 {previousB1:0.##}->0, " +
-                $"vmInputId='{outputDeviceId}', vmInputName='{outputDeviceName}', outputIndex={outputDeviceIndex}, outputConfirmed=true, processedStrip={processedStripIndex} B1={vm.GetFloat($"Strip[{processedStripIndex}].B1"):0.##}");
+                $"VC START routing: mic='{micDeviceName}' id='{micDeviceId}', strip={micStripIndex} stripDevice='{resolvedStripDevice}', B1 {previousB1:0.##}->0, A1 {previousMicA1:0.##}->0, " +
+                $"vmInputId='{outputDeviceId}', vmInputName='{outputDeviceName}', outputIndex={outputDeviceIndex}, outputConfirmed=true, processedStrip={processedStripIndex} B1={vm.GetFloat($"Strip[{processedStripIndex}].B1"):0.##}, A1={vm.GetFloat($"Strip[{processedStripIndex}].A1"):0.##}");
 
             return true;
         }
@@ -1081,17 +1109,35 @@ public sealed class MainViewModel : ObservableObject
                 return false;
             }
 
+            var processedB1Param = $"Strip[{snapshot.ProcessedStripIndex}].B1";
+            var restoreProcessedB1Result = TrySetFloatVerified(vm, processedB1Param, snapshot.PreviousProcessedB1, out var restoredProcessedB1);
+            if (!restoreProcessedB1Result)
+            {
+                error = $"Voice changer routing restore failed: processed strip {snapshot.ProcessedStripIndex} B1 restore mismatch (target={snapshot.PreviousProcessedB1:0.##}, readBack={restoredProcessedB1:0.##}).";
+                _logService?.Warning(error);
+                return false;
+            }
+
+            var micA1Param = $"Strip[{snapshot.StripIndex}].A1";
+            var restoreMicA1Result = TrySetFloatVerified(vm, micA1Param, snapshot.PreviousMicA1, out var restoredMicA1);
+            if (!restoreMicA1Result)
+            {
+                error = $"Voice changer routing restore failed: input strip {snapshot.StripIndex} A1 restore mismatch (target={snapshot.PreviousMicA1:0.##}, readBack={restoredMicA1:0.##}).";
+                _logService?.Warning(error);
+                return false;
+            }
+
             var virtualA1Param = $"Strip[{snapshot.ProcessedStripIndex}].A1";
             var restoreA1Result = TrySetFloatVerified(vm, virtualA1Param, 1f, out var restoredA1);
             if (!restoreA1Result)
             {
-                error = $"Voice changer routing restore failed: virtual strip {snapshot.ProcessedStripIndex} A1 enable mismatch (target=1, readBack={restoredA1:0.##}).";
+                error = $"Voice changer routing restore failed: virtual strip {snapshot.ProcessedStripIndex} A1 restore mismatch (target=1, readBack={restoredA1:0.##}).";
                 _logService?.Warning(error);
                 return false;
             }
 
             _voiceChangerMicSnapshot = null;
-            _logService?.Info($"VC STOP routing: micStrip={snapshot.StripIndex}, B1 current={currentB1:0.##}, restored={restoredB1:0.##}, mic='{snapshot.MicDeviceName}' id='{snapshot.MicDeviceId}'");
+            _logService?.Info($"VC STOP routing: micStrip={snapshot.StripIndex}, B1 current={currentB1:0.##}, restored={restoredB1:0.##}, A1 restored={restoredMicA1:0.##}, processedStrip={snapshot.ProcessedStripIndex}, B1 restored={restoredProcessedB1:0.##}, A1 restored={restoredA1:0.##}, mic='{snapshot.MicDeviceName}' id='{snapshot.MicDeviceId}'");
             return true;
         }
         catch (Exception ex)
@@ -1252,6 +1298,7 @@ public sealed class MainViewModel : ObservableObject
 
         _disposed = true;
         _logService?.Info("Disposing MainViewModel");
+        RestoreWindowsDefaultDevicesOnExit();
         _triggerService.Dispose();
         _logService?.Info("Disposing AudioPlayer");
         _logService?.Info("Disposing HttpClient");
@@ -1464,6 +1511,10 @@ public sealed class MainViewModel : ObservableObject
             calibration.ArrowOffsetY,
             calibration.NumpadOffsetX,
             calibration.NumpadOffsetY,
+            calibration.MainLettersOffsetX,
+            calibration.MainLettersOffsetY,
+            calibration.MainLettersWidthAdjustment,
+            calibration.MainLettersHeightAdjustment,
             calibration.EscWidthAdjustment,
             calibration.EscHeightAdjustment,
             calibration.F1ToF4WidthAdjustment,
@@ -1482,6 +1533,12 @@ public sealed class MainViewModel : ObservableObject
             calibration.ArrowHeightAdjustment,
             calibration.NumpadWidthAdjustment,
             calibration.NumpadHeightAdjustment);
+
+        KeyboardLayoutPanel.ResetRowCalibration();
+        KeyboardLayoutPanel.SetRowCalibration(1, calibration.MainRowOffsetX1, calibration.MainRowOffsetY1);
+        KeyboardLayoutPanel.SetRowCalibration(2, calibration.MainRowOffsetX2, calibration.MainRowOffsetY2);
+        KeyboardLayoutPanel.SetRowCalibration(3, calibration.MainRowOffsetX3, calibration.MainRowOffsetY3);
+        KeyboardLayoutPanel.SetRowCalibration(4, calibration.MainRowOffsetX4, calibration.MainRowOffsetY4);
 
         KeyboardLayoutPanel.ClearAllSpecialKeyOverrides();
         KeyboardLayoutPanel.SetSpecialKeyOverride("SPACE", calibration.SpacebarWidthAdjustment);
@@ -1962,7 +2019,6 @@ public sealed class MainViewModel : ObservableObject
         var tokens = (chordKeys ?? Array.Empty<string>())
             .Select(NormalizeChordToken)
             .Where(token => !string.IsNullOrWhiteSpace(token))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
             .Take(3)
             .ToList();
 
@@ -2936,33 +2992,62 @@ public sealed class MainViewModel : ObservableObject
         Refresh();
     }
 
-    private void AutoConfigureAudio()
+    private async void AutoConfigureAudio()
     {
-        var output = PickBestDevice(OutputDevices, preferVirtual: false);
-        var input = PickBestDevice(InputDevices, preferVirtual: false);
-        if (output is not null)
+        var loader = new LoadingScreenWindow();
+        var owner = _window;
+        if (owner is not null)
         {
-            Settings.OutputDeviceId = output.Id;
-            Settings.PlaybackDeviceId = output.Id;
-
+            loader.Owner = owner;
         }
 
-        if (input is not null)
+        try
         {
-            Settings.InputDeviceId = input.Id;
-            Settings.MicrophoneDeviceId = input.Id;
+            loader.SetStatus("Configuring audio devices…");
+            loader.Show();
+            await Task.Delay(450);
+
+            var output = PickBestDevice(OutputDevices, preferVirtual: false);
+            var input = PickBestDevice(InputDevices, preferVirtual: false);
+            if (output is not null)
+            {
+                Settings.OutputDeviceId = output.Id;
+                Settings.PlaybackDeviceId = output.Id;
+            }
+
+            if (input is not null)
+            {
+                Settings.InputDeviceId = input.Id;
+                Settings.MicrophoneDeviceId = input.Id;
+            }
+
+            Settings.VirtualCableDeviceId = string.Empty;
+            Settings.VBCableDetected = false;
+
+            Settings.LastConfigurationDate = DateTime.UtcNow;
+            Save();
+            UpdateRoutingStatus();
+
+            var outputName = output?.Name ?? "no output device";
+            var inputName = input?.Name ?? "no input device";
+            StatusText = $"Auto-configured audio: {outputName} / {inputName}";
+
+            loader.SetStatus("Setup complete. Discord input profile should be Studio.");
+            await Task.Delay(500);
+            ToastWindow.ShowDiscordStudioTip();
+            StatusText = "Auto-configured. Set Discord input profile to Studio for best quality.";
         }
-
-        Settings.VirtualCableDeviceId = string.Empty;
-        Settings.VBCableDetected = false;
-
-        Settings.LastConfigurationDate = DateTime.UtcNow;
-        Save();
-        UpdateRoutingStatus();
-
-        var outputName = output?.Name ?? "no output device";
-        var inputName = input?.Name ?? "no input device";
-        StatusText = $"Auto-configured audio: {outputName} / {inputName}";
+        catch (Exception ex)
+        {
+            StatusText = $"Auto-configure failed: {ex.Message}";
+        }
+        finally
+        {
+            if (loader.IsVisible)
+            {
+                loader.Close();
+            }
+        }
     }
 
     private void TestRouting()
@@ -3168,6 +3253,44 @@ public sealed class MainViewModel : ObservableObject
                 : "⚠  No saved Windows defaults to restore (or restore failed).";
             return $"{vmResult}\n{line2}";
         });
+    }
+
+    public void RestoreWindowsDefaultDevicesOnExit()
+    {
+        try
+        {
+            var previousRender = Settings.SavedDefaultRenderId;
+            var previousCapture = Settings.SavedDefaultCaptureId;
+            if (string.IsNullOrWhiteSpace(previousRender) && string.IsNullOrWhiteSpace(previousCapture))
+            {
+                return;
+            }
+
+            var restored = _windowsAudioRoutingService.TrySetDefaultDevices(previousRender ?? string.Empty, previousCapture ?? string.Empty);
+            Settings.SavedDefaultRenderId = string.Empty;
+            Settings.SavedDefaultCaptureId = string.Empty;
+
+            if (restored)
+            {
+                var render = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
+                var capture = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
+                Settings.OutputDeviceId = render ?? string.Empty;
+                Settings.PlaybackDeviceId = render ?? string.Empty;
+                Settings.InputDeviceId = capture ?? string.Empty;
+                Settings.MicrophoneDeviceId = capture ?? string.Empty;
+            }
+
+            _config.Settings = Settings;
+            _configService.Save(_config);
+
+            _logService?.Info(restored
+                ? "Windows default output/input restored on exit."
+                : $"Windows default restore on exit incomplete ({_windowsAudioRoutingService.LastError})");
+        }
+        catch (Exception ex)
+        {
+            _logService?.Error("Windows default restore on exit failed", ex);
+        }
     }
 
     internal void OpenMixer(Window owner)
@@ -3565,6 +3688,9 @@ public sealed class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(NumLockIndicatorOffsetY));
         OnPropertyChanged(nameof(ScrollLockIndicatorOffsetX));
         OnPropertyChanged(nameof(ScrollLockIndicatorOffsetY));
+        OnPropertyChanged(nameof(CapsLockIndicatorSize));
+        OnPropertyChanged(nameof(NumLockIndicatorSize));
+        OnPropertyChanged(nameof(ScrollLockIndicatorSize));
     }
 
     private async Task TrackPlaybackAsync(string soundId, string? keyId)
