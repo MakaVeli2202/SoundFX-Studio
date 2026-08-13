@@ -64,6 +64,7 @@ public sealed class TriggerService : IDisposable
     {
         _hotkeyService = hotkeyService;
         _keyboardHookService = keyboardHookService;
+        _keyboardHookService.ShouldSuppressKey = ShouldSuppressKey;
         _actionExecutor = actionExecutor;
         _audioPlayer = audioPlayer;
         _getConfig = getConfig;
@@ -92,6 +93,8 @@ public sealed class TriggerService : IDisposable
     }
 
     public ChordRuntimeService ChordRuntimeService { get; }
+
+    public Func<bool>? IsSoundboardActiveProvider { get; set; }
 
     public void AttachWindow(Window window, Action<Key, bool> handlePhysicalKey)
     {
@@ -602,6 +605,41 @@ public sealed class TriggerService : IDisposable
             string.IsNullOrWhiteSpace(item.ChordKey)
             && (string.Equals(item.KeyId, normalized, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(NormalizeHotkeyToken(item.HotkeyText), normalized, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private bool ShouldSuppressKey(Key key)
+    {
+        if (IsSoundboardActiveProvider?.Invoke() != true)
+        {
+            return false;
+        }
+
+        var token = KeyToToken(key);
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        var profile = ActiveProfile;
+        if (profile is null)
+        {
+            return false;
+        }
+
+        var normalized = NormalizeHotkeyToken(token);
+        foreach (var assignment in profile.Assignments)
+        {
+            if (string.Equals(assignment.KeyId, token, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(assignment.KeyId, normalized, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(NormalizeHotkeyToken(assignment.HotkeyText), normalized, StringComparison.OrdinalIgnoreCase)
+                || (!string.IsNullOrWhiteSpace(assignment.ChordKey)
+                    && string.Equals(assignment.ChordKey, token, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string NormalizeHotkeyToken(string? hotkeyText)

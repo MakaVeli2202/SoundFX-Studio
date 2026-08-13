@@ -22,6 +22,8 @@ public sealed class KeyboardHookService : IDisposable
     public event EventHandler<KeyboardHookKeyEventArgs>? KeyDown;
     public event EventHandler<KeyboardHookKeyEventArgs>? KeyUp;
 
+    public Func<Key, bool>? ShouldSuppressKey { get; set; }
+
     public void Attach()
     {
         if (_hookId != IntPtr.Zero)
@@ -56,12 +58,14 @@ public sealed class KeyboardHookService : IDisposable
                 var data = Marshal.PtrToStructure<KbdLlHookStruct>(lParam);
                 var key = KeyInterop.KeyFromVirtualKey((int)data.VkCode);
                 KeyDown?.Invoke(this, new KeyboardHookKeyEventArgs(key));
+                return ShouldSuppressKey?.Invoke(key) == true ? (IntPtr)1 : CallNextHookEx(_hookId, nCode, wParam, lParam);
             }
             else if (message is WmKeyUp or WmSysKeyUp)
             {
                 var data = Marshal.PtrToStructure<KbdLlHookStruct>(lParam);
                 var key = KeyInterop.KeyFromVirtualKey((int)data.VkCode);
                 KeyUp?.Invoke(this, new KeyboardHookKeyEventArgs(key));
+                return ShouldSuppressKey?.Invoke(key) == true ? (IntPtr)1 : CallNextHookEx(_hookId, nCode, wParam, lParam);
             }
         }
 

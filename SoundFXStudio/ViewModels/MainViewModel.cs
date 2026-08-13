@@ -109,6 +109,8 @@ public sealed class MainViewModel : ObservableObject
             RunOnUiThread,
             _logService);
 
+        _triggerService.IsSoundboardActiveProvider = () => IsSoundboardActive;
+
         _keyboardViewModel = new KeyboardViewModel(
             () => _config,
             () => Settings,
