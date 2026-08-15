@@ -32,4 +32,6 @@ public class Category : ObservableObject
         get => _isBuiltIn;
         set => SetProperty(ref _isBuiltIn, value);
     }
+
+    public override string ToString() => Name ?? string.Empty;
 }

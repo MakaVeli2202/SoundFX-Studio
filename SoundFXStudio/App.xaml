@@ -204,13 +204,12 @@
                             <Popup Name="PART_Popup"
                                    IsOpen="{TemplateBinding IsDropDownOpen}"
                                    Placement="Bottom"
-                                   AllowsTransparency="True"
+                                   AllowsTransparency="False"
                                    Focusable="False"
-                                   PopupAnimation="Slide">
+                                   PopupAnimation="Fade">
                                 <Border Background="#111827"
                                         BorderBrush="{StaticResource BrandCyan}"
                                         BorderThickness="1"
-                                    CornerRadius="10"
                                         MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
                                         MaxHeight="{TemplateBinding MaxDropDownHeight}"
                                         Margin="0,2,0,0">

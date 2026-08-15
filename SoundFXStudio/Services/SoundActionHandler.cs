@@ -41,7 +41,7 @@ public sealed class SoundActionHandler : IActionHandler
         }
 
         App.EnsureVirtualInputB1();
-        _audioPlayer.Play(sound.Id, filePath, sound.Volume, action.PlaybackMode, outputDeviceIndex);
+        _audioPlayer.Play(sound.Id, filePath, sound.Volume * sound.NormalizedGain, action.PlaybackMode, outputDeviceIndex);
         return Task.CompletedTask;
     }
 }

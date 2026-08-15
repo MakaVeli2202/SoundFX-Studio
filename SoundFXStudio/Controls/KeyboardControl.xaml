@@ -67,9 +67,18 @@
 
                           <Canvas Width="1536"
                             Height="1024"
-                            IsHitTestVisible="False"
                             Panel.ZIndex="50">
-                           <Grid Width="{Binding DataContext.CapsLockIndicatorSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            <Canvas.Style>
+                                <Style TargetType="Canvas">
+                                    <Setter Property="IsHitTestVisible" Value="False"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsCalibrationMode, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                            <Setter Property="IsHitTestVisible" Value="True"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Canvas.Style>
+                           <Grid x:Name="CapsLockIndicator" Width="{Binding DataContext.CapsLockIndicatorSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Canvas.Left="{Binding DataContext.CapsLockIndicatorOffsetX, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Canvas.Top="{Binding DataContext.CapsLockIndicatorOffsetY, RelativeSource={RelativeSource AncestorType=UserControl}}">
                                <Grid.RowDefinitions>
@@ -108,7 +117,7 @@
                                             Width="70" TextAlignment="Center" TextWrapping="NoWrap"
                                             FontSize="13" FontWeight="Bold" Foreground="#F5F7FB" />
                            </Grid>
-                           <Grid Width="{Binding DataContext.NumLockIndicatorSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           <Grid x:Name="NumLockIndicator" Width="{Binding DataContext.NumLockIndicatorSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Canvas.Left="{Binding DataContext.NumLockIndicatorOffsetX, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Canvas.Top="{Binding DataContext.NumLockIndicatorOffsetY, RelativeSource={RelativeSource AncestorType=UserControl}}">
                                <Grid.RowDefinitions>
@@ -147,7 +156,7 @@
                                             Width="70" TextAlignment="Center" TextWrapping="NoWrap"
                                             FontSize="13" FontWeight="Bold" Foreground="#F5F7FB" />
                            </Grid>
-                           <Grid Width="{Binding DataContext.ScrollLockIndicatorSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           <Grid x:Name="ScrollLockIndicator" Width="{Binding DataContext.ScrollLockIndicatorSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Canvas.Left="{Binding DataContext.ScrollLockIndicatorOffsetX, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                Canvas.Top="{Binding DataContext.ScrollLockIndicatorOffsetY, RelativeSource={RelativeSource AncestorType=UserControl}}">
                                <Grid.RowDefinitions>
@@ -222,6 +231,10 @@
                                                     <Setter Property="BorderBrush" Value="#A78BFA"/>
                                                     <Setter Property="BorderThickness" Value="2"/>
                                                 </MultiDataTrigger>
+                                                <DataTrigger Binding="{Binding IsGuideHighlighted}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#00D4FF"/>
+                                                    <Setter Property="BorderThickness" Value="3"/>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
@@ -267,6 +280,10 @@
                                                         <Setter Property="BorderBrush" Value="{Binding PressHighlightColor}"/>
                                                         <Setter Property="BorderThickness" Value="2"/>
                                                     </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsGuideHighlighted}" Value="True">
+                                                        <Setter Property="BorderBrush" Value="#00D4FF"/>
+                                                        <Setter Property="BorderThickness" Value="2"/>
+                                                    </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
@@ -301,20 +318,32 @@
                                             <Grid Margin="4,2,4,2">
                                                 <TextBlock Text="{Binding DisplayLabel}"
                                                            FontSize="11"
-                                                           FontWeight="SemiBold"
                                                            HorizontalAlignment="Center"
                                                            VerticalAlignment="Center"
                                                            TextAlignment="Center"
                                                            TextWrapping="NoWrap"
                                                            TextTrimming="CharacterEllipsis"
                                                            Opacity="1">
-                                                    <TextBlock.Foreground>
-                                                        <MultiBinding Converter="{StaticResource KeyboardLabelForegroundConverter}">
-                                                            <Binding Path="State" />
-                                                            <Binding Path="DataContext.Settings.KeyboardPressedTextColor"
-                                                                     RelativeSource="{RelativeSource AncestorType=UserControl}" />
-                                                        </MultiBinding>
-                                                    </TextBlock.Foreground>
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                            <Setter Property="Foreground">
+                                                                <Setter.Value>
+                                                                    <MultiBinding Converter="{StaticResource KeyboardLabelForegroundConverter}">
+                                                                        <Binding Path="State" />
+                                                                        <Binding Path="DataContext.Settings.KeyboardPressedTextColor"
+                                                                                 RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                                                    </MultiBinding>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsGuideHighlighted}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#00D4FF"/>
+                                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
                                                 </TextBlock>
                                             </Grid>
                                         </Grid>
@@ -356,6 +385,25 @@
                                                     <Setter Property="BorderBrush" Value="#A78BFA"/>
                                                     <Setter Property="BorderThickness" Value="2"/>
                                                 </MultiDataTrigger>
+                                                <DataTrigger Binding="{Binding IsGuideHighlighted}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="#00D4FF"/>
+                                                    <Setter Property="BorderThickness" Value="3"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+
+                                <Border IsHitTestVisible="False"
+                                        CornerRadius="10"
+                                        Panel.ZIndex="20">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsGuideDimmed}" Value="True">
+                                                    <Setter Property="Background" Value="#A6000000"/>
+                                                </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>

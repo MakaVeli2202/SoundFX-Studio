@@ -428,7 +428,7 @@ public sealed class KeyboardViewModel
         _audioPlayer.Play(
             sound.Id,
             sound.FilePath,
-            assignment?.VolumeOverride ?? sound.Volume,
+            (assignment?.VolumeOverride ?? sound.Volume) * sound.NormalizedGain,
             PlaybackMode.Restart,
             deviceIndex);
 

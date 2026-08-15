@@ -140,7 +140,9 @@ public sealed class MacroActionHandler : IActionHandler
     {
         if (float.TryParse(target, out var value))
         {
-            _getConfig().Settings.MasterVolume = Math.Clamp(value, 0f, 1f);
+            value = Math.Clamp(value, 0f, 1f);
+            _getConfig().Settings.MasterVolume = value;
+            _audioPlayer.SetMasterVolume(value);
             _configService.Save(_getConfig());
         }
     }

@@ -67,6 +67,15 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private double _overlayDragStartX;
     private double _overlayDragStartY;
 
+    private bool _keyboardDragActive;
+    private bool _keyboardDragMoved;
+    private Point _keyboardDragStart;
+    private double _keyboardDragStartX;
+    private double _keyboardDragStartY;
+    private KeyCalibrationItem? _keyboardDragKeyItem;
+    private string? _keyboardDragLamp;
+    private FrameworkElement? _keyboardDragElement;
+
     public KeyboardCalibrationWindow()
     {
         InitializeComponent();
@@ -666,6 +675,238 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         UpdateOverlayPreviewHighlight();
     }
 
+    private void PreviewKeyboard_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        _keyboardDragKeyItem = FindKeyItemAt(e.OriginalSource);
+        _keyboardDragLamp = FindLampAt(e.OriginalSource);
+
+        if (_keyboardDragKeyItem is not null)
+        {
+            SelectedKeyItem = _keyboardDragKeyItem;
+            _keyboardDragStartX = _keyboardDragKeyItem.OffsetX;
+            _keyboardDragStartY = _keyboardDragKeyItem.OffsetY;
+            _keyboardDragElement = FindKeyButton(_keyboardDragKeyItem.KeyId);
+        }
+        else if (_keyboardDragLamp is not null)
+        {
+            _keyboardDragStartX = GetLampOffsetX(_keyboardDragLamp);
+            _keyboardDragStartY = GetLampOffsetY(_keyboardDragLamp);
+            _keyboardDragElement = FindLampElement(_keyboardDragLamp);
+        }
+        else
+        {
+            _keyboardDragStartX = PreviewOffsetX;
+            _keyboardDragStartY = PreviewOffsetY;
+            _keyboardDragElement = FindVisualChild<KeyboardLayoutPanel>(PreviewKeyboard);
+        }
+
+        _keyboardDragActive = true;
+        _keyboardDragMoved = false;
+        _keyboardDragStart = e.GetPosition(PreviewKeyboard);
+        PreviewKeyboard.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void PreviewKeyboard_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_keyboardDragActive)
+        {
+            return;
+        }
+
+        var position = e.GetPosition(PreviewKeyboard);
+        if (!_keyboardDragMoved &&
+            Math.Abs(position.X - _keyboardDragStart.X) < 3 &&
+            Math.Abs(position.Y - _keyboardDragStart.Y) < 3)
+        {
+            return;
+        }
+
+        _keyboardDragMoved = true;
+        if (_keyboardDragElement is not null)
+        {
+            _keyboardDragElement.RenderTransform =
+                new TranslateTransform(position.X - _keyboardDragStart.X, position.Y - _keyboardDragStart.Y);
+        }
+
+        e.Handled = true;
+    }
+
+    private void PreviewKeyboard_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!_keyboardDragActive)
+        {
+            return;
+        }
+
+        var wasMoved = _keyboardDragMoved;
+        var keyItem = _keyboardDragKeyItem;
+        var lamp = _keyboardDragLamp;
+        _keyboardDragActive = false;
+        PreviewKeyboard.ReleaseMouseCapture();
+
+        if (wasMoved)
+        {
+            var position = e.GetPosition(PreviewKeyboard);
+            var dx = position.X - _keyboardDragStart.X;
+            var dy = position.Y - _keyboardDragStart.Y;
+
+            if (_keyboardDragElement is not null)
+            {
+                _keyboardDragElement.RenderTransform = null;
+            }
+
+            if (keyItem is not null)
+            {
+                keyItem.OffsetX = _keyboardDragStartX + dx;
+                keyItem.OffsetY = _keyboardDragStartY + dy;
+            }
+            else if (lamp is not null)
+            {
+                SetLampPosition(lamp, _keyboardDragStartX + dx, _keyboardDragStartY + dy);
+            }
+            else
+            {
+                PreviewOffsetX = _keyboardDragStartX + dx;
+                PreviewOffsetY = _keyboardDragStartY + dy;
+            }
+        }
+        else if (keyItem is null)
+        {
+            SelectedKeyItem = null;
+        }
+
+        _keyboardDragKeyItem = null;
+        _keyboardDragLamp = null;
+        _keyboardDragElement = null;
+        e.Handled = true;
+    }
+
+    private KeyCalibrationItem? FindKeyItemAt(object originalSource)
+    {
+        var current = originalSource as DependencyObject;
+        while (current is not null)
+        {
+            if (current is Button { DataContext: KeyboardKey key })
+            {
+                return _keyItems.FirstOrDefault(item => string.Equals(item.KeyId, key.Id, StringComparison.OrdinalIgnoreCase));
+            }
+
+            current = GetVisualOrLogicalParent(current);
+        }
+
+        return null;
+    }
+
+    private static string? FindLampAt(object originalSource)
+    {
+        var current = originalSource as DependencyObject;
+        while (current is not null)
+        {
+            if (current is FrameworkElement { Name: "CapsLockIndicator" })
+            {
+                return "Caps";
+            }
+
+            if (current is FrameworkElement { Name: "NumLockIndicator" })
+            {
+                return "Num";
+            }
+
+            if (current is FrameworkElement { Name: "ScrollLockIndicator" })
+            {
+                return "Scroll";
+            }
+
+            current = GetVisualOrLogicalParent(current);
+        }
+
+        return null;
+    }
+
+    private static DependencyObject? GetVisualOrLogicalParent(DependencyObject? current)
+    {
+        if (current is Visual or System.Windows.Media.Media3D.Visual3D)
+        {
+            return VisualTreeHelper.GetParent(current);
+        }
+
+        return LogicalTreeHelper.GetParent(current);
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent, Func<T, bool>? predicate = null) where T : DependencyObject
+    {
+        var count = VisualTreeHelper.GetChildrenCount(parent);
+        for (var i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T match && (predicate is null || predicate(match)))
+            {
+                return match;
+            }
+
+            if (FindVisualChild(child, predicate) is T descendant)
+            {
+                return descendant;
+            }
+        }
+
+        return null;
+    }
+
+    private Button? FindKeyButton(string keyId)
+    {
+        return FindVisualChild<Button>(
+            PreviewKeyboard,
+            button => button.DataContext is KeyboardKey key
+                      && string.Equals(key.Id, keyId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private FrameworkElement? FindLampElement(string lamp) => lamp switch
+    {
+        "Caps" => FindVisualChild<FrameworkElement>(PreviewKeyboard, element => element.Name == "CapsLockIndicator"),
+        "Num" => FindVisualChild<FrameworkElement>(PreviewKeyboard, element => element.Name == "NumLockIndicator"),
+        _ => FindVisualChild<FrameworkElement>(PreviewKeyboard, element => element.Name == "ScrollLockIndicator")
+    };
+
+    private double GetLampOffsetX(string lamp) => lamp switch
+    {
+        "Caps" => CapsLockIndicatorOffsetX,
+        "Num" => NumLockIndicatorOffsetX,
+        _ => ScrollLockIndicatorOffsetX
+    };
+
+    private double GetLampOffsetY(string lamp) => lamp switch
+    {
+        "Caps" => CapsLockIndicatorOffsetY,
+        "Num" => NumLockIndicatorOffsetY,
+        _ => ScrollLockIndicatorOffsetY
+    };
+
+    private void SetLampPosition(string lamp, double x, double y)
+    {
+        switch (lamp)
+        {
+            case "Caps":
+                CapsLockIndicatorOffsetX = x;
+                CapsLockIndicatorOffsetY = y;
+                break;
+            case "Num":
+                NumLockIndicatorOffsetX = x;
+                NumLockIndicatorOffsetY = y;
+                break;
+            default:
+                ScrollLockIndicatorOffsetX = x;
+                ScrollLockIndicatorOffsetY = y;
+                break;
+        }
+    }
+
     private void ApplyClusterCalibration()
     {
         KeyboardClusterLayout.ApplyPreset(
@@ -931,7 +1172,7 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
     private void PersistCalibrationLive()
     {
-        if (_suppressUpdates || _overlayDragActive)
+        if (_suppressUpdates || _overlayDragActive || _keyboardDragActive)
         {
             return;
         }

@@ -34,7 +34,9 @@ public sealed class CommandActionHandler : IActionHandler
             case ActionType.VolumeChange:
                 if (float.TryParse(action.Payload?.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var target))
                 {
-                    _audioPlayer.SetMasterVolume(target <= 1f ? target : target / 100f);
+                    var master = Math.Clamp(target <= 1f ? target : target / 100f, 0f, 1f);
+                    _audioPlayer.SetMasterVolume(master);
+                    _getConfig().Settings.MasterVolume = master;
                 }
                 break;
 

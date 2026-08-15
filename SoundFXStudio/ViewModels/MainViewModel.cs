@@ -46,6 +46,7 @@ public sealed class MainViewModel : ObservableObject
     private SoundEntry? _selectedSound;
     private Profile? _selectedProfile;
     private string _searchText = string.Empty;
+    private double _masterVolumePercent = 100;
     private string _selectedCategoryFilter = "All";
     private string _profileSearchText = string.Empty;
     private bool _favoritesOnly;
@@ -164,6 +165,7 @@ public sealed class MainViewModel : ObservableObject
         _keyboardViewModel.AttachChordRuntimeService(_triggerService.ChordRuntimeService);
 
         AddSoundCommand = new RelayCommand(_ => _soundLibraryViewModel.AddSound());
+        EqualizeSoundsCommand = new AsyncRelayCommand(_ => _soundLibraryViewModel.EqualizeSoundsAsync(100));
         AddMultipleSoundsCommand = new RelayCommand(_ => _soundLibraryViewModel.AddMultipleSounds());
         AddSoundFromUrlCommand = new AsyncRelayCommand(_ => _soundLibraryViewModel.AddSoundFromUrlAsync());
         DeleteMarkedSoundsCommand = new RelayCommand(_ => _soundLibraryViewModel.DeleteMarkedSounds());
@@ -199,8 +201,12 @@ public sealed class MainViewModel : ObservableObject
         ClearSelectedSoundBindingCommand = new RelayCommand(_ => ClearSelectedSoundBinding(), _ => SelectedSound is not null);
         SetSoundHotkeyCommand = new RelayCommand(parameter => SetSoundHotkey(parameter), parameter => ResolveSound(parameter) is not null);
         Load();
+        ReconcileWindowsDefaultsOnStartup();
         InitializeKeybindings();
         UpdateTitle();
+
+        _masterVolumePercent = Math.Clamp(Settings.MasterVolume * 100.0, 5, 100);
+        _audioPlayer.SetMasterVolume(Settings.MasterVolume);
 
         _keyboardViewModel.RebuildKeyboard();
         NotifyKeyboardLampProperties();
@@ -209,7 +215,7 @@ public sealed class MainViewModel : ObservableObject
 
     private void InitializeSoundboardState()
     {
-        _isSoundboardActive = !Settings.HotkeyHoldMode;
+        _isSoundboardActive = false;
     }
     public ObservableCollection<KeyboardKey> KeyboardKeys { get; }
 
@@ -240,6 +246,8 @@ public sealed class MainViewModel : ObservableObject
     internal HttpClient HttpClient => _httpClient;
 
     public ICommand AddSoundCommand { get; }
+
+    public ICommand EqualizeSoundsCommand { get; }
 
     public ICommand AddMultipleSoundsCommand { get; }
 
@@ -460,6 +468,20 @@ public sealed class MainViewModel : ObservableObject
             {
                 SoundsView.Refresh();
                 RaiseSoundCollectionStats();
+            }
+        }
+    }
+
+    public double MasterVolumePercent
+    {
+        get => _masterVolumePercent;
+        set
+        {
+            var clamped = Math.Clamp(value, 5, 100);
+            if (SetProperty(ref _masterVolumePercent, clamped))
+            {
+                Settings.MasterVolume = (float)(clamped / 100.0);
+                _audioPlayer.SetMasterVolume((float)(clamped / 100.0));
             }
         }
     }
@@ -945,8 +967,8 @@ public sealed class MainViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(micDeviceId))
         {
-            error = "Voice changer routing failed: microphone device is not selected.";
-            _logService?.Warning(error);
+            _logService?.Warning("Voice changer routing failed: microphone device is not selected.");
+            error = "No microphone is selected. Check the Audio Setup.";
             return false;
         }
 
@@ -954,16 +976,16 @@ public sealed class MainViewModel : ObservableObject
         outputDeviceName = _audioDeviceService.GetVoicemeeterInputDeviceName() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(outputDeviceId) || string.IsNullOrWhiteSpace(outputDeviceName))
         {
-            error = "Voice changer routing failed: Voicemeeter Input (VAIO) endpoint was not found.";
-            _logService?.Warning(error);
+            _logService?.Warning("Voice changer routing failed: Voicemeeter Input (VAIO) endpoint was not found.");
+            error = "Audio routing is missing. Run the Audio Setup wizard again.";
             return false;
         }
 
         outputDeviceIndex = ResolveWaveOutIndex(outputDeviceName);
         if (outputDeviceIndex < 0)
         {
-            error = $"Voice changer routing failed: Voicemeeter Input endpoint '{outputDeviceName}' is not available to WaveOut.";
-            _logService?.Warning(error);
+            _logService?.Warning($"Voice changer routing failed: Voicemeeter Input endpoint '{outputDeviceName}' is not available to WaveOut.");
+            error = "Audio routing isn't available. Run the Audio Setup wizard again.";
             return false;
         }
 
@@ -976,8 +998,8 @@ public sealed class MainViewModel : ObservableObject
             using var vm = new VoicemeeterRemote();
             if (!vm.TryConnect())
             {
-                error = "Voice changer routing failed: could not connect to Voicemeeter.";
-                _logService?.Warning(error);
+                _logService?.Warning("Voice changer routing failed: could not connect to Voicemeeter.");
+                error = "Couldn't start the voice changer. Check your audio routing and try again.";
                 return false;
             }
 
@@ -985,16 +1007,38 @@ public sealed class MainViewModel : ObservableObject
             var firstVirtual = vm.FirstVirtualStrip(stripCount);
             if (stripCount <= 0 || firstVirtual <= 0)
             {
-                error = $"Voice changer routing failed: invalid Voicemeeter strip topology (count={stripCount}, firstVirtual={firstVirtual}).";
-                _logService?.Warning(error);
+                _logService?.Warning($"Voice changer routing failed: invalid Voicemeeter strip topology (count={stripCount}, firstVirtual={firstVirtual}).");
+                error = "Couldn't start the voice changer. Run the Audio Setup wizard again.";
                 return false;
             }
 
-            if (!TryResolvePhysicalMicStripIndex(vm, firstVirtual, micDeviceName, Settings.TalkDeviceName, out var micStripIndex, out var resolvedStripDevice))
+            var micStripIndex = -1;
+            var resolvedStripDevice = string.Empty;
+            if (!TryResolvePhysicalMicStripIndex(vm, firstVirtual, micDeviceName, Settings.TalkDeviceName, out micStripIndex, out resolvedStripDevice))
             {
-                error = $"Voice changer routing failed: could not map mic '{micDeviceName}' to a physical Voicemeeter strip.";
-                _logService?.Warning(error);
-                return false;
+                bool autoAssigned = vm.AssignMicToStrip(0, Settings.TalkDeviceName ?? micDeviceName, micDeviceName);
+                if (autoAssigned)
+                {
+                    autoAssigned = TryResolvePhysicalMicStripIndex(vm, firstVirtual, micDeviceName, Settings.TalkDeviceName, out micStripIndex, out resolvedStripDevice);
+                }
+
+                if (!autoAssigned)
+                {
+                    if (!string.IsNullOrWhiteSpace(vm.GetString("Strip[0].device.name")))
+                    {
+                        _logService?.Warning($"Voice changer routing failed: could not map mic '{micDeviceName}' to a physical Voicemeeter strip.");
+                        error = "Couldn't start the voice changer. Run the Audio Setup wizard again.";
+                        return false;
+                    }
+
+                    micStripIndex = 0;
+                    resolvedStripDevice = string.Empty;
+                    _logService?.Warning($"VC could not assign mic '{micDeviceName}' to a Voicemeeter strip; proceeding on Strip[0] (dry-mic mute is a no-op).");
+                }
+                else
+                {
+                    _logService?.Info($"VC auto-assigned mic '{micDeviceName}' to physical Strip[{micStripIndex}] ('{resolvedStripDevice}').");
+                }
             }
 
             var micB1Param = $"Strip[{micStripIndex}].B1";
@@ -1006,8 +1050,8 @@ public sealed class MainViewModel : ObservableObject
             if (!setMuteResult)
             {
                 _ = TrySetFloatVerified(vm, micB1Param, previousB1, out _);
-                error = $"Voice changer routing failed: unable to force dry mic strip B1 OFF (strip={micStripIndex}, target=0, readBack={mutedB1:0.##}).";
-                _logService?.Warning(error);
+                _logService?.Warning($"Voice changer routing failed: unable to force dry mic strip B1 OFF (strip={micStripIndex}, target=0, readBack={mutedB1:0.##}).");
+                error = "Couldn't start the voice changer. Check your audio routing and try again.";
                 return false;
             }
 
@@ -1020,8 +1064,8 @@ public sealed class MainViewModel : ObservableObject
                 if (!processedSetOk)
                 {
                     _ = TrySetFloatVerified(vm, micB1Param, previousB1, out _);
-                    error = $"Voice changer routing failed: unable to ensure processed strip B1 ON (strip={processedStripIndex}, target=1, readBack={processedB1After:0.##}).";
-                    _logService?.Warning(error);
+                    _logService?.Warning($"Voice changer routing failed: unable to ensure processed strip B1 ON (strip={processedStripIndex}, target=1, readBack={processedB1After:0.##}).");
+                    error = "Couldn't start the voice changer. Check your audio routing and try again.";
                     return false;
                 }
             }
@@ -1033,8 +1077,8 @@ public sealed class MainViewModel : ObservableObject
                 {
                     _ = TrySetFloatVerified(vm, micB1Param, previousB1, out _);
                     _ = TrySetFloatVerified(vm, processedB1Param, processedB1Before, out _);
-                    error = $"Voice changer routing failed: unable to close input strip A1 (strip={micStripIndex}, target=0, readBack={disabledMicA1:0.##}).";
-                    _logService?.Warning(error);
+                    _logService?.Warning($"Voice changer routing failed: unable to close input strip A1 (strip={micStripIndex}, target=0, readBack={disabledMicA1:0.##}).");
+                    error = "Couldn't start the voice changer. Check your audio routing and try again.";
                     return false;
                 }
             }
@@ -1049,8 +1093,8 @@ public sealed class MainViewModel : ObservableObject
                     _ = TrySetFloatVerified(vm, micB1Param, previousB1, out _);
                     _ = TrySetFloatVerified(vm, processedB1Param, processedB1Before, out _);
                     _ = TrySetFloatVerified(vm, micA1Param, previousMicA1, out _);
-                    error = $"Voice changer routing failed: unable to turn virtual input A1 OFF (strip={processedStripIndex}, target=0, readBack={disabledA1:0.##}).";
-                    _logService?.Warning(error);
+                    _logService?.Warning($"Voice changer routing failed: unable to turn virtual input A1 OFF (strip={processedStripIndex}, target=0, readBack={disabledA1:0.##}).");
+                    error = "Couldn't start the voice changer. Check your audio routing and try again.";
                     return false;
                 }
             }
@@ -1075,8 +1119,8 @@ public sealed class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            error = $"Voice changer routing failed: {ex.Message}";
-            _logService?.Error(error, ex);
+            _logService?.Error($"Voice changer routing failed: {ex.Message}", ex);
+            error = "Couldn't start the voice changer. Check your audio routing and try again.";
             return false;
         }
     }
@@ -1095,8 +1139,8 @@ public sealed class MainViewModel : ObservableObject
             using var vm = new VoicemeeterRemote();
             if (!vm.TryConnect())
             {
-                error = "Voice changer routing restore failed: could not connect to Voicemeeter.";
-                _logService?.Warning(error);
+                _logService?.Warning("Voice changer routing restore failed: could not connect to Voicemeeter.");
+                error = "Voice changer stopped — audio routing couldn't be restored.";
                 return false;
             }
 
@@ -1106,8 +1150,8 @@ public sealed class MainViewModel : ObservableObject
 
             if (!restoreResult)
             {
-                error = $"Voice changer routing restore failed: strip {snapshot.StripIndex} B1 restore mismatch (target={snapshot.PreviousB1:0.##}, readBack={restoredB1:0.##}).";
-                _logService?.Warning(error);
+                _logService?.Warning($"Voice changer routing restore failed: strip {snapshot.StripIndex} B1 restore mismatch (target={snapshot.PreviousB1:0.##}, readBack={restoredB1:0.##}).");
+                error = "Voice changer stopped — audio routing couldn't be restored.";
                 return false;
             }
 
@@ -1115,8 +1159,8 @@ public sealed class MainViewModel : ObservableObject
             var restoreProcessedB1Result = TrySetFloatVerified(vm, processedB1Param, snapshot.PreviousProcessedB1, out var restoredProcessedB1);
             if (!restoreProcessedB1Result)
             {
-                error = $"Voice changer routing restore failed: processed strip {snapshot.ProcessedStripIndex} B1 restore mismatch (target={snapshot.PreviousProcessedB1:0.##}, readBack={restoredProcessedB1:0.##}).";
-                _logService?.Warning(error);
+                _logService?.Warning($"Voice changer routing restore failed: processed strip {snapshot.ProcessedStripIndex} B1 restore mismatch (target={snapshot.PreviousProcessedB1:0.##}, readBack={restoredProcessedB1:0.##}).");
+                error = "Voice changer stopped — audio routing couldn't be restored.";
                 return false;
             }
 
@@ -1124,8 +1168,8 @@ public sealed class MainViewModel : ObservableObject
             var restoreMicA1Result = TrySetFloatVerified(vm, micA1Param, snapshot.PreviousMicA1, out var restoredMicA1);
             if (!restoreMicA1Result)
             {
-                error = $"Voice changer routing restore failed: input strip {snapshot.StripIndex} A1 restore mismatch (target={snapshot.PreviousMicA1:0.##}, readBack={restoredMicA1:0.##}).";
-                _logService?.Warning(error);
+                _logService?.Warning($"Voice changer routing restore failed: input strip {snapshot.StripIndex} A1 restore mismatch (target={snapshot.PreviousMicA1:0.##}, readBack={restoredMicA1:0.##}).");
+                error = "Voice changer stopped — audio routing couldn't be restored.";
                 return false;
             }
 
@@ -1133,8 +1177,8 @@ public sealed class MainViewModel : ObservableObject
             var restoreA1Result = TrySetFloatVerified(vm, virtualA1Param, 1f, out var restoredA1);
             if (!restoreA1Result)
             {
-                error = $"Voice changer routing restore failed: virtual strip {snapshot.ProcessedStripIndex} A1 restore mismatch (target=1, readBack={restoredA1:0.##}).";
-                _logService?.Warning(error);
+                _logService?.Warning($"Voice changer routing restore failed: virtual strip {snapshot.ProcessedStripIndex} A1 restore mismatch (target=1, readBack={restoredA1:0.##}).");
+                error = "Voice changer stopped — audio routing couldn't be restored.";
                 return false;
             }
 
@@ -1144,8 +1188,8 @@ public sealed class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            error = $"Voice changer routing restore failed: {ex.Message}";
-            _logService?.Error(error, ex);
+            _logService?.Error($"Voice changer routing restore failed: {ex.Message}", ex);
+            error = "Voice changer stopped — audio routing couldn't be restored.";
             return false;
         }
     }
@@ -1439,6 +1483,11 @@ public sealed class MainViewModel : ObservableObject
             Categories.Add(new Category { Name = "All", IsBuiltIn = true });
             foreach (var category in _config.Categories)
             {
+                if (string.Equals(category.Name, "All", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 Categories.Add(category);
             }
 
@@ -1693,7 +1742,7 @@ public sealed class MainViewModel : ObservableObject
         _audioPlayer.Play(
             sound.Id,
             sound.FilePath,
-            assignment?.VolumeOverride ?? sound.Volume,
+            (assignment?.VolumeOverride ?? sound.Volume) * sound.NormalizedGain,
             PlaybackMode.Restart,
             deviceIndex);
 
@@ -1825,6 +1874,7 @@ public sealed class MainViewModel : ObservableObject
         StatusText = $"Added {sound.Name}";
         UpdateBindingPanelState();
         RaiseSoundCollectionStats();
+        _ = _soundLibraryViewModel.EqualizeSoundAsync(sound);
     }
 
     internal void AssignSoundToKeyIfSelected(SoundEntry sound, string? keyId)
@@ -3113,10 +3163,7 @@ public sealed class MainViewModel : ObservableObject
                 var haveRender = !string.IsNullOrWhiteSpace(vmInputId);
                 var haveCapture = !string.IsNullOrWhiteSpace(vmOutputId);
 
-                if (string.IsNullOrWhiteSpace(Settings.SavedDefaultRenderId))
-                    Settings.SavedDefaultRenderId = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render) ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(Settings.SavedDefaultCaptureId))
-                    Settings.SavedDefaultCaptureId = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture) ?? string.Empty;
+                RefreshSavedWindowsDefaults();
 
                 bool outputApplied = false;
                 bool inputApplied = false;
@@ -3201,60 +3248,52 @@ public sealed class MainViewModel : ObservableObject
         return false;
     }
 
-    internal async Task<string> ResetVoicemeeterAsync()
+    internal async Task<string> ResetVoicemeeterAsync(Action<string>? reportStep = null)
     {
-        return await Task.Run(() =>
+        var previousRender = Settings.SavedDefaultRenderId;
+        var previousCapture = Settings.SavedDefaultCaptureId;
+
+        reportStep?.Invoke("Resetting Voicemeeter…");
+        string vmResult = await Task.Run(() =>
         {
-            string vmResult;
             if (!VoicemeeterService.IsVoicemeeterInstalled())
             {
-                vmResult = "⚠  Voicemeeter not installed — devices were NOT cleared.";
+                return "⚠  Voicemeeter not installed — devices were NOT cleared.";
             }
-            else
+
+            using var vm = new VoicemeeterRemote();
+            if (!vm.Login())
             {
-                using var vm = new VoicemeeterRemote();
-                if (vm.Login())
-                {
-                    vmResult = vm.ResetRouting();
-                    vm.Dispose();
-                }
-                else
-                {
-                    vmResult = "⚠  Could not log in to Voicemeeter — devices were NOT cleared.";
-                }
+                return "⚠  Could not log in to Voicemeeter — devices were NOT cleared.";
             }
 
-            var previousRender = Settings.SavedDefaultRenderId;
-            var previousCapture = Settings.SavedDefaultCaptureId;
-            var restoredDefaults = false;
-
-            if (!string.IsNullOrWhiteSpace(previousRender) || !string.IsNullOrWhiteSpace(previousCapture))
-            {
-                restoredDefaults = _windowsAudioRoutingService.TrySetDefaultDevices(previousRender ?? string.Empty, previousCapture ?? string.Empty);
-                Settings.SavedDefaultRenderId = string.Empty;
-                Settings.SavedDefaultCaptureId = string.Empty;
-            }
-
-            if (restoredDefaults)
-            {
-                var render = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
-                var capture = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
-                Settings.OutputDeviceId = render ?? string.Empty;
-                Settings.PlaybackDeviceId = render ?? string.Empty;
-                Settings.InputDeviceId = capture ?? string.Empty;
-                Settings.MicrophoneDeviceId = capture ?? string.Empty;
-            }
-
-            Settings.HearDeviceName = string.Empty;
-            Settings.TalkDeviceName = string.Empty;
-            Settings.VoicemeeterDetected = false;
-            Save();
-
-            var line2 = restoredDefaults
-                ? "✓  Windows defaults + app I/O restored."
-                : "⚠  No saved Windows defaults to restore (or restore failed).";
-            return $"{vmResult}\n{line2}";
+            return vm.ResetRouting();
         });
+
+        reportStep?.Invoke("Restoring Windows default devices…");
+        bool restoredDefaults = false;
+        if (!string.IsNullOrWhiteSpace(previousRender) || !string.IsNullOrWhiteSpace(previousCapture))
+        {
+            restoredDefaults = _windowsAudioRoutingService.TrySetDefaultDevices(previousRender ?? string.Empty, previousCapture ?? string.Empty);
+        }
+
+        if (restoredDefaults)
+        {
+            Settings.SavedDefaultRenderId = string.Empty;
+            Settings.SavedDefaultCaptureId = string.Empty;
+        }
+
+        Settings.HearDeviceName = string.Empty;
+        Settings.TalkDeviceName = string.Empty;
+        Settings.VoicemeeterDetected = false;
+        Save();
+
+        var line2 = restoredDefaults
+            ? "✓  Windows defaults restored. App device selection kept."
+            : string.IsNullOrWhiteSpace(previousRender) && string.IsNullOrWhiteSpace(previousCapture)
+                ? "⚠  No saved Windows defaults to restore."
+                : "⚠  Windows restore failed — will retry on next start.";
+        return $"{vmResult}\n{line2}";
     }
 
     public void RestoreWindowsDefaultDevicesOnExit()
@@ -3269,17 +3308,11 @@ public sealed class MainViewModel : ObservableObject
             }
 
             var restored = _windowsAudioRoutingService.TrySetDefaultDevices(previousRender ?? string.Empty, previousCapture ?? string.Empty);
-            Settings.SavedDefaultRenderId = string.Empty;
-            Settings.SavedDefaultCaptureId = string.Empty;
 
             if (restored)
             {
-                var render = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
-                var capture = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
-                Settings.OutputDeviceId = render ?? string.Empty;
-                Settings.PlaybackDeviceId = render ?? string.Empty;
-                Settings.InputDeviceId = capture ?? string.Empty;
-                Settings.MicrophoneDeviceId = capture ?? string.Empty;
+                Settings.SavedDefaultRenderId = string.Empty;
+                Settings.SavedDefaultCaptureId = string.Empty;
             }
 
             _config.Settings = Settings;
@@ -3287,11 +3320,70 @@ public sealed class MainViewModel : ObservableObject
 
             _logService?.Info(restored
                 ? "Windows default output/input restored on exit."
-                : $"Windows default restore on exit incomplete ({_windowsAudioRoutingService.LastError})");
+                : $"Windows default restore on exit incomplete ({_windowsAudioRoutingService.LastError}) — kept for retry");
         }
         catch (Exception ex)
         {
             _logService?.Error("Windows default restore on exit failed", ex);
+        }
+    }
+
+    internal void ReconcileWindowsDefaultsOnStartup()
+    {
+        try
+        {
+            var render = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
+            var capture = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
+            var vmInput = _audioDeviceService.GetVoicemeeterInputId();
+            var vmOutput = _audioDeviceService.GetVoicemeeterOutputId();
+
+            bool renderIsVm = !string.IsNullOrWhiteSpace(vmInput)
+                              && string.Equals(render, vmInput, StringComparison.OrdinalIgnoreCase);
+            bool captureIsVm = !string.IsNullOrWhiteSpace(vmOutput)
+                               && string.Equals(capture, vmOutput, StringComparison.OrdinalIgnoreCase);
+
+            bool hasSaved = !string.IsNullOrWhiteSpace(Settings.SavedDefaultRenderId)
+                            || !string.IsNullOrWhiteSpace(Settings.SavedDefaultCaptureId);
+
+            if ((renderIsVm || captureIsVm) && hasSaved)
+            {
+                _logService?.Info("Startup: Windows defaults left on VoiceMeeter — restoring previous defaults.");
+                _windowsAudioRoutingService.TrySetDefaultDevices(Settings.SavedDefaultRenderId, Settings.SavedDefaultCaptureId);
+            }
+
+            RefreshSavedWindowsDefaults();
+        }
+        catch (Exception ex)
+        {
+            _logService?.Error("Windows default reconcile failed on startup", ex);
+        }
+    }
+
+    private void RefreshSavedWindowsDefaults()
+    {
+        var render = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
+        var capture = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
+        var vmInput = _audioDeviceService.GetVoicemeeterInputId();
+        var vmOutput = _audioDeviceService.GetVoicemeeterOutputId();
+
+        bool changed = false;
+        if (!string.IsNullOrWhiteSpace(render)
+            && !string.Equals(render, vmInput, StringComparison.OrdinalIgnoreCase))
+        {
+            Settings.SavedDefaultRenderId = render;
+            changed = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(capture)
+            && !string.Equals(capture, vmOutput, StringComparison.OrdinalIgnoreCase))
+        {
+            Settings.SavedDefaultCaptureId = capture;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            Save();
         }
     }
 
@@ -3346,7 +3438,8 @@ public sealed class MainViewModel : ObservableObject
     {
         _config.Sounds = new ObservableCollection<SoundEntry>(Sounds);
         _config.Profiles = new ObservableCollection<Profile>(Profiles);
-        _config.Categories = new ObservableCollection<Category>(Categories);
+        _config.Categories = new ObservableCollection<Category>(
+            Categories.Where(c => !string.Equals(c.Name, "All", StringComparison.OrdinalIgnoreCase)));
         _config.Settings = Settings;
         _config.ActiveProfileId = SelectedProfile?.Id ?? _config.ActiveProfileId;
         _configService.Save(_config);

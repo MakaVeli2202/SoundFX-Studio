@@ -2,6 +2,7 @@ using SoundFXStudio.Models;
 using SoundFXStudio.ViewModels;
 using SoundFXStudio.Views.Dialogs;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -37,10 +38,16 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
     private double _panelStartX;
     private double _panelStartY;
 
+    private static bool _guideShownThisSession;
+    private KeyboardKey? _guideKey;
+    private bool _guideActive;
+
     public KeyboardWindow()
     {
         InitializeComponent();
         DataContext = this;
+        Closed += KeyboardWindow_Closed;
+        Loaded += (_, _) => StartInsertGuideIfFirstOpen();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -178,6 +185,133 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         ViewModel = viewModel;
         OnPropertyChanged(nameof(ViewModel));
         ReloadWindowScale();
+        ViewModel.IsSoundboardActive = false;
+    }
+
+    private void KeyboardWindow_Closed(object? sender, EventArgs e)
+    {
+        StopInsertGuide();
+        if (ViewModel is not null)
+        {
+            ViewModel.IsSoundboardActive = false;
+        }
+    }
+
+    private void StartInsertGuideIfFirstOpen()
+    {
+        if (_guideShownThisSession || ViewModel is null)
+        {
+            return;
+        }
+
+        _guideShownThisSession = true;
+
+        var insert = ViewModel.KeyboardKeys.FirstOrDefault(k =>
+            string.Equals(k.KeyName, "INSERT", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(k.Id, "INSERT", StringComparison.OrdinalIgnoreCase));
+        if (insert is null)
+        {
+            return;
+        }
+
+        _guideKey = insert;
+        _guideActive = true;
+
+        foreach (var key in ViewModel.KeyboardKeys)
+        {
+            key.IsGuideDimmed = key != insert;
+        }
+
+        insert.IsGuideHighlighted = true;
+
+        ViewModel.PropertyChanged += OnGuideViewModelPropertyChanged;
+        ShowInsertCallout();
+    }
+
+    private void OnGuideViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.IsSoundboardActive) && ViewModel?.IsSoundboardActive == true)
+        {
+            StopInsertGuide();
+        }
+    }
+
+    private void StopInsertGuide()
+    {
+        if (!_guideActive)
+        {
+            return;
+        }
+
+        _guideActive = false;
+        if (ViewModel is not null)
+        {
+            ViewModel.PropertyChanged -= OnGuideViewModelPropertyChanged;
+        }
+
+        if (_guideKey is not null)
+        {
+            _guideKey.IsGuideHighlighted = false;
+            _guideKey = null;
+        }
+
+        foreach (var key in ViewModel?.KeyboardKeys ?? System.Linq.Enumerable.Empty<KeyboardKey>())
+        {
+            key.IsGuideDimmed = false;
+        }
+
+        InsertCallout.Visibility = Visibility.Collapsed;
+    }
+
+    private void ShowInsertCallout()
+    {
+        var insertButton = FindKeyButton();
+        if (insertButton is null)
+        {
+            return;
+        }
+
+        insertButton.UpdateLayout();
+        var anchor = insertButton.TranslatePoint(new Point(insertButton.ActualWidth / 2, 0), this);
+        InsertCallout.Visibility = Visibility.Visible;
+        InsertCallout.UpdateLayout();
+        InsertCallout.Margin = new Thickness(
+            anchor.X - (InsertCallout.ActualWidth / 2),
+            anchor.Y - InsertCallout.ActualHeight - 10,
+            0,
+            0);
+    }
+
+    private Button? FindKeyButton()
+    {
+        if (_guideKey is null)
+        {
+            return null;
+        }
+
+        return FindVisualChild<Button>(KeyboardHost, b => ReferenceEquals(b.DataContext, _guideKey));
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent, Func<T, bool> predicate)
+        where T : DependencyObject
+    {
+        int count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T match && predicate(match))
+            {
+                return match;
+            }
+
+            var nested = FindVisualChild(child, predicate);
+            if (nested is not null)
+            {
+                return nested;
+            }
+        }
+
+        return null;
     }
 
     private void KeyboardWindow_PreviewKeyDown(object sender, KeyEventArgs e)

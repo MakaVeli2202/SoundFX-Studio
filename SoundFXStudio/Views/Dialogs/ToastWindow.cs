@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 
 namespace SoundFXStudio.Views.Dialogs;
 
@@ -110,7 +111,8 @@ public sealed class ToastWindow : Window
         {
             Background = accentBrush,
             Width = 5,
-            HorizontalAlignment = HorizontalAlignment.Left
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Effect = new DropShadowEffect { Color = accent, BlurRadius = 12, ShadowDepth = 0, Opacity = 0.55 }
         };
 
         var titleText = new TextBlock
@@ -169,10 +171,27 @@ public sealed class ToastWindow : Window
         return new Border
         {
             Background = new SolidColorBrush(Color.FromArgb(0xEE, 0x0B, 0x15, 0x28)),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(0x66, 0x4A, 0x63, 0x8A)),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(12),
+            BorderBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(1, 0),
+                GradientStops =
+                {
+                    new GradientStop(Color.FromRgb(0x00, 0xD4, 0xFF), 0),
+                    new GradientStop(Color.FromRgb(0x7B, 0x3F, 0xFF), 0.55),
+                    new GradientStop(Color.FromRgb(0xFF, 0x2D, 0xAF), 1)
+                }
+            },
+            BorderThickness = new Thickness(1.2),
+            CornerRadius = new CornerRadius(14),
             ClipToBounds = true,
+            Effect = new DropShadowEffect
+            {
+                Color = Color.FromRgb(0x00, 0xD4, 0xFF),
+                BlurRadius = 16,
+                ShadowDepth = 0,
+                Opacity = 0.45
+            },
             Child = grid
         };
     }

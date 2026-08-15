@@ -281,6 +281,19 @@ public sealed class VoicemeeterRemote : IDisposable
         return GetOutputDevices();
     }
 
+    private List<VmDevice> WaitForInputDevices(int timeoutMs = 10000)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < timeoutMs)
+        {
+            var devices = GetInputDevices();
+            if (devices.Count > 0)
+                return devices;
+            System.Threading.Thread.Sleep(200);
+        }
+        return GetInputDevices();
+    }
+
     private bool WaitUntilReady(int timeoutMs = 15000)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -381,6 +394,70 @@ public sealed class VoicemeeterRemote : IDisposable
             if (!string.IsNullOrEmpty(device.Name) && device.Name.StartsWith(userDevice, StringComparison.OrdinalIgnoreCase))
                 return device;
         return null;
+    }
+
+    public bool AssignMicToStrip(int stripIndex, string userDeviceName, string verifyName)
+    {
+        if (!WaitUntilReady()) return false;
+
+        var inputs = WaitForInputDevices();
+        var match = MatchVmDevice(inputs, userDeviceName);
+        var mmeMatch = MatchVmDevice(inputs.Where(d => d.Types.Contains(1L)), userDeviceName);
+
+        var wdmName = match is not null && match.Types.Contains(3L) ? match.Name : null;
+        var mmeName = mmeMatch?.Name;
+
+        if (!string.IsNullOrWhiteSpace(wdmName))
+        {
+            ClearStripDeviceParams(stripIndex, keep: "wdm");
+            if (SetString($"Strip[{stripIndex}].device.wdm", wdmName) == 0
+                && VerifyStripDevice(stripIndex, userDeviceName, verifyName))
+            {
+                return true;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(mmeName))
+        {
+            ClearStripDeviceParams(stripIndex, keep: "mme");
+            if (SetString($"Strip[{stripIndex}].device.mme", mmeName) == 0
+                && VerifyStripDevice(stripIndex, userDeviceName, verifyName))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void ClearStripDeviceParams(int stripIndex, string keep)
+    {
+        foreach (var p in new[] { "mme", "ks", "wdm" })
+            if (!string.Equals(p, keep, StringComparison.OrdinalIgnoreCase))
+                SetString($"Strip[{stripIndex}].device.{p}", string.Empty);
+    }
+
+    private bool VerifyStripDevice(int stripIndex, string userDeviceName, string verifyName)
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            System.Threading.Thread.Sleep(100);
+            var current = GetString($"Strip[{stripIndex}].device.name");
+            if (VmNameMatches(current, verifyName) || VmNameMatches(current, userDeviceName))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool VmNameMatches(string? stripDevice, string? target)
+    {
+        if (string.IsNullOrWhiteSpace(stripDevice) || string.IsNullOrWhiteSpace(target)) return false;
+        return stripDevice.Equals(target, StringComparison.OrdinalIgnoreCase)
+            || stripDevice.StartsWith(target, StringComparison.OrdinalIgnoreCase)
+            || target.StartsWith(stripDevice, StringComparison.OrdinalIgnoreCase);
     }
 
     public sealed class VmDevice

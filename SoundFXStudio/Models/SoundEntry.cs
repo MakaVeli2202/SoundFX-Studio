@@ -9,6 +9,7 @@ public class SoundEntry : ObservableObject
     private string _name = string.Empty;
     private string _filePath = string.Empty;
     private float _volume = 1f;
+    private float _normalizedGain = 1f;
     private string? _imagePath;
     private bool _isFavorite;
     private string _hotkey = string.Empty;
@@ -42,6 +43,12 @@ public class SoundEntry : ObservableObject
     {
         get => _volume;
         set => SetProperty(ref _volume, value);
+    }
+
+    public float NormalizedGain
+    {
+        get => _normalizedGain;
+        set => SetProperty(ref _normalizedGain, value);
     }
 
     public string? ImagePath

@@ -9,6 +9,7 @@ public sealed class AudioPlayer : IDisposable
     private readonly object _gate = new();
     private readonly Dictionary<string, List<PlaybackSession>> _sessions = new(StringComparer.OrdinalIgnoreCase);
     private readonly ILogService? _logService;
+    private float _masterVolume = 1f;
 
     public AudioPlayer(ILogService? logService = null)
     {
@@ -52,7 +53,7 @@ public sealed class AudioPlayer : IDisposable
 
             var reader = new AudioFileReader(filePath)
             {
-                Volume = Math.Clamp(volume, 0f, 1f)
+                Volume = Math.Clamp(volume * _masterVolume, 0f, 100f)
             };
 
             var output = new WaveOutEvent
@@ -161,6 +162,13 @@ public sealed class AudioPlayer : IDisposable
     public void SetMasterVolume(float volume)
     {
         volume = Math.Clamp(volume, 0f, 1f);
+        if (Math.Abs(volume - _masterVolume) < 0.001f)
+        {
+            return;
+        }
+
+        float ratio = _masterVolume <= 0f ? 0f : volume / _masterVolume;
+        _masterVolume = volume;
         List<PlaybackSession> sessions;
 
         lock (_gate)
@@ -170,7 +178,7 @@ public sealed class AudioPlayer : IDisposable
 
         foreach (var session in sessions)
         {
-            session.Reader.Volume = volume;
+            session.Reader.Volume = Math.Clamp(session.Reader.Volume * ratio, 0f, 100f);
         }
 
         _logService?.Info($"Master Volume Set: {volume:P0}");

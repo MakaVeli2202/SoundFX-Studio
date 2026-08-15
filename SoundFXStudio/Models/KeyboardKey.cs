@@ -21,6 +21,8 @@ public class KeyboardKey : ObservableObject
     private bool _isEnabled = true;
     private bool _isSelected;
     private bool _isHovered;
+    private bool _isGuideDimmed;
+    private bool _isGuideHighlighted;
     private double _innerInsetAdjustmentPercent;
     private double _innerInsetXAdjustmentPercent;
     private double _innerInsetYAdjustmentPercent;
@@ -206,6 +208,18 @@ public class KeyboardKey : ObservableObject
     {
         get => _isHovered;
         set => SetProperty(ref _isHovered, value);
+    }
+
+    public bool IsGuideDimmed
+    {
+        get => _isGuideDimmed;
+        set => SetProperty(ref _isGuideDimmed, value);
+    }
+
+    public bool IsGuideHighlighted
+    {
+        get => _isGuideHighlighted;
+        set => SetProperty(ref _isGuideHighlighted, value);
     }
 
     public double InnerInsetAdjustmentPercent

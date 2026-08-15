@@ -33,6 +33,13 @@ public partial class SetupWizardWindow : Window
     {
         if (e.Key == System.Windows.Input.Key.Escape)
         {
+            if (WizardHearCombo.IsDropDownOpen || WizardTalkCombo.IsDropDownOpen)
+            {
+                CloseDropdownPanels();
+                e.Handled = true;
+                return;
+            }
+
             Close();
         }
     }
@@ -40,8 +47,8 @@ public partial class SetupWizardWindow : Window
     private void SetupWizardWindow_SourceInitialized(object? sender, EventArgs e)
     {
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
-        int noRound = 1;
-        DwmSetWindowAttribute(hwnd, 33, ref noRound, Marshal.SizeOf<int>());
+        int cornerPreference = 2;
+        DwmSetWindowAttribute(hwnd, 33, ref cornerPreference, Marshal.SizeOf<int>());
     }
 
     private void TryDragWindow(object sender, MouseButtonEventArgs e)
@@ -54,6 +61,16 @@ public partial class SetupWizardWindow : Window
         var source = e.OriginalSource as DependencyObject;
         while (source is not null)
         {
+            if (source is System.Windows.Controls.Primitives.Popup)
+            {
+                return;
+            }
+
+            if (source is System.Windows.Window)
+            {
+                break;
+            }
+
             if (source is System.Windows.Controls.Primitives.ButtonBase
                 or System.Windows.Controls.TextBox
                 or System.Windows.Controls.ComboBox
@@ -68,7 +85,19 @@ public partial class SetupWizardWindow : Window
             source = System.Windows.Media.VisualTreeHelper.GetParent(source);
         }
 
+        if (source is null)
+        {
+            return;
+        }
+
+        CloseDropdownPanels();
         DragMove();
+    }
+
+    private void CloseDropdownPanels()
+    {
+        WizardHearCombo.IsDropDownOpen = false;
+        WizardTalkCombo.IsDropDownOpen = false;
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
@@ -112,17 +141,19 @@ public partial class SetupWizardWindow : Window
         if (!VoicemeeterRemote.IsInstalled()) { VmSetupStatus.Text = "✗ Voicemeeter not installed."; return; }
 
         WizardAutoSetupBtn.IsEnabled = false;
-        VmSetupStatus.Text = "Setting up…";
-        VmSetupStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x98, 0xA0, 0xC0));
-        Mouse.OverrideCursor = Cursors.Wait;
 
-        string result;
+        var overlay = new ProgressOverlayWindow("Auto Setup") { Owner = this };
+        overlay.Show();
+
+        string result = string.Empty;
         try
         {
             var (applied, diagnostics) = await Task.Run(() =>
             {
+                overlay.UpdateStep("Connecting to Voicemeeter…");
                 using var vm = new VoicemeeterRemote();
                 if (!vm.Login()) return (false, "Login failed.");
+                overlay.UpdateStep("Configuring Hear/Talk routing…");
                 bool ok = vm.ApplyRouting(hear.Name, talk.Name);
                 string diag = vm.LastDiagnostics;
                 vm.Dispose();
@@ -131,6 +162,7 @@ public partial class SetupWizardWindow : Window
 
             if (applied)
             {
+                overlay.UpdateStep("Routing Windows input…");
                 _config.Settings.HearDeviceName = hear.Name;
                 _config.Settings.TalkDeviceName = talk.Name;
                 _config.Settings.SpeakersDeviceName = hear.Name;
@@ -143,9 +175,11 @@ public partial class SetupWizardWindow : Window
                 }
                 else
                 {
-                    if (string.IsNullOrWhiteSpace(_config.Settings.SavedDefaultCaptureId))
+                    var currentCapture = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
+                    if (!string.IsNullOrWhiteSpace(currentCapture)
+                        && !string.Equals(currentCapture, vmOutputId, StringComparison.OrdinalIgnoreCase))
                     {
-                        _config.Settings.SavedDefaultCaptureId = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture) ?? string.Empty;
+                        _config.Settings.SavedDefaultCaptureId = currentCapture;
                     }
 
                     var inputApplied = _windowsAudioRoutingService.TrySetDefaultInput(vmOutputId);
@@ -162,6 +196,7 @@ public partial class SetupWizardWindow : Window
                 }
 
                 _configService.Save(_config);
+                overlay.Complete("Everything ready — have fun!");
                 ToastWindow.ShowDiscordStudioTip();
             }
             else
@@ -169,14 +204,17 @@ public partial class SetupWizardWindow : Window
                 result = "✗ Setup failed: could not configure Voicemeeter.\n   Check Hear/Talk device names and retry.";
                 if (!string.IsNullOrWhiteSpace(diagnostics))
                     result += $"\n\n{diagnostics}";
+                overlay.Complete("Setup failed — check the status below.");
             }
         }
         catch (Exception ex)
         {
             result = $"✗ Setup failed: {ex.Message}";
+            overlay.Complete("Setup failed — check the status below.");
         }
 
-        Mouse.OverrideCursor = null;
+        await Task.Delay(1400);
+        overlay.Close();
         WizardAutoSetupBtn.IsEnabled = true;
         VmSetupStatus.Text = result;
         VmSetupStatus.Foreground = new System.Windows.Media.SolidColorBrush(result.StartsWith("✓")
@@ -196,8 +234,11 @@ public partial class SetupWizardWindow : Window
             bool restored = _windowsAudioRoutingService.TrySetDefaultInput(_config.Settings.SavedDefaultCaptureId);
             windowsResult = restored
                 ? "✓ Windows input restored to previous device"
-                : "⚠ Could not restore Windows input device";
-            _config.Settings.SavedDefaultCaptureId = string.Empty;
+                : "⚠ Could not restore Windows input device — kept for retry";
+            if (restored)
+            {
+                _config.Settings.SavedDefaultCaptureId = string.Empty;
+            }
             _configService.Save(_config);
         }
 

@@ -609,6 +609,11 @@ public sealed class TriggerService : IDisposable
 
     private bool ShouldSuppressKey(Key key)
     {
+        if (IsOwnWindowForeground())
+        {
+            return false;
+        }
+
         if (IsSoundboardActiveProvider?.Invoke() != true)
         {
             return false;

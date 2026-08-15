@@ -21,6 +21,7 @@ namespace SoundFXStudio;
 public partial class MainWindow : Window
 {
     private MainViewModel ViewModel => (MainViewModel)DataContext;
+    private readonly ILogService? _logService;
     private KeyboardCalibrationWindow? _keyboardCalibrationWindow;
     private KeyboardWindow? _keyboardWindow;
     private VoiceChangerService? _voiceChanger;
@@ -30,6 +31,8 @@ public partial class MainWindow : Window
     private bool _suppressB1;
     private bool _suppressA1;
     private bool _suppressVirtualB1;
+    private bool _exitFlowRunning;
+    private bool _isClosing;
 
     public (double Width, double Height) HeroOverlaySize =>
         HeroImage.ActualWidth > 0 && HeroImage.ActualHeight > 0
@@ -38,6 +41,7 @@ public partial class MainWindow : Window
 
     public MainWindow(ILogService? logService = null)
     {
+        _logService = logService;
         InitializeComponent();
         DataContext = new MainViewModel(logService);
         Loaded += MainWindow_Loaded;
@@ -52,16 +56,21 @@ public partial class MainWindow : Window
     {
         VoiceChangerToggleBtn.Click += (_, _) => ToggleVoiceChanger();
 
-        ShowWizardOnStartupCheck.Checked += (_, _) => ViewModel.Save();
-        ShowWizardOnStartupCheck.Unchecked += (_, _) => ViewModel.Save();
-        StartMinimizedCheck.Checked += (_, _) => ViewModel.Save();
-        StartMinimizedCheck.Unchecked += (_, _) => ViewModel.Save();
+        ShowWizardOnStartupCheck.Checked += (_, _) => { if (!_isClosing) ViewModel.Save(); };
+        ShowWizardOnStartupCheck.Unchecked += (_, _) => { if (!_isClosing) ViewModel.Save(); };
+        StartMinimizedCheck.Checked += (_, _) => { if (!_isClosing) ViewModel.Save(); };
+        StartMinimizedCheck.Unchecked += (_, _) => { if (!_isClosing) ViewModel.Save(); };
 
         SetupVoiceChangerPresets();
     }
 
     private void ToggleVoiceChanger()
     {
+        if (_isClosing)
+        {
+            return;
+        }
+
         if (_voiceChanger is { IsRunning: true })
         {
             _voiceChanger.Stop();
@@ -88,13 +97,13 @@ public partial class MainWindow : Window
         var micId = ViewModel.GetVoiceChangerMicId();
         if (string.IsNullOrWhiteSpace(micId))
         {
-            ViewModel.StatusText = "No input device available for voice changer.";
+            ViewModel.StatusText = "No microphone available.";
             return;
         }
 
         if (!ViewModel.Settings.SetupCompleted)
         {
-            ViewModel.StatusText = "Voice changer is not configured yet. Run the Audio Setup wizard first.";
+            ViewModel.StatusText = "Not configured yet — run the Audio Setup wizard.";
             VoiceChangerStatus.Text = "Not configured";
             VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
             VoiceChangerStatusDot.Background = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
@@ -124,10 +133,11 @@ public partial class MainWindow : Window
             _voiceChanger?.Dispose();
             _voiceChanger = null;
             App.IsVoiceChangerRunning = false;
+            _logService?.Error("Voice changer failed to start.", ex);
             ViewModel.TryRestoreVoiceChangerRouting(out var restoreError);
             ViewModel.StatusText = string.IsNullOrWhiteSpace(restoreError)
-                ? $"Voice changer failed to start: {ex.Message}"
-                : $"Voice changer failed to start: {ex.Message} | {restoreError}";
+                ? "Voice changer failed to start."
+                : "Voice changer failed to start. Audio routing couldn't be restored.";
             VoiceChangerStatus.Text = "Start failed";
             VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
             VoiceChangerStatusDot.Background = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
@@ -138,7 +148,7 @@ public partial class MainWindow : Window
         VoiceChangerStatus.Text = "Running";
         VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
         VoiceChangerStatusDot.Background = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
-        ViewModel.StatusText = $"Voice changer started -> {outputDeviceName} ({outputDeviceId})";
+        ViewModel.StatusText = "Voice changer started.";
         ToastWindow.Show("Voice Changer", "Running", true);
     }
 
@@ -381,12 +391,64 @@ public partial class MainWindow : Window
             return;
         }
 
-        App.RequestShutdown();
-        base.OnClosing(e);
-        Dispatcher.BeginInvoke(() => Application.Current.Shutdown());
+        e.Cancel = true;
+        _ = RunExitResetAsync();
     }
 
-    private void CloseButton_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    private async Task RunExitResetAsync()
+    {
+        if (_exitFlowRunning)
+        {
+            return;
+        }
+
+        _exitFlowRunning = true;
+
+        ProgressOverlayWindow? overlay = null;
+        try
+        {
+            _voiceChanger?.Stop();
+            _voiceChanger?.Dispose();
+            _voiceChanger = null;
+            App.IsVoiceChangerRunning = false;
+            _teamMonitor?.Dispose();
+            _teamMonitor = null;
+
+            if (App.IsSessionEnding)
+            {
+                await ViewModel.ResetVoicemeeterAsync();
+            }
+            else
+            {
+                Hide();
+                overlay = new ProgressOverlayWindow("Resetting Audio")
+                {
+                    Owner = this,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen
+                };
+                overlay.Show();
+                await ViewModel.ResetVoicemeeterAsync(step => overlay.UpdateStep(step));
+                overlay.Complete("Devices restored to defaults.");
+                await Task.Delay(900);
+                overlay.Close();
+                overlay = null;
+                ToastWindow.Show("Devices reset", "Input/output devices restored to default.", "DONE", Color.FromRgb(0x10, 0xB9, 0x81));
+                await Task.Delay(1800);
+            }
+        }
+        catch
+        {
+            // reset failed — still shut down cleanly
+        }
+        finally
+        {
+            overlay?.Close();
+            App.RequestShutdown();
+            Application.Current.Shutdown();
+        }
+    }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
@@ -468,6 +530,7 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
+        _isClosing = true;
         _advancedVmTimer?.Stop();
         _voiceChanger?.Stop();
         _voiceChanger?.Dispose();
@@ -484,10 +547,15 @@ public partial class MainWindow : Window
 
         if (DataContext is IDisposable disposable)
         {
-            disposable.Dispose();
+            try
+            {
+                disposable.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logService?.Error("MainViewModel dispose failed during close", ex);
+            }
         }
-
-        DataContext = null;
     }
 
     private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -1084,9 +1152,11 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(config.Settings.SavedDefaultCaptureId))
+        var currentCapture = audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
+        if (!string.IsNullOrWhiteSpace(currentCapture)
+            && !string.Equals(currentCapture, vmOutputId, StringComparison.OrdinalIgnoreCase))
         {
-            config.Settings.SavedDefaultCaptureId = audioDeviceService.GetDefaultDeviceId(DataFlow.Capture) ?? string.Empty;
+            config.Settings.SavedDefaultCaptureId = currentCapture;
         }
 
         var inputApplied = routing.TrySetDefaultInput(vmOutputId);
@@ -1143,8 +1213,11 @@ public partial class MainWindow : Window
             bool restored = routing.TrySetDefaultInput(config.Settings.SavedDefaultCaptureId);
             windowsResult = restored
                 ? "✓ Windows input restored to previous device"
-                : "⚠ Could not restore Windows input device";
-            config.Settings.SavedDefaultCaptureId = string.Empty;
+                : "⚠ Could not restore Windows input device — kept for retry";
+            if (restored)
+            {
+                config.Settings.SavedDefaultCaptureId = string.Empty;
+            }
             configService.Save(config);
         }
 

@@ -81,6 +81,12 @@ public partial class KeyboardControl : UserControl
         typeof(KeyboardControl),
         new PropertyMetadata(false));
 
+    public static readonly DependencyProperty IsCalibrationModeProperty = DependencyProperty.Register(
+        nameof(IsCalibrationMode),
+        typeof(bool),
+        typeof(KeyboardControl),
+        new PropertyMetadata(false));
+
     public KeyboardControl()
     {
         InitializeComponent();
@@ -183,5 +189,11 @@ public partial class KeyboardControl : UserControl
     {
         get => (bool)GetValue(IsScrollLockOnProperty);
         set => SetValue(IsScrollLockOnProperty, value);
+    }
+
+    public bool IsCalibrationMode
+    {
+        get => (bool)GetValue(IsCalibrationModeProperty);
+        set => SetValue(IsCalibrationModeProperty, value);
     }
 }

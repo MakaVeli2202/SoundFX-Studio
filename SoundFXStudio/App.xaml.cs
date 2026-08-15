@@ -30,6 +30,8 @@ public partial class App : Application
 
     public static bool IsShuttingDown { get; private set; }
 
+    public static bool IsSessionEnding { get; private set; }
+
     public static void RequestShutdown()
     {
         IsShuttingDown = true;
@@ -42,6 +44,7 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += AppDomain_UnhandledException;
         TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
         Exit += App_Exit;
+        Microsoft.Win32.SystemEvents.SessionEnding += (_, _) => IsSessionEnding = true;
         _logService.Info("Application Starting");
     }
 
@@ -191,7 +194,17 @@ public partial class App : Application
         trayMenu.Items.Add(stopAllItem);
         trayMenu.Items.Add(new Separator());
         var exitItem = new MenuItem { Header = "Exit" };
-        exitItem.Click += (_, _) => Shutdown();
+        exitItem.Click += (_, _) =>
+        {
+            if (MainWindow is Window w)
+            {
+                w.Close();
+            }
+            else
+            {
+                Shutdown();
+            }
+        };
         trayMenu.Items.Add(exitItem);
         _trayIcon.ContextMenu = trayMenu;
 

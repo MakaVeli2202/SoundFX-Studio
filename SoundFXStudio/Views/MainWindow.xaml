@@ -130,7 +130,7 @@
             <Setter Property="Padding" Value="16,0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Background" Value="#1F13233A"/>
+            <Setter Property="Background" Value="#122036"/>
             <Setter Property="BorderBrush" Value="#4A00D4FF"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -759,7 +759,7 @@
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Grid>
-                                            <Border x:Name="HoverGlow" CornerRadius="16" BorderBrush="#8B5CF6" BorderThickness="1.5" Opacity="0" IsHitTestVisible="False"/>
+                                            <Border x:Name="HoverGlow" CornerRadius="16" BorderBrush="#00D4FF" BorderThickness="1.5" Opacity="0" IsHitTestVisible="False"/>
                                             <Border x:Name="Bd" CornerRadius="16" Background="Transparent">
                                                 <Grid Margin="16">
                                                     <Grid.ColumnDefinitions>
@@ -768,10 +768,10 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
                                                     <Border Width="42" Height="42" CornerRadius="12"
-                                                            Background="#1A8B5CF6" BorderBrush="#338B5CF6" BorderThickness="1"
+                                                            Background="#1A00D4FF" BorderBrush="#334A647F" BorderThickness="1"
                                                             VerticalAlignment="Center">
                                                         <TextBlock Text="&#xEC4A;" FontFamily="Segoe Fluent Icons" FontSize="17"
-                                                                   Foreground="#8B5CF6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                   Foreground="#00D4FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Border>
                                                     <StackPanel Grid.Column="1" Margin="14,0,10,0" VerticalAlignment="Center">
                                                         <TextBlock Text="Voice changer" Foreground="#F7FAFF" FontSize="14.5" FontWeight="SemiBold"/>
@@ -947,8 +947,8 @@
                             <StackPanel>
                                 <Border Background="#161E31" BorderBrush="#2C476A" BorderThickness="1" CornerRadius="12" Padding="10,8" Margin="0,0,0,12">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE7BF;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock Text="PRIMARY CONTROLS" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        <TextBlock Text="&#xE7BF;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#00D4FF" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="PRIMARY CONTROLS" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
                                 <TextBlock Text="Start or stop the real-time pipeline and monitor what your team hears." Foreground="#A1B2D2" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,14"/>
@@ -975,8 +975,8 @@
                                 </Border>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
-                                    <TextBlock Text="&#xE7C1;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="MONITOR" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="&#xE7C1;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#00D4FF" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="MONITOR" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <TextBlock Text="Preview the route your team receives while you talk." Foreground="#A1B2D2" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
                                 <Button x:Name="TeamMonitorToggleBtn"
@@ -1012,8 +1012,8 @@
                             <StackPanel>
                                 <Border Background="#161E31" BorderBrush="#2C476A" BorderThickness="1" CornerRadius="12" Padding="10,8" Margin="0,0,0,10">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xEC4A;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBlock Text="EFFECT CONTROLS" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        <TextBlock Text="&#xEC4A;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#00D4FF" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="EFFECT CONTROLS" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
                                 <TextBlock Text="Choose a preset, then fine-tune the pitch and formant to match your voice." Foreground="{StaticResource TextMutedBrush}" FontSize="10.5" Margin="0,0,0,6"/>
@@ -1021,8 +1021,8 @@
                                 <ComboBox x:Name="VoiceChangerPresetCombo"
                                           Height="30"
                                           HorizontalAlignment="Stretch"
-                                          Background="#44111A2E"
-                                          BorderBrush="#558B5CF6"
+                                          Background="#122036"
+                                          BorderBrush="#334A647F"
                                           Foreground="White"
                                           FontSize="12"
                                           BorderThickness="1"
@@ -1032,8 +1032,8 @@
                                 <TextBlock x:Name="PresetSummaryText" Foreground="{StaticResource TextMutedBrush}" FontSize="10" TextWrapping="Wrap" Margin="0,0,0,14"/>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                    <TextBlock Text="&#xE790;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="PITCH" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="&#xE790;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#00D4FF" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="PITCH" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <TextBlock Text="Shift voice pitch in semitones." Foreground="{StaticResource TextMutedBrush}" FontSize="10.5" Margin="0,0,0,4"/>
                                 <Grid Margin="0,0,0,14">
@@ -1057,8 +1057,8 @@
                                 </Grid>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                    <TextBlock Text="&#xE7F4;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#8B5CF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="FORMANT" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="&#xE7F4;" FontFamily="Segoe Fluent Icons" FontSize="15" Foreground="#00D4FF" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="FORMANT" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <TextBlock Text="Adjust the voice character without touching pitch." Foreground="{StaticResource TextMutedBrush}" FontSize="10.5" Margin="0,0,0,4"/>
                                 <Grid>
@@ -1130,24 +1130,43 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <WrapPanel Orientation="Horizontal" VerticalAlignment="Center" ItemHeight="40">
                                 <Button Content="+ Add Sound"
                                         Style="{StaticResource RoundButton}"
+                                        Margin="0,0,8,0"
                                         Command="{Binding AddSoundCommand}"/>
                                 <Button Content="&#x1F310; URL"
                                         Style="{StaticResource RoundButtonSecondary}"
+                                        Margin="0,0,8,0"
                                         Command="{Binding AddSoundFromUrlCommand}"/>
                                 <Button Content="&#x1F3A4; Mic"
                                         Style="{StaticResource RoundButtonSecondary}"
+                                        Margin="0,0,8,0"
                                         Click="LibraryMicButton_Click"/>
                                 <Button Content="&#x1F5D1; Delete"
                                         Style="{StaticResource RoundButtonDanger}"
                                         Command="{Binding DeleteMarkedSoundsCommand}"/>
                             </WrapPanel>
 
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
+                                <TextBlock Text="LEVEL" Foreground="#8EA2C0" FontSize="10" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <Slider Width="96" Minimum="5" Maximum="100" Margin="7,0,0,0"
+                                        Value="{Binding MasterVolumePercent, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        VerticalAlignment="Center"
+                                        ToolTip="Master volume for all sound playback (percent)"/>
+                                <TextBlock Text="{Binding MasterVolumePercent, StringFormat='{}{0:0}%'}"
+                                           Foreground="#00D4FF" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" Margin="7,0,0,0"/>
+                                <Button Content="&#x2696; Equalize"
+                                        Style="{StaticResource RoundButtonSecondary}"
+                                        Command="{Binding EqualizeSoundsCommand}"
+                                        Margin="10,0,0,0"
+                                        ToolTip="Analyze every sound and set each gain so they all play at the same loudness"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Border Background="#152137" BorderBrush="#2C476A" BorderThickness="1" CornerRadius="999" Padding="12,5" Margin="0,0,8,0">
                                     <TextBlock Text="{Binding Sounds.Count, StringFormat='{}{0} sounds'}" Foreground="#DDE7F8" FontSize="11" FontWeight="SemiBold"/>
                                 </Border>
@@ -1251,7 +1270,7 @@
                                                                 <ControlTemplate TargetType="Thumb">
                                                                     <Border CornerRadius="4"
                                                                             Background="#228B5CF6"
-                                                                            BorderBrush="#8B5CF6"
+                                                                            BorderBrush="#00D4FF"
                                                                             BorderThickness="1"
                                                                             Margin="1,2"/>
                                                                 </ControlTemplate>
@@ -1555,12 +1574,12 @@
                                     </Border.Style>
                                     <StackPanel Margin="24">
                                         <TextBlock x:Name="SettingsGeneralHeader"
-                                                   Text="GENERAL" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold"
+                                                   Text="GENERAL" Foreground="#00D4FF" FontSize="16" FontWeight="Bold"
                                                    Margin="0,0,0,4"/>
                                         <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
                                                    Text="Startup and app behavior."/>
 
-                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
+                                        <Border Background="#B4141E2D" BorderBrush="#334A647F" BorderThickness="1"
                                             CornerRadius="12" Padding="18,16">
                                             <StackPanel>
                                                 <CheckBox x:Name="ShowWizardOnStartupCheck"
@@ -1576,7 +1595,7 @@
                                             </StackPanel>
                                         </Border>
 
-                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
+                                        <Border Background="#B4141E2D" BorderBrush="#334A647F" BorderThickness="1"
                                             CornerRadius="12" Padding="18,16" Margin="0,12,0,0">
                                             <StackPanel>
                                                 <Grid Margin="0,0,0,6">
@@ -1609,12 +1628,12 @@
                                     </Border.Style>
                                     <StackPanel Margin="24">
                                         <TextBlock x:Name="SettingsAudioHeader"
-                                                   Text="AUDIO DEVICES" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold"
+                                                   Text="AUDIO DEVICES" Foreground="#00D4FF" FontSize="16" FontWeight="Bold"
                                                    Margin="0,0,0,4"/>
                                         <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
                                                    Text="Where SoundFX plays sounds and where your voice comes from."/>
 
-                                        <Border Background="#66081428" BorderBrush="#558B5CF6"
+                                        <Border Background="#B4141E2D" BorderBrush="#334A647F"
                                             BorderThickness="1" CornerRadius="12" Padding="18,16" Margin="0,0,0,16">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
@@ -1622,7 +1641,7 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
                                                 <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
-                                                    <TextBlock Text="AUDIO SETUP" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,3"/>
+                                                    <TextBlock Text="AUDIO SETUP" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,3"/>
                                                     <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap"
                                                                Text="Set hear/talk devices, route apps through Voicemeeter, or reset routing."/>
                                                 </StackPanel>
@@ -1656,26 +1675,26 @@
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <Border Grid.Column="0" Background="#66081428" BorderBrush="#558B5CF6"
+                                            <Border Grid.Column="0" Background="#B4141E2D" BorderBrush="#334A647F"
                                                     BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,8,0">
                                                 <StackPanel>
-                                                    <TextBlock Text="OUTPUT DEVICE" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                                    <TextBlock Text="OUTPUT DEVICE" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                                                     <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,6"
                                                                Text="Where SoundFX plays your sounds."/>
                                                     <ComboBox x:Name="SpeakersComboBox" Height="28" DisplayMemberPath="Name"
-                                                              Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White" FontSize="12"
+                                                              Background="#122036" BorderBrush="#334A647F" Foreground="White" FontSize="12"
                                                               BorderThickness="1" Padding="6,1"/>
                                                 </StackPanel>
                                             </Border>
 
-                                            <Border Grid.Column="1" Background="#66081428" BorderBrush="#558B5CF6"
+                                            <Border Grid.Column="1" Background="#B4141E2D" BorderBrush="#334A647F"
                                                     BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,0">
                                                 <StackPanel>
-                                                    <TextBlock Text="MICROPHONE (VOICE INPUT)" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                                    <TextBlock Text="MICROPHONE (VOICE INPUT)" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                                                     <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,6"
                                                                Text="Where your voice comes from (VoiceMeeter B1 when routed)."/>
                                                     <ComboBox x:Name="MicrophoneComboBox" Height="28" DisplayMemberPath="Name"
-                                                              Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White" FontSize="12"
+                                                              Background="#122036" BorderBrush="#334A647F" Foreground="White" FontSize="12"
                                                               BorderThickness="1" Padding="6,1"/>
                                                 </StackPanel>
                                             </Border>
@@ -1702,7 +1721,7 @@
                                         </Grid.RowDefinitions>
 
                                         <StackPanel>
-                                            <TextBlock Text="KEYBINDS (HOTKEYS)" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold"
+                                            <TextBlock Text="KEYBINDS (HOTKEYS)" Foreground="#00D4FF" FontSize="16" FontWeight="Bold"
                                                        Margin="0,0,0,4"/>
                                             <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
                                                        Text="Global shortcuts for mute actions and the soundboard toggle."/>
@@ -1715,9 +1734,9 @@
                                                     <Style TargetType="Button">
                                                         <Setter Property="Height" Value="34"/>
                                                         <Setter Property="Padding" Value="14,0"/>
-                                                        <Setter Property="Foreground" Value="#8B5CF6"/>
-                                                        <Setter Property="Background" Value="#0A1A2E"/>
-                                                        <Setter Property="BorderBrush" Value="#8B5CF6"/>
+                                                        <Setter Property="Foreground" Value="#00D4FF"/>
+                                                        <Setter Property="Background" Value="#122036"/>
+                                                        <Setter Property="BorderBrush" Value="#00D4FF"/>
                                                         <Setter Property="BorderThickness" Value="1"/>
                                                         <Setter Property="Cursor" Value="Hand"/>
                                                         <Setter Property="FontSize" Value="12"/>
@@ -1736,7 +1755,7 @@
                                                                     </Grid>
                                                                     <ControlTemplate.Triggers>
                                                                         <Trigger Property="IsMouseOver" Value="True">
-                                                                            <Setter TargetName="Bd" Property="Fill" Value="#1A8B5CF6"/>
+                                                                            <Setter TargetName="Bd" Property="Fill" Value="#1A00D4FF"/>
                                                                         </Trigger>
                                                                     </ControlTemplate.Triggers>
                                                                 </ControlTemplate>
@@ -1751,13 +1770,13 @@
                                             </Button>
 
                                                 <Border x:Name="AddBindingPanel" Visibility="Collapsed"
-                                                    Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
+                                                    Background="#B4141E2D" BorderBrush="#334A647F" BorderThickness="1"
                                                     CornerRadius="12" Padding="18,16" Margin="0,0,0,14">
                                                 <StackPanel>
                                                     <TextBlock Text="Choose an action:" Foreground="#DDEAFF" FontSize="11" Margin="0,0,0,6"/>
                                                     <ComboBox x:Name="AddBindingActionCombo" Height="30"
                                                               ItemsSource="{Binding AvailableKeybindActions}"
-                                                              Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White" FontSize="12"
+                                                              Background="#122036" BorderBrush="#334A647F" Foreground="White" FontSize="12"
                                                               BorderThickness="1" Padding="6,1"/>
                                                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                                         <Button x:Name="AddBindingRecordButton" Content="Record"
@@ -1777,7 +1796,7 @@
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                                                 <TextBlock Text="Activation:" Foreground="#A1B2D2" FontSize="11" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                                 <ComboBox x:Name="KeybindHoldModeCombo" Width="200" Height="30" FontSize="12"
-                                                          Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White"
+                                                          Background="#122036" BorderBrush="#334A647F" Foreground="White"
                                                           BorderThickness="1" Padding="6,1">
                                                     <ComboBoxItem Content="Hold + tap sound key"/>
                                                     <ComboBoxItem Content="Toggle"/>
@@ -1801,7 +1820,7 @@
                                                                     <TextBlock Text="{Binding ActionName}" Foreground="#DDEAFF" FontSize="12" FontWeight="SemiBold"/>
                                                                 </StackPanel>
                                                                 <Border Grid.Column="1" Background="#1AFFFFFF" CornerRadius="6" Padding="10,4" VerticalAlignment="Center" Margin="0,0,8,0">
-                                                                    <TextBlock Text="{Binding Key}" Foreground="#8B5CF6" FontSize="12" FontWeight="Bold"/>
+                                                                    <TextBlock Text="{Binding Key}" Foreground="#00D4FF" FontSize="12" FontWeight="Bold"/>
                                                                 </Border>
                                                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                                                     <Button Content="Change" Height="26" FontSize="10.5" Margin="0,0,6,0"
@@ -1846,17 +1865,17 @@
                                         </Style>
                                     </Border.Style>
                                     <StackPanel Margin="24">
-                                        <TextBlock Text="TOOLS" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold" Margin="0,0,0,4"/>
+                                        <TextBlock Text="TOOLS" Foreground="#00D4FF" FontSize="16" FontWeight="Bold" Margin="0,0,0,4"/>
                                         <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,18"
                                                    Text="Keep the keyboard and routing utilities in one place."/>
 
-                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1" CornerRadius="12" Padding="18,16" Margin="0,0,0,14">
+                                        <Border Background="#B4141E2D" BorderBrush="#334A647F" BorderThickness="1" CornerRadius="12" Padding="18,16" Margin="0,0,0,14">
                                             <StackPanel>
-                                                <TextBlock Text="KEYBOARD LAYOUT" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                                <TextBlock Text="KEYBOARD LAYOUT" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                                                 <ComboBox ItemsSource="{Binding KeyboardLayoutOptions}"
                                                           SelectedItem="{Binding KeyboardLayout}"
                                                           Height="32" HorizontalAlignment="Left" Width="230"
-                                                          Background="#44111A2E" BorderBrush="#558B5CF6" Foreground="White" FontSize="12"
+                                                          Background="#122036" BorderBrush="#334A647F" Foreground="White" FontSize="12"
                                                           BorderThickness="1" Padding="6,1" Margin="0,0,0,12"/>
                                                 <Button Content="Open Keyboard Calibration"
                                                         Style="{StaticResource SettingsButton}"
@@ -1865,9 +1884,9 @@
                                             </StackPanel>
                                         </Border>
 
-                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1" CornerRadius="12" Padding="18,16">
+                                        <Border Background="#B4141E2D" BorderBrush="#334A647F" BorderThickness="1" CornerRadius="12" Padding="18,16">
                                             <StackPanel>
-                                                <TextBlock Text="ROUTING" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
+                                                <TextBlock Text="ROUTING" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                                     <Button Content="Configure Voicemeeter Only"
                                                             Click="AdvancedConfigureVmOnly_Click"
@@ -1905,19 +1924,19 @@
                                         <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
                                                    Text="Match the on-screen keyboard to your physical keyboard."/>
 
-                                        <Border Background="#66081428" BorderBrush="#5500D4FF" BorderThickness="1"
+                                        <Border Background="#B4141E2D" BorderBrush="#5500D4FF" BorderThickness="1"
                                             CornerRadius="12" Padding="18,16" Margin="0,0,0,14">
                                             <StackPanel>
                                                 <TextBlock Text="KEYBOARD LAYOUT" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                                                 <ComboBox ItemsSource="{Binding KeyboardLayoutOptions}"
                                                           SelectedItem="{Binding KeyboardLayout}"
                                                           Height="28" HorizontalAlignment="Left" Width="220"
-                                                          Background="#44111A2E" BorderBrush="#5500D4FF" Foreground="White" FontSize="12"
+                                                          Background="#122036" BorderBrush="#5500D4FF" Foreground="White" FontSize="12"
                                                           BorderThickness="1" Padding="6,1"/>
                                             </StackPanel>
                                         </Border>
 
-                                        <Border Background="#66081428" BorderBrush="#5500D4FF" BorderThickness="1"
+                                        <Border Background="#B4141E2D" BorderBrush="#5500D4FF" BorderThickness="1"
                                             CornerRadius="12" Padding="18,16">
                                             <StackPanel>
                                                 <TextBlock Text="KEYBOARD CALIBRATION" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
@@ -1945,20 +1964,20 @@
                                         </Style>
                                     </Border.Style>
                                     <StackPanel Margin="24">
-                                        <TextBlock Text="ADVANCED" Foreground="#8B5CF6" FontSize="16" FontWeight="Bold"
+                                        <TextBlock Text="ADVANCED" Foreground="#00D4FF" FontSize="16" FontWeight="Bold"
                                                    Margin="0,0,0,4"/>
                                         <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
                                                    Text="Voicemeeter routing and advanced options."/>
 
-                                        <Border Background="#66081428" BorderBrush="#558B5CF6" BorderThickness="1"
+                                        <Border Background="#B4141E2D" BorderBrush="#334A647F" BorderThickness="1"
                                             CornerRadius="12" Padding="18,16" Margin="0,14,0,0">
                                             <StackPanel>
-                                                <TextBlock Text="VOICEMEETER ROUTING" Foreground="#8B5CF6" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
+                                                <TextBlock Text="VOICEMEETER ROUTING" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
                                                 <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,10"
                                                            Text="Live control of Voicemeeter strips — same switches the setup wizard used to offer."/>
 
-                                                <Border Background="#22081428" CornerRadius="10" Padding="12,10" Margin="0,0,0,10"
-                                                        BorderBrush="#338B5CF6" BorderThickness="1">
+                                                <Border Background="#4A141E2D" CornerRadius="10" Padding="12,10" Margin="0,0,0,10"
+                                                        BorderBrush="#334A647F" BorderThickness="1">
                                                     <StackPanel>
                                                         <TextBlock Text="INPUT STRIP B1 (mic → Discord/teams)"
                                                                    Foreground="#C9D7F0" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
@@ -2000,8 +2019,8 @@
                                                     </StackPanel>
                                                 </Border>
 
-                                                <Border Background="#22081428" CornerRadius="10" Padding="12,10" Margin="0,0,0,10"
-                                                        BorderBrush="#338B5CF6" BorderThickness="1">
+                                                <Border Background="#4A141E2D" CornerRadius="10" Padding="12,10" Margin="0,0,0,10"
+                                                        BorderBrush="#334A647F" BorderThickness="1">
                                                     <StackPanel>
                                                         <TextBlock Text="VIRTUAL INPUT STRIP A1 (processed voice → speakers)"
                                                                    Foreground="#C9D7F0" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>
@@ -2043,8 +2062,8 @@
                                                     </StackPanel>
                                                 </Border>
 
-                                                <Border Background="#22081428" CornerRadius="10" Padding="12,10" Margin="0,0,0,10"
-                                                        BorderBrush="#338B5CF6" BorderThickness="1">
+                                                <Border Background="#4A141E2D" CornerRadius="10" Padding="12,10" Margin="0,0,0,10"
+                                                        BorderBrush="#334A647F" BorderThickness="1">
                                                     <StackPanel>
                                                         <TextBlock Text="VIRTUAL INPUT STRIP B1 (processed voice → Discord/teams)"
                                                                    Foreground="#C9D7F0" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,6"/>

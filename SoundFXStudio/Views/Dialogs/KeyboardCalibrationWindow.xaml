@@ -187,9 +187,9 @@
                         <Border Style="{StaticResource Card}" Padding="18" Margin="0,0,0,12" Background="#0F1A2A" BorderBrush="#355378">
                             <StackPanel>
                                 <TextBlock Text="Quick Tips" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource Cyan}"/>
-                                <TextBlock Text="Use small nudges by default. Hold Shift while pressing nudge buttons for faster movement."
+                                <TextBlock Text="Drag empty preview space to move the whole keyboard. Drag a key to reposition it (click to select). Drag a lock indicator light to place it."
                                            Foreground="{StaticResource Muted}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                                <TextBlock Text="For the Open Keyboard overlay, step size is now fine-tuned for precise placement."
+                                <TextBlock Text="Nudge buttons stay for fine-tuning. Hold Shift while pressing them for faster movement."
                                            Foreground="{StaticResource Muted}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
@@ -727,7 +727,7 @@
                         <Border Style="{StaticResource Card}" Padding="20">
                             <StackPanel>
                                 <TextBlock Text="Individual Keys" FontSize="19" FontWeight="Bold" Foreground="{StaticResource Cyan}" Margin="0,0,0,6"/>
-                                <TextBlock Text="Click a key in the preview, then tweak" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,0,0,14"/>
+                                <TextBlock Text="Click a key in the preview to select it, or drag it to move it" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,0,0,14"/>
                                 <TextBlock Text="{Binding SelectedKeyItem.Name, TargetNullValue='Click a key in the preview'}" FontWeight="SemiBold" FontSize="14" Foreground="#5AD8FF" Margin="0,0,0,12"/>
 
                                 <StackPanel DataContext="{Binding SelectedKeyItem}">
@@ -884,11 +884,16 @@
                                                               ItemsSource="{Binding KeyboardKeys}"
                                                               ButtonScale="{Binding PreviewButtonScale}"
                                                               CalibrationSelectionHighlight="True"
+                                                              IsCalibrationMode="True"
                                                               InnerInsetXPercent="{Binding PreviewInnerInsetXPercent}"
                                                               InnerInsetYPercent="{Binding PreviewInnerInsetYPercent}"
                                                               InnerOffsetXPercent="{Binding PreviewInnerOffsetXPercent}"
                                                               InnerOffsetYPercent="{Binding PreviewInnerOffsetYPercent}"
-                                                              KeyClickedCommand="{Binding KeyClickedCommand}"/>
+                                                              KeyClickedCommand="{Binding KeyClickedCommand}"
+                                                              Cursor="SizeAll"
+                                                              PreviewMouseLeftButtonDown="PreviewKeyboard_PreviewMouseLeftButtonDown"
+                                                              PreviewMouseMove="PreviewKeyboard_PreviewMouseMove"
+                                                              PreviewMouseLeftButtonUp="PreviewKeyboard_PreviewMouseLeftButtonUp"/>
                                 </Viewbox>
                             </ScrollViewer>
                         </Border>

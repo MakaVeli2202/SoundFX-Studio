@@ -119,6 +119,123 @@ public sealed class SoundLibraryViewModel
 
     public void AddMultipleSounds() => AddSound();
 
+    public async Task EqualizeSoundsAsync(double targetPercent)
+    {
+        if (_sounds.Count == 0)
+        {
+            _setStatusText("No sounds to equalize.");
+            return;
+        }
+
+        var snapshot = _sounds.ToList();
+        var analyzer = new SoundNormalizerService();
+        var results = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+        var analyzed = 0;
+        var failed = 0;
+
+        ProgressOverlayWindow? overlay = null;
+        _runOnUiThread(() =>
+        {
+            overlay = new ProgressOverlayWindow("Equalizing Sounds")
+            {
+                Owner = _getWindow(),
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            overlay.Show();
+        });
+
+        await Task.Run(() =>
+        {
+            foreach (var sound in snapshot)
+            {
+                try
+                {
+                    if (!File.Exists(sound.FilePath))
+                    {
+                        failed++;
+                        continue;
+                    }
+
+                    var levels = analyzer.Analyze(sound.FilePath);
+                    var gain = SoundNormalizerService.ComputeGain(levels.Peak, levels.Rms, (float)targetPercent);
+                    results[sound.Id] = ComputeNormalizedGain(sound.Volume, gain);
+                    analyzed++;
+                    overlay?.UpdateStep($"Analyzing {sound.Name}… ({analyzed}/{snapshot.Count})");
+                }
+                catch
+                {
+                    failed++;
+                }
+            }
+        });
+
+        _runOnUiThread(() =>
+        {
+            foreach (var sound in snapshot)
+            {
+                if (results.TryGetValue(sound.Id, out var gain))
+                {
+                    sound.NormalizedGain = gain;
+                }
+            }
+
+            _save();
+            _updateStatus();
+            _raiseSoundCollectionStats();
+
+            var message = $"Equalized {analyzed} sounds to {targetPercent:0}%";
+            if (failed > 0)
+            {
+                message += $", {failed} skipped";
+            }
+
+            message += ".";
+
+            if (overlay is not null)
+            {
+                overlay.Complete(message);
+                _ = Task.Delay(900).ContinueWith(_ => _runOnUiThread(() =>
+                {
+                    overlay.Close();
+                }));
+            }
+
+            _setStatusText(message);
+        });
+    }
+
+    public async Task EqualizeSoundAsync(SoundEntry sound, double targetPercent = 100)
+    {
+        float finalGain;
+        try
+        {
+            if (sound is null || !File.Exists(sound.FilePath))
+            {
+                return;
+            }
+
+            var levels = await Task.Run(() => new SoundNormalizerService().Analyze(sound.FilePath)).ConfigureAwait(false);
+            var gain = SoundNormalizerService.ComputeGain(levels.Peak, levels.Rms, (float)targetPercent);
+            finalGain = ComputeNormalizedGain(sound.Volume, gain);
+        }
+        catch
+        {
+            return;
+        }
+
+        _runOnUiThread(() =>
+        {
+            sound.NormalizedGain = finalGain;
+            _save();
+        });
+    }
+
+    private static float ComputeNormalizedGain(float volume, float gain)
+    {
+        var divisor = Math.Max(volume, 0.05f);
+        return Math.Clamp(gain / divisor, 0.05f, 100f);
+    }
+
     public Task AddSoundFromUrlAsync()
     {
         var input = Microsoft.VisualBasic.Interaction.InputBox("Paste an audio URL", "Add Sound From URL", string.Empty).Trim();
@@ -351,6 +468,7 @@ public sealed class SoundLibraryViewModel
         _save();
         _setStatusText($"Added {sound.Name}");
         _raiseSoundCollectionStats();
+        _ = EqualizeSoundAsync(sound);
     }
 
     public void UpdateSoundFromDetails(SoundEntry sound, SoundAssignmentViewModel details)
@@ -631,7 +749,7 @@ public sealed class SoundLibraryViewModel
         _audioPlayer.Play(
             sound.Id,
             sound.FilePath,
-            assignment?.VolumeOverride ?? sound.Volume,
+            (assignment?.VolumeOverride ?? sound.Volume) * sound.NormalizedGain,
             PlaybackMode.Restart,
             deviceIndex);
 
@@ -714,6 +832,7 @@ public sealed class SoundLibraryViewModel
                 _setStatusText($"Imported {sound.Name} from URL");
                 _raiseSoundCollectionStats();
                 _save();
+                _ = EqualizeSoundAsync(sound);
             });
         }
         catch (Exception ex)
