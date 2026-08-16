@@ -211,34 +211,19 @@
                 <Button Content="Clear"
                         Margin="0,0,10,0"
                         Style="{StaticResource CyberButton}"
+                        Height="40"
                         Visibility="{Binding ClearButtonVisibility}"
                         Click="ClearButton_Click"/>
 
                 <Button Content="Cancel"
                         Margin="0,0,10,0"
                         Style="{StaticResource CyberButton}"
+                        Height="40"
                         Click="CancelButton_Click"/>
 
                 <Button Content="Save"
-                        FontWeight="Bold"
-                        Foreground="#080D17"
-                        Height="42"
-                        Click="SaveButton_Click">
-
-                    <Button.Background>
-
-                        <LinearGradientBrush StartPoint="0,0"
-                                             EndPoint="1,0">
-
-                            <GradientStop Color="#00D4FF"/>
-
-                            <GradientStop Color="#7B3FFF"/>
-
-                        </LinearGradientBrush>
-
-                    </Button.Background>
-
-                </Button>
+                        Style="{StaticResource PrimaryGradientButtonStyle}"
+                        Click="SaveButton_Click"/>
 
             </StackPanel>
 

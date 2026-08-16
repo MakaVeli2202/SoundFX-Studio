@@ -1878,6 +1878,7 @@
                                                           Background="#122036" BorderBrush="#334A647F" Foreground="White" FontSize="12"
                                                           BorderThickness="1" Padding="6,1" Margin="0,0,0,12"/>
                                                 <Button Content="Open Keyboard Calibration"
+                                                        AutomationProperties.Name="Calibration"
                                                         Style="{StaticResource SettingsButton}"
                                                         Click="OpenCalibrationButton_Click"
                                                         HorizontalAlignment="Left" Width="200"/>
@@ -1943,6 +1944,7 @@
                                                 <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,8"
                                                            Text="Adjust key positions for your physical keyboard."/>
                                                 <Button Content="Open Keyboard Calibration"
+                                                        AutomationProperties.Name="Calibration"
                                                         Style="{StaticResource SettingsButton}"
                                                         Click="OpenCalibrationButton_Click"
                                                         HorizontalAlignment="Left" Width="200"/>

@@ -20,6 +20,8 @@ public sealed class KeyboardClusterCalibration
     public double OffsetY { get; set; }
     public double WidthAdjustment { get; set; }
     public double HeightAdjustment { get; set; }
+    public double GapX { get; set; }
+    public double GapY { get; set; }
 }
 
 public static class KeyboardClusterLayout
@@ -33,14 +35,16 @@ public static class KeyboardClusterLayout
             ? calibration
             : new KeyboardClusterCalibration();
 
-    public static void Set(KeyboardCluster cluster, double offsetX, double offsetY, double widthAdjustment = 0, double heightAdjustment = 0)
+    public static void Set(KeyboardCluster cluster, double offsetX, double offsetY, double widthAdjustment = 0, double heightAdjustment = 0, double gapX = 0, double gapY = 0)
     {
         ClusterCalibrations[cluster] = new KeyboardClusterCalibration
         {
             OffsetX = offsetX,
             OffsetY = offsetY,
             WidthAdjustment = widthAdjustment,
-            HeightAdjustment = heightAdjustment
+            HeightAdjustment = heightAdjustment,
+            GapX = gapX,
+            GapY = gapY
         };
 
         Changed?.Invoke();

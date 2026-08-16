@@ -392,12 +392,19 @@ public partial class MainWindow : Window
         }
 
         e.Cancel = true;
-        _ = RunExitResetAsync();
+        _ = RunExitResetAsync(resetAudio: App.IsSessionEnding || AskResetOnClose());
+    }
+
+    private bool AskResetOnClose()
+    {
+        var dialog = new CloseOptionsDialog { Owner = this };
+        dialog.ShowDialog();
+        return dialog.ResetAudioOnClose;
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
-    private async Task RunExitResetAsync()
+    private async Task RunExitResetAsync(bool resetAudio)
     {
         if (_exitFlowRunning)
         {
@@ -416,26 +423,29 @@ public partial class MainWindow : Window
             _teamMonitor?.Dispose();
             _teamMonitor = null;
 
-            if (App.IsSessionEnding)
+            if (resetAudio)
             {
-                await ViewModel.ResetVoicemeeterAsync();
-            }
-            else
-            {
-                Hide();
-                overlay = new ProgressOverlayWindow("Resetting Audio")
+                if (App.IsSessionEnding)
                 {
-                    Owner = this,
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen
-                };
-                overlay.Show();
-                await ViewModel.ResetVoicemeeterAsync(step => overlay.UpdateStep(step));
-                overlay.Complete("Devices restored to defaults.");
-                await Task.Delay(900);
-                overlay.Close();
-                overlay = null;
-                ToastWindow.Show("Devices reset", "Input/output devices restored to default.", "DONE", Color.FromRgb(0x10, 0xB9, 0x81));
-                await Task.Delay(1800);
+                    await ViewModel.ResetVoicemeeterAsync();
+                }
+                else
+                {
+                    Hide();
+                    overlay = new ProgressOverlayWindow("Resetting Audio")
+                    {
+                        Owner = this,
+                        WindowStartupLocation = WindowStartupLocation.CenterScreen
+                    };
+                    overlay.Show();
+                    await ViewModel.ResetVoicemeeterAsync(step => overlay.UpdateStep(step));
+                    overlay.Complete("Devices restored to defaults.");
+                    await Task.Delay(900);
+                    overlay.Close();
+                    overlay = null;
+                    ToastWindow.Show("Devices reset", "Input/output devices restored to default.", "DONE", Color.FromRgb(0x10, 0xB9, 0x81));
+                    await Task.Delay(1800);
+                }
             }
         }
         catch
@@ -728,30 +738,37 @@ public partial class MainWindow : Window
                 return;
             }
 
-            var calibration = ViewModel.Settings.KeyboardCalibration;
-            if (calibration is not null)
-            {
-                calibration.OpenKeyboardButtonX = _keyboardCalibrationWindow.OpenKeyboardButtonX;
-                calibration.OpenKeyboardButtonY = _keyboardCalibrationWindow.OpenKeyboardButtonY;
-                calibration.OpenKeyboardButtonWidth = _keyboardCalibrationWindow.OpenKeyboardButtonWidth;
-                calibration.OpenKeyboardButtonHeight = _keyboardCalibrationWindow.OpenKeyboardButtonHeight;
-            }
-
             ApplyOpenKeyboardButton(
                 _keyboardCalibrationWindow.OpenKeyboardButtonX,
                 _keyboardCalibrationWindow.OpenKeyboardButtonY,
                 _keyboardCalibrationWindow.OpenKeyboardButtonWidth,
                 _keyboardCalibrationWindow.OpenKeyboardButtonHeight);
         };
+        _keyboardCalibrationWindow.LivePreviewChanged += (_, _) =>
+        {
+            if (_keyboardCalibrationWindow is null)
+            {
+                return;
+            }
+
+            var live = _keyboardCalibrationWindow.BuildCalibration();
+            ViewModel.PushLiveKeyboardCalibration(live);
+            _keyboardWindow?.RefreshPanels(live);
+        };
         _keyboardCalibrationWindow.CalibrationSaved += (_, _) =>
         {
             ViewModel.RefreshCommand.Execute(null);
+            ViewModel.ClearLiveKeyboardCalibration();
             ApplyOpenKeyboardButtonCalibration();
+            _keyboardWindow?.RefreshPanels();
         };
         _keyboardCalibrationWindow.Closed += (_, _) =>
         {
             _keyboardCalibrationWindow = null;
+            ViewModel.ClearLiveKeyboardCalibration();
+            ViewModel.ApplyKeyboardCalibrationFromSettings();
             ApplyOpenKeyboardButtonCalibration();
+            _keyboardWindow?.RefreshPanels();
         };
         _keyboardCalibrationWindow.Show();
     }

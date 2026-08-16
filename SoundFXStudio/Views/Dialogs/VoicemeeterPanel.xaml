@@ -5,20 +5,16 @@
         Title="Sound Mixer"
         Width="600" Height="640"
         WindowStyle="None"
-        Background="#080D17"
+        Background="Transparent"
+        AllowsTransparency="True"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Loaded="Window_Loaded"
         Closed="Window_Closed"
         SourceInitialized="Window_SourceInitialized">
 
-    <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="52" ResizeBorderThickness="0"
-                      UseAeroCaptionButtons="False" CornerRadius="0"/>
-    </WindowChrome.WindowChrome>
-
     <Border Style="{StaticResource AppWindowRoot}"
-            CornerRadius="18"
+            CornerRadius="28"
             BorderThickness="1.5">
 
         <Grid>
@@ -32,7 +28,7 @@
             </Grid.RowDefinitions>
 
             <!-- Title -->
-                <Border Grid.Row="0" Background="#141E2D" CornerRadius="18,18,0,0"
+                <Border Grid.Row="0" Background="#141E2D" CornerRadius="28,28,0,0"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid Margin="18,0,10,0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -86,7 +82,7 @@
                                 ToolTip="Mute what YOU hear (bus A1)">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" CornerRadius="9" Padding="12,8"
+                                    <Border x:Name="Bd" CornerRadius="12" Padding="12,8"
                                             Background="#14FFFFFF" BorderBrush="#26FFFFFF" BorderThickness="1">
                                         <ContentPresenter VerticalAlignment="Center"/>
                                     </Border>
@@ -106,7 +102,7 @@
                                 ToolTip="Mute what your TEAM hears (bus B1)">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" CornerRadius="9" Padding="12,8"
+                                    <Border x:Name="Bd" CornerRadius="12" Padding="12,8"
                                             Background="#14FFFFFF" BorderBrush="#26FFFFFF" BorderThickness="1">
                                         <ContentPresenter VerticalAlignment="Center"/>
                                     </Border>
@@ -126,7 +122,7 @@
                                 ToolTip="Mute EVERY input">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" CornerRadius="9" Padding="12,8"
+                                    <Border x:Name="Bd" CornerRadius="12" Padding="12,8"
                                             Background="#14FFFFFF" BorderBrush="#26FFFFFF" BorderThickness="1">
                                         <ContentPresenter VerticalAlignment="Center"/>
                                     </Border>
@@ -161,7 +157,7 @@
                             Click="RemoveInput1_Click">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                <Border x:Name="Bd" CornerRadius="12" Background="{TemplateBinding Background}"
                                         BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
@@ -181,7 +177,7 @@
                             Click="RemoveHwOut_Click">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                <Border x:Name="Bd" CornerRadius="12" Background="{TemplateBinding Background}"
                                         BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
@@ -201,7 +197,7 @@
                             Click="ResetBoth_Click">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
+                                <Border x:Name="Bd" CornerRadius="12" Background="{TemplateBinding Background}"
                                         BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
@@ -223,68 +219,22 @@
             </ScrollViewer>
 
             <!-- Footer -->
-            <Border Grid.Row="5" Background="#101722" CornerRadius="0,0,18,18">
+            <Border Grid.Row="5" Background="#101722" CornerRadius="0,0,28,28">
                 <Grid Margin="20,0">
                     <TextBlock x:Name="StatusText" Foreground="{StaticResource TextMutedBrush}" FontSize="11" VerticalAlignment="Center"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button x:Name="TestHearBtn" Content="Hear what others hear"
-                                Background="#1F13233A" BorderBrush="#10B981" Foreground="#A7F3D0"
-                                BorderThickness="1" Cursor="Hand" FontSize="12" Padding="14,7" Margin="0,0,10,0"
+                                Height="40" MinWidth="140" Margin="0,0,10,0" Cursor="Hand"
                                 ToolTip="Listen to the exact mix your mic sends to Discord (VoiceMeeter B1)"
-                                Click="TestHear_Click">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
-                                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="#3310B981"/>
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#10B981"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-                        <Button x:Name="OpenVmBtn" Content="Open Voicemeeter" 
-                                Background="#151B35" BorderBrush="#3A5A8A" Foreground="#9AAFD0"
-                                BorderThickness="1" Cursor="Hand" FontSize="12" Padding="14,7"
-                                Click="OpenVm_Click">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
-                                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="#2A2A5A8A"/>
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#00D4FF"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-                        <Button Content="Done"
-                                Background="#222A2A66" BorderBrush="#5A00D4FF" Foreground="White"
-                                BorderThickness="1" Cursor="Hand" FontWeight="SemiBold" FontSize="12" Padding="14,7" Margin="10,0,0,0"
-                                Click="Done_Click">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
-                                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="#442A2A66"/>
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#00D4FF"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                                Click="TestHear_Click"
+                                Style="{StaticResource SecondaryActionButtonStyle}"/>
+                        <Button x:Name="OpenVmBtn" Content="Open Voicemeeter"
+                                Height="40" Cursor="Hand"
+                                Click="OpenVm_Click"
+                                Style="{StaticResource SecondaryActionButtonStyle}"/>
+                        <Button Content="Done" Height="40" Cursor="Hand" Margin="10,0,0,0"
+                                Click="Done_Click"
+                                Style="{StaticResource PrimaryGradientButtonStyle}"/>
                     </StackPanel>
                 </Grid>
             </Border>

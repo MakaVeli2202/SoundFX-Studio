@@ -1,0 +1,83 @@
+<Window x:Class="SoundFXStudio.Views.Dialogs.CloseOptionsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:SoundFXStudio.Controls"
+        Title="SoundFX Studio"
+        Width="520"
+        Height="330"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Icon="/Assets/SoundFXStudioLogo.png">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="TextBrush" Color="#EAF1FF"/>
+        <SolidColorBrush x:Key="MutedBrush" Color="#9AAFD0"/>
+
+        <Style x:Key="GlassPanel" TargetType="Border">
+            <Setter Property="CornerRadius" Value="24"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderAccentBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+    </Window.Resources>
+
+    <Border Style="{StaticResource AppWindowRoot}"
+            CornerRadius="28"
+            BorderThickness="1.5">
+
+        <Grid Margin="18">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="70"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- HEADER -->
+            <Border Grid.Row="0" Style="{StaticResource GlassPanel}">
+                <Grid MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
+                        <Image Source="/Assets/UI/MainDashboardLogo.png" Height="36" Stretch="Uniform"/>
+                        <StackPanel Margin="12,0,0,0">
+                            <TextBlock Text="SOUNDFX STUDIO" Foreground="#00D4FF" FontWeight="Bold"/>
+                            <TextBlock Text="Close SoundFX Studio" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <controls:WindowControlBar Grid.Column="1" VerticalAlignment="Center"
+                                                Margin="0,0,10,0"
+                                                ShowMinimize="False"
+                                                CloseClicked="CloseButton_Click"/>
+                </Grid>
+            </Border>
+
+            <!-- CONTENT -->
+            <Border Grid.Row="1" Style="{StaticResource GlassPanel}" Margin="0,14,0,14">
+                <StackPanel Margin="18" VerticalAlignment="Center">
+                    <TextBlock Text="What should happen to your audio settings?"
+                               Foreground="{StaticResource TextBrush}" FontSize="15" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                    <TextBlock Text="Closing with reset restores your input/output devices to Windows defaults, so your mic and routing are released. If you just close, everything stays as-is and you can start playing immediately next time."
+                               Foreground="{StaticResource MutedBrush}" FontSize="13" TextWrapping="Wrap" LineHeight="19"/>
+                </StackPanel>
+            </Border>
+
+            <!-- FOOTER -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="✕ Just Close"
+                        Margin="0,0,10,0"
+                        Style="{StaticResource SecondaryActionButtonStyle}"
+                        Height="40" MinWidth="110"
+                        Foreground="#C7D2E8"
+                        Click="JustCloseButton_Click"/>
+                <Button Content="↺ Close &amp; Reset"
+                        Style="{StaticResource PrimaryGradientButtonStyle}"
+                        Click="ResetCloseButton_Click"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

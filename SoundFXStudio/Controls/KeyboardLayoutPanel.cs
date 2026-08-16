@@ -20,6 +20,9 @@ public sealed class KeyboardLayoutPanel : Panel
     private static readonly Dictionary<string, SpecialKeyOverride> SpecialKeyOverrides = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, PerKeyOverride> PerKeyOverrides = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<int, RowOffset> RowOffsets = new();
+    private static readonly Dictionary<KeyboardCluster, GapOverride> ClusterGaps = new();
+    private static readonly Dictionary<int, GapOverride> RowGaps = new();
+    private static readonly Dictionary<string, KeyBaseline> KeyBaselines = new(StringComparer.OrdinalIgnoreCase);
     private static event Action? CalibrationChanged;
 
     public static bool DebugKeyboardCalibration { get; set; }
@@ -183,6 +186,59 @@ public sealed class KeyboardLayoutPanel : Panel
         NotifyCalibrationChanged();
     }
 
+    public static void SetClusterGapCalibration(KeyboardCluster cluster, double gapX, double gapY)
+    {
+        ClusterGaps[cluster] = new GapOverride(gapX, gapY);
+        NotifyCalibrationChanged();
+    }
+
+    public static void ClearClusterGapCalibration()
+    {
+        ClusterGaps.Clear();
+        NotifyCalibrationChanged();
+    }
+
+    public static void SetRowGapCalibration(int rowIndex, double gapX, double gapY)
+    {
+        RowGaps[rowIndex] = new GapOverride(gapX, gapY);
+        NotifyCalibrationChanged();
+    }
+
+    public static void ClearRowGapCalibration()
+    {
+        RowGaps.Clear();
+        NotifyCalibrationChanged();
+    }
+
+    public static void SetKeyBaseline(string keyId, double x, double y, double width, double height)
+    {
+        KeyBaselines[keyId] = new KeyBaseline(x, y, width, height);
+    }
+
+    public static void ClearKeyBaselines()
+    {
+        KeyBaselines.Clear();
+        NotifyCalibrationChanged();
+    }
+
+    public static KeyboardCluster GetClusterOf(KeyboardKey key) => GetCluster(key);
+
+    public static (double X, double Y, double Width, double Height)? GetKeyGeometry(KeyboardKey key)
+    {
+        var clusterCalibration = KeyboardClusterLayout.Get(GetCluster(key));
+        var size = GetKeySize(key, clusterCalibration);
+        var topLeft = GetKeyTopLeft(key, clusterCalibration, size);
+        return (topLeft.X, topLeft.Y, size.Width, size.Height);
+    }
+
+    public static IReadOnlyDictionary<string, (double X, double Y, double Width, double Height)> GetKeyBaselinesSnapshot()
+    {
+        return KeyBaselines.ToDictionary(
+            kv => kv.Key,
+            kv => (kv.Value.X, kv.Value.Y, kv.Value.Width, kv.Value.Height),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
     public KeyboardLayoutPanel()
     {
         Loaded += KeyboardLayoutPanel_Loaded;
@@ -240,19 +296,10 @@ public sealed class KeyboardLayoutPanel : Panel
             }
 
             var clusterCalibration = KeyboardClusterLayout.Get(GetCluster(key));
-            var specialOverride = GetSpecialOverride(key);
-            var keyOverride = GetPerKeyOverride(key);
-            var rowOffset = GetRowOffset(key);
-            var baseWidth = Math.Max(1d, (key.WidthUnits * KeyUnit) + specialOverride.WidthAdjustment + keyOverride.WidthAdjustment);
-            var baseHeight = Math.Max(1d, (key.HeightUnits * KeyUnit) + keyOverride.HeightAdjustment);
-            var width = Math.Max(1d, (baseWidth * ButtonScale) + clusterCalibration.WidthAdjustment);
-            var height = Math.Max(1d, (baseHeight * ButtonScale) + clusterCalibration.HeightAdjustment);
+            var size = GetKeySize(key, clusterCalibration);
+            var topLeft = GetKeyTopLeft(key, clusterCalibration, size);
 
-            // Keep scaled keys centered within their logical slot so global spacing stays stable.
-            var x = OffsetX + clusterCalibration.OffsetX + rowOffset.OffsetX + key.ColumnIndex * (KeyUnit + GapX) + keyOverride.OffsetX + ((baseWidth - width) / 2d);
-            var y = OffsetY + clusterCalibration.OffsetY + rowOffset.OffsetY + key.RowIndex * (KeyUnit + GapY) + keyOverride.OffsetY + ((baseHeight - height) / 2d);
-
-            child.Arrange(new Rect(new Point(x, y), new Size(width, height)));
+            child.Arrange(new Rect(topLeft, size));
         }
 
         var maxWidth = InternalChildren.OfType<FrameworkElement>()
@@ -273,6 +320,19 @@ public sealed class KeyboardLayoutPanel : Panel
     private static Size GetKeySlotSize(KeyboardKey key)
     {
         var clusterCalibration = KeyboardClusterLayout.Get(GetCluster(key));
+        return GetKeySize(key, clusterCalibration);
+    }
+
+    private static Size GetKeySize(KeyboardKey key, KeyboardClusterCalibration clusterCalibration)
+    {
+        if (GetBaseline(key) is KeyBaseline baseline)
+        {
+            var baselineKeyOverride = GetPerKeyOverride(key);
+            return new Size(
+                Math.Max(1d, baseline.Width + clusterCalibration.WidthAdjustment + baselineKeyOverride.WidthAdjustment),
+                Math.Max(1d, baseline.Height + clusterCalibration.HeightAdjustment));
+        }
+
         var specialOverride = GetSpecialOverride(key);
         var keyOverride = GetPerKeyOverride(key);
         var baseWidth = Math.Max(1d, (key.WidthUnits * KeyUnit) + specialOverride.WidthAdjustment + keyOverride.WidthAdjustment);
@@ -281,6 +341,47 @@ public sealed class KeyboardLayoutPanel : Panel
             Math.Max(1d, (baseWidth * ButtonScale) + clusterCalibration.WidthAdjustment),
             Math.Max(1d, (baseHeight * ButtonScale) + clusterCalibration.HeightAdjustment));
     }
+
+    private static Point GetKeyTopLeft(KeyboardKey key, KeyboardClusterCalibration clusterCalibration, Size size)
+    {
+        var rowOffset = GetRowOffset(key);
+        var keyOverride = GetPerKeyOverride(key);
+
+        if (GetBaseline(key) is KeyBaseline baseline)
+        {
+            return new Point(
+                baseline.X + clusterCalibration.OffsetX + rowOffset.OffsetX + keyOverride.OffsetX,
+                baseline.Y + clusterCalibration.OffsetY + rowOffset.OffsetY + keyOverride.OffsetY);
+        }
+
+        var (gapX, gapY) = GetEffectiveGaps(key, clusterCalibration);
+        var specialOverride = GetSpecialOverride(key);
+        var baseWidth = Math.Max(1d, (key.WidthUnits * KeyUnit) + specialOverride.WidthAdjustment + keyOverride.WidthAdjustment);
+        var baseHeight = Math.Max(1d, (key.HeightUnits * KeyUnit) + keyOverride.HeightAdjustment);
+        var x = OffsetX + clusterCalibration.OffsetX + rowOffset.OffsetX + key.ColumnIndex * (KeyUnit + gapX) + keyOverride.OffsetX + ((baseWidth - size.Width) / 2d);
+        var y = OffsetY + clusterCalibration.OffsetY + rowOffset.OffsetY + key.RowIndex * (KeyUnit + gapY) + keyOverride.OffsetY + ((baseHeight - size.Height) / 2d);
+        return new Point(x, y);
+    }
+
+    private static (double GapX, double GapY) GetEffectiveGaps(KeyboardKey key, KeyboardClusterCalibration clusterCalibration)
+    {
+        var gapX = GapX + clusterCalibration.GapX;
+        var gapY = GapY + clusterCalibration.GapY;
+
+        if (GetCluster(key) == KeyboardCluster.MainLettersCluster
+            && RowGaps.TryGetValue(key.RowIndex, out var rowGap))
+        {
+            gapX += rowGap.GapX;
+            gapY += rowGap.GapY;
+        }
+
+        return (gapX, gapY);
+    }
+
+    private static KeyBaseline? GetBaseline(KeyboardKey key)
+        => string.IsNullOrWhiteSpace(key.Id) || !KeyBaselines.TryGetValue(key.Id, out var baseline)
+            ? null
+            : baseline;
 
     private static PerKeyOverride GetPerKeyOverride(KeyboardKey key)
         => string.IsNullOrWhiteSpace(key.Id) || !PerKeyOverrides.TryGetValue(key.Id, out var calibration)
@@ -448,27 +549,22 @@ public sealed class KeyboardLayoutPanel : Panel
     private static double GetKeyRightEdge(KeyboardKey key)
     {
         var clusterCalibration = KeyboardClusterLayout.Get(GetCluster(key));
-        var specialOverride = GetSpecialOverride(key);
-        var keyOverride = GetPerKeyOverride(key);
-        var rowOffset = GetRowOffset(key);
-        var baseWidth = Math.Max(1d, (key.WidthUnits * KeyUnit) + specialOverride.WidthAdjustment + keyOverride.WidthAdjustment);
-        var width = Math.Max(1d, baseWidth * ButtonScale);
-        var x = OffsetX + clusterCalibration.OffsetX + rowOffset.OffsetX + key.ColumnIndex * (KeyUnit + GapX) + keyOverride.OffsetX + ((baseWidth - width) / 2d);
-        return x + width;
+        var size = GetKeySize(key, clusterCalibration);
+        var topLeft = GetKeyTopLeft(key, clusterCalibration, size);
+        return topLeft.X + size.Width;
     }
 
     private static double GetKeyBottomEdge(KeyboardKey key)
     {
         var clusterCalibration = KeyboardClusterLayout.Get(GetCluster(key));
-        var keyOverride = GetPerKeyOverride(key);
-        var rowOffset = GetRowOffset(key);
-        var baseHeight = Math.Max(1d, (key.HeightUnits * KeyUnit) + keyOverride.HeightAdjustment);
-        var height = Math.Max(1d, baseHeight * ButtonScale);
-        var y = OffsetY + clusterCalibration.OffsetY + rowOffset.OffsetY + key.RowIndex * (KeyUnit + GapY) + keyOverride.OffsetY + ((baseHeight - height) / 2d);
-        return y + height;
+        var size = GetKeySize(key, clusterCalibration);
+        var topLeft = GetKeyTopLeft(key, clusterCalibration, size);
+        return topLeft.Y + size.Height;
     }
 
     private readonly record struct SpecialKeyOverride(double WidthAdjustment);
     private readonly record struct PerKeyOverride(double OffsetX, double OffsetY, double WidthAdjustment, double HeightAdjustment);
     private readonly record struct RowOffset(double OffsetX, double OffsetY);
+    private readonly record struct GapOverride(double GapX, double GapY);
+    private readonly record struct KeyBaseline(double X, double Y, double Width, double Height);
 }

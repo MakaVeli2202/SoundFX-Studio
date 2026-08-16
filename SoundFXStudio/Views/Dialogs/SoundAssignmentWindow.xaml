@@ -103,9 +103,9 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="FilePathBox" IsReadOnly="True" Text="{Binding FilePath, Mode=OneWay}"
-                                     Height="36" Padding="10,6" Background="#1F13233A" BorderBrush="#3300D4FF"
+                                     Height="40" Padding="10,6" Background="#1F13233A" BorderBrush="#3300D4FF"
                                      BorderThickness="1" Foreground="{StaticResource TextBrush}" Margin="0,0,10,0"/>
-                            <Button Grid.Column="1" Content="Browse" Height="36"
+                            <Button Grid.Column="1" Content="Browse" Height="40"
                                     Click="BrowseButton_Click" Style="{StaticResource CyberButton}"/>
                         </Grid>
 
@@ -115,7 +115,7 @@
                                 <TextBlock Text="Sound Name" FontWeight="Bold" Foreground="{StaticResource TextBrush}"/>
                                 <TextBlock Text="(label on keyboard button)" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="8,2,0,0"/>
                             </StackPanel>
-                            <TextBox x:Name="NameBox" Text="{Binding Name}" Height="36" Padding="10,6"
+                            <TextBox x:Name="NameBox" Text="{Binding Name}" Height="40" Padding="10,6"
                                      Background="#1F13233A" BorderBrush="#3300D4FF" BorderThickness="1"
                                      Foreground="{StaticResource TextBrush}"/>
                         </StackPanel>
@@ -130,10 +130,10 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="ChordKeyBox" IsReadOnly="True"
-                                         Text="{Binding ChordKeyDisplay, Mode=OneWay}" Height="36" Padding="10,6"
+                                         Text="{Binding ChordKeyDisplay, Mode=OneWay}" Height="40" Padding="10,6"
                                          Background="#1F13233A" BorderBrush="#3300D4FF" BorderThickness="1"
                                          Foreground="{StaticResource TextBrush}" Margin="0,0,10,0"/>
-                                <Button Grid.Column="1" Content="Capture" Height="36"
+                                <Button Grid.Column="1" Content="Capture" Height="40"
                                         Click="CaptureChordKey_Click" Style="{StaticResource CyberButton}"/>
                             </Grid>
                         </StackPanel>
@@ -195,12 +195,12 @@
 
                                     <StackPanel Grid.Column="1" Margin="12,0,0,0">
                                         <TextBox x:Name="ImagePathBox" IsReadOnly="True" Text="{Binding ImagePath, Mode=OneWay}"
-                                                 Height="34" Padding="10,6" Background="#1F13233A" BorderBrush="#3300D4FF"
+                                                 Height="40" Padding="10,6" Background="#1F13233A" BorderBrush="#3300D4FF"
                                                  BorderThickness="1" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8"/>
                                         <StackPanel Orientation="Horizontal">
-                                            <Button Content="Choose" Height="34"
+                                            <Button Content="Choose" Height="40"
                                                     Click="ImageBrowseButton_Click" Style="{StaticResource CyberButton}"/>
-                                            <Button Content="Remove" Height="34" Margin="8,0,0,0"
+                                            <Button Content="Remove" Height="40" Margin="8,0,0,0"
                                                     Click="RemoveImageButton_Click" Style="{StaticResource CyberButton}"/>
                                         </StackPanel>
                                     </StackPanel>
@@ -215,16 +215,9 @@
             <!-- FOOTER -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <Button Content="Cancel" Margin="0,0,10,0"
-                        Style="{StaticResource CyberButton}" Click="CancelButton_Click"/>
-                <Button Content="Save" FontWeight="Bold" Foreground="#080D17"
-                        Click="SaveButton_Click">
-                    <Button.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                            <GradientStop Color="#00D4FF"/>
-                            <GradientStop Color="#7B3FFF"/>
-                        </LinearGradientBrush>
-                    </Button.Background>
-                </Button>
+                        Style="{StaticResource CyberButton}" Height="40" Click="CancelButton_Click"/>
+                <Button Content="Save"
+                        Style="{StaticResource PrimaryGradientButtonStyle}" Click="SaveButton_Click"/>
             </StackPanel>
         </Grid>
     </Border>

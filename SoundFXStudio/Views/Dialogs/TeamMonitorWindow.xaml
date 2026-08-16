@@ -5,19 +5,15 @@
         Title="Hear what others hear"
         Width="560" Height="700"
         WindowStyle="None"
-        Background="#08091F"
+        Background="Transparent"
+        AllowsTransparency="True"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
         Closed="Window_Closed"
         SourceInitialized="Window_SourceInitialized">
 
-    <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="52" ResizeBorderThickness="0"
-                      UseAeroCaptionButtons="False" CornerRadius="0"/>
-    </WindowChrome.WindowChrome>
-
     <Border Style="{StaticResource AppWindowRoot}"
-            CornerRadius="18"
+            CornerRadius="28"
             BorderThickness="1.5">
 
         <Grid>
@@ -28,7 +24,7 @@
             </Grid.RowDefinitions>
 
             <!-- Title -->
-                <Border Grid.Row="0" Background="#141E2D" CornerRadius="18,18,0,0"
+                <Border Grid.Row="0" Background="#141E2D" CornerRadius="28,28,0,0"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid Margin="18,0,10,0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -70,7 +66,7 @@
 
                 <TextBlock Text="Volume" Foreground="#8891B8" FontSize="11" FontWeight="Bold" Margin="0,14,0,4"/>
                 <Slider x:Name="VolumeSlider" Minimum="0" Maximum="1" Value="0.8"
-                        VerticalAlignment="Center"
+                        VerticalAlignment="Center" Foreground="#00D4FF"
                         ValueChanged="VolumeSlider_ValueChanged"/>
 
                 <TextBlock x:Name="MonitorStatus" Margin="0,18,0,0"
@@ -79,7 +75,7 @@
             </StackPanel>
 
             <!-- Footer -->
-                <Border Grid.Row="2" Background="#101722" CornerRadius="0,0,18,18" BorderBrush="#26394F" BorderThickness="1,1,1,0">
+                <Border Grid.Row="2" Background="#101722" CornerRadius="0,0,28,28" BorderBrush="#26394F" BorderThickness="1,1,1,0">
                 <Grid Margin="20,12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -89,47 +85,13 @@
                                VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,10"/>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button x:Name="CloseBtn" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                Content="Close" Click="Done_Click" Cursor="Hand" Height="42"
+                                Content="Close" Click="Done_Click" Cursor="Hand" Height="40"
+                                MinWidth="100"
                                 Margin="0,0,10,0"
-                                Background="#1F13233A" BorderBrush="#3A5A8A" Foreground="#9AAFD0"
-                                FontWeight="SemiBold" FontSize="12">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" CornerRadius="10"
-                                            Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="#442A2A66"/>
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#00D4FF"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                                Style="{StaticResource SecondaryActionButtonStyle}"/>
                         <Button x:Name="StartBtn" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                Content="Start" Click="StartStop_Click" Cursor="Hand" Height="42"
-                                FontWeight="SemiBold" FontSize="13" Foreground="White">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" CornerRadius="10"
-                                            Background="#222A2A66" BorderBrush="#5A00D4FF" BorderThickness="1">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="#442A2A66"/>
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#00D4FF"/>
-                                        </Trigger>
-                                        <Trigger Property="IsEnabled" Value="False">
-                                            <Setter TargetName="Bd" Property="Background" Value="#11222233"/>
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#33555A7A"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
+                                Content="Start" Click="StartStop_Click" Cursor="Hand"
+                                Style="{StaticResource PrimaryGradientButtonStyle}"/>
                     </StackPanel>
                 </Grid>
             </Border>

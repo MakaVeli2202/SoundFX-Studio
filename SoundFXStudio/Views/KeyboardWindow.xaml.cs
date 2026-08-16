@@ -38,7 +38,6 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
     private double _panelStartX;
     private double _panelStartY;
 
-    private static bool _guideShownThisSession;
     private KeyboardKey? _guideKey;
     private bool _guideActive;
 
@@ -47,7 +46,7 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         InitializeComponent();
         DataContext = this;
         Closed += KeyboardWindow_Closed;
-        Loaded += (_, _) => StartInsertGuideIfFirstOpen();
+        Loaded += KeyboardWindow_Loaded;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -188,8 +187,23 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         ViewModel.IsSoundboardActive = false;
     }
 
+    private void KeyboardWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is not null)
+        {
+            ViewModel.ReapplyKeyboardLayoutFromSettings();
+            ViewModel.PropertyChanged += OnGuideViewModelPropertyChanged;
+            StartInsertGuideIfSoundboardOff();
+        }
+    }
+
     private void KeyboardWindow_Closed(object? sender, EventArgs e)
     {
+        if (ViewModel is not null)
+        {
+            ViewModel.PropertyChanged -= OnGuideViewModelPropertyChanged;
+        }
+
         StopInsertGuide();
         if (ViewModel is not null)
         {
@@ -197,14 +211,22 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void StartInsertGuideIfFirstOpen()
+    private void StartInsertGuideIfSoundboardOff()
     {
-        if (_guideShownThisSession || ViewModel is null)
+        if (ViewModel is null || ViewModel.IsSoundboardActive)
         {
             return;
         }
 
-        _guideShownThisSession = true;
+        StartInsertGuide();
+    }
+
+    private void StartInsertGuide()
+    {
+        if (_guideActive || ViewModel is null)
+        {
+            return;
+        }
 
         var insert = ViewModel.KeyboardKeys.FirstOrDefault(k =>
             string.Equals(k.KeyName, "INSERT", StringComparison.OrdinalIgnoreCase) ||
@@ -224,15 +246,23 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
 
         insert.IsGuideHighlighted = true;
 
-        ViewModel.PropertyChanged += OnGuideViewModelPropertyChanged;
         ShowInsertCallout();
     }
 
     private void OnGuideViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(MainViewModel.IsSoundboardActive) && ViewModel?.IsSoundboardActive == true)
+        if (e.PropertyName != nameof(MainViewModel.IsSoundboardActive))
+        {
+            return;
+        }
+
+        if (ViewModel?.IsSoundboardActive == true)
         {
             StopInsertGuide();
+        }
+        else
+        {
+            StartInsertGuide();
         }
     }
 
@@ -244,10 +274,6 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         }
 
         _guideActive = false;
-        if (ViewModel is not null)
-        {
-            ViewModel.PropertyChanged -= OnGuideViewModelPropertyChanged;
-        }
 
         if (_guideKey is not null)
         {
@@ -355,14 +381,14 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         ViewModel?.ToggleSoundboardMode();
     }
 
-    private void ReloadWindowScale()
+    private void ReloadWindowScale(KeyboardCalibrationSettings? overrideCalibration = null)
     {
         if (ViewModel is null)
         {
             return;
         }
 
-        var calibration = ViewModel.Settings.KeyboardCalibration;
+        var calibration = overrideCalibration ?? ViewModel.Settings.KeyboardCalibration;
 
         _suppressSelectionEvents = true;
         try
@@ -442,10 +468,21 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
         UpdateWindowClip();
     }
 
-    private void UpdateTopControlsMargin()
+    public void RefreshPanels(KeyboardCalibrationSettings? overrideCalibration = null)
+    {
+        if (ViewModel is null)
+        {
+            return;
+        }
+
+        ReloadWindowScale(overrideCalibration);
+        UpdateTopControlsMargin(overrideCalibration);
+    }
+
+    private void UpdateTopControlsMargin(KeyboardCalibrationSettings? overrideCalibration = null)
     {
         var scale = Math.Min(Width / BaseKeyboardWidth, Height / BaseKeyboardHeight);
-        var calibration = ViewModel?.Settings.KeyboardCalibration;
+        var calibration = overrideCalibration ?? ViewModel?.Settings.KeyboardCalibration;
 
         if (calibration is null)
         {
@@ -487,6 +524,11 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
             ? calibration.CloseButtonPanelY
             : ledWinY - CloseButtonLedOffsetUp;
         TopControls.Margin = new Thickness(closeX, closeY, 0, 0);
+
+        BottomControls.Width = calibration.SoundboardStatusPanelWidth > 0 ? calibration.SoundboardStatusPanelWidth : double.NaN;
+        BottomControls.Height = calibration.SoundboardStatusPanelHeight > 0 ? calibration.SoundboardStatusPanelHeight : double.NaN;
+        TopControls.Width = calibration.CloseButtonPanelWidth > 0 ? calibration.CloseButtonPanelWidth : double.NaN;
+        TopControls.Height = calibration.CloseButtonPanelHeight > 0 ? calibration.CloseButtonPanelHeight : double.NaN;
     }
 
     private void BottomControls_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

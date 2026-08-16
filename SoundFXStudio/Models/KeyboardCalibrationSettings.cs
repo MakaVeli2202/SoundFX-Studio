@@ -38,6 +38,12 @@ public class KeyboardCalibrationSettings
     public double CloseButtonPanelX { get; set; }
     public double CloseButtonPanelY { get; set; }
 
+    // User-set sizes for the keyboard window floating panels (0 = auto-size).
+    public double SoundboardStatusPanelWidth { get; set; }
+    public double SoundboardStatusPanelHeight { get; set; }
+    public double CloseButtonPanelWidth { get; set; }
+    public double CloseButtonPanelHeight { get; set; }
+
     // Legacy cluster offsets kept for migration compatibility.
     public double EscOffsetX { get; set; }
     public double EscOffsetY { get; set; }
@@ -103,6 +109,31 @@ public class KeyboardCalibrationSettings
     public double CapsLockWidthAdjustment { get; set; }
 
     public Dictionary<string, KeyCalibrationOverrideSettings> KeyOverrides { get; set; } = new();
+
+    // Additive gap overrides per cluster, keyed by (int)KeyboardCluster.
+    public Dictionary<int, double> ClusterGapOverridesX { get; set; } = new();
+    public Dictionary<int, double> ClusterGapOverridesY { get; set; } = new();
+
+    // Additive gap overrides per letter row, keyed by row index (1..4).
+    public Dictionary<int, double> RowGapOverridesX { get; set; } = new();
+    public Dictionary<int, double> RowGapOverridesY { get; set; } = new();
+
+    // Absolute per-key baseline captured by "Set as Default". When present,
+    // the key is placed at this absolute position plus any current deltas.
+    public Dictionary<string, KeyBaselineSettings> KeyBaselines { get; set; } = new();
+}
+
+public class KeyBaselineSettings
+{
+    public double X { get; set; }
+    public double Y { get; set; }
+    public double Width { get; set; }
+    public double Height { get; set; }
+
+    public KeyBaselineSettings Clone()
+    {
+        return new KeyBaselineSettings { X = X, Y = Y, Width = Width, Height = Height };
+    }
 }
 
 public class KeyCalibrationOverrideSettings

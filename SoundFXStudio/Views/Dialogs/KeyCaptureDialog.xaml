@@ -27,112 +27,9 @@
 
         </Storyboard>
 
-        <LinearGradientBrush x:Key="PrimaryGradient"
-                             StartPoint="0,0"
-                             EndPoint="1,0">
-
-            <GradientStop Color="#00D4FF" Offset="0"/>
-            <GradientStop Color="#7B3FFF" Offset="1"/>
-
-        </LinearGradientBrush>
-
-        <Style x:Key="SecondaryButtonStyle"
-               TargetType="Button">
-
-            <Setter Property="Height" Value="36"/>
-            <Setter Property="MinWidth" Value="85"/>
-            <Setter Property="Foreground" Value="#EAF1FF"/>
-            <Setter Property="Background" Value="#1A2336"/>
-            <Setter Property="BorderBrush" Value="#325476"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor" Value="Hand"/>
-
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="12">
-
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"/>
-
-                        </Border>
-
-                        <ControlTemplate.Triggers>
-
-                            <Trigger Property="IsMouseOver"
-                                     Value="True">
-
-                                <Setter TargetName="Border"
-                                        Property="BorderBrush"
-                                        Value="#00D4FF"/>
-
-                                <Setter TargetName="Border"
-                                        Property="Background"
-                                        Value="#223149"/>
-
-                            </Trigger>
-
-                            <Trigger Property="IsPressed"
-                                     Value="True">
-
-                                <Setter TargetName="Border"
-                                        Property="Background"
-                                        Value="#162031"/>
-
-                            </Trigger>
-
-                            <Trigger Property="IsEnabled"
-                                     Value="False">
-
-                                <Setter TargetName="Border"
-                                        Property="Opacity"
-                                        Value="0.4"/>
-
-                            </Trigger>
-
-                        </ControlTemplate.Triggers>
-
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-
-        </Style>
-
-        <Style x:Key="PrimaryButtonStyle"
-               TargetType="Button"
-               BasedOn="{StaticResource SecondaryButtonStyle}">
-
-            <Setter Property="Foreground"
-                    Value="White"/>
-
-            <Setter Property="Background">
-                <Setter.Value>
-                    <LinearGradientBrush StartPoint="0,0"
-                                         EndPoint="1,0">
-
-                        <GradientStop Color="#00D4FF"/>
-                        <GradientStop Color="#7B3FFF"
-                                      Offset="1"/>
-
-                    </LinearGradientBrush>
-                </Setter.Value>
-            </Setter>
-
-        </Style>
-
     </Window.Resources>
 
-    <Border Style="{StaticResource AppWindowRoot}"
-            CornerRadius="26"
-            BorderThickness="1.5"
-            Background="#0D1627"
-            BorderBrush="#2C3E5B">
+    <Border Style="{StaticResource AppWindowRoot}">
 
         <Grid Margin="16">
 
@@ -176,14 +73,12 @@
                     </StackPanel>
 
                     <Button x:Name="CloseButton"
-                            Width="34"
-                            Height="34"
                             Content="✕"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Margin="0,0,10,0"
                             Click="CancelButton_Click"
-                            Style="{StaticResource SecondaryButtonStyle}"/>
+                            Style="{StaticResource DialogCloseButtonStyle}"/>
 
                 </Grid>
 
@@ -265,19 +160,21 @@
                         IsDefault="True"
                         IsEnabled="False"
                         Click="SaveButton_Click"
-                        Style="{StaticResource PrimaryButtonStyle}"/>
+                        Style="{StaticResource PrimaryGradientButtonStyle}"/>
 
                 <Button x:Name="ClearButton"
                         Content="Clear"
                         Margin="0,0,8,0"
                         IsEnabled="False"
                         Click="ClearButton_Click"
-                        Style="{StaticResource SecondaryButtonStyle}"/>
+                        Style="{StaticResource SecondaryActionButtonStyle}"
+                        Height="40" MinWidth="100"/>
 
                 <Button Content="Cancel"
                         IsCancel="True"
                         Click="CancelButton_Click"
-                        Style="{StaticResource SecondaryButtonStyle}"/>
+                        Style="{StaticResource SecondaryActionButtonStyle}"
+                        Height="40" MinWidth="100"/>
 
             </StackPanel>
 

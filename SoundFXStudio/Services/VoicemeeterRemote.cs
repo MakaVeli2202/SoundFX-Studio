@@ -163,8 +163,6 @@ public sealed class VoicemeeterRemote : IDisposable
             {
                 ("Strip[0].device.wdm", talkMatch?.Name ?? talkDevice)
             });
-            SetFloat("Strip[0].A1", 0);
-            SetFloat("Strip[0].B1", 1);
         }
         if (!string.IsNullOrEmpty(hearDevice))
         {
@@ -173,12 +171,36 @@ public sealed class VoicemeeterRemote : IDisposable
                 SetString("Bus[0].label", "SoundFX");
         }
 
+        // Turn on the routing channels: A1 (mic → speakers) + B1 (mic → Discord)
+        // on the input strip, A1 + B1 on every app/virtual strip, and unmute both
+        // output buses so audio actually flows.
+        bool channelsOk = TrySetChannel("Strip[0].A1", 1);
+        channelsOk &= TrySetChannel("Strip[0].B1", 1);
         for (int i = firstVirtual; i < count; i++)
         {
-            SetFloat($"Strip[{i}].A1", 1);
-            SetFloat($"Strip[{i}].B1", 1);
+            channelsOk &= TrySetChannel($"Strip[{i}].A1", 1);
+            channelsOk &= TrySetChannel($"Strip[{i}].B1", 1);
         }
-        return ok;
+        channelsOk &= TrySetChannel("Bus[0].Mute", 0);
+        channelsOk &= TrySetChannel($"Bus[{B1Bus}].Mute", 0);
+
+        return ok && channelsOk;
+    }
+
+    private bool TrySetChannel(string param, float target)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            int rc = SetFloat(param, target);
+            System.Threading.Thread.Sleep(150);
+            if (rc == 0 && Math.Abs(GetFloat(param) - target) <= 0.01f)
+            {
+                return true;
+            }
+        }
+
+        LastDiagnostics += $"⚠ {param} not set to {target}\n";
+        return false;
     }
 
     /// <summary>

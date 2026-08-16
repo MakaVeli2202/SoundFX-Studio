@@ -564,16 +564,28 @@
                                                             <Button Style="{StaticResource NudgeBtn}" Content="+" FontSize="18" Tag="WidthAdjustment:1" Click="NudgeValue_Click"/>
                                                         </StackPanel>
                                                     </Grid>
-                                                    <Grid>
+                                                    <Grid Margin="0,0,0,6">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="40"/>
                                                             <ColumnDefinition Width="*"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="Height" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="Gap X" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
                                                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                                                            <Button Style="{StaticResource NudgeBtn}" Content="−" FontSize="18" Tag="HeightAdjustment:-1" Click="NudgeValue_Click"/>
-                                                            <TextBlock Text="{Binding HeightAdjustment, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
-                                                            <Button Style="{StaticResource NudgeBtn}" Content="+" FontSize="18" Tag="HeightAdjustment:1" Click="NudgeValue_Click"/>
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="−" FontSize="18" Tag="GapX:-1" Click="NudgeValue_Click"/>
+                                                            <TextBlock Text="{Binding GapX, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="+" FontSize="18" Tag="GapX:1" Click="NudgeValue_Click"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="40"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="Gap Y" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="−" FontSize="18" Tag="GapY:-1" Click="NudgeValue_Click"/>
+                                                            <TextBlock Text="{Binding GapY, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="+" FontSize="18" Tag="GapY:1" Click="NudgeValue_Click"/>
                                                         </StackPanel>
                                                     </Grid>
                                                     <Button Content="Reset" Click="ResetSelectedCluster_Click" HorizontalAlignment="Left" Margin="0,8,0,0" Height="28" Padding="14,0" FontSize="11" Cursor="Hand" Background="#1A2A45" BorderBrush="#3A5A7A" Foreground="#D7E3F5" BorderThickness="1"/>
@@ -621,6 +633,30 @@
                                                             <Button Style="{StaticResource NudgeBtn}" Content="▲" Tag="OffsetY:-1" Click="NudgeValue_Click"/>
                                                             <TextBlock Text="{Binding OffsetY, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
                                                             <Button Style="{StaticResource NudgeBtn}" Content="▼" Tag="OffsetY:1" Click="NudgeValue_Click"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="40"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="Gap X" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="−" FontSize="18" Tag="GapX:-1" Click="NudgeValue_Click"/>
+                                                            <TextBlock Text="{Binding GapX, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="+" FontSize="18" Tag="GapX:1" Click="NudgeValue_Click"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <Grid Margin="0,0,0,6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="40"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="Gap Y" Foreground="{StaticResource Muted}" FontSize="13" VerticalAlignment="Center"/>
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="−" FontSize="18" Tag="GapY:-1" Click="NudgeValue_Click"/>
+                                                            <TextBlock Text="{Binding GapY, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="50" TextAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                                            <Button Style="{StaticResource NudgeBtn}" Content="+" FontSize="18" Tag="GapY:1" Click="NudgeValue_Click"/>
                                                         </StackPanel>
                                                     </Grid>
                                                     <Button Content="Reset" Click="ResetSelectedRow_Click" HorizontalAlignment="Left" Margin="0,8,0,0" Height="28" Padding="14,0" FontSize="11" Cursor="Hand" Background="#1A2A45" BorderBrush="#3A5A7A" Foreground="#D7E3F5" BorderThickness="1"/>
@@ -866,6 +902,7 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
@@ -875,6 +912,17 @@
                                 <TextBlock Text="{Binding ZoomLevel, StringFormat='{}{0:0}%'}" VerticalAlignment="Center" Width="44" TextAlignment="Center" FontSize="13" Foreground="{StaticResource Muted}"/>
                                 <Button Style="{StaticResource NudgeBtn}" Content="+" FontSize="16" Click="ZoomIn_Click" Margin="4,0,0,0"/>
                             </StackPanel>
+                            <TextBlock Text="Drag:" Foreground="{StaticResource Muted}" FontSize="12" VerticalAlignment="Center" Margin="18,0,6,0"/>
+                            <ComboBox x:Name="DragModeComboBox"
+                                      Width="96"
+                                      Height="30"
+                                      VerticalAlignment="Center"
+                                      SelectedIndex="0"
+                                      SelectionChanged="DragModeComboBox_SelectionChanged">
+                                <ComboBoxItem Content="Key"/>
+                                <ComboBoxItem Content="Group"/>
+                                <ComboBoxItem Content="Row"/>
+                            </ComboBox>
                         </StackPanel>
 
                         <Border Grid.Row="1" Margin="0,0,0,10" Background="#060C18" BorderBrush="#1A2A45" BorderThickness="1" CornerRadius="12" Padding="6">
@@ -901,40 +949,59 @@
                         <Border Grid.Row="2" Margin="0,0,0,10" Background="#0F1A2B" BorderBrush="#2D455F" BorderThickness="1" CornerRadius="14" Padding="12">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <TextBlock Text="Open Keyboard Button" FontWeight="Bold" FontSize="14" Foreground="{StaticResource Cyan}" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Click the rectangle to select, then tweak it below" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    <TextBlock Text="Keyboard Window Panels" FontWeight="Bold" FontSize="14" Foreground="{StaticResource Cyan}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Soundboard status + close X" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0"/>
                                 </StackPanel>
-                                <Grid x:Name="OverlayPreviewHost" Width="340" Height="190" Background="#060C18" ClipToBounds="True" HorizontalAlignment="Left">
-                                    <Grid x:Name="OverlayPreviewStage" HorizontalAlignment="Left" VerticalAlignment="Top" ClipToBounds="True">
-                                        <Image Source="/Assets/UI/HeroSection.png" Stretch="UniformToFill" Opacity="0.35"/>
-                                        <Button x:Name="OverlayPreviewButton"
-                                                Click="OverlayPreviewButton_Click"
-                                                Cursor="Hand"
-                                                PreviewMouseLeftButtonDown="OverlayPreviewButton_PreviewMouseLeftButtonDown"
-                                                PreviewMouseMove="OverlayPreviewButton_PreviewMouseMove"
-                                                PreviewMouseLeftButtonUp="OverlayPreviewButton_PreviewMouseLeftButtonUp"
-                                                HorizontalAlignment="Left"
-                                                VerticalAlignment="Top">
-                                        <Button.Template>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border x:Name="OverlayPreviewRect" CornerRadius="6" Background="#33000000" BorderBrush="#33AAFFFF" BorderThickness="1">
-                                                    <ContentPresenter/>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="OverlayPreviewRect" Property="BorderBrush" Value="#88AAFFFF"/>
-                                                        <Setter TargetName="OverlayPreviewRect" Property="Background" Value="#22FFFFFF"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Button.Template>
-                                    </Button>
-                                    </Grid>
-                                </Grid>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBlock Text="Soundboard" Foreground="{StaticResource Muted}" FontSize="12" VerticalAlignment="Center" Width="74"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="◀" Tag="SoundboardPanelX:-1" Click="NudgeValue_Click"/>
+                                    <TextBlock Text="{Binding SoundboardPanelX, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="42" TextAlignment="Center" FontSize="13"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="▶" Tag="SoundboardPanelX:1" Click="NudgeValue_Click"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="▲" Tag="SoundboardPanelY:-1" Click="NudgeValue_Click" Margin="8,0,0,0"/>
+                                    <TextBlock Text="{Binding SoundboardPanelY, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="42" TextAlignment="Center" FontSize="13"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="▼" Tag="SoundboardPanelY:1" Click="NudgeValue_Click"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="−" FontSize="18" Tag="SoundboardPanelWidth:-5" Click="NudgeValue_Click" Margin="8,0,0,0"/>
+                                    <TextBlock Text="{Binding SoundboardPanelWidth, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="42" TextAlignment="Center" FontSize="13"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="+" FontSize="18" Tag="SoundboardPanelWidth:5" Click="NudgeValue_Click"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="−" FontSize="18" Tag="SoundboardPanelHeight:-5" Click="NudgeValue_Click" Margin="8,0,0,0"/>
+                                    <TextBlock Text="{Binding SoundboardPanelHeight, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="42" TextAlignment="Center" FontSize="13"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="+" FontSize="18" Tag="SoundboardPanelHeight:5" Click="NudgeValue_Click"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                    <TextBlock Text="Close X" Foreground="{StaticResource Muted}" FontSize="12" VerticalAlignment="Center" Width="74"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="◀" Tag="ClosePanelX:-1" Click="NudgeValue_Click"/>
+                                    <TextBlock Text="{Binding ClosePanelX, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="42" TextAlignment="Center" FontSize="13"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="▶" Tag="ClosePanelX:1" Click="NudgeValue_Click"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="▲" Tag="ClosePanelY:-1" Click="NudgeValue_Click" Margin="8,0,0,0"/>
+                                    <TextBlock Text="{Binding ClosePanelY, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="42" TextAlignment="Center" FontSize="13"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="▼" Tag="ClosePanelY:1" Click="NudgeValue_Click"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="−" FontSize="18" Tag="ClosePanelWidth:-5" Click="NudgeValue_Click" Margin="8,0,0,0"/>
+                                    <TextBlock Text="{Binding ClosePanelWidth, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="42" TextAlignment="Center" FontSize="13"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="+" FontSize="18" Tag="ClosePanelWidth:5" Click="NudgeValue_Click"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="−" FontSize="18" Tag="ClosePanelHeight:-5" Click="NudgeValue_Click" Margin="8,0,0,0"/>
+                                    <TextBlock Text="{Binding ClosePanelHeight, StringFormat='{}{0:F0}'}" Foreground="White" VerticalAlignment="Center" Width="42" TextAlignment="Center" FontSize="13"/>
+                                    <Button Style="{StaticResource NudgeBtn}" Content="+" FontSize="18" Tag="ClosePanelHeight:5" Click="NudgeValue_Click"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Button Content="Reset Soundboard" Click="ResetSoundboardPanel_Click" HorizontalAlignment="Left" Height="26" Padding="12,0" FontSize="11" Cursor="Hand" Background="#1A2A45" BorderBrush="#3A5A7A" Foreground="#D7E3F5" BorderThickness="1" Margin="0,0,8,0"/>
+                                    <Button Content="Reset Close X" Click="ResetClosePanel_Click" HorizontalAlignment="Left" Height="26" Padding="12,0" FontSize="11" Cursor="Hand" Background="#1A2A45" BorderBrush="#3A5A7A" Foreground="#D7E3F5" BorderThickness="1"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
 
-                        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                        <Border Grid.Row="3" Margin="0,0,0,10" Background="#0F1A2B" BorderBrush="#2D455F" BorderThickness="1" CornerRadius="14" Padding="12">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <TextBlock Text="Open Keyboard Button" FontWeight="Bold" FontSize="14" Foreground="{StaticResource Cyan}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Click the rectangle to select, then tweak it below" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                </StackPanel>
+                                <TextBlock Text="Move and resize the Open Keyboard Button on the main page. Changes apply live to the main window and are saved only when you press Save."
+                                           Foreground="{StaticResource Muted}" FontSize="11.5" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                            <Button Style="{StaticResource ActionBtn}" Content="Set as Default" Margin="0,0,10,0" Click="SetAsDefault_Click" ToolTip="Snap current layout as the new zero point for all groups, rows and keys. Gap sliders no longer affect keys until you press Reset All."/>
                             <Button Style="{StaticResource ActionBtn}" Content="Reset All" Margin="0,0,10,0" Click="ResetAll_Click"/>
                             <Button Style="{StaticResource ActionBtn}" Content="💾 Save" Margin="0,0,10,0" Click="SavePermanently_Click"/>
                             <Button Style="{StaticResource ActionBtn}" Content="Close" Click="CloseButton_Click"/>

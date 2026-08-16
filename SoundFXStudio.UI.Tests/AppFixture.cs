@@ -5,6 +5,7 @@ using FlaUI.UIA3;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace SoundFXStudio.UI.Tests;
 
@@ -74,6 +75,13 @@ public class AppFixture : IDisposable
                         return;
                     }
 
+                    if ((w.Name ?? string.Empty).Contains("SoundFX Studio Setup", StringComparison.OrdinalIgnoreCase))
+                    {
+                        CloseWindowByHandle(w);
+                        Thread.Sleep(1500);
+                        return;
+                    }
+
                     if (IsMainWindow(w))
                         return;
                 }
@@ -82,6 +90,21 @@ public class AppFixture : IDisposable
             Thread.Sleep(500);
         }
     }
+
+    private static void CloseWindowByHandle(Window w)
+    {
+        try
+        {
+            var handle = new IntPtr(w.Properties.NativeWindowHandle.ValueOrDefault);
+            SendMessage(handle, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+        }
+        catch { }
+    }
+
+    private const uint WM_CLOSE = 0x0010;
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
 
     public Window GetMainWindow()
     {

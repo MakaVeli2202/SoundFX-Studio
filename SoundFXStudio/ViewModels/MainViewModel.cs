@@ -1450,6 +1450,11 @@ public sealed class MainViewModel : ObservableObject
         NotifyKeyboardLampProperties();
     }
 
+    public void ReapplyKeyboardLayoutFromSettings()
+    {
+        ApplyKeyboardCalibration(Settings.KeyboardCalibration);
+    }
+
     public void SaveKeyboardCalibrationSettings()
     {
         ApplyKeyboardCalibrationFromSettings();
@@ -1611,6 +1616,34 @@ public sealed class MainViewModel : ObservableObject
                 entry.Value.OffsetY,
                 entry.Value.WidthAdjustment,
                 entry.Value.HeightAdjustment);
+        }
+
+        KeyboardLayoutPanel.ClearClusterGapCalibration();
+        foreach (var cluster in Enum.GetValues<KeyboardCluster>())
+        {
+            var clusterGapX = calibration.ClusterGapOverridesX.TryGetValue((int)cluster, out var cgx) ? cgx : 0;
+            var clusterGapY = calibration.ClusterGapOverridesY.TryGetValue((int)cluster, out var cgy) ? cgy : 0;
+            if (Math.Abs(clusterGapX) > double.Epsilon || Math.Abs(clusterGapY) > double.Epsilon)
+            {
+                KeyboardLayoutPanel.SetClusterGapCalibration(cluster, clusterGapX, clusterGapY);
+            }
+        }
+
+        KeyboardLayoutPanel.ClearRowGapCalibration();
+        for (var row = 1; row <= 4; row++)
+        {
+            var rowGapX = calibration.RowGapOverridesX.TryGetValue(row, out var rgx) ? rgx : 0;
+            var rowGapY = calibration.RowGapOverridesY.TryGetValue(row, out var rgy) ? rgy : 0;
+            if (Math.Abs(rowGapX) > double.Epsilon || Math.Abs(rowGapY) > double.Epsilon)
+            {
+                KeyboardLayoutPanel.SetRowGapCalibration(row, rowGapX, rowGapY);
+            }
+        }
+
+        KeyboardLayoutPanel.ClearKeyBaselines();
+        foreach (var entry in calibration.KeyBaselines)
+        {
+            KeyboardLayoutPanel.SetKeyBaseline(entry.Key, entry.Value.X, entry.Value.Y, entry.Value.Width, entry.Value.Height);
         }
     }
 
@@ -3769,8 +3802,22 @@ public sealed class MainViewModel : ObservableObject
 
     internal void UpdateKeyVisualState(KeyboardKey key) => _keyboardViewModel.UpdateKeyVisualState(key);
 
+    private KeyboardCalibrationSettings? _liveKeyboardCalibration;
+
     private KeyboardCalibrationSettings GetKeyboardCalibration()
-        => Settings.KeyboardCalibration ?? new KeyboardCalibrationSettings();
+        => _liveKeyboardCalibration ?? Settings.KeyboardCalibration ?? new KeyboardCalibrationSettings();
+
+    public void PushLiveKeyboardCalibration(KeyboardCalibrationSettings live)
+    {
+        _liveKeyboardCalibration = live;
+        NotifyKeyboardLampProperties();
+    }
+
+    public void ClearLiveKeyboardCalibration()
+    {
+        _liveKeyboardCalibration = null;
+        NotifyKeyboardLampProperties();
+    }
 
     private static double NormalizeLampY(double value)
         => value < 220 ? value + 70 : value;
