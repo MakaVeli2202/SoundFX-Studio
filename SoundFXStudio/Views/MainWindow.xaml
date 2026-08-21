@@ -1084,6 +1084,23 @@
                 </Grid>
             </Border>
 
+            <!-- Gaming Enhancement Page -->
+            <Border HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Margin="308,82,40,70">
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource GlassPanel}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="Gaming">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <controls:GamingPanel x:Name="GamingPanelControl" DataContext="{Binding Gaming}"/>
+            </Border>
+
             <!-- Library Page (tile grid) — MyBoard design with dark theme -->
                     <Border
                     HorizontalAlignment="Stretch"
@@ -2365,6 +2382,27 @@
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE8A5;" FontFamily="Segoe Fluent Icons" FontSize="15" Width="30" VerticalAlignment="Center"/>
                                 <TextBlock Text="Voice Changer" FontSize="13.5" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Gaming Enhancement -->
+                        <Button Click="NavigateGaming_Click"
+                                AutomationProperties.Name="Gaming"
+                                ToolTip="Gaming Enhancement">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CurrentPage}" Value="Gaming">
+                                            <Setter Property="Background" Value="#2A10B981"/>
+                                            <Setter Property="BorderBrush" Value="#10B981"/>
+                                            <Setter Property="Foreground" Value="#6EE7B7"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE9F9;" FontFamily="Segoe Fluent Icons" FontSize="15" Width="30" VerticalAlignment="Center"/>
+                                <TextBlock Text="Gaming" FontSize="13.5" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 

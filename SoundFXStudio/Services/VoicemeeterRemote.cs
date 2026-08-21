@@ -140,18 +140,25 @@ public sealed class VoicemeeterRemote : IDisposable
 
     /// <summary>
     /// Applies the selected microphone and output routing to the Voicemeeter strips and buses.
+    /// Optional progress callback reports each step with attempt numbers.
     /// </summary>
-    public bool ApplyRouting(string hearDevice, string talkDevice)
+    public bool ApplyRouting(string hearDevice, string talkDevice, Action<string>? onProgress = null)
     {
         LastDiagnostics = "";
         if (!Available && !Load()) return false;
         if (!LoggedIn && !Login()) return false;
+
+        onProgress?.Invoke("Waiting for Voicemeeter API…");
         if (!WaitUntilReady()) return false;
+
+        onProgress?.Invoke("Proving API is writable…");
+        if (!WaitUntilWritable()) return false;
 
         int count = StripCount();
         if (count == 0) return false;
         int firstVirtual = FirstVirtualStrip(count);
 
+        onProgress?.Invoke("Enumerating audio devices…");
         var outputs = WaitForOutputDevices();
         var inputs = GetInputDevices();
 
@@ -159,44 +166,71 @@ public sealed class VoicemeeterRemote : IDisposable
         if (!string.IsNullOrEmpty(talkDevice))
         {
             var talkMatch = MatchVmDevice(inputs, talkDevice);
+            onProgress?.Invoke($"Setting strip device…");
             ok &= TrySetDevice("Strip[0].device.name", new[]
             {
                 ("Strip[0].device.wdm", talkMatch?.Name ?? talkDevice)
-            });
+            }, onProgress);
         }
         if (!string.IsNullOrEmpty(hearDevice))
         {
-            ok &= TrySetBusOutputDevice(outputs, hearDevice);
+            onProgress?.Invoke($"Setting bus output device…");
+            ok &= TrySetBusOutputDevice(outputs, hearDevice, onProgress);
             if (ok)
                 SetString("Bus[0].label", "SoundFX");
         }
 
-        // Turn on the routing channels: A1 (mic → speakers) + B1 (mic → Discord)
-        // on the input strip, A1 + B1 on every app/virtual strip, and unmute both
-        // output buses so audio actually flows.
-        bool channelsOk = TrySetChannel("Strip[0].A1", 1);
-        channelsOk &= TrySetChannel("Strip[0].B1", 1);
+        onProgress?.Invoke("Configuring routing channels…");
+        System.Threading.Thread.Sleep(1500);
+        bool channelsOk = TrySetChannel("Strip[0].A1", 1, onProgress);
+        channelsOk &= TrySetChannel("Strip[0].B1", 1, onProgress);
         for (int i = firstVirtual; i < count; i++)
         {
-            channelsOk &= TrySetChannel($"Strip[{i}].A1", 1);
-            channelsOk &= TrySetChannel($"Strip[{i}].B1", 1);
+            channelsOk &= TrySetChannel($"Strip[{i}].A1", 1, onProgress);
+            channelsOk &= TrySetChannel($"Strip[{i}].B1", 1, onProgress);
         }
-        channelsOk &= TrySetChannel("Bus[0].Mute", 0);
-        channelsOk &= TrySetChannel($"Bus[{B1Bus}].Mute", 0);
+        channelsOk &= TrySetChannel("Bus[0].Mute", 0, onProgress);
+        channelsOk &= TrySetChannel($"Bus[{B1Bus}].Mute", 0, onProgress);
 
+        onProgress?.Invoke(ok && channelsOk ? "Routing complete ✓" : "Some writes failed — see diagnostics");
         return ok && channelsOk;
     }
 
-    private bool TrySetChannel(string param, float target)
+    /// <summary>
+    /// Proves the API is actually writable by doing a read-write round-trip on a safe parameter.
+    /// This catches the case where Edition() returns non-zero but parameter writes still fail.
+    /// </summary>
+    private bool WaitUntilWritable(int timeoutMs = 10000)
     {
-        for (int i = 0; i < 5; i++)
+        var sw = Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < timeoutMs)
+        {
+            float before = GetFloat("Strip[0].gain");
+            int rc = SetFloat("Strip[0].gain", before);
+            if (rc == 0)
+            {
+                System.Threading.Thread.Sleep(200);
+                float after = GetFloat("Strip[0].gain");
+                if (Math.Abs(after - before) <= 0.01f)
+                    return true;
+            }
+            System.Threading.Thread.Sleep(500);
+        }
+        LastDiagnostics += "⚠ API did not become writable within timeout\n";
+        return false;
+    }
+
+    private bool TrySetChannel(string param, float target, Action<string>? onProgress = null)
+    {
+        for (int i = 0; i < 10; i++)
         {
             int rc = SetFloat(param, target);
-            System.Threading.Thread.Sleep(150);
+            System.Threading.Thread.Sleep(500);
             if (rc == 0 && Math.Abs(GetFloat(param) - target) <= 0.01f)
             {
                 return true;
             }
+            onProgress?.Invoke($"Retrying {param} (attempt {i + 2}/10)…");
         }
 
         LastDiagnostics += $"⚠ {param} not set to {target}\n";
@@ -328,7 +362,7 @@ public sealed class VoicemeeterRemote : IDisposable
         return Edition() != 0;
     }
 
-    private bool TrySetBusOutputDevice(List<VmDevice> outputs, string userDevice)
+    private bool TrySetBusOutputDevice(List<VmDevice> outputs, string userDevice, Action<string>? onProgress = null)
     {
         var diag = new StringBuilder();
         var match = MatchVmDevice(outputs, userDevice);
@@ -337,35 +371,56 @@ public sealed class VoicemeeterRemote : IDisposable
         var wdm = match is not null && match.Types.Contains(3L) ? match.Name : null;
         var mmeName = mmeMatch?.Name;
 
-        bool ok;
+        bool ok = false;
         if (!string.IsNullOrEmpty(mmeName))
         {
-            int r1 = SetString("Bus[0].device.mme", mmeName);
-            diag.AppendLine($"Bus[0].device.mme='{mmeName}' rc={r1}");
-            ok = r1 == 0;
-            diag.AppendLine(ok ? "MME selected (applies async)" : "MME write rejected");
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                int r1 = SetString("Bus[0].device.mme", mmeName);
+                diag.AppendLine($"Bus[0].device.mme='{mmeName}' rc={r1} attempt={attempt + 1}");
+                if (r1 == 0)
+                {
+                    ok = true;
+                    diag.AppendLine("MME selected (applies async)");
+                    break;
+                }
+                onProgress?.Invoke($"MME rejected, retrying (attempt {attempt + 2}/3)…");
+                System.Threading.Thread.Sleep(800);
+            }
+            if (!ok)
+                diag.AppendLine("MME write rejected after retries");
         }
         else if (!string.IsNullOrEmpty(wdm))
         {
-            int r1 = SetString("Bus[0].device.wdm", wdm);
-            diag.AppendLine($"Bus[0].device.wdm='{wdm}' rc={r1}");
-            ok = r1 == 0;
-            diag.AppendLine(ok ? "WDM selected (applies async)" : "WDM write rejected");
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                int r1 = SetString("Bus[0].device.wdm", wdm);
+                diag.AppendLine($"Bus[0].device.wdm='{wdm}' rc={r1} attempt={attempt + 1}");
+                if (r1 == 0)
+                {
+                    ok = true;
+                    diag.AppendLine("WDM selected (applies async)");
+                    break;
+                }
+                onProgress?.Invoke($"WDM rejected, retrying (attempt {attempt + 2}/3)…");
+                System.Threading.Thread.Sleep(800);
+            }
+            if (!ok)
+                diag.AppendLine("WDM write rejected after retries");
         }
         else
         {
             diag.AppendLine("No matching device entry in Voicemeeter enumeration");
-            ok = false;
         }
 
-        System.Threading.Thread.Sleep(1200);
+        System.Threading.Thread.Sleep(1500);
         var read = GetString("Bus[0].device.name");
         diag.AppendLine($"read-back '{read}'");
         LastDiagnostics = diag.ToString();
         return ok;
     }
 
-    private bool TrySetDevice(string readParam, IEnumerable<(string Param, string Name)> attempts)
+    private bool TrySetDevice(string readParam, IEnumerable<(string Param, string Name)> attempts, Action<string>? onProgress = null)
     {
         var diag = new StringBuilder();
         bool ok = false;
@@ -377,13 +432,19 @@ public sealed class VoicemeeterRemote : IDisposable
                 continue;
             }
 
-            int rc = SetString(param, name);
-            diag.AppendLine($"{param}='{name}' rc={rc}");
-            if (rc == 0)
+            for (int attempt = 0; attempt < 3; attempt++)
             {
-                ok = true;
-                break;
+                int rc = SetString(param, name);
+                diag.AppendLine($"{param}='{name}' rc={rc} attempt={attempt + 1}");
+                if (rc == 0)
+                {
+                    ok = true;
+                    break;
+                }
+                onProgress?.Invoke($"Strip device rejected, retrying (attempt {attempt + 2}/3)…");
+                System.Threading.Thread.Sleep(800);
             }
+            if (ok) break;
         }
 
         for (int i = 0; i < 20 && ok; i++)

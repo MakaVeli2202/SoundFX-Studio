@@ -153,8 +153,7 @@ public partial class SetupWizardWindow : Window
                 overlay.UpdateStep("Connecting to Voicemeeter…");
                 using var vm = new VoicemeeterRemote();
                 if (!vm.Login()) return (false, "Login failed.");
-                overlay.UpdateStep("Configuring Hear/Talk routing…");
-                bool ok = vm.ApplyRouting(hear.Name, talk.Name);
+                bool ok = vm.ApplyRouting(hear.Name, talk.Name, step => overlay.UpdateStep(step));
                 string diag = vm.LastDiagnostics;
                 vm.Dispose();
                 return (ok, diag);
@@ -195,7 +194,7 @@ public partial class SetupWizardWindow : Window
                             : "⚠  Windows input → VoiceMeeter Output (B1) not confirmed");
                 }
 
-                _configService.Save(_config);
+            try { _configService.Save(_config); } catch { }
                 overlay.Complete("Everything ready — have fun!");
                 ToastWindow.ShowDiscordStudioTip();
             }
@@ -273,7 +272,9 @@ public partial class SetupWizardWindow : Window
 
         _config.Settings.SetupCompleted = true;
         _config.Settings.LastConfigurationDate = DateTime.UtcNow;
-        _configService.Save(_config);
+
+        try { _configService.Save(_config); } catch { }
+
         DialogResult = true;
     }
 

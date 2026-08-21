@@ -38,6 +38,20 @@ public class AppSettings : ObservableObject
     private string _voiceChangerPresetId = "normal";
     private bool _voicePassthroughAutoStart;
     private bool _gamingAudioActive;
+    private bool _gamingEnhancementEnabled;
+    private string _activeGamingProfileId = string.Empty;
+    private bool _headphoneEqEnabled;
+    private string _activeHeadphoneProfileId = string.Empty;
+    private bool _hrtfEnabled;
+    private string _activeHrtfProfileId = string.Empty;
+    private double _hrtfAzimuth;
+    private double _hrtfElevation;
+    private double _hrtfSpatialMix = 1.0;
+    private bool _hrtfHeadTrackingEnabled;
+    private string _headTrackingProviderId = "opentrack";
+    private int _openTrackPort = 4242;
+    private string _openTrackBindAddress = "127.0.0.1";
+    private AudioLatencyMode _audioLatencyMode = AudioLatencyMode.Balanced;
     private string _savedConsoleMicId = string.Empty;
     private string _savedCommMicId = string.Empty;
     private string _savedDefaultRenderId = string.Empty;
@@ -238,6 +252,90 @@ public class AppSettings : ObservableObject
     {
         get => _gamingAudioActive;
         set => SetProperty(ref _gamingAudioActive, value);
+    }
+
+    public bool GamingEnhancementEnabled
+    {
+        get => _gamingEnhancementEnabled;
+        set => SetProperty(ref _gamingEnhancementEnabled, value);
+    }
+
+    public string ActiveGamingProfileId
+    {
+        get => _activeGamingProfileId;
+        set => SetProperty(ref _activeGamingProfileId, value ?? string.Empty);
+    }
+
+    public bool HeadphoneEqEnabled
+    {
+        get => _headphoneEqEnabled;
+        set => SetProperty(ref _headphoneEqEnabled, value);
+    }
+
+    public string ActiveHeadphoneProfileId
+    {
+        get => _activeHeadphoneProfileId;
+        set => SetProperty(ref _activeHeadphoneProfileId, value ?? string.Empty);
+    }
+
+    public bool HrtfEnabled
+    {
+        get => _hrtfEnabled;
+        set => SetProperty(ref _hrtfEnabled, value);
+    }
+
+    public string ActiveHrtfProfileId
+    {
+        get => _activeHrtfProfileId;
+        set => SetProperty(ref _activeHrtfProfileId, value ?? string.Empty);
+    }
+
+    public double HrtfAzimuth
+    {
+        get => _hrtfAzimuth;
+        set => SetProperty(ref _hrtfAzimuth, value);
+    }
+
+    public double HrtfElevation
+    {
+        get => _hrtfElevation;
+        set => SetProperty(ref _hrtfElevation, value);
+    }
+
+    public double HrtfSpatialMix
+    {
+        get => _hrtfSpatialMix;
+        set => SetProperty(ref _hrtfSpatialMix, value);
+    }
+
+    public bool HrtfHeadTrackingEnabled
+    {
+        get => _hrtfHeadTrackingEnabled;
+        set => SetProperty(ref _hrtfHeadTrackingEnabled, value);
+    }
+
+    public string HeadTrackingProviderId
+    {
+        get => _headTrackingProviderId;
+        set => SetProperty(ref _headTrackingProviderId, value ?? "opentrack");
+    }
+
+    public int OpenTrackPort
+    {
+        get => _openTrackPort;
+        set => SetProperty(ref _openTrackPort, value);
+    }
+
+    public string OpenTrackBindAddress
+    {
+        get => _openTrackBindAddress;
+        set => SetProperty(ref _openTrackBindAddress, value ?? "127.0.0.1");
+    }
+
+    public AudioLatencyMode AudioLatencyMode
+    {
+        get => _audioLatencyMode;
+        set => SetProperty(ref _audioLatencyMode, value);
     }
 
     public string SavedConsoleMicId

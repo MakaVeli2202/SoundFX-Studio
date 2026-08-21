@@ -164,19 +164,30 @@ public partial class App : Application
 
         await Dispatcher.Yield(DispatcherPriority.Background);
 
-        var mainWindow = new MainWindow(_logService);
-        MainWindow = mainWindow;
-
-        if (splash.IsVisible)
+        try
         {
-            splash.Close();
+            var mainWindow = new MainWindow(_logService);
+            MainWindow = mainWindow;
+
+            if (splash.IsVisible)
+            {
+                splash.Close();
+            }
+
+            mainWindow.Show();
+
+            if (config.Settings.StartMinimized)
+            {
+                mainWindow.WindowState = WindowState.Minimized;
+            }
         }
-
-        mainWindow.Show();
-
-        if (config.Settings.StartMinimized)
+        catch (Exception ex)
         {
-            mainWindow.WindowState = WindowState.Minimized;
+            _logService?.Critical("Failed to create main window", ex);
+            splash.Close();
+            MessageBox.Show($"SoundFX Studio failed to start:\n\n{ex.Message}", "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown();
+            return;
         }
 
         _trayIcon = new TaskbarIcon

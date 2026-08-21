@@ -19,6 +19,29 @@ public class KeyboardCalibrationSettings
     public double OpenKeyboardButtonY { get; set; } = 488;
     public double OpenKeyboardButtonWidth { get; set; } = 220;
     public double OpenKeyboardButtonHeight { get; set; } = 48;
+
+    public double ReferenceHeroWidth { get; set; }
+    public double ReferenceHeroHeight { get; set; }
+
+    public void RescaleForHeroSize(double currentHeroWidth, double currentHeroHeight)
+    {
+        if (ReferenceHeroWidth <= 0 || ReferenceHeroHeight <= 0) return;
+        if (currentHeroWidth <= 0 || currentHeroHeight <= 0) return;
+        if (Math.Abs(ReferenceHeroWidth - currentHeroWidth) < 1 &&
+            Math.Abs(ReferenceHeroHeight - currentHeroHeight) < 1) return;
+
+        double sx = currentHeroWidth / ReferenceHeroWidth;
+        double sy = currentHeroHeight / ReferenceHeroHeight;
+
+        OpenKeyboardButtonX = Math.Round(OpenKeyboardButtonX * sx);
+        OpenKeyboardButtonY = Math.Round(OpenKeyboardButtonY * sy);
+        OpenKeyboardButtonWidth = Math.Round(OpenKeyboardButtonWidth * sx);
+        OpenKeyboardButtonHeight = Math.Round(OpenKeyboardButtonHeight * sy);
+
+        ReferenceHeroWidth = currentHeroWidth;
+        ReferenceHeroHeight = currentHeroHeight;
+    }
+
     public bool DebugCalibration { get; set; }
 
     public double CapsLockIndicatorOffsetX { get; set; } = 1235;

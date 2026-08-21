@@ -121,6 +121,9 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     public event EventHandler? OpenKeyboardButtonChanged;
     public event EventHandler? LivePreviewChanged;
 
+    public double HeroOverlayWidth { get; set; }
+    public double HeroOverlayHeight { get; set; }
+
     private void OnLivePreviewThrottleTick(object? sender, EventArgs e)
     {
         _livePreviewThrottle.Stop();
@@ -1356,6 +1359,13 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private void SaveCalibration(bool notifyMainViewModel)
     {
         var calibration = BuildCalibration();
+
+        if (HeroOverlayWidth > 0 && HeroOverlayHeight > 0)
+        {
+            calibration.ReferenceHeroWidth = HeroOverlayWidth;
+            calibration.ReferenceHeroHeight = HeroOverlayHeight;
+        }
+
         _config.Settings.KeyboardCalibration = calibration;
         _configService.Save(_config);
 

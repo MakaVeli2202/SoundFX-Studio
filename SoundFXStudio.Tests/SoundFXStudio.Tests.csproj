@@ -14,10 +14,15 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="SwatRecords.NetCDF" Version="1.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\SoundFXStudio\SoundFXStudio.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="TestData\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

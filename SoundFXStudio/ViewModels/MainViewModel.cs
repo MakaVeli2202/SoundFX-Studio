@@ -36,6 +36,7 @@ public sealed class MainViewModel : ObservableObject
     private readonly TriggerService _triggerService;
     private readonly SoundLibraryViewModel _soundLibraryViewModel;
     private readonly KeyboardViewModel _keyboardViewModel;
+    private readonly GamingViewModel _gamingViewModel;
     private AppConfig _config = new();
 
     public event Action? VoiceChangerToggleRequested;
@@ -163,6 +164,11 @@ public sealed class MainViewModel : ObservableObject
             ImportImage);
 
         _keyboardViewModel.AttachChordRuntimeService(_triggerService.ChordRuntimeService);
+
+        _gamingViewModel = new GamingViewModel(
+            () => Save(),
+            status => StatusText = status,
+            Settings);
 
         AddSoundCommand = new RelayCommand(_ => _soundLibraryViewModel.AddSound());
         EqualizeSoundsCommand = new AsyncRelayCommand(_ => _soundLibraryViewModel.EqualizeSoundsAsync(100));
@@ -630,6 +636,8 @@ public sealed class MainViewModel : ObservableObject
         get => _currentPage;
         set => SetProperty(ref _currentPage, value);
     }
+
+    public GamingViewModel Gaming => _gamingViewModel;
 
     public string SettingsSection
     {
@@ -1346,6 +1354,7 @@ public sealed class MainViewModel : ObservableObject
         _logService?.Info("Disposing MainViewModel");
         RestoreWindowsDefaultDevicesOnExit();
         _triggerService.Dispose();
+        _gamingViewModel.Dispose();
         _logService?.Info("Disposing AudioPlayer");
         _logService?.Info("Disposing HttpClient");
         _audioPlayer.Dispose();
@@ -3174,7 +3183,8 @@ public sealed class MainViewModel : ObservableObject
                 if (!vm.Login())
                     return "✗  Could not start Voicemeeter.";
 
-                bool applied = vm.ApplyRouting(hearDevice.Name, talkDevice.Name);
+                bool applied = vm.ApplyRouting(hearDevice.Name, talkDevice.Name,
+                    step => System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => StatusText = step));
                 var diagnostics = string.IsNullOrWhiteSpace(vm.LastDiagnostics) ? null : vm.LastDiagnostics;
                 vm.Dispose();
 
@@ -3475,7 +3485,7 @@ public sealed class MainViewModel : ObservableObject
             Categories.Where(c => !string.Equals(c.Name, "All", StringComparison.OrdinalIgnoreCase)));
         _config.Settings = Settings;
         _config.ActiveProfileId = SelectedProfile?.Id ?? _config.ActiveProfileId;
-        _configService.Save(_config);
+        try { _configService.Save(_config); } catch { /* disk full / locked — state preserved in memory */ }
         UpdateTitle();
         UpdateRoutingStatus();
     }

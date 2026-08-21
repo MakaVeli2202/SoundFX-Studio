@@ -31,7 +31,13 @@ public sealed class DSPChain : IAudioEffect
             var effect = _effects[i];
             if (effect.IsEnabled)
             {
-                effect.Process(buffer);
+                try
+                {
+                    effect.Process(buffer);
+                }
+                catch
+                {
+                }
             }
         }
     }

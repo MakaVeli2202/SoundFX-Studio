@@ -73,8 +73,8 @@ public partial class MainWindow : Window
 
         if (_voiceChanger is { IsRunning: true })
         {
-            _voiceChanger.Stop();
-            _voiceChanger.Dispose();
+            try { _voiceChanger.Stop(); } catch { }
+            try { _voiceChanger.Dispose(); } catch { }
             _voiceChanger = null;
             App.IsVoiceChangerRunning = false;
             if (!ViewModel.TryRestoreVoiceChangerRouting(out var restoreError))
@@ -420,6 +420,8 @@ public partial class MainWindow : Window
             _voiceChanger?.Dispose();
             _voiceChanger = null;
             App.IsVoiceChangerRunning = false;
+            ViewModel.Gaming.StopCapture();
+            ViewModel.Gaming.Dispose();
             _teamMonitor?.Dispose();
             _teamMonitor = null;
 
@@ -728,7 +730,9 @@ public partial class MainWindow : Window
 
         _keyboardCalibrationWindow = new KeyboardCalibrationWindow
         {
-            Owner = this
+            Owner = this,
+            HeroOverlayWidth = HeroOverlaySize.Width,
+            HeroOverlayHeight = HeroOverlaySize.Height
         };
 
         _keyboardCalibrationWindow.OpenKeyboardButtonChanged += (_, _) =>
@@ -779,6 +783,12 @@ public partial class MainWindow : Window
         if (calibration is null)
         {
             return;
+        }
+
+        var (heroWidth, heroHeight) = HeroOverlaySize;
+        if (heroWidth > 0 && heroHeight > 0)
+        {
+            calibration.RescaleForHeroSize(heroWidth, heroHeight);
         }
 
         ApplyOpenKeyboardButton(
@@ -864,6 +874,12 @@ public partial class MainWindow : Window
     private void NavigateSettings_Click(object sender, RoutedEventArgs e)
     {
         ViewModel.CurrentPage = "Settings";
+        UpdateCurrentPageDisplay();
+    }
+
+    private void NavigateGaming_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CurrentPage = "Gaming";
         UpdateCurrentPageDisplay();
     }
 
@@ -1112,7 +1128,7 @@ public partial class MainWindow : Window
             {
                 using var vm = new VoicemeeterRemote();
                 if (!vm.Login()) return (false, "Login failed.");
-                bool ok = vm.ApplyRouting(hear, talk);
+                bool ok = vm.ApplyRouting(hear, talk, step => Dispatcher.BeginInvoke(() => SetAdvancedVmStatus(step, Color.FromRgb(0x98, 0xA0, 0xC0))));
                 string diag = vm.LastDiagnostics;
                 vm.Dispose();
                 return (ok, diag);
@@ -1235,11 +1251,11 @@ public partial class MainWindow : Window
             {
                 config.Settings.SavedDefaultCaptureId = string.Empty;
             }
-            configService.Save(config);
+            try { configService.Save(config); } catch { }
         }
 
-        SetAdvancedResetStatus("Resetting Voicemeeter devices…", Color.FromRgb(0x98, 0xA0, 0xC0));
         AdvancedResetWindowsBtn.IsEnabled = false;
+        SetAdvancedResetStatus("Resetting Voicemeeter devices…", Color.FromRgb(0x98, 0xA0, 0xC0));
 
         var audioDeviceService = new AudioDeviceService();
         string vmResult;

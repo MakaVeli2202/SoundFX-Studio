@@ -208,6 +208,32 @@ public class DSPChainTests
         return max;
     }
 
+    [Fact]
+    public void Chain_ExceptionInEffect_DoesNotKillSubsequentEffects()
+    {
+        var chain = new DSPChain();
+        var a = new AddOffsetEffect(0.1f);
+        var b = new ThrowingEffect();
+        var c = new AddOffsetEffect(0.2f);
+        chain.Add(a);
+        chain.Add(b);
+        chain.Add(c);
+
+        var buffer = new float[] { 0.5f, -0.5f };
+        chain.Process(buffer);
+
+        Assert.Equal(0.8f, buffer[0]);
+        Assert.Equal(-0.2f, buffer[1]);
+    }
+
+    private sealed class ThrowingEffect : IAudioEffect
+    {
+        public string Name => "throw";
+        public bool IsEnabled { get; set; } = true;
+        public void Process(Span<float> buffer) => throw new InvalidOperationException("boom");
+        public void Reset() { }
+    }
+
     private sealed class CountingEffect : IAudioEffect
     {
         public CountingEffect(string name) => Name = name;
