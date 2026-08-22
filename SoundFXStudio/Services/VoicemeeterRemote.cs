@@ -79,8 +79,9 @@ public sealed class VoicemeeterRemote : IDisposable
     /// </summary>
     public bool Login()
     {
-        if (!Available && !Load()) return false;
+        if (!Available && !Load()) { ActionLog.Instance.Error("VM", "Login: DLL not available"); return false; }
         int r = _login!();
+        ActionLog.Instance.Info("VM", $"Login: rc={r} (1=launched, 0=already running, <0=error)");
         if (r == 1)
         {
             _run!(1);
@@ -98,8 +99,9 @@ public sealed class VoicemeeterRemote : IDisposable
     /// </summary>
     public bool TryConnect()
     {
-        if (!Available && !Load()) return false;
+        if (!Available && !Load()) { ActionLog.Instance.Error("VM", "TryConnect: DLL not available"); return false; }
         int r = _login!();
+        ActionLog.Instance.Info("VM", $"TryConnect: rc={r}");
         LoggedIn = r >= 0;
         return LoggedIn;
     }
@@ -123,19 +125,26 @@ public sealed class VoicemeeterRemote : IDisposable
     {
         float v = 0f;
         if (Available) _getF!(param, ref v);
+        ActionLog.Instance.Info("VM.API", $"GetFloat('{param}') = {v}");
         return v;
     }
 
     public int SetFloat(string param, float value)
     {
         if (!Available) return -2;
-        return _setF!(param, value);
+        int rc = _setF!(param, value);
+        if (rc != 0)
+            ActionLog.Instance.Warn("VM.API", $"SetFloat('{param}', {value}) FAILED rc={rc}");
+        return rc;
     }
 
     public int SetString(string param, string value)
     {
         if (!Available) return -2;
-        return _setS!(param, value);
+        int rc = _setS!(param, value);
+        if (rc != 0)
+            ActionLog.Instance.Warn("VM.API", $"SetString('{param}', '{value}') FAILED rc={rc}");
+        return rc;
     }
 
     /// <summary>
@@ -238,6 +247,7 @@ public sealed class VoicemeeterRemote : IDisposable
             onProgress?.Invoke($"Retrying {param} (attempt {i + 2}/10)…");
         }
 
+        ActionLog.Instance.Error("VM", $"TrySetChannel('{param}', {target}) FAILED after 10 retries");
         LastDiagnostics += $"⚠ {param} not set to {target}\n";
         return false;
     }

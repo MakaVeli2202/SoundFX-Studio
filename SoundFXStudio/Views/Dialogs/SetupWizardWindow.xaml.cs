@@ -149,6 +149,8 @@ public partial class SetupWizardWindow : Window
         var talk = WizardTalkCombo.SelectedItem as AudioDeviceInfo;
         if (hear is null || talk is null) { VmSetupStatus.Text = "Select both devices first."; return; }
 
+        Services.ActionLog.Instance.Action("Wizard", $"AutoSetup: hear='{hear.Name}', talk='{talk.Name}'");
+
         if (!VoicemeeterRemote.IsInstalled()) { VmSetupStatus.Text = "✗ Voicemeeter not installed."; return; }
 
         WizardAutoSetupBtn.IsEnabled = false;
@@ -227,6 +229,7 @@ public partial class SetupWizardWindow : Window
         overlay.Close();
         WizardAutoSetupBtn.IsEnabled = true;
         VmSetupStatus.Text = result;
+        Services.ActionLog.Instance.Action("Wizard", $"AutoSetup result: {result.Replace("\n", " | ")}");
         VmSetupStatus.Foreground = new System.Windows.Media.SolidColorBrush(result.StartsWith("✓")
             ? System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)
             : System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));

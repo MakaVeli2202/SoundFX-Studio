@@ -1143,6 +1143,7 @@ public sealed class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             _logService?.Error($"Voice changer routing failed: {ex.Message}", ex);
+            Services.ActionLog.Instance.Error("VC.Routing", $"Exception: {ex}");
             error = "Couldn't start the voice changer. Check your audio routing and try again.";
             return false;
         }

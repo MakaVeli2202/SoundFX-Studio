@@ -403,6 +403,8 @@ public partial class MainWindow : Window
             return;
         }
 
+        Services.ActionLog.Instance.Action("App", "Window closing");
+        Services.ActionLog.Instance.Flush();
         e.Cancel = true;
         _ = RunExitResetAsync(resetAudio: App.IsSessionEnding || AskResetOnClose());
     }
@@ -1120,6 +1122,7 @@ public partial class MainWindow : Window
 
     private async void AdvancedConfigureVmOnly_Click(object sender, RoutedEventArgs e)
     {
+        Services.ActionLog.Instance.Action("Advanced", "Configure VM Only clicked");
         if (!VoicemeeterRemote.IsInstalled())
         {
             SetAdvancedVmStatus("✗ Voicemeeter not installed.", Color.FromRgb(0xE8, 0x55, 0x55));
