@@ -84,9 +84,9 @@ public sealed class VoicemeeterRemote : IDisposable
         if (r == 1)
         {
             _run!(1);
-            System.Threading.Thread.Sleep(2000);
+            System.Threading.Thread.Sleep(3000);
             HideVmWindow();
-            System.Threading.Thread.Sleep(1000);
+            System.Threading.Thread.Sleep(2000);
             HideVmWindow();
         }
         LoggedIn = r >= 0;
@@ -197,26 +197,31 @@ public sealed class VoicemeeterRemote : IDisposable
     }
 
     /// <summary>
-    /// Proves the API is actually writable by doing a read-write round-trip on a safe parameter.
-    /// This catches the case where Edition() returns non-zero but parameter writes still fail.
+    /// Proves the API is actually writable by writing a sentinel value and reading it back.
+    /// Avoids the round-trip trap where gain=0.0 → write 0.0 → read 0.0 (no-op, always passes).
     /// </summary>
-    private bool WaitUntilWritable(int timeoutMs = 10000)
+    private bool WaitUntilWritable(int timeoutMs = 15000)
     {
+        float originalGain = GetFloat("Strip[0].gain");
+        const float sentinel = 3.14f;
+
         var sw = Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < timeoutMs)
         {
-            float before = GetFloat("Strip[0].gain");
-            int rc = SetFloat("Strip[0].gain", before);
+            int rc = SetFloat("Strip[0].gain", sentinel);
             if (rc == 0)
             {
-                System.Threading.Thread.Sleep(200);
-                float after = GetFloat("Strip[0].gain");
-                if (Math.Abs(after - before) <= 0.01f)
+                System.Threading.Thread.Sleep(300);
+                float readBack = GetFloat("Strip[0].gain");
+                if (Math.Abs(readBack - sentinel) <= 0.5f)
+                {
+                    SetFloat("Strip[0].gain", originalGain);
                     return true;
+                }
             }
             System.Threading.Thread.Sleep(500);
         }
-        LastDiagnostics += "⚠ API did not become writable within timeout\n";
+        LastDiagnostics += $"⚠ API did not become writable within {timeoutMs}ms\n";
         return false;
     }
 
