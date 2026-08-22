@@ -192,14 +192,22 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         set
         {
             if (SetProperty(ref _statusText, value))
+            {
                 _setStatusAction?.Invoke(value);
+                if (!string.IsNullOrWhiteSpace(value))
+                    Services.ActionLog.Instance.Info("Gaming", value);
+            }
         }
     }
 
     public string ErrorText
     {
         get => _errorText;
-        set => SetProperty(ref _errorText, value);
+        set
+        {
+            if (SetProperty(ref _errorText, value) && !string.IsNullOrWhiteSpace(value))
+                Services.ActionLog.Instance.Error("Gaming", $"ErrorText: {value}");
+        }
     }
 
     public GameProcessInfo? SelectedProcess
@@ -1016,6 +1024,8 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
     {
         if (SelectedProcess is null || !IsEnabled) return;
 
+        Services.ActionLog.Instance.Action("Gaming", $"StartCapture: process='{SelectedProcess?.DisplayName}'");
+
         if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 20348))
         {
             ErrorText = "Application Loopback requires Windows 10 build 20348+.";
@@ -1026,6 +1036,7 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         if (!_processPidMap.TryGetValue(SelectedProcess.DisplayName, out var pid))
         {
             StatusText = "Selected process not found. Click Refresh.";
+            Services.ActionLog.Instance.Error("Gaming", $"PID not found for '{SelectedProcess.DisplayName}'");
             return;
         }
 
@@ -1035,9 +1046,11 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
             _gameAudioService.LatencyMode = _selectedLatencyMode;
             _gameAudioService.StartCapture(pid);
             IsCapturing = true;
+            Services.ActionLog.Instance.Action("Gaming", $"StartCapture OK: pid={pid}");
         }
         catch (Exception ex)
         {
+            Services.ActionLog.Instance.Error("Gaming", $"StartCapture failed: {ex}");
             ErrorText = ex.Message;
             StatusText = $"Capture failed: {ex.Message}";
             IsCapturing = false;

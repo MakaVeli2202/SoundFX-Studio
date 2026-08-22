@@ -73,6 +73,7 @@ public partial class MainWindow : Window
 
         if (_voiceChanger is { IsRunning: true })
         {
+            Services.ActionLog.Instance.Action("VC", "Stop Voice Changer");
             try { _voiceChanger.Stop(); } catch { }
             try { _voiceChanger.Dispose(); } catch { }
             _voiceChanger = null;
@@ -80,6 +81,7 @@ public partial class MainWindow : Window
             if (!ViewModel.TryRestoreVoiceChangerRouting(out var restoreError))
             {
                 ViewModel.StatusText = restoreError;
+                Services.ActionLog.Instance.Error("VC", $"Restore routing failed: {restoreError}");
             }
             ViewModel.EndVoiceChangerMonitorMute();
             if (_teamMonitor is not { IsRunning: true })
@@ -94,15 +96,19 @@ public partial class MainWindow : Window
             return;
         }
 
+        Services.ActionLog.Instance.Action("VC", "Start Voice Changer — resolving mic");
         var micId = ViewModel.GetVoiceChangerMicId();
         if (string.IsNullOrWhiteSpace(micId))
         {
+            Services.ActionLog.Instance.Error("VC", $"No mic found. MicrophoneDeviceId='{ViewModel.Settings.MicrophoneDeviceId}', InputDevices={ViewModel.InputDevices.Count}");
             ViewModel.StatusText = "No microphone available.";
             return;
         }
+        Services.ActionLog.Instance.Info("VC", $"Mic resolved: {micId}");
 
         if (!ViewModel.Settings.SetupCompleted)
         {
+            Services.ActionLog.Instance.Error("VC", "Setup not completed");
             ViewModel.StatusText = "Not configured yet — run the Audio Setup wizard.";
             VoiceChangerStatus.Text = "Not configured";
             VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
@@ -111,25 +117,31 @@ public partial class MainWindow : Window
         }
 
         var pitch = ViewModel.Settings.PitchShift;
+        Services.ActionLog.Instance.Info("VC", $"Preparing routing: mic={micId}, pitch={pitch}");
         if (!ViewModel.TryPrepareVoiceChangerRouting(micId, out var outIdx, out var outputDeviceId, out var outputDeviceName, out var routingError))
         {
+            Services.ActionLog.Instance.Error("VC", $"Routing failed: {routingError} (outIdx={outIdx}, outDev='{outputDeviceName}')");
             ViewModel.StatusText = routingError;
             VoiceChangerStatus.Text = "Routing error";
             VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
             VoiceChangerStatusDot.Background = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
             return;
         }
+        Services.ActionLog.Instance.Info("VC", $"Routing OK: outIdx={outIdx}, outDev='{outputDeviceName}'");
 
         try
         {
+            Services.ActionLog.Instance.Info("VC", $"Creating VoiceChangerService, preset={ViewModel.Settings.VoiceChangerPresetId}, formant={ViewModel.Settings.FormantShift}");
             _voiceChanger = new VoiceChangerService();
             PresetManager.Apply(PresetManager.GetById(ViewModel.Settings.VoiceChangerPresetId), _voiceChanger);
             _voiceChanger.SetFormant(ViewModel.Settings.FormantShift);
             _voiceChanger.Start(micId, outIdx, pitch);
             App.IsVoiceChangerRunning = true;
+            Services.ActionLog.Instance.Action("VC", "Voice Changer started OK");
         }
         catch (Exception ex)
         {
+            Services.ActionLog.Instance.Error("VC", $"VoiceChangerService.Start failed: {ex}");
             _voiceChanger?.Dispose();
             _voiceChanger = null;
             App.IsVoiceChangerRunning = false;

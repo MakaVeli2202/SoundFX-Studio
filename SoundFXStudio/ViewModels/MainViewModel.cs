@@ -539,7 +539,13 @@ public sealed class MainViewModel : ObservableObject
     public string StatusText
     {
         get => _statusText;
-        set => SetProperty(ref _statusText, value);
+        set
+        {
+            if (SetProperty(ref _statusText, value) && !string.IsNullOrWhiteSpace(value))
+            {
+                Services.ActionLog.Instance.Info("Status", value);
+            }
+        }
     }
 
     public string WindowTitle
@@ -972,11 +978,13 @@ public sealed class MainViewModel : ObservableObject
         outputDeviceId = string.Empty;
         outputDeviceName = string.Empty;
         error = string.Empty;
+        Services.ActionLog.Instance.Info("VC.Routing", $"Start: micId='{micDeviceId}'");
 
         if (string.IsNullOrWhiteSpace(micDeviceId))
         {
             _logService?.Warning("Voice changer routing failed: microphone device is not selected.");
             error = "No microphone is selected. Check the Audio Setup.";
+            Services.ActionLog.Instance.Error("VC.Routing", "micDeviceId is empty");
             return false;
         }
 
@@ -986,6 +994,7 @@ public sealed class MainViewModel : ObservableObject
         {
             _logService?.Warning("Voice changer routing failed: Voicemeeter Input (VAIO) endpoint was not found.");
             error = "Audio routing is missing. Run the Audio Setup wizard again.";
+            Services.ActionLog.Instance.Error("VC.Routing", $"VoicemeeterInput not found: id='{outputDeviceId}' name='{outputDeviceName}'");
             return false;
         }
 
@@ -994,8 +1003,10 @@ public sealed class MainViewModel : ObservableObject
         {
             _logService?.Warning($"Voice changer routing failed: Voicemeeter Input endpoint '{outputDeviceName}' is not available to WaveOut.");
             error = "Audio routing isn't available. Run the Audio Setup wizard again.";
+            Services.ActionLog.Instance.Error("VC.Routing", $"WaveOut index not found for '{outputDeviceName}'");
             return false;
         }
+        Services.ActionLog.Instance.Info("VC.Routing", $"Output resolved: idx={outputDeviceIndex}, id='{outputDeviceId}', name='{outputDeviceName}'");
 
         var micDeviceName = _audioDeviceService.GetCaptureDevice(micDeviceId)?.FriendlyName
             ?? Settings.TalkDeviceName
@@ -1004,15 +1015,18 @@ public sealed class MainViewModel : ObservableObject
         try
         {
             using var vm = new VoicemeeterRemote();
+            Services.ActionLog.Instance.Info("VC.Routing", "Connecting to Voicemeeter…");
             if (!vm.TryConnect())
             {
                 _logService?.Warning("Voice changer routing failed: could not connect to Voicemeeter.");
                 error = "Couldn't start the voice changer. Check your audio routing and try again.";
+                Services.ActionLog.Instance.Error("VC.Routing", "vm.TryConnect() returned false");
                 return false;
             }
 
             var stripCount = vm.StripCount();
             var firstVirtual = vm.FirstVirtualStrip(stripCount);
+            Services.ActionLog.Instance.Info("VC.Routing", $"VM connected: stripCount={stripCount}, firstVirtual={firstVirtual}");
             if (stripCount <= 0 || firstVirtual <= 0)
             {
                 _logService?.Warning($"Voice changer routing failed: invalid Voicemeeter strip topology (count={stripCount}, firstVirtual={firstVirtual}).");
@@ -1022,6 +1036,7 @@ public sealed class MainViewModel : ObservableObject
 
             var micStripIndex = -1;
             var resolvedStripDevice = string.Empty;
+            Services.ActionLog.Instance.Info("VC.Routing", $"Resolving mic strip: micName='{micDeviceName}', talkDevice='{Settings.TalkDeviceName}'");
             if (!TryResolvePhysicalMicStripIndex(vm, firstVirtual, micDeviceName, Settings.TalkDeviceName, out micStripIndex, out resolvedStripDevice))
             {
                 bool autoAssigned = vm.AssignMicToStrip(0, Settings.TalkDeviceName ?? micDeviceName, micDeviceName);

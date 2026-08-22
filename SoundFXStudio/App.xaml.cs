@@ -298,6 +298,8 @@ public partial class App : Application
     private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
     {
         _logService.Critical("DispatcherUnhandledException", e.Exception);
+        Services.ActionLog.Instance.Error("App", $"UnhandledException: {e.Exception}");
+        Services.ActionLog.Instance.Dispose();
         e.Handled = true;
     }
 
