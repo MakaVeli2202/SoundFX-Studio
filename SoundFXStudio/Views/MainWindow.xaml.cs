@@ -505,11 +505,16 @@ public partial class MainWindow : Window
         SpeakersComboBox.ItemsSource = outputs;
         MicrophoneComboBox.ItemsSource = inputs;
 
+        var ads = new AudioDeviceService();
         SpeakersComboBox.SelectedItem = outputs.FirstOrDefault(d => d.Id == settings.OutputDeviceId)
+            ?? outputs.FirstOrDefault(d => d.Id == ads.GetDefaultDeviceId(DataFlow.Render))
+            ?? outputs.FirstOrDefault(d => d.Id == ads.GetDefaultCommunicationDeviceId(DataFlow.Render))
             ?? outputs.FirstOrDefault(d => d.IsDefaultCommunication)
             ?? outputs.FirstOrDefault(d => d.IsDefault)
             ?? outputs.FirstOrDefault();
         MicrophoneComboBox.SelectedItem = inputs.FirstOrDefault(d => d.Id == settings.InputDeviceId)
+            ?? inputs.FirstOrDefault(d => d.Id == ads.GetDefaultDeviceId(DataFlow.Capture))
+            ?? inputs.FirstOrDefault(d => d.Id == ads.GetDefaultCommunicationDeviceId(DataFlow.Capture))
             ?? inputs.FirstOrDefault(d => d.IsDefaultCommunication)
             ?? inputs.FirstOrDefault(d => d.IsDefault)
             ?? inputs.FirstOrDefault();

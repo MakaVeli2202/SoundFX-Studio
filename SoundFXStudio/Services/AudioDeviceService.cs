@@ -165,6 +165,19 @@ public sealed class AudioDeviceService
         }
     }
 
+    public string? GetDefaultCommunicationDeviceId(DataFlow flow)
+    {
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            return enumerator.GetDefaultAudioEndpoint(flow, Role.Communications)?.ID;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public string? GetDefaultCommunicationDeviceName(DataFlow flow)
     {
         try

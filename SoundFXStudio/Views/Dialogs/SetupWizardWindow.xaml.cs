@@ -111,11 +111,15 @@ public partial class SetupWizardWindow : Window
         WizardTalkCombo.ItemsSource = inputs;
 
         WizardHearCombo.SelectedItem = outputs.FirstOrDefault(d => d.Name == _config.Settings.HearDeviceName)
+            ?? outputs.FirstOrDefault(d => d.Id == _audioDeviceService.GetDefaultDeviceId(DataFlow.Render))
+            ?? outputs.FirstOrDefault(d => d.Id == _audioDeviceService.GetDefaultCommunicationDeviceId(DataFlow.Render))
             ?? outputs.FirstOrDefault(d => d.IsDefaultCommunication)
             ?? outputs.FirstOrDefault(d => d.IsDefault)
             ?? outputs.FirstOrDefault();
 
         WizardTalkCombo.SelectedItem = inputs.FirstOrDefault(d => d.Name == _config.Settings.TalkDeviceName)
+            ?? inputs.FirstOrDefault(d => d.Id == _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture))
+            ?? inputs.FirstOrDefault(d => d.Id == _audioDeviceService.GetDefaultCommunicationDeviceId(DataFlow.Capture))
             ?? inputs.FirstOrDefault(d => d.IsDefaultCommunication)
             ?? inputs.FirstOrDefault(d => d.IsDefault)
             ?? inputs.FirstOrDefault();
