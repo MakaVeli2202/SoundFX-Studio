@@ -110,8 +110,15 @@ public partial class SetupWizardWindow : Window
         WizardHearCombo.ItemsSource = outputs;
         WizardTalkCombo.ItemsSource = inputs;
 
-        WizardHearCombo.SelectedItem = outputs.FirstOrDefault(d => d.Name == _config.Settings.HearDeviceName) ?? outputs.FirstOrDefault();
-        WizardTalkCombo.SelectedItem = inputs.FirstOrDefault(d => d.Name == _config.Settings.TalkDeviceName) ?? inputs.FirstOrDefault();
+        WizardHearCombo.SelectedItem = outputs.FirstOrDefault(d => d.Name == _config.Settings.HearDeviceName)
+            ?? outputs.FirstOrDefault(d => d.IsDefaultCommunication)
+            ?? outputs.FirstOrDefault(d => d.IsDefault)
+            ?? outputs.FirstOrDefault();
+
+        WizardTalkCombo.SelectedItem = inputs.FirstOrDefault(d => d.Name == _config.Settings.TalkDeviceName)
+            ?? inputs.FirstOrDefault(d => d.IsDefaultCommunication)
+            ?? inputs.FirstOrDefault(d => d.IsDefault)
+            ?? inputs.FirstOrDefault();
 
         CheckVoicemeeter();
     }

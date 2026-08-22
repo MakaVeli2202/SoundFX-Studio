@@ -505,11 +505,14 @@ public partial class MainWindow : Window
         SpeakersComboBox.ItemsSource = outputs;
         MicrophoneComboBox.ItemsSource = inputs;
 
-        SpeakersComboBox.SelectedItem = outputs.FirstOrDefault(d => d.Id == settings.OutputDeviceId);
-        MicrophoneComboBox.SelectedItem = inputs.FirstOrDefault(d => d.Id == settings.InputDeviceId);
-
-        SpeakersComboBox.SelectedItem ??= outputs.FirstOrDefault();
-        MicrophoneComboBox.SelectedItem ??= inputs.FirstOrDefault();
+        SpeakersComboBox.SelectedItem = outputs.FirstOrDefault(d => d.Id == settings.OutputDeviceId)
+            ?? outputs.FirstOrDefault(d => d.IsDefaultCommunication)
+            ?? outputs.FirstOrDefault(d => d.IsDefault)
+            ?? outputs.FirstOrDefault();
+        MicrophoneComboBox.SelectedItem = inputs.FirstOrDefault(d => d.Id == settings.InputDeviceId)
+            ?? inputs.FirstOrDefault(d => d.IsDefaultCommunication)
+            ?? inputs.FirstOrDefault(d => d.IsDefault)
+            ?? inputs.FirstOrDefault();
 
         KeybindHoldModeCombo.SelectedIndex = settings.HotkeyHoldMode ? 0 : 1;
         KeybindHoldModeCombo.SelectionChanged += (_, _) =>
