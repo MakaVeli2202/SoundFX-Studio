@@ -310,7 +310,7 @@ public class HeadphoneProfileTests
 
         Assert.Equal(origGateEnabled, vcService.Chain.Get<NoiseGateEffect>()!.IsEnabled);
         Assert.Equal(origCompEnabled, vcService.Chain.Get<CompressorEffect>()!.IsEnabled);
-        Assert.Null(vcService.Chain.Get<EqualizerEffect>());
+        Assert.NotNull(vcService.Chain.Get<EqualizerEffect>());
     }
 
     // ── Persistence tests ──────────────────────────────────────────────────

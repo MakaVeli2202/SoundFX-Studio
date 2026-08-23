@@ -80,16 +80,53 @@ public sealed class VoicemeeterRemote : IDisposable
     public bool Login()
     {
         if (!Available && !Load()) { ActionLog.Instance.Error("VM", "Login: DLL not available"); return false; }
+
+        // Ensure VM is running before Login(). If Login() returns rc=1 (launched internally),
+        // the API session is broken — writes return -1. So we pre-launch externally and wait.
+        bool vmRunning = Process.GetProcessesByName("voicemeeter").Length > 0
+                      || Process.GetProcessesByName("voicemeeter_x64").Length > 0;
+        ActionLog.Instance.Info("VM", $"VM process running: {vmRunning}");
+
+        if (!vmRunning)
+        {
+            var exe = FindVmExe();
+            if (exe != null)
+            {
+                ActionLog.Instance.Info("VM", $"Launching VM externally: {exe}");
+                Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
+                // Wait for VM process to start, then hide in background while it initializes
+                System.Threading.Thread.Sleep(500);
+                _ = Task.Run(async () =>
+                {
+                    for (int i = 0; i < 10; i++)
+                    {
+                        await Task.Delay(300);
+                        HideVmWindow();
+                    }
+                });
+            }
+        }
+
         int r = _login!();
         ActionLog.Instance.Info("VM", $"Login: rc={r} (1=launched, 0=already running, <0=error)");
+
         if (r == 1)
         {
-            _run!(1);
-            System.Threading.Thread.Sleep(3000);
+            // Fallback: Login launched VM internally despite our pre-launch.
+            // Give it extra time to initialize.
+            ActionLog.Instance.Info("VM", "Login launched VM internally — waiting for API readiness...");
             HideVmWindow();
-            System.Threading.Thread.Sleep(2000);
+            System.Threading.Thread.Sleep(5000);
             HideVmWindow();
         }
+
+        if (r == 0)
+        {
+            HideVmWindow();
+            System.Threading.Thread.Sleep(500);
+            HideVmWindow();
+        }
+
         LoggedIn = r >= 0;
         return LoggedIn;
     }
@@ -99,19 +136,34 @@ public sealed class VoicemeeterRemote : IDisposable
     /// </summary>
     public bool TryConnect()
     {
-        if (!Available && !Load()) { ActionLog.Instance.Error("VM", "TryConnect: DLL not available"); return false; }
+        if (!Available && !Load()) return false;
         int r = _login!();
-        ActionLog.Instance.Info("VM", $"TryConnect: rc={r}");
         LoggedIn = r >= 0;
         return LoggedIn;
     }
 
-    public bool IsDirty() => Available && _dirty!() > 0;
+    public bool IsDirty()
+    {
+        if (!Available) return false;
+        try { return _dirty!() > 0; }
+        catch (Exception ex)
+        {
+            ActionLog.Instance.Warn("VM.API", $"IsDirty crashed: {ex.Message}");
+            return false;
+        }
+    }
 
     public int Edition()
     {
         int t = 0;
-        if (Available) _getType!(ref t);
+        if (Available)
+        {
+            try { _getType!(ref t); }
+            catch (Exception ex)
+            {
+                ActionLog.Instance.Warn("VM.API", $"Edition crashed: {ex.Message}");
+            }
+        }
         return t;
     }
 
@@ -124,32 +176,53 @@ public sealed class VoicemeeterRemote : IDisposable
     public float GetFloat(string param)
     {
         float v = 0f;
-        if (Available) _getF!(param, ref v);
-        ActionLog.Instance.Info("VM.API", $"GetFloat('{param}') = {v}");
+        if (Available)
+        {
+            try { _getF!(param, ref v); }
+            catch (Exception ex)
+            {
+                ActionLog.Instance.Warn("VM.API", $"GetFloat('{param}') crashed: {ex.Message}");
+            }
+        }
         return v;
     }
 
     public int SetFloat(string param, float value)
     {
         if (!Available) return -2;
-        int rc = _setF!(param, value);
-        if (rc != 0)
-            ActionLog.Instance.Warn("VM.API", $"SetFloat('{param}', {value}) FAILED rc={rc}");
-        return rc;
+        try
+        {
+            int rc = _setF!(param, value);
+            if (rc != 0)
+                ActionLog.Instance.Warn("VM.API", $"SetFloat('{param}', {value}) rc={rc}");
+            return rc;
+        }
+        catch (Exception ex)
+        {
+            ActionLog.Instance.Warn("VM.API", $"SetFloat('{param}', {value}) crashed: {ex.Message}");
+            return -1;
+        }
     }
 
     public int SetString(string param, string value)
     {
         if (!Available) return -2;
-        int rc = _setS!(param, value);
-        if (rc != 0)
-            ActionLog.Instance.Warn("VM.API", $"SetString('{param}', '{value}') FAILED rc={rc}");
-        return rc;
+        try
+        {
+            int rc = _setS!(param, value);
+            if (rc != 0)
+                ActionLog.Instance.Warn("VM.API", $"SetString('{param}', '{value}') rc={rc}");
+            return rc;
+        }
+        catch (Exception ex)
+        {
+            ActionLog.Instance.Warn("VM.API", $"SetString('{param}', '{value}') crashed: {ex.Message}");
+            return -1;
+        }
     }
 
     /// <summary>
     /// Applies the selected microphone and output routing to the Voicemeeter strips and buses.
-    /// Optional progress callback reports each step with attempt numbers.
     /// </summary>
     public bool ApplyRouting(string hearDevice, string talkDevice, Action<string>? onProgress = null)
     {
@@ -157,11 +230,8 @@ public sealed class VoicemeeterRemote : IDisposable
         if (!Available && !Load()) return false;
         if (!LoggedIn && !Login()) return false;
 
-        onProgress?.Invoke("Waiting for Voicemeeter API…");
+        onProgress?.Invoke("Waiting for audio engine…");
         if (!WaitUntilReady()) return false;
-
-        onProgress?.Invoke("Proving API is writable…");
-        if (!WaitUntilWritable()) return false;
 
         int count = StripCount();
         if (count == 0) return false;
@@ -175,79 +245,55 @@ public sealed class VoicemeeterRemote : IDisposable
         if (!string.IsNullOrEmpty(talkDevice))
         {
             var talkMatch = MatchVmDevice(inputs, talkDevice);
-            onProgress?.Invoke($"Setting strip device…");
-            ok &= TrySetDevice("Strip[0].device.name", new[]
+            string targetName = talkMatch?.Name ?? talkDevice;
+            string current = GetString("Strip[0].device.name");
+            if (!string.IsNullOrEmpty(current) &&
+                string.Equals(current, targetName, StringComparison.OrdinalIgnoreCase))
             {
-                ("Strip[0].device.wdm", talkMatch?.Name ?? talkDevice)
-            }, onProgress);
+                onProgress?.Invoke("Mic already set — skipping");
+            }
+            else
+            {
+                onProgress?.Invoke("Setting mic device…");
+                ok &= TrySetDevice("Strip[0].device.name", new[]
+                {
+                    ("Strip[0].device.wdm", targetName)
+                });
+            }
         }
         if (!string.IsNullOrEmpty(hearDevice))
         {
-            onProgress?.Invoke($"Setting bus output device…");
-            ok &= TrySetBusOutputDevice(outputs, hearDevice, onProgress);
+            onProgress?.Invoke("Setting output device…");
+            ok &= TrySetBusOutputDevice(outputs, hearDevice);
             if (ok)
                 SetString("Bus[0].label", "SoundFX");
         }
 
+        // Turn on the routing channels:
+        // - Strip[0] (mic): B1 only → routes to virtual output for Discord. A1 OFF (no echo).
+        // - Virtual strips: A1 + B1 → app audio goes to both speakers and virtual output.
+        // - Unmute both buses.
         onProgress?.Invoke("Configuring routing channels…");
-        System.Threading.Thread.Sleep(1500);
-        bool channelsOk = TrySetChannel("Strip[0].A1", 1, onProgress);
-        channelsOk &= TrySetChannel("Strip[0].B1", 1, onProgress);
+        bool channelsOk = TrySetChannel("Strip[0].A1", 0);
+        channelsOk &= TrySetChannel("Strip[0].B1", 1);
         for (int i = firstVirtual; i < count; i++)
         {
-            channelsOk &= TrySetChannel($"Strip[{i}].A1", 1, onProgress);
-            channelsOk &= TrySetChannel($"Strip[{i}].B1", 1, onProgress);
+            channelsOk &= TrySetChannel($"Strip[{i}].A1", 1);
+            channelsOk &= TrySetChannel($"Strip[{i}].B1", 1);
         }
-        channelsOk &= TrySetChannel("Bus[0].Mute", 0, onProgress);
-        channelsOk &= TrySetChannel($"Bus[{B1Bus}].Mute", 0, onProgress);
+        channelsOk &= TrySetChannel("Bus[0].Mute", 0);
+        channelsOk &= TrySetChannel($"Bus[{B1Bus}].Mute", 0);
 
         onProgress?.Invoke(ok && channelsOk ? "Routing complete ✓" : "Some writes failed — see diagnostics");
         return ok && channelsOk;
     }
 
-    /// <summary>
-    /// Proves the API is actually writable by writing a sentinel value and reading it back.
-    /// Avoids the round-trip trap where gain=0.0 → write 0.0 → read 0.0 (no-op, always passes).
-    /// </summary>
-    private bool WaitUntilWritable(int timeoutMs = 15000)
+    private bool TrySetChannel(string param, float target)
     {
-        float originalGain = GetFloat("Strip[0].gain");
-        const float sentinel = 3.14f;
+        int rc = SetFloat(param, target);
+        System.Threading.Thread.Sleep(200);
+        if (rc == 0) return true;
 
-        var sw = Stopwatch.StartNew();
-        while (sw.ElapsedMilliseconds < timeoutMs)
-        {
-            int rc = SetFloat("Strip[0].gain", sentinel);
-            if (rc == 0)
-            {
-                System.Threading.Thread.Sleep(300);
-                float readBack = GetFloat("Strip[0].gain");
-                if (Math.Abs(readBack - sentinel) <= 0.5f)
-                {
-                    SetFloat("Strip[0].gain", originalGain);
-                    return true;
-                }
-            }
-            System.Threading.Thread.Sleep(500);
-        }
-        LastDiagnostics += $"⚠ API did not become writable within {timeoutMs}ms\n";
-        return false;
-    }
-
-    private bool TrySetChannel(string param, float target, Action<string>? onProgress = null)
-    {
-        for (int i = 0; i < 10; i++)
-        {
-            int rc = SetFloat(param, target);
-            System.Threading.Thread.Sleep(500);
-            if (rc == 0 && Math.Abs(GetFloat(param) - target) <= 0.01f)
-            {
-                return true;
-            }
-            onProgress?.Invoke($"Retrying {param} (attempt {i + 2}/10)…");
-        }
-
-        ActionLog.Instance.Error("VM", $"TrySetChannel('{param}', {target}) FAILED after 10 retries");
         LastDiagnostics += $"⚠ {param} not set to {target}\n";
         return false;
     }
@@ -259,9 +305,9 @@ public sealed class VoicemeeterRemote : IDisposable
                                IReadOnlyCollection<string>? currentOutputNames = null)
     {
         LastDiagnostics = "";
-        if (!Available && !Load()) return "Voicemeeter DLL not found.";
-        if (!LoggedIn && !Login()) return "Could not log in to Voicemeeter.";
-        if (!WaitUntilReady()) return "Voicemeeter not ready.";
+        if (!Available && !Load()) return "Audio engine DLL not found.";
+        if (!LoggedIn && !Login()) return "Could not connect to audio engine.";
+        if (!WaitUntilReady()) return "Audio engine not ready.";
 
         int count = StripCount();
         int firstVirtual = FirstVirtualStrip(count);
@@ -294,7 +340,7 @@ public sealed class VoicemeeterRemote : IDisposable
 
         for (int i = firstVirtual; i < count; i++)
         {
-            SetFloat($"Strip[{i}].A1", 1);
+            SetFloat($"Strip[{i}].A1", 0);
             SetFloat($"Strip[{i}].B1", 0);
             SetFloat($"Strip[{i}].gain", 0);
         }
@@ -327,16 +373,18 @@ public sealed class VoicemeeterRemote : IDisposable
                 if (stripGone) gone.Add($"Strip[0] '{stripDevice}'");
                 if (busGone) gone.Add($"Bus[0] '{busDevice}'");
                 LastDiagnostics = string.Join(", ", gone) +
-                    " no longer exist in Windows — cleared from SoundFX Studio; Voicemeeter will drop them after restart.";
-                return "✓ Voicemeeter reset — removed devices no longer in Windows.";
+                    " no longer exist in Windows — cleared from SoundFX Studio; audio engine will drop them after restart.";
+                HideVmWindow();
+                return "✓ Audio engine reset — removed devices no longer in Windows.";
             }
             failures.AppendLine($"read-back Strip[0]='{stripDevice}' Bus[0]='{busDevice}' (still selected)");
         }
 
         LastDiagnostics = failures.ToString();
+        HideVmWindow();
         return failures.Length == 0
-            ? "✓ Voicemeeter reset to factory (devices unselected)."
-            : "⚠ Some Voicemeeter writes failed:\n" + failures;
+            ? "✓ Audio engine reset to factory (devices unselected)."
+            : "⚠ Some audio engine writes failed:\n" + failures;
     }
 
     private List<VmDevice> WaitForOutputDevices(int timeoutMs = 10000)
@@ -365,7 +413,7 @@ public sealed class VoicemeeterRemote : IDisposable
         return GetInputDevices();
     }
 
-    private bool WaitUntilReady(int timeoutMs = 15000)
+    public bool WaitUntilReady(int timeoutMs = 15000)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < timeoutMs)
@@ -377,7 +425,7 @@ public sealed class VoicemeeterRemote : IDisposable
         return Edition() != 0;
     }
 
-    private bool TrySetBusOutputDevice(List<VmDevice> outputs, string userDevice, Action<string>? onProgress = null)
+    private bool TrySetBusOutputDevice(List<VmDevice> outputs, string userDevice)
     {
         var diag = new StringBuilder();
         var match = MatchVmDevice(outputs, userDevice);
@@ -386,56 +434,35 @@ public sealed class VoicemeeterRemote : IDisposable
         var wdm = match is not null && match.Types.Contains(3L) ? match.Name : null;
         var mmeName = mmeMatch?.Name;
 
-        bool ok = false;
+        bool ok;
         if (!string.IsNullOrEmpty(mmeName))
         {
-            for (int attempt = 0; attempt < 3; attempt++)
-            {
-                int r1 = SetString("Bus[0].device.mme", mmeName);
-                diag.AppendLine($"Bus[0].device.mme='{mmeName}' rc={r1} attempt={attempt + 1}");
-                if (r1 == 0)
-                {
-                    ok = true;
-                    diag.AppendLine("MME selected (applies async)");
-                    break;
-                }
-                onProgress?.Invoke($"MME rejected, retrying (attempt {attempt + 2}/3)…");
-                System.Threading.Thread.Sleep(800);
-            }
-            if (!ok)
-                diag.AppendLine("MME write rejected after retries");
+            int r1 = SetString("Bus[0].device.mme", mmeName);
+            diag.AppendLine($"Bus[0].device.mme='{mmeName}' rc={r1}");
+            ok = r1 == 0;
+            diag.AppendLine(ok ? "MME selected (applies async)" : "MME write rejected");
         }
         else if (!string.IsNullOrEmpty(wdm))
         {
-            for (int attempt = 0; attempt < 3; attempt++)
-            {
-                int r1 = SetString("Bus[0].device.wdm", wdm);
-                diag.AppendLine($"Bus[0].device.wdm='{wdm}' rc={r1} attempt={attempt + 1}");
-                if (r1 == 0)
-                {
-                    ok = true;
-                    diag.AppendLine("WDM selected (applies async)");
-                    break;
-                }
-                onProgress?.Invoke($"WDM rejected, retrying (attempt {attempt + 2}/3)…");
-                System.Threading.Thread.Sleep(800);
-            }
-            if (!ok)
-                diag.AppendLine("WDM write rejected after retries");
+            int r1 = SetString("Bus[0].device.wdm", wdm);
+            diag.AppendLine($"Bus[0].device.wdm='{wdm}' rc={r1}");
+            ok = r1 == 0;
+            diag.AppendLine(ok ? "WDM selected (applies async)" : "WDM write rejected");
         }
         else
         {
             diag.AppendLine("No matching device entry in Voicemeeter enumeration");
+            ok = false;
         }
 
-        System.Threading.Thread.Sleep(1500);
+        System.Threading.Thread.Sleep(1200);
         var read = GetString("Bus[0].device.name");
         diag.AppendLine($"read-back '{read}'");
         LastDiagnostics = diag.ToString();
         return ok;
     }
 
-    private bool TrySetDevice(string readParam, IEnumerable<(string Param, string Name)> attempts, Action<string>? onProgress = null)
+    private bool TrySetDevice(string readParam, IEnumerable<(string Param, string Name)> attempts)
     {
         var diag = new StringBuilder();
         bool ok = false;
@@ -447,19 +474,13 @@ public sealed class VoicemeeterRemote : IDisposable
                 continue;
             }
 
-            for (int attempt = 0; attempt < 3; attempt++)
+            int rc = SetString(param, name);
+            diag.AppendLine($"{param}='{name}' rc={rc}");
+            if (rc == 0)
             {
-                int rc = SetString(param, name);
-                diag.AppendLine($"{param}='{name}' rc={rc} attempt={attempt + 1}");
-                if (rc == 0)
-                {
-                    ok = true;
-                    break;
-                }
-                onProgress?.Invoke($"Strip device rejected, retrying (attempt {attempt + 2}/3)…");
-                System.Threading.Thread.Sleep(800);
+                ok = true;
+                break;
             }
-            if (ok) break;
         }
 
         for (int i = 0; i < 20 && ok; i++)
@@ -583,25 +604,32 @@ public sealed class VoicemeeterRemote : IDisposable
         var descFn = useOutput ? _outputDevDesc : _inputDevDesc;
         if (numFn is null || descFn is null) return result;
 
-        long count = numFn();
-        for (long i = 0; i < count; i++)
+        try
         {
-            long type = 0;
-            var name = new byte[512];
-            var hw = new byte[512];
-            if (descFn(i, ref type, name, hw) == 0)
+            long count = numFn();
+            for (long i = 0; i < count; i++)
             {
-                string s = ReadCString(name);
-                if (s.Length == 0) continue;
-                var existing = result.FirstOrDefault(d => string.Equals(d.Name, s, StringComparison.OrdinalIgnoreCase));
-                if (existing is null)
+                long type = 0;
+                var name = new byte[512];
+                var hw = new byte[512];
+                if (descFn(i, ref type, name, hw) == 0)
                 {
-                    existing = new VmDevice { Name = s };
-                    result.Add(existing);
+                    string s = ReadCString(name);
+                    if (s.Length == 0) continue;
+                    var existing = result.FirstOrDefault(d => string.Equals(d.Name, s, StringComparison.OrdinalIgnoreCase));
+                    if (existing is null)
+                    {
+                        existing = new VmDevice { Name = s };
+                        result.Add(existing);
+                    }
+                    if (!existing.Types.Contains(type))
+                        existing.Types.Add(type);
                 }
-                if (!existing.Types.Contains(type))
-                    existing.Types.Add(type);
             }
+        }
+        catch (Exception ex)
+        {
+            ActionLog.Instance.Warn("VM.API", $"EnumerateDevices crashed: {ex.Message}");
         }
         return result;
     }
@@ -641,7 +669,14 @@ public sealed class VoicemeeterRemote : IDisposable
     public float GetLevel(int type, int channel)
     {
         float v = 0f;
-        if (Available) _getLevel!(type, channel, ref v);
+        if (Available)
+        {
+            try { _getLevel!(type, channel, ref v); }
+            catch (Exception ex)
+            {
+                ActionLog.Instance.Warn("VM.API", $"GetLevel({type}, {channel}) crashed: {ex.Message}");
+            }
+        }
         return v;
     }
 
@@ -665,9 +700,17 @@ public sealed class VoicemeeterRemote : IDisposable
     public string GetString(string param)
     {
         if (!Available) return "";
-        var buf = new byte[512];
-        if (_getS!(param, buf) != 0) return "";
-        return ReadCString(buf);
+        try
+        {
+            var buf = new byte[512];
+            if (_getS!(param, buf) != 0) return "";
+            return ReadCString(buf);
+        }
+        catch (Exception ex)
+        {
+            ActionLog.Instance.Warn("VM.API", $"GetString('{param}') crashed: {ex.Message}");
+            return "";
+        }
     }
 
     public static bool IsInstalled() => FindDll() is not null;
@@ -691,7 +734,7 @@ public sealed class VoicemeeterRemote : IDisposable
 
     private static void HideVmWindow()
     {
-        foreach (var name in new[] { "voicemeeter8x64", "voicemeeter8", "voicemeeterpro", "voicemeeter" })
+        foreach (var name in new[] { "voicemeeter8x64", "voicemeeter_x64", "voicemeeter8", "voicemeeterpro", "voicemeeter" })
             foreach (var p in Process.GetProcessesByName(name))
                 if (p.MainWindowHandle != IntPtr.Zero)
                     ShowWindow(p.MainWindowHandle, SW_HIDE);
@@ -740,7 +783,7 @@ public sealed class VoicemeeterRemote : IDisposable
         foreach (var d in new[] { dir, @"C:\Program Files (x86)\VB\Voicemeeter", @"C:\Program Files\VB\Voicemeeter", @"C:\Program Files (x86)\VB-Audio\Voicemeeter", @"C:\Program Files\VB-Audio\Voicemeeter" })
         {
             if (string.IsNullOrEmpty(d)) continue;
-            foreach (var exe in new[] { "voicemeeter8x64.exe", "voicemeeter8.exe", "voicemeeterpro.exe", "voicemeeter.exe" })
+            foreach (var exe in new[] { "voicemeeter8x64.exe", "voicemeeter_x64.exe", "voicemeeter8.exe", "voicemeeterpro.exe", "voicemeeter.exe" })
             {
                 var p = Path.Combine(d, exe);
                 if (File.Exists(p)) return p;

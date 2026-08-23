@@ -62,7 +62,7 @@ public class AppSettings : ObservableObject
     private string _soundboardToggleKey = "Insert";
     private int _chordTimeoutMs = 1000;
     private int _simultaneousPressTimeoutMs = 200;
-    private bool _hotkeyHoldMode = true;
+    private bool _hotkeyHoldMode = false;
 
     // Mixer quick-mute hotkeys
     private string _muteAllKey = string.Empty;

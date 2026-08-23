@@ -71,6 +71,23 @@ public partial class MainWindow : Window
             return;
         }
 
+        try
+        {
+            ToggleVoiceChangerCore();
+        }
+        catch (Exception ex)
+        {
+            Services.ActionLog.Instance.Error("VC", $"ToggleVoiceChanger crashed: {ex}");
+            _logService?.Error("Voice changer toggle crashed.", ex);
+            ViewModel.StatusText = "Voice changer encountered an error. Please try again.";
+            VoiceChangerStatus.Text = "Error";
+            VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
+            VoiceChangerStatusDot.Background = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
+        }
+    }
+
+    private void ToggleVoiceChangerCore()
+    {
         if (_voiceChanger is { IsRunning: true })
         {
             Services.ActionLog.Instance.Action("VC", "Stop Voice Changer");
@@ -106,10 +123,11 @@ public partial class MainWindow : Window
         }
         Services.ActionLog.Instance.Info("VC", $"Mic resolved: {micId}");
 
-        if (!ViewModel.Settings.SetupCompleted)
+        if (string.IsNullOrWhiteSpace(ViewModel.Settings.HearDeviceName)
+            && string.IsNullOrWhiteSpace(ViewModel.Settings.TalkDeviceName))
         {
-            Services.ActionLog.Instance.Error("VC", "Setup not completed");
-            ViewModel.StatusText = "Not configured yet — run the Audio Setup wizard.";
+            Services.ActionLog.Instance.Error("VC", "No devices configured");
+            ViewModel.StatusText = "Run the Audio Setup wizard first.";
             VoiceChangerStatus.Text = "Not configured";
             VoiceChangerStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
             VoiceChangerStatusDot.Background = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
@@ -945,7 +963,7 @@ public partial class MainWindow : Window
             AdvancedA1ToggleBtn.IsEnabled = false;
             AdvancedVirtualB1ToggleBtn.IsEnabled = false;
             if (!AdvancedVmStatus.Text.StartsWith("✗"))
-                SetAdvancedVmStatus("✗ Voicemeeter not running or not installed", Color.FromRgb(0xE8, 0x55, 0x55));
+                SetAdvancedVmStatus("✗ Audio engine not running or not installed", Color.FromRgb(0xE8, 0x55, 0x55));
             return;
         }
 
@@ -997,7 +1015,7 @@ public partial class MainWindow : Window
             : Color.FromRgb(0xE8, 0x55, 0x55));
 
         if (AdvancedVmStatus.Text.StartsWith("✗"))
-            SetAdvancedVmStatus("Voicemeeter connected", Color.FromRgb(0x10, 0xB9, 0x81));
+            SetAdvancedVmStatus("Audio engine connected", Color.FromRgb(0x10, 0xB9, 0x81));
     }
 
     private void AdvancedB1Toggle_Checked(object sender, RoutedEventArgs e)
@@ -1009,7 +1027,7 @@ public partial class MainWindow : Window
             _suppressB1 = true;
             AdvancedB1ToggleBtn.IsChecked = false;
             _suppressB1 = false;
-            SetAdvancedB1Status("✗ Voicemeeter not running", Color.FromRgb(0xE8, 0x55, 0x55));
+            SetAdvancedB1Status("✗ Audio engine not running", Color.FromRgb(0xE8, 0x55, 0x55));
             return;
         }
         vm.SetFloat("Strip[0].B1", 1);
@@ -1025,7 +1043,7 @@ public partial class MainWindow : Window
             _suppressB1 = true;
             AdvancedB1ToggleBtn.IsChecked = true;
             _suppressB1 = false;
-            SetAdvancedB1Status("✗ Voicemeeter not running", Color.FromRgb(0xE8, 0x55, 0x55));
+            SetAdvancedB1Status("✗ Audio engine not running", Color.FromRgb(0xE8, 0x55, 0x55));
             return;
         }
         vm.SetFloat("Strip[0].B1", 0);
@@ -1049,7 +1067,7 @@ public partial class MainWindow : Window
             _suppressA1 = true;
             AdvancedA1ToggleBtn.IsChecked = false;
             _suppressA1 = false;
-            SetAdvancedA1Status("✗ Voicemeeter not running", Color.FromRgb(0xE8, 0x55, 0x55));
+            SetAdvancedA1Status("✗ Audio engine not running", Color.FromRgb(0xE8, 0x55, 0x55));
             return;
         }
         int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
@@ -1069,7 +1087,7 @@ public partial class MainWindow : Window
             _suppressA1 = true;
             AdvancedA1ToggleBtn.IsChecked = true;
             _suppressA1 = false;
-            SetAdvancedA1Status("✗ Voicemeeter not running", Color.FromRgb(0xE8, 0x55, 0x55));
+            SetAdvancedA1Status("✗ Audio engine not running", Color.FromRgb(0xE8, 0x55, 0x55));
             return;
         }
         int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
@@ -1089,7 +1107,7 @@ public partial class MainWindow : Window
             _suppressVirtualB1 = true;
             AdvancedVirtualB1ToggleBtn.IsChecked = false;
             _suppressVirtualB1 = false;
-            SetAdvancedVirtualB1Status("✗ Voicemeeter not running", Color.FromRgb(0xE8, 0x55, 0x55));
+            SetAdvancedVirtualB1Status("✗ Audio engine not running", Color.FromRgb(0xE8, 0x55, 0x55));
             return;
         }
         int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
@@ -1109,7 +1127,7 @@ public partial class MainWindow : Window
             _suppressVirtualB1 = true;
             AdvancedVirtualB1ToggleBtn.IsChecked = true;
             _suppressVirtualB1 = false;
-            SetAdvancedVirtualB1Status("✗ Voicemeeter not running", Color.FromRgb(0xE8, 0x55, 0x55));
+            SetAdvancedVirtualB1Status("✗ Audio engine not running", Color.FromRgb(0xE8, 0x55, 0x55));
             return;
         }
         int firstVirtual = vm.FirstVirtualStrip(vm.StripCount());
@@ -1125,7 +1143,7 @@ public partial class MainWindow : Window
         Services.ActionLog.Instance.Action("Advanced", "Configure VM Only clicked");
         if (!VoicemeeterRemote.IsInstalled())
         {
-            SetAdvancedVmStatus("✗ Voicemeeter not installed.", Color.FromRgb(0xE8, 0x55, 0x55));
+            SetAdvancedVmStatus("✗ Audio engine not installed.", Color.FromRgb(0xE8, 0x55, 0x55));
             return;
         }
 
@@ -1141,7 +1159,7 @@ public partial class MainWindow : Window
 
         AdvancedConfigureVmOnlyBtn.IsEnabled = false;
         AdvancedRouteInputOnlyBtn.IsEnabled = false;
-        SetAdvancedVmStatus("Configuring Voicemeeter only…", Color.FromRgb(0x98, 0xA0, 0xC0));
+        SetAdvancedVmStatus("Configuring audio…", Color.FromRgb(0x98, 0xA0, 0xC0));
         Mouse.OverrideCursor = Cursors.Wait;
 
         string result;
@@ -1165,11 +1183,11 @@ public partial class MainWindow : Window
                 config.Settings.VoicemeeterDetected = true;
                 configService.Save(config);
 
-                result = $"✓ Voicemeeter configured only:\n   Hear: {hear}\n   Talk: {talk}\n   Windows defaults unchanged.";
+                result = $"✓ Audio configured:\n   Hear: {hear}\n   Talk: {talk}\n   Windows defaults unchanged.";
             }
             else
             {
-                result = "✗ Setup failed: could not configure Voicemeeter.\n   Check Hear/Talk device names and retry.";
+                result = "✗ Setup failed: could not configure audio engine.\n   Check Hear/Talk device names and retry.";
                 if (!string.IsNullOrWhiteSpace(diagnostics))
                     result += $"\n\n{diagnostics}";
             }
@@ -1192,7 +1210,7 @@ public partial class MainWindow : Window
     {
         if (!VoicemeeterRemote.IsInstalled())
         {
-            SetAdvancedVmStatus("✗ Voicemeeter not installed.", Color.FromRgb(0xE8, 0x55, 0x55));
+            SetAdvancedVmStatus("✗ Audio engine not installed.", Color.FromRgb(0xE8, 0x55, 0x55));
             return;
         }
 
@@ -1204,7 +1222,7 @@ public partial class MainWindow : Window
         var vmOutputId = audioDeviceService.GetVoicemeeterOutputId();
         if (string.IsNullOrWhiteSpace(vmOutputId))
         {
-            SetAdvancedVmStatus("✗ VoiceMeeter Output (B1) not found.", Color.FromRgb(0xE8, 0x55, 0x55));
+            SetAdvancedVmStatus("✗ Virtual Audio Output (B1) not found.", Color.FromRgb(0xE8, 0x55, 0x55));
             return;
         }
 
@@ -1243,9 +1261,9 @@ public partial class MainWindow : Window
 
         SetAdvancedVmStatus(verified
             ? virtualB1Activated
-                ? "✓ Windows input → VoiceMeeter Output (B1). Virtual Input B1 also enabled."
-                : "✓ Windows input → VoiceMeeter Output (B1). Output device left unchanged."
-            : "⚠ Windows input → VoiceMeeter Output (B1) not confirmed. Output device left unchanged.",
+                ? "✓ Windows input → Virtual Audio Output (B1). Virtual Input B1 also enabled."
+                : "✓ Windows input → Virtual Audio Output (B1). Output device left unchanged."
+            : "⚠ Windows input → Virtual Audio Output (B1) not confirmed. Output device left unchanged.",
             verified
                 ? Color.FromRgb(0x10, 0xB9, 0x81)
                 : Color.FromRgb(0xF5, 0x9E, 0x0B));
@@ -1278,7 +1296,7 @@ public partial class MainWindow : Window
         }
 
         AdvancedResetWindowsBtn.IsEnabled = false;
-        SetAdvancedResetStatus("Resetting Voicemeeter devices…", Color.FromRgb(0x98, 0xA0, 0xC0));
+        SetAdvancedResetStatus("Resetting audio routing…", Color.FromRgb(0x98, 0xA0, 0xC0));
 
         var audioDeviceService = new AudioDeviceService();
         string vmResult;
@@ -1294,7 +1312,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            vmResult = $"✗ Voicemeeter reset failed: {ex.Message}";
+            vmResult = $"✗ Audio reset failed: {ex.Message}";
         }
 
         AdvancedResetWindowsBtn.IsEnabled = true;
@@ -1366,7 +1384,7 @@ public partial class MainWindow : Window
 
         if (capture is null || playback is null)
         {
-            SetInlineMonitorStatus("✗ VoiceMeeter B1 or playback device not found", "#F43F5E");
+            SetInlineMonitorStatus("✗ B1 or playback device not found", "#F43F5E");
             return;
         }
 

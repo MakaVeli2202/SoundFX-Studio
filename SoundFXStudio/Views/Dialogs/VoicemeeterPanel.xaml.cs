@@ -52,14 +52,14 @@ public partial class VoicemeeterPanel : Window
         if (!VoicemeeterRemote.IsInstalled())
         {
             ConnectionStateText.Text = "Unavailable";
-            StatusText.Text = "Voicemeeter isn't installed yet.";
-            OpenVmBtn.Content = "Install Voicemeeter";
+            StatusText.Text = "Audio engine isn't installed yet.";
+            OpenVmBtn.Content = "Install Audio Engine";
             return;
         }
         if (!_vm.Login())
         {
             ConnectionStateText.Text = "Not connected";
-            StatusText.Text = "Couldn't connect to Voicemeeter — click Open Voicemeeter, then reopen this.";
+            StatusText.Text = "Couldn't connect to audio engine — click Open Audio Mixer, then reopen this.";
             return;
         }
 
@@ -75,7 +75,7 @@ public partial class VoicemeeterPanel : Window
         _vuTimer.Start();
 
         ConnectionStateText.Text = "Connected";
-        StatusText.Text = "Connected to Voicemeeter";
+        StatusText.Text = "Connected to audio engine";
     }
 
     private void BuildStrips()
@@ -117,7 +117,7 @@ public partial class VoicemeeterPanel : Window
                     Children =
                     {
                         new TextBlock { Text = "No strips available", Foreground = Brushes.White, FontSize = 14, FontWeight = FontWeights.SemiBold },
-                        new TextBlock { Text = "Voicemeeter is running, but there are no available strips to display yet.", Foreground = new SolidColorBrush(Color.FromRgb(0x98, 0xA0, 0xC0)), FontSize = 12, Margin = new Thickness(0, 4, 0, 0), TextWrapping = TextWrapping.Wrap }
+                        new TextBlock { Text = "Audio engine is running, but there are no available strips to display yet.", Foreground = new SolidColorBrush(Color.FromRgb(0x98, 0xA0, 0xC0)), FontSize = 12, Margin = new Thickness(0, 4, 0, 0), TextWrapping = TextWrapping.Wrap }
                     }
                 }
             });
@@ -322,7 +322,7 @@ public partial class VoicemeeterPanel : Window
 
     private void RemoveInput1_Click(object sender, RoutedEventArgs e)
     {
-        if (!_vm.LoggedIn) { StatusText.Text = "Not connected to Voicemeeter."; return; }
+        if (!_vm.LoggedIn) { StatusText.Text = "Not connected to audio engine."; return; }
         _vm.SetString("Strip[0].device.mme", string.Empty);
         _vm.SetString("Strip[0].device.wdm", string.Empty);
         _vm.SetString("Strip[0].device.ks", string.Empty);
@@ -332,7 +332,7 @@ public partial class VoicemeeterPanel : Window
 
     private void RemoveHwOut_Click(object sender, RoutedEventArgs e)
     {
-        if (!_vm.LoggedIn) { StatusText.Text = "Not connected to Voicemeeter."; return; }
+        if (!_vm.LoggedIn) { StatusText.Text = "Not connected to audio engine."; return; }
         _vm.SetString("Bus[0].device.mme", string.Empty);
         _vm.SetString("Bus[0].device.wdm", string.Empty);
         _vm.SetString("Bus[0].device.ks", string.Empty);
@@ -343,7 +343,7 @@ public partial class VoicemeeterPanel : Window
 
     private void ResetBoth_Click(object sender, RoutedEventArgs e)
     {
-        if (!_vm.LoggedIn) { StatusText.Text = "Not connected to Voicemeeter."; return; }
+        if (!_vm.LoggedIn) { StatusText.Text = "Not connected to audio engine."; return; }
         RemoveInput1_Click(sender, e);
         RemoveHwOut_Click(sender, e);
         StatusText.Text = "Both devices unselected — nothing selected.";
@@ -354,12 +354,12 @@ public partial class VoicemeeterPanel : Window
     {
         if (!VoicemeeterRemote.IsInstalled())
         {
-            StatusText.Text = "Install Voicemeeter, then reopen.";
+            StatusText.Text = "Install the audio engine, then reopen.";
             return;
         }
         StatusText.Text = VoicemeeterRemote.LaunchHidden()
-            ? "Voicemeeter opened (hidden)."
-            : "Could not find Voicemeeter.";
+            ? "Audio engine started (hidden)."
+            : "Could not find audio engine.";
     }
 
     private void TestHear_Click(object sender, RoutedEventArgs e)

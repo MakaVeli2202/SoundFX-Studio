@@ -35,7 +35,7 @@
                         <TextBlock Text="Sound Mixer" Foreground="White" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
                         <Border Background="#1A00D4FF" CornerRadius="6" Padding="8,3" Margin="12,0,0,0"
                                 BorderBrush="#33FFFFFF" BorderThickness="1">
-                            <TextBlock Text="powered by Voicemeeter" Foreground="{StaticResource TextMutedBrush}" FontSize="9" FontWeight="Bold"/>
+                            <TextBlock Text="Audio Mixer" Foreground="{StaticResource TextMutedBrush}" FontSize="9" FontWeight="Bold"/>
                         </Border>
                     </StackPanel>
                     <controls:WindowControlBar HorizontalAlignment="Right" VerticalAlignment="Center"
@@ -225,10 +225,10 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button x:Name="TestHearBtn" Content="Hear what others hear"
                                 Height="40" MinWidth="140" Margin="0,0,10,0" Cursor="Hand"
-                                ToolTip="Listen to the exact mix your mic sends to Discord (VoiceMeeter B1)"
+                                ToolTip="Listen to the exact mix your mic sends to Discord (mic mix)"
                                 Click="TestHear_Click"
                                 Style="{StaticResource SecondaryActionButtonStyle}"/>
-                        <Button x:Name="OpenVmBtn" Content="Open Voicemeeter"
+                         <Button x:Name="OpenVmBtn" Content="Open Audio Mixer"
                                 Height="40" Cursor="Hand"
                                 Click="OpenVm_Click"
                                 Style="{StaticResource SecondaryActionButtonStyle}"/>

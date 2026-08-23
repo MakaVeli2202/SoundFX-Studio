@@ -1,6 +1,7 @@
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+using SoundFXStudio.Models;
 using SoundFXStudio.Services.DSP;
 
 namespace SoundFXStudio.Services;
@@ -29,8 +30,9 @@ public sealed class VoiceChangerService : IDisposable
     {
         Chain = new DSPChain();
         Chain.Add(new NoiseGateEffect(44100));
-        Chain.Add(new LimiterEffect(44100));
+        Chain.Add(new EqualizerEffect(44100) { IsEnabled = true });
         Chain.Add(new CompressorEffect(44100));
+        Chain.Add(new LimiterEffect(44100));
         Chain.Add(new DistortionEffect(44100));
         Chain.Add(new ReverbEffect(44100));
         Chain.Add(new RobotEffect(44100));
@@ -184,11 +186,14 @@ public sealed class VoiceChangerService : IDisposable
                 case NoiseGateEffect noiseGate:
                     noiseGate.SampleRate = sampleRate;
                     break;
-                case LimiterEffect limiter:
-                    limiter.SampleRate = sampleRate;
+                case EqualizerEffect eq:
+                    eq.SampleRate = sampleRate;
                     break;
                 case CompressorEffect compressor:
                     compressor.SampleRate = sampleRate;
+                    break;
+                case LimiterEffect limiter:
+                    limiter.SampleRate = sampleRate;
                     break;
                 case DistortionEffect distortion:
                     distortion.SampleRate = sampleRate;

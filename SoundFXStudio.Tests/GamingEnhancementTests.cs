@@ -313,7 +313,7 @@ public class GamingEnhancementTests
     {
         var vcService = new VoiceChangerService();
 
-        Assert.Null(vcService.Chain.Get<EqualizerEffect>());
+        Assert.NotNull(vcService.Chain.Get<EqualizerEffect>());
     }
 
     [Fact]
@@ -482,11 +482,11 @@ public class GamingEnhancementTests
     // ── VoiceChangerService isolation tests ──────────────────────────────────
 
     [Fact]
-    public void VoiceChangerService_HasNoEqualizerInChain()
+    public void VoiceChangerService_HasEqualizerInChain()
     {
         var service = new VoiceChangerService();
 
-        Assert.Null(service.Chain.Get<EqualizerEffect>());
+        Assert.NotNull(service.Chain.Get<EqualizerEffect>());
     }
 
     [Fact]
@@ -499,8 +499,9 @@ public class GamingEnhancementTests
         gamingService.Apply(GamingProfilePresets.GetById("competitive-fps"));
         gamingService.Bypass();
 
-        Assert.Equal(7, vcService.Chain.Effects.Count);
+        Assert.Equal(8, vcService.Chain.Effects.Count);
         Assert.NotNull(vcService.Chain.Get<NoiseGateEffect>());
+        Assert.NotNull(vcService.Chain.Get<EqualizerEffect>());
         Assert.NotNull(vcService.Chain.Get<LimiterEffect>());
         Assert.NotNull(vcService.Chain.Get<CompressorEffect>());
         Assert.NotNull(vcService.Chain.Get<DistortionEffect>());

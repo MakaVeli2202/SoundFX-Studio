@@ -59,13 +59,13 @@ public partial class TeamMonitorWindow : Window
         {
             StartBtn.IsEnabled = false;
             MonitorStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
-            MonitorStatus.Text = "✗ VoiceMeeter setup hasn't been run yet.\nClose this window, run Setup, then reopen.";
+            MonitorStatus.Text = "✗ Setup hasn't been run yet.\nClose this window, run Setup, then reopen.";
         }
         else if (!isB1Source)
         {
             StartBtn.IsEnabled = false;
             MonitorStatus.Foreground = new SolidColorBrush(Color.FromRgb(0xF4, 0x3F, 0x5E));
-            MonitorStatus.Text = "✗ VoiceMeeter B1 monitor source not found.\nInstall/launch Voicemeeter, run Setup, then reopen.";
+            MonitorStatus.Text = "✗ B1 monitor source not found.\nRun Setup first, then reopen.";
         }
         else
         {

@@ -14,13 +14,13 @@ public class VoiceChangerPreset
 
     public bool NoiseGateEnabled { get; set; } = true;
 
-    public float NoiseGateThresholdDb { get; set; } = -45f;
+    public float NoiseGateThresholdDb { get; set; } = -40f;
 
-    public bool CompressorEnabled { get; set; }
+    public bool CompressorEnabled { get; set; } = true;
 
-    public float CompressorThresholdDb { get; set; } = -20f;
+    public float CompressorThresholdDb { get; set; } = -18f;
 
-    public float CompressorRatio { get; set; } = 4f;
+    public float CompressorRatio { get; set; } = 3f;
 
     public bool LimiterEnabled { get; set; } = true;
 
@@ -41,4 +41,16 @@ public class VoiceChangerPreset
     public bool ChorusEnabled { get; set; }
 
     public float ChorusMix { get; set; } = 0.4f;
+
+    public bool ClarityEnabled { get; set; } = true;
+
+    public double ClarityHpfHz { get; set; } = 80;
+
+    public double ClarityPresenceDb { get; set; } = 3.0;
+
+    public double ClarityPresenceHz { get; set; } = 3000;
+
+    public double ClarityAirDb { get; set; } = 2.0;
+
+    public double ClarityAirHz { get; set; } = 8000;
 }

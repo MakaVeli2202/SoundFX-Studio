@@ -151,11 +151,11 @@ public partial class SetupWizardWindow : Window
 
         Services.ActionLog.Instance.Action("Wizard", $"AutoSetup: hear='{hear.Name}', talk='{talk.Name}'");
 
-        if (!VoicemeeterRemote.IsInstalled()) { VmSetupStatus.Text = "✗ Voicemeeter not installed."; return; }
+        if (!VoicemeeterRemote.IsInstalled()) { VmSetupStatus.Text = "✗ Audio engine not installed."; return; }
 
         WizardAutoSetupBtn.IsEnabled = false;
 
-        var overlay = new ProgressOverlayWindow("Auto Setup") { Owner = this };
+        var overlay = new ProgressOverlayWindow("Setting up") { Owner = this };
         overlay.Show();
 
         string result = string.Empty;
@@ -163,9 +163,9 @@ public partial class SetupWizardWindow : Window
         {
             var (applied, diagnostics) = await Task.Run(() =>
             {
-                overlay.UpdateStep("Connecting to Voicemeeter…");
+                overlay.UpdateStep("Connecting to audio engine…");
                 using var vm = new VoicemeeterRemote();
-                if (!vm.Login()) return (false, "Login failed.");
+                if (!vm.Login()) return (false, "Could not connect.");
                 bool ok = vm.ApplyRouting(hear.Name, talk.Name, step => overlay.UpdateStep(step));
                 string diag = vm.LastDiagnostics;
                 vm.Dispose();
@@ -174,7 +174,7 @@ public partial class SetupWizardWindow : Window
 
             if (applied)
             {
-                overlay.UpdateStep("Routing Windows input…");
+                overlay.UpdateStep("Wiring Windows input…");
                 _config.Settings.HearDeviceName = hear.Name;
                 _config.Settings.TalkDeviceName = talk.Name;
                 _config.Settings.SpeakersDeviceName = hear.Name;
@@ -183,7 +183,7 @@ public partial class SetupWizardWindow : Window
                 var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
                 if (string.IsNullOrWhiteSpace(vmOutputId))
                 {
-                    result = $"✓ Voicemeeter configured:\n   Hear: {hear.Name}\n   Talk: {talk.Name}\n   ⚠  VoiceMeeter Output (B1) not found — Windows input not routed";
+                    result = $"✓ Channels configured:\n   Output: {hear.Name}\n   Mic: {talk.Name}\n   ⚠  Windows input not routed — virtual output not found";
                 }
                 else
                 {
@@ -194,6 +194,12 @@ public partial class SetupWizardWindow : Window
                         _config.Settings.SavedDefaultCaptureId = currentCapture;
                     }
 
+                    var currentRender = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
+                    if (!string.IsNullOrWhiteSpace(currentRender))
+                    {
+                        _config.Settings.SavedDefaultRenderId = currentRender;
+                    }
+
                     var inputApplied = _windowsAudioRoutingService.TrySetDefaultInput(vmOutputId);
                     var reboundInput = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
                     var verified = inputApplied && string.Equals(reboundInput, vmOutputId, StringComparison.OrdinalIgnoreCase);
@@ -201,22 +207,22 @@ public partial class SetupWizardWindow : Window
                     _config.Settings.InputDeviceId = vmOutputId;
                     _config.Settings.MicrophoneDeviceId = vmOutputId;
 
-                    result = $"✓ Voicemeeter configured:\n   Hear: {hear.Name}\n   Talk: {talk.Name}\n   " +
+                    result = $"✓ Channels configured:\n   Output: {hear.Name}\n   Mic: {talk.Name}\n   " +
                         (verified
-                            ? "✓ Windows input → VoiceMeeter Output (B1)"
-                            : "⚠  Windows input → VoiceMeeter Output (B1) not confirmed");
+                            ? "✓ Windows input wired"
+                            : "⚠  Windows input wiring unconfirmed");
                 }
 
             try { _configService.Save(_config); } catch { }
-                overlay.Complete("Everything ready — have fun!");
+                overlay.Complete("Ready to play!");
                 ToastWindow.ShowDiscordStudioTip();
             }
             else
             {
-                result = "✗ Setup failed: could not configure Voicemeeter.\n   Check Hear/Talk device names and retry.";
+                result = "✗ Setup failed — check your devices and retry.";
                 if (!string.IsNullOrWhiteSpace(diagnostics))
                     result += $"\n\n{diagnostics}";
-                overlay.Complete("Setup failed — check the status below.");
+                overlay.Complete("Setup failed — check status.");
             }
         }
         catch (Exception ex)
@@ -237,22 +243,29 @@ public partial class SetupWizardWindow : Window
 
     private async void WizardResetWindows_Click(object sender, RoutedEventArgs e)
     {
-        WizardStatusText.Text = "Resetting Voicemeeter devices…";
+        WizardStatusText.Text = "Resetting channels…";
         WizardStatusText.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x98, 0xA0, 0xC0));
         WizardResetWindowsBtn.IsEnabled = false;
 
-        string windowsResult = "Windows input device unchanged.";
-        if (!string.IsNullOrWhiteSpace(_config.Settings.SavedDefaultCaptureId))
+        string windowsResult = "";
+        var previousRender = _config.Settings.SavedDefaultRenderId;
+        var previousCapture = _config.Settings.SavedDefaultCaptureId;
+
+        if (!string.IsNullOrWhiteSpace(previousRender) || !string.IsNullOrWhiteSpace(previousCapture))
         {
-            bool restored = _windowsAudioRoutingService.TrySetDefaultInput(_config.Settings.SavedDefaultCaptureId);
+            bool restored = _windowsAudioRoutingService.TrySetDefaultDevices(previousRender ?? "", previousCapture ?? "");
             windowsResult = restored
-                ? "✓ Windows input restored to previous device"
-                : "⚠ Could not restore Windows input device — kept for retry";
+                ? "✓ Windows defaults restored"
+                : "⚠  Could not restore Windows defaults";
             if (restored)
             {
+                _config.Settings.SavedDefaultRenderId = string.Empty;
                 _config.Settings.SavedDefaultCaptureId = string.Empty;
             }
-            _configService.Save(_config);
+        }
+        else
+        {
+            windowsResult = "No saved Windows defaults to restore";
         }
 
         string vmResult;
@@ -268,12 +281,18 @@ public partial class SetupWizardWindow : Window
         }
         catch (Exception ex)
         {
-            vmResult = $"✗ Voicemeeter reset failed: {ex.Message}";
+            vmResult = $"✗ Reset failed: {ex.Message}";
         }
 
+        _config.Settings.HearDeviceName = string.Empty;
+        _config.Settings.TalkDeviceName = string.Empty;
+        _config.Settings.VoicemeeterDetected = false;
+        try { _configService.Save(_config); } catch { }
+
         WizardResetWindowsBtn.IsEnabled = true;
-        WizardStatusText.Text = $"{windowsResult}\n{vmResult}";
-        WizardStatusText.Foreground = new System.Windows.Media.SolidColorBrush(vmResult.StartsWith("✓")
+        WizardStatusText.Text = $"{vmResult}\n{windowsResult}";
+        WizardStatusText.Foreground = new System.Windows.Media.SolidColorBrush(
+            vmResult.StartsWith("✓") && windowsResult.StartsWith("✓")
             ? System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)
             : System.Windows.Media.Color.FromRgb(0xE8, 0x55, 0x55));
     }
@@ -287,7 +306,15 @@ public partial class SetupWizardWindow : Window
         _config.Settings.SetupCompleted = true;
         _config.Settings.LastConfigurationDate = DateTime.UtcNow;
 
-        try { _configService.Save(_config); } catch { }
+        try
+        {
+            _configService.Save(_config);
+            Services.ActionLog.Instance.Info("Wizard", $"Finish: SetupCompleted=true saved to disk");
+        }
+        catch (Exception ex)
+        {
+            Services.ActionLog.Instance.Error("Wizard", $"Finish: Save failed: {ex.Message}");
+        }
 
         DialogResult = true;
     }

@@ -1608,7 +1608,7 @@
                                                           IsChecked="{Binding Settings.StartMinimized, Mode=TwoWay}"
                                                           Foreground="#DDEAFF" FontSize="12"/>
                                                 <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"
-                                                           Text="Voicemeeter hear/talk selection, routing and reset live in the Setup Wizard."/>
+                                                           Text="Device selection, routing and reset live in the Setup Wizard."/>
                                             </StackPanel>
                                         </Border>
 
@@ -1660,7 +1660,7 @@
                                                 <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
                                                     <TextBlock Text="AUDIO SETUP" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,3"/>
                                                     <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap"
-                                                               Text="Set hear/talk devices, route apps through Voicemeeter, or reset routing."/>
+                                                               Text="Set hear/talk devices, route audio, or reset routing."/>
                                                 </StackPanel>
                                                 <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" ItemHeight="34">
                                                     <Button x:Name="TeamMonitorBtn" Content="Hear What People Hear"
@@ -1709,7 +1709,7 @@
                                                 <StackPanel>
                                                     <TextBlock Text="MICROPHONE (VOICE INPUT)" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
                                                     <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,6"
-                                                               Text="Where your voice comes from (VoiceMeeter B1 when routed)."/>
+                                                               Text="Where your voice comes from (mic mix when routed)."/>
                                                     <ComboBox x:Name="MicrophoneComboBox" Height="28" DisplayMemberPath="Name"
                                                               Background="#122036" BorderBrush="#334A647F" Foreground="White" FontSize="12"
                                                               BorderThickness="1" Padding="6,1"/>
@@ -1906,7 +1906,7 @@
                                             <StackPanel>
                                                 <TextBlock Text="ROUTING" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,10"/>
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                                    <Button Content="Configure Voicemeeter Only"
+                                                     <Button Content="Configure Audio Only"
                                                             Click="AdvancedConfigureVmOnly_Click"
                                                             Style="{StaticResource SettingsButton}"
                                                             Width="190"/>
@@ -1986,14 +1986,14 @@
                                         <TextBlock Text="ADVANCED" Foreground="#00D4FF" FontSize="16" FontWeight="Bold"
                                                    Margin="0,0,0,4"/>
                                         <TextBlock Foreground="#7F899C" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,16"
-                                                   Text="Voicemeeter routing and advanced options."/>
+                                                   Text="Audio engine routing and advanced options."/>
 
                                         <Border Background="#B4141E2D" BorderBrush="#334A647F" BorderThickness="1"
                                             CornerRadius="12" Padding="18,16" Margin="0,14,0,0">
                                             <StackPanel>
                                                 <TextBlock Text="VOICEMEETER ROUTING" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
                                                 <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,10"
-                                                           Text="Live control of Voicemeeter strips — same switches the setup wizard used to offer."/>
+                                                           Text="Live control of audio strips — same switches the setup wizard used to offer."/>
 
                                                 <Border Background="#4A141E2D" CornerRadius="10" Padding="12,10" Margin="0,0,0,10"
                                                         BorderBrush="#334A647F" BorderThickness="1">
@@ -2052,7 +2052,7 @@
                                                                           Height="34"
                                                                           Background="#222A2A66" BorderBrush="#10B981"
                                                                           Foreground="#A7F3D0" Cursor="Hand" FontWeight="SemiBold" FontSize="12"
-                                                                          ToolTip="Routes the Voicemeeter virtual input to A1 — what you hear through your speakers/headphones">
+                                                                           ToolTip="Routes audio to your speakers/headphones">
                                                                 <ToggleButton.Template>
                                                                     <ControlTemplate TargetType="ToggleButton">
                                                                         <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
@@ -2095,7 +2095,7 @@
                                                                           Height="34"
                                                                           Background="#222A2A66" BorderBrush="#10B981"
                                                                           Foreground="#A7F3D0" Cursor="Hand" FontWeight="SemiBold" FontSize="12"
-                                                                          ToolTip="Routes the Voicemeeter virtual input to B1 — what teammates hear in Discord/teams">
+                                                                           ToolTip="Routes audio to your teammates — what they hear in Discord/teams">
                                                                 <ToggleButton.Template>
                                                                     <ControlTemplate TargetType="ToggleButton">
                                                                         <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
@@ -2126,7 +2126,7 @@
 
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                                     <Button x:Name="AdvancedConfigureVmOnlyBtn"
-                                                            Content="Configure Voicemeeter Only"
+                                                             Content="Configure Audio Only"
                                                             Click="AdvancedConfigureVmOnly_Click"
                                                             Height="34"
                                                             Background="#222A2A66" BorderBrush="#10B981"
@@ -2183,7 +2183,7 @@
                                                         Height="34"
                                                         Background="#22112233" BorderBrush="#10B981"
                                                         Foreground="#A7F3D0" Cursor="Hand" FontSize="12"
-                                                        ToolTip="Listen to the exact mix your mic sends to Discord (VoiceMeeter B1)">
+                                                         ToolTip="Listen to the exact mix your mic sends to Discord (mic mix)">
                                                     <Button.Template>
                                                         <ControlTemplate TargetType="Button">
                                                             <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
@@ -2207,7 +2207,7 @@
                                                         Height="34"
                                                         Background="#222A2A66" BorderBrush="#F43F5E"
                                                         Foreground="White" Cursor="Hand" FontSize="12"
-                                                        ToolTip="Restore Windows sound devices and reset Voicemeeter routing">
+                                                         ToolTip="Restore Windows sound devices and reset audio routing">
                                                     <Button.Template>
                                                         <ControlTemplate TargetType="Button">
                                                             <Border x:Name="Bd" CornerRadius="8" Background="{TemplateBinding Background}"
@@ -2227,7 +2227,7 @@
                                                     </Button.Template>
                                                 </Button>
 
-                                                <TextBlock x:Name="AdvancedVmStatus" Text="Voicemeeter not checked"
+                                                 <TextBlock x:Name="AdvancedVmStatus" Text="Audio engine not checked"
                                                            Foreground="#8891B8" FontSize="12" TextWrapping="Wrap"/>
                                                 <TextBlock x:Name="AdvancedResetStatus" Text=""
                                                            Foreground="#8891B8" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"/>

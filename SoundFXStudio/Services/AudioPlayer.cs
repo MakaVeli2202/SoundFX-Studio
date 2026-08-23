@@ -49,7 +49,13 @@ public sealed class AudioPlayer : IDisposable
                 _logService?.Info($"Playback Stopped: {soundId}");
             }
 
-            App.EnsureVirtualInputB1();
+            var vmRunning = App.EnsureVirtualInputB1();
+
+            if (!vmRunning && outputDeviceNumber >= 0)
+            {
+                _logService?.Info($"VM not running – falling back to default device for {Path.GetFileName(filePath)}");
+                outputDeviceNumber = -1;
+            }
 
             var reader = new AudioFileReader(filePath)
             {

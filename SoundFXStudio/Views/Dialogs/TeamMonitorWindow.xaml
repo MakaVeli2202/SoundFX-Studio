@@ -42,7 +42,7 @@
 
             <!-- Body -->
                 <StackPanel Grid.Row="1" Margin="24,22,24,10">
-                <TextBlock Text="This plays back the EXACT mix your mic sends to Discord (VoiceMeeter B1) — your voice + all your soundboard/app audio — through your speakers or headphones."
+                <TextBlock Text="This plays back the EXACT mix your mic sends to Discord (mic mix) — your voice + all your soundboard/app audio — through your speakers or headphones."
                            Foreground="#C7CEEA" FontSize="12.5" TextWrapping="Wrap" LineHeight="20"/>
 
                     <Border Background="#1400D4FF" CornerRadius="10" Padding="12,9" Margin="0,12,0,0" BorderBrush="#3300D4FF" BorderThickness="1">
@@ -56,7 +56,7 @@
                           Foreground="White" FontSize="12"
                           SelectionChanged="ModeCombo_SelectionChanged"/>
 
-                <TextBlock Text="Monitor from (mic mix — VoiceMeeter B1)" Foreground="#8891B8" FontSize="11" FontWeight="Bold" Margin="0,14,0,4"/>
+                <TextBlock Text="Monitor from (mic mix)" Foreground="#8891B8" FontSize="11" FontWeight="Bold" Margin="0,14,0,4"/>
                 <ComboBox x:Name="CaptureCombo" Height="32" DisplayMemberPath="Name"
                           Background="#44111A2E" BorderBrush="#5A00D4FF" Foreground="White" FontSize="12"/>
 

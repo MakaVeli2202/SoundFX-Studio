@@ -100,7 +100,7 @@ public sealed class GameAudioService : IDisposable
 
             if (outputDeviceIndex < 0)
                 throw new InvalidOperationException(
-                    "Voicemeeter Input device not found. Make sure Voicemeeter is running and has the 'VoiceMeeter Input' virtual device enabled.");
+                    "Virtual audio input device not found. Make sure the audio engine is running and enabled.");
 
             _targetProcessId = processId;
         }

@@ -36,7 +36,7 @@ public sealed class MainViewModel : ObservableObject
     private readonly TriggerService _triggerService;
     private readonly SoundLibraryViewModel _soundLibraryViewModel;
     private readonly KeyboardViewModel _keyboardViewModel;
-    private readonly GamingViewModel _gamingViewModel;
+    private GamingViewModel _gamingViewModel = default!;
     private AppConfig _config = new();
 
     public event Action? VoiceChangerToggleRequested;
@@ -165,11 +165,6 @@ public sealed class MainViewModel : ObservableObject
 
         _keyboardViewModel.AttachChordRuntimeService(_triggerService.ChordRuntimeService);
 
-        _gamingViewModel = new GamingViewModel(
-            () => Save(),
-            status => StatusText = status,
-            Settings);
-
         AddSoundCommand = new RelayCommand(_ => _soundLibraryViewModel.AddSound());
         EqualizeSoundsCommand = new AsyncRelayCommand(_ => _soundLibraryViewModel.EqualizeSoundsAsync(100));
         AddMultipleSoundsCommand = new RelayCommand(_ => _soundLibraryViewModel.AddMultipleSounds());
@@ -207,6 +202,10 @@ public sealed class MainViewModel : ObservableObject
         ClearSelectedSoundBindingCommand = new RelayCommand(_ => ClearSelectedSoundBinding(), _ => SelectedSound is not null);
         SetSoundHotkeyCommand = new RelayCommand(parameter => SetSoundHotkey(parameter), parameter => ResolveSound(parameter) is not null);
         Load();
+        _gamingViewModel = new GamingViewModel(
+            () => Save(),
+            status => StatusText = status,
+            Settings);
         ReconcileWindowsDefaultsOnStartup();
         InitializeKeybindings();
         UpdateTitle();
@@ -1024,6 +1023,15 @@ public sealed class MainViewModel : ObservableObject
                 return false;
             }
 
+            Services.ActionLog.Instance.Info("VC.Routing", "Waiting for Voicemeeter audio engine…");
+            if (!vm.WaitUntilReady(15000))
+            {
+                _logService?.Warning("Voice changer routing failed: Voicemeeter audio engine not ready.");
+                error = "Couldn't start the voice changer. Voicemeeter is not responding. Try restarting it.";
+                Services.ActionLog.Instance.Error("VC.Routing", "WaitUntilReady timed out");
+                return false;
+            }
+
             var stripCount = vm.StripCount();
             var firstVirtual = vm.FirstVirtualStrip(stripCount);
             Services.ActionLog.Instance.Info("VC.Routing", $"VM connected: stripCount={stripCount}, firstVirtual={firstVirtual}");
@@ -1170,29 +1178,29 @@ public sealed class MainViewModel : ObservableObject
 
             var micB1Param = $"Strip[{snapshot.StripIndex}].B1";
             var currentB1 = vm.GetFloat(micB1Param);
-            var restoreResult = TrySetFloatVerified(vm, micB1Param, snapshot.PreviousB1, out var restoredB1);
+            var restoreB1Result = TrySetFloatVerified(vm, micB1Param, 1f, out var restoredB1);
 
-            if (!restoreResult)
+            if (!restoreB1Result)
             {
-                _logService?.Warning($"Voice changer routing restore failed: strip {snapshot.StripIndex} B1 restore mismatch (target={snapshot.PreviousB1:0.##}, readBack={restoredB1:0.##}).");
-                error = "Voice changer stopped — audio routing couldn't be restored.";
-                return false;
-            }
-
-            var processedB1Param = $"Strip[{snapshot.ProcessedStripIndex}].B1";
-            var restoreProcessedB1Result = TrySetFloatVerified(vm, processedB1Param, snapshot.PreviousProcessedB1, out var restoredProcessedB1);
-            if (!restoreProcessedB1Result)
-            {
-                _logService?.Warning($"Voice changer routing restore failed: processed strip {snapshot.ProcessedStripIndex} B1 restore mismatch (target={snapshot.PreviousProcessedB1:0.##}, readBack={restoredProcessedB1:0.##}).");
+                _logService?.Warning($"Voice changer routing restore failed: strip {snapshot.StripIndex} B1 restore mismatch (target=1, readBack={restoredB1:0.##}).");
                 error = "Voice changer stopped — audio routing couldn't be restored.";
                 return false;
             }
 
             var micA1Param = $"Strip[{snapshot.StripIndex}].A1";
-            var restoreMicA1Result = TrySetFloatVerified(vm, micA1Param, snapshot.PreviousMicA1, out var restoredMicA1);
+            var restoreMicA1Result = TrySetFloatVerified(vm, micA1Param, 0f, out var restoredMicA1);
             if (!restoreMicA1Result)
             {
-                _logService?.Warning($"Voice changer routing restore failed: input strip {snapshot.StripIndex} A1 restore mismatch (target={snapshot.PreviousMicA1:0.##}, readBack={restoredMicA1:0.##}).");
+                _logService?.Warning($"Voice changer routing restore failed: input strip {snapshot.StripIndex} A1 restore mismatch (target=0, readBack={restoredMicA1:0.##}).");
+                error = "Voice changer stopped — audio routing couldn't be restored.";
+                return false;
+            }
+
+            var processedB1Param = $"Strip[{snapshot.ProcessedStripIndex}].B1";
+            var restoreProcessedB1Result = TrySetFloatVerified(vm, processedB1Param, 1f, out var restoredProcessedB1);
+            if (!restoreProcessedB1Result)
+            {
+                _logService?.Warning($"Voice changer routing restore failed: processed strip {snapshot.ProcessedStripIndex} B1 restore mismatch (target=1, readBack={restoredProcessedB1:0.##}).");
                 error = "Voice changer stopped — audio routing couldn't be restored.";
                 return false;
             }
@@ -3191,13 +3199,13 @@ public sealed class MainViewModel : ObservableObject
         return await Task.Run(() =>
         {
             if (!VoicemeeterService.IsVoicemeeterInstalled())
-                return "✗  Voicemeeter isn't installed yet.";
+                return "✗  Audio engine isn't installed yet.";
 
             try
             {
                 using var vm = new VoicemeeterRemote();
                 if (!vm.Login())
-                    return "✗  Could not start Voicemeeter.";
+                    return "✗  Could not connect to audio engine.";
 
                 bool applied = vm.ApplyRouting(hearDevice.Name, talkDevice.Name,
                     step => System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => StatusText = step));
@@ -3206,7 +3214,7 @@ public sealed class MainViewModel : ObservableObject
 
                 if (!applied)
                 {
-                    var msg = $"✗  Could not select devices in Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
+                    var msg = $"✗  Could not configure channels:\n   Output: {hearDevice.Name}\n   Mic: {talkDevice.Name}";
                     if (diagnostics is not null)
                         msg += $"\n\n{diagnostics}";
                     return msg;
@@ -3256,33 +3264,33 @@ public sealed class MainViewModel : ObservableObject
 
                 Save();
 
-                var result = $"✓  Configured for Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
+                var result = $"✓  Audio configured:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
 
                 if (haveRender)
                 {
                     if (outputApplied)
-                        result += "\n   ✓ App output + Windows playback → VoiceMeeter Input";
+                        result += "\n   ✓ App output + Windows playback → Virtual Audio Input";
                     else
-                        result += $"\n   ⚠  Could not set Windows playback → VoiceMeeter Input ({renderError ?? "set failed"})";
+                        result += $"\n   ⚠  Could not set Windows playback → Virtual Audio Input ({renderError ?? "set failed"})";
                 }
                 else
                 {
-                    result += "\n   ⚠  VoiceMeeter Input device not found — playback not routed";
+                    result += "\n   ⚠  Virtual Audio Input device not found — playback not routed";
                 }
 
                 if (haveCapture)
                 {
                     var rb = inputApplied ? _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture) : null;
                     if (inputApplied && string.Equals(rb, vmOutputId, StringComparison.OrdinalIgnoreCase))
-                        result += "\n   ✓ Mic + Windows input → VoiceMeeter Output (B1)";
+                        result += "\n   ✓ Mic + Windows input → Virtual Audio Output (B1)";
                     else if (inputApplied)
-                        result += $"\n   ⚠  Input default is '{rb}' — VoiceMeeter Output (B1) not applied ({captureError ?? "none"})";
+                        result += $"\n   ⚠  Input default is '{rb}' — Virtual Audio Output (B1) not applied ({captureError ?? "none"})";
                     else
-                        result += $"\n   ⚠  Could not set Windows input → VoiceMeeter Output (B1) ({captureError ?? "set failed"})";
+                        result += $"\n   ⚠  Could not set Windows input → Virtual Audio Output (B1) ({captureError ?? "set failed"})";
                 }
                 else
                 {
-                    result += "\n   ⚠  VoiceMeeter Output (B1) device not found — input not routed";
+                    result += "\n   ⚠  Virtual Audio Output (B1) device not found — input not routed";
                 }
 
                 return result;
@@ -3312,18 +3320,18 @@ public sealed class MainViewModel : ObservableObject
         var previousRender = Settings.SavedDefaultRenderId;
         var previousCapture = Settings.SavedDefaultCaptureId;
 
-        reportStep?.Invoke("Resetting Voicemeeter…");
+        reportStep?.Invoke("Resetting audio routing…");
         string vmResult = await Task.Run(() =>
         {
             if (!VoicemeeterService.IsVoicemeeterInstalled())
             {
-                return "⚠  Voicemeeter not installed — devices were NOT cleared.";
+                return "⚠  Audio engine not installed — devices were NOT cleared.";
             }
 
             using var vm = new VoicemeeterRemote();
             if (!vm.Login())
             {
-                return "⚠  Could not log in to Voicemeeter — devices were NOT cleared.";
+                return "⚠  Could not connect to audio engine — devices were NOT cleared.";
             }
 
             return vm.ResetRouting();
@@ -3495,6 +3503,8 @@ public sealed class MainViewModel : ObservableObject
 
     internal void Save()
     {
+        if (_isLoading) return;
+
         _config.Sounds = new ObservableCollection<SoundEntry>(Sounds);
         _config.Profiles = new ObservableCollection<Profile>(Profiles);
         _config.Categories = new ObservableCollection<Category>(

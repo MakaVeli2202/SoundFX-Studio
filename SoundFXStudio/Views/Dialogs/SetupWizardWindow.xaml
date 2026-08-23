@@ -180,7 +180,7 @@
                                 <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="1" Opacity="0.8"/>
                             </TextBlock.Effect>
                         </TextBlock>
-                        <TextBlock Text="Three quick steps and you're live." Margin="0,3,0,0" Foreground="#BCD0EC" FontSize="12"/>
+                        <TextBlock Text="Pick your devices, hit configure, you're good to go." Margin="0,3,0,0" Foreground="#BCD0EC" FontSize="12"/>
                     </StackPanel>
 
                     <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Orientation="Horizontal">
@@ -214,7 +214,7 @@
                                     </Border>
                                     <TextBlock Text="CHOOSE DEVICES" Margin="0,8,0,0" Foreground="White" FontSize="12.5"
                                                FontWeight="Bold" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="Pick your output &amp; mic" Margin="0,3,0,0" Foreground="{StaticResource MutedBrush}"
+                                    <TextBlock Text="Your speakers &amp; mic" Margin="0,3,0,0" Foreground="{StaticResource MutedBrush}"
                                                FontSize="10.5" HorizontalAlignment="Center"/>
                                 </StackPanel>
 
@@ -240,7 +240,7 @@
                                     </Border>
                                     <TextBlock Text="AUTO CONFIGURE" Margin="0,8,0,0" Foreground="White" FontSize="12.5"
                                                FontWeight="Bold" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="We route your voice" Margin="0,3,0,0" Foreground="{StaticResource MutedBrush}"
+                                    <TextBlock Text="One click to wire everything up" Margin="0,3,0,0" Foreground="{StaticResource MutedBrush}"
                                                FontSize="10.5" HorizontalAlignment="Center"/>
                                 </StackPanel>
 
@@ -266,7 +266,7 @@
                                     </Border>
                                     <TextBlock Text="READY TO PLAY" Margin="0,8,0,0" Foreground="White" FontSize="12.5"
                                                FontWeight="Bold" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="Your soundboard is live" Margin="0,3,0,0" Foreground="{StaticResource MutedBrush}"
+                                    <TextBlock Text="You're all set" Margin="0,3,0,0" Foreground="{StaticResource MutedBrush}"
                                                FontSize="10.5" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Grid>
@@ -285,7 +285,7 @@
                                             <TextBlock Text="OUT" Foreground="#BFF4FF" FontFamily="Consolas" FontWeight="Bold" FontSize="10.5"/>
                                         </Border>
                                         <TextBlock Text="OUTPUT DEVICE" Margin="0,7,0,0" Foreground="White" FontSize="13.5" FontWeight="Bold"/>
-                                        <TextBlock Text="Choose what you hear through." Margin="0,2,0,7" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
+                                        <TextBlock Text="What you hear game audio through." Margin="0,2,0,7" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
                                         <ComboBox x:Name="WizardHearCombo"
                                                   DisplayMemberPath="Name"
                                                   FontSize="12"/>
@@ -299,7 +299,7 @@
                                             <TextBlock Text="MIC" Foreground="#E0D2FF" FontFamily="Consolas" FontWeight="Bold" FontSize="10.5"/>
                                         </Border>
                                         <TextBlock Text="INPUT DEVICE" Margin="0,7,0,0" Foreground="White" FontSize="13.5" FontWeight="Bold"/>
-                                        <TextBlock Text="Choose what you talk through." Margin="0,2,0,7" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
+                                        <TextBlock Text="Your microphone." Margin="0,2,0,7" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
                                         <ComboBox x:Name="WizardTalkCombo"
                                                   DisplayMemberPath="Name"
                                                   FontSize="12"/>
@@ -310,8 +310,8 @@
                             <!-- Auto configure group box -->
                             <Border Style="{StaticResource InnerCard}" Margin="0,16,0,0" Padding="18,14">
                                 <StackPanel>
-                                    <TextBlock Text="AUTO CONFIGURE AUDIO ROUTING" Foreground="White" FontSize="15" FontWeight="Bold"/>
-                                    <TextBlock Text="SoundFX Studio can automatically configure Voicemeeter and Windows routing."
+                                    <TextBlock Text="AUTO CONFIGURE" Foreground="White" FontSize="15" FontWeight="Bold"/>
+                                    <TextBlock Text="One click to wire your mic and speakers. No manual setup needed."
                                                Margin="0,5,0,12" Foreground="{StaticResource MutedBrush}" FontSize="11.5" TextWrapping="Wrap"/>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <Button x:Name="WizardAutoSetupBtn"
@@ -382,7 +382,7 @@
 
                         <CheckBox x:Name="DontShowAgainCheckBox"
                                   VerticalAlignment="Center"
-                                  Content="Don't show this setup again"
+                                  Content="Skip setup next time"
                                   Foreground="#DDEAFF"
                                   FontSize="12"/>
 
@@ -396,7 +396,7 @@
                                     Width="200"
                                     Margin="12,0,0,0"
                                     Click="Finish_Click"
-                                    Content="ENTER SOUNDFX"/>
+                                    Content="LET'S GO"/>
                         </StackPanel>
                     </Grid>
                 </Border>

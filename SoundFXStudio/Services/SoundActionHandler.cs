@@ -40,7 +40,6 @@ public sealed class SoundActionHandler : IActionHandler
             outputDeviceIndex = _resolveOutputDeviceIndex(config.Settings.OutputDeviceId);
         }
 
-        App.EnsureVirtualInputB1();
         _audioPlayer.Play(sound.Id, filePath, sound.Volume * sound.NormalizedGain, action.PlaybackMode, outputDeviceIndex);
         return Task.CompletedTask;
     }

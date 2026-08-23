@@ -23,7 +23,7 @@
                            Foreground="#00D4FF"
                            FontSize="24"
                            FontWeight="Bold"/>
-                <TextBlock Text="Capture game audio, apply EQ and dynamics, and route through Voicemeeter."
+                <TextBlock Text="Capture game audio, apply EQ and dynamics for a competitive edge."
                            Foreground="#A2B4CC"
                            FontSize="13"
                            Margin="0,5,0,0"
@@ -39,7 +39,7 @@
                     MinWidth="260">
                 <StackPanel>
                     <TextBlock Text="SIGNAL FLOW" Foreground="#00D4FF" FontSize="10.5" FontWeight="Bold"/>
-                    <TextBlock Text="Game → Loopback Capture → EQ/DSP → Voicemeeter → Output"
+                    <TextBlock Text="Game → Loopback Capture → EQ/DSP → Output"
                                Foreground="#F7FAFF" FontSize="12.5" FontWeight="SemiBold" Margin="0,4,0,0"/>
                     <TextBlock Text="Voice Changer and Soundboard are independent."
                                Foreground="#8EA2C0" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"/>
@@ -668,13 +668,13 @@
                                Foreground="#A1B2D2" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,10"/>
                     <TextBlock Text="3. Enable the enhancement and start capture."
                                Foreground="#A1B2D2" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                    <TextBlock Text="4. Game audio is captured, processed, and routed to Voicemeeter."
+                    <TextBlock Text="4. Game audio is captured, processed, and sent to your speakers."
                                Foreground="#A1B2D2" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
                     <Border Height="1" Background="#2F3E58" Margin="0,8,0,12"/>
 
                     <TextBlock Text="NOTES" Foreground="#00D4FF" FontSize="10.5" FontWeight="Bold" Margin="0,0,0,8"/>
-                    <TextBlock Text="&#x2022; The game's original audio is suppressed to prevent doubling.&#x0a;&#x2022; Voice Changer and Soundboard remain independent.&#x0a;&#x2022; Requires Voicemeeter for audio routing."
+                    <TextBlock Text="&#x2022; The game's original audio is suppressed to prevent doubling.&#x0a;&#x2022; Voice Changer and Soundboard remain independent.&#x0a;&#x2022; Requires the audio engine for routing."
                                Foreground="#8EA2C0" FontSize="11" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>

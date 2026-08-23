@@ -69,8 +69,9 @@ public sealed class VoiceTransformSampleProvider : ISampleProvider
             return;
         }
 
-        // fftSize 4096 keeps voice frequency resolution; osamp 8 (vs default 4)
-        // halves phase-vocoder smearing for a cleaner, less "phasey" result.
-        _stage = new SmbPitchShiftingSampleProvider(_source, 4096, 8, effective);
+        // FFT 2048 keeps voice frequency resolution with half the time smearing
+        // of 4096 (~42ms vs ~85ms), preserving consonant clarity.
+        // osamp 16 gives smooth overlap-add reconstruction with minimal artifacts.
+        _stage = new SmbPitchShiftingSampleProvider(_source, 2048, 16, effective);
     }
 }

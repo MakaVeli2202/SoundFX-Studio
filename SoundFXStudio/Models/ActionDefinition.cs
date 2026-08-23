@@ -14,7 +14,7 @@ public class ActionDefinition : ObservableObject
     private bool _isFavorite;
     private string _payload = string.Empty;
     private PlaybackMode _playbackMode = PlaybackMode.Restart;
-    private KeyPlaybackMode _keyPlaybackMode = KeyPlaybackMode.PlayOnce;
+    private KeyPlaybackMode _keyPlaybackMode = KeyPlaybackMode.Toggle;
     private string _playlistMode = "Sequential";
     private bool _isEnabled = true;
 

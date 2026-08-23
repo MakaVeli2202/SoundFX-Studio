@@ -10,63 +10,93 @@ public static class PresetManager
         {
             Id = "normal", Name = "Normal",
             PitchSemitones = 0, FormantShift = 1f,
-            NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
-            LimiterEnabled = true
+            NoiseGateEnabled = true, NoiseGateThresholdDb = -40f,
+            CompressorEnabled = true, CompressorThresholdDb = -18f, CompressorRatio = 3f,
+            LimiterEnabled = true,
+            ClarityEnabled = true, ClarityHpfHz = 80,
+            ClarityPresenceDb = 3.0, ClarityPresenceHz = 3000,
+            ClarityAirDb = 2.0, ClarityAirHz = 8000
         },
         new()
         {
             Id = "deepmale", Name = "Deep Male",
             PitchSemitones = -4f, FormantShift = 0.9f,
-            NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
-            CompressorEnabled = true, CompressorThresholdDb = -20f, CompressorRatio = 4f,
-            LimiterEnabled = true
+            NoiseGateEnabled = true, NoiseGateThresholdDb = -40f,
+            CompressorEnabled = true, CompressorThresholdDb = -18f, CompressorRatio = 3f,
+            LimiterEnabled = true,
+            ClarityEnabled = true, ClarityHpfHz = 80,
+            ClarityPresenceDb = 3.0, ClarityPresenceHz = 3000,
+            ClarityAirDb = 2.0, ClarityAirHz = 8000
         },
         new()
         {
             Id = "female", Name = "Female",
             PitchSemitones = 5f, FormantShift = 1.2f,
-            NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
+            NoiseGateEnabled = true, NoiseGateThresholdDb = -40f,
             CompressorEnabled = true, CompressorThresholdDb = -18f, CompressorRatio = 3f,
-            LimiterEnabled = true
+            LimiterEnabled = true,
+            ClarityEnabled = true, ClarityHpfHz = 80,
+            ClarityPresenceDb = 2.5, ClarityPresenceHz = 3500,
+            ClarityAirDb = 2.5, ClarityAirHz = 9000
         },
         new()
         {
             Id = "robot", Name = "Robot",
             PitchSemitones = 0f, FormantShift = 1f,
-            NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
+            NoiseGateEnabled = true, NoiseGateThresholdDb = -40f,
+            CompressorEnabled = true, CompressorThresholdDb = -18f, CompressorRatio = 3f,
             RobotEnabled = true, RobotFrequencyHz = 120f,
-            LimiterEnabled = true
+            LimiterEnabled = true,
+            ClarityEnabled = true, ClarityHpfHz = 80,
+            ClarityPresenceDb = 3.0, ClarityPresenceHz = 3000,
+            ClarityAirDb = 2.0, ClarityAirHz = 8000
         },
         new()
         {
             Id = "demon", Name = "Demon",
             PitchSemitones = -6f, FormantShift = 0.8f,
-            NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
+            NoiseGateEnabled = true, NoiseGateThresholdDb = -40f,
+            CompressorEnabled = true, CompressorThresholdDb = -18f, CompressorRatio = 3f,
             DistortionEnabled = true, DistortionDrive = 5f,
-            LimiterEnabled = true
+            LimiterEnabled = true,
+            ClarityEnabled = true, ClarityHpfHz = 80,
+            ClarityPresenceDb = 2.0, ClarityPresenceHz = 2500,
+            ClarityAirDb = 1.5, ClarityAirHz = 6000
         },
         new()
         {
             Id = "anime", Name = "Anime",
             PitchSemitones = 6f, FormantShift = 1.2f,
-            NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
+            NoiseGateEnabled = true, NoiseGateThresholdDb = -40f,
+            CompressorEnabled = true, CompressorThresholdDb = -18f, CompressorRatio = 3f,
             ChorusEnabled = true, ChorusMix = 0.3f,
-            LimiterEnabled = true
+            LimiterEnabled = true,
+            ClarityEnabled = true, ClarityHpfHz = 80,
+            ClarityPresenceDb = 3.0, ClarityPresenceHz = 4000,
+            ClarityAirDb = 3.0, ClarityAirHz = 9000
         },
         new()
         {
             Id = "caveecho", Name = "Cave Echo",
             PitchSemitones = 1f, FormantShift = 1f,
-            NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
+            NoiseGateEnabled = true, NoiseGateThresholdDb = -40f,
+            CompressorEnabled = true, CompressorThresholdDb = -18f, CompressorRatio = 3f,
             ReverbEnabled = true, ReverbMix = 0.45f, ReverbRoomSize = 0.85f,
-            LimiterEnabled = true
+            LimiterEnabled = true,
+            ClarityEnabled = true, ClarityHpfHz = 80,
+            ClarityPresenceDb = 2.5, ClarityPresenceHz = 3000,
+            ClarityAirDb = 2.0, ClarityAirHz = 8000
         },
         new()
         {
             Id = "chipmunk", Name = "Chipmunk",
             PitchSemitones = 8f, FormantShift = 1.3f,
-            NoiseGateEnabled = true, NoiseGateThresholdDb = -45f,
-            LimiterEnabled = true
+            NoiseGateEnabled = true, NoiseGateThresholdDb = -40f,
+            CompressorEnabled = true, CompressorThresholdDb = -18f, CompressorRatio = 3f,
+            LimiterEnabled = true,
+            ClarityEnabled = true, ClarityHpfHz = 80,
+            ClarityPresenceDb = 3.0, ClarityPresenceHz = 4000,
+            ClarityAirDb = 3.0, ClarityAirHz = 10000
         }
     };
 
@@ -95,5 +125,37 @@ public static class PresetManager
         service.Chain.Get<RobotEffect>()!.FrequencyHz = preset.RobotFrequencyHz;
         service.Chain.Get<ChorusEffect>()!.IsEnabled = preset.ChorusEnabled;
         service.Chain.Get<ChorusEffect>()!.Mix = preset.ChorusMix;
+
+        var eq = service.Chain.Get<EqualizerEffect>();
+        if (eq is not null)
+        {
+            eq.IsEnabled = preset.ClarityEnabled;
+            eq.SetFilters(new List<EqFilter>
+            {
+                new()
+                {
+                    Type = EqFilterType.HighPass,
+                    FrequencyHz = preset.ClarityHpfHz,
+                    Q = 0.7,
+                    Enabled = preset.ClarityEnabled
+                },
+                new()
+                {
+                    Type = EqFilterType.Peaking,
+                    FrequencyHz = preset.ClarityPresenceHz,
+                    GainDb = preset.ClarityPresenceDb,
+                    Q = 1.2,
+                    Enabled = preset.ClarityEnabled
+                },
+                new()
+                {
+                    Type = EqFilterType.Peaking,
+                    FrequencyHz = preset.ClarityAirHz,
+                    GainDb = preset.ClarityAirDb,
+                    Q = 0.8,
+                    Enabled = preset.ClarityEnabled
+                }
+            });
+        }
     }
 }

@@ -69,9 +69,13 @@ public partial class App : Application
         var firstVirtual = vm.FirstVirtualStrip(stripCount);
         if (stripCount <= 0 || firstVirtual < 0) return false;
 
-        if (vm.GetFloat($"Strip[{firstVirtual}].B1") >= 0.5f) return true;
+        var b1 = vm.GetFloat($"Strip[{firstVirtual}].B1") >= 0.5f;
+        var a1 = vm.GetFloat($"Strip[{firstVirtual}].A1") >= 0.5f;
 
-        vm.SetFloat($"Strip[{firstVirtual}].B1", 1);
+        if (b1 && a1) return true;
+
+        if (!b1) vm.SetFloat($"Strip[{firstVirtual}].B1", 1);
+        if (!a1) vm.SetFloat($"Strip[{firstVirtual}].A1", 1);
         vm.IsDirty();
         return true;
     }
