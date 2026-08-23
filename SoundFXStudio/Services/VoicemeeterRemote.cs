@@ -81,8 +81,9 @@ public sealed class VoicemeeterRemote : IDisposable
     {
         if (!Available && !Load()) { ActionLog.Instance.Error("VM", "Login: DLL not available"); return false; }
 
-        // Ensure VM is running before Login(). If Login() returns rc=1 (launched internally),
-        // the API session is broken — writes return -1. So we pre-launch externally and wait.
+        // Ensure VM is running before _login(). If _login() returns rc=1 (launched internally),
+        // the API session is broken — writes return -1. So we pre-launch externally and wait
+        // until the process is actually detected before calling _login().
         bool vmRunning = Process.GetProcessesByName("voicemeeter").Length > 0
                       || Process.GetProcessesByName("voicemeeter_x64").Length > 0;
         ActionLog.Instance.Info("VM", $"VM process running: {vmRunning}");
@@ -94,8 +95,16 @@ public sealed class VoicemeeterRemote : IDisposable
             {
                 ActionLog.Instance.Info("VM", $"Launching VM externally: {exe}");
                 Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
-                // Wait for VM process to start, then hide in background while it initializes
-                System.Threading.Thread.Sleep(500);
+                // Poll until the process is actually detected — _login() must see it running
+                // to return 0 instead of 1 (double-launch breaks the API session).
+                for (int i = 0; i < 20; i++)
+                {
+                    System.Threading.Thread.Sleep(500);
+                    vmRunning = Process.GetProcessesByName("voicemeeter").Length > 0
+                              || Process.GetProcessesByName("voicemeeter_x64").Length > 0;
+                    if (vmRunning) break;
+                }
+                ActionLog.Instance.Info("VM", $"VM process detected after wait: {vmRunning}");
                 _ = Task.Run(async () =>
                 {
                     for (int i = 0; i < 10; i++)
@@ -245,7 +254,9 @@ public sealed class VoicemeeterRemote : IDisposable
         if (!string.IsNullOrEmpty(talkDevice))
         {
             var talkMatch = MatchVmDevice(inputs, talkDevice);
+            var talkMmeMatch = MatchVmDevice(inputs.Where(d => d.Types.Contains(1L)), talkDevice);
             string targetName = talkMatch?.Name ?? talkDevice;
+            string mmeName = talkMmeMatch?.Name;
             string current = GetString("Strip[0].device.name");
             if (!string.IsNullOrEmpty(current) &&
                 string.Equals(current, targetName, StringComparison.OrdinalIgnoreCase))
@@ -255,10 +266,14 @@ public sealed class VoicemeeterRemote : IDisposable
             else
             {
                 onProgress?.Invoke("Setting mic device…");
-                ok &= TrySetDevice("Strip[0].device.name", new[]
-                {
-                    ("Strip[0].device.wdm", targetName)
-                });
+                var micAttempts = new List<(string Param, string Name)>();
+                if (!string.IsNullOrEmpty(mmeName))
+                    micAttempts.Add(("Strip[0].device.mme", mmeName));
+                if (talkMatch is not null && talkMatch.Types.Contains(3L))
+                    micAttempts.Add(("Strip[0].device.wdm", targetName));
+                if (!string.IsNullOrEmpty(mmeName))
+                    micAttempts.Add(("Strip[0].device.wdm", targetName));
+                ok &= TrySetDevice("Strip[0].device.name", micAttempts);
             }
         }
         if (!string.IsNullOrEmpty(hearDevice))
