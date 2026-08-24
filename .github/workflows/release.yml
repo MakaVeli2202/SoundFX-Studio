@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Derive version from tag
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          "SFX_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          Add-Content $env:GITHUB_PATH 'C:\Program Files (x86)\Inno Setup 6'
+
+      - name: Publish and build installer
+        shell: pwsh
+        run: .\build-installer.ps1
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: installer-output/SoundFXStudio-Setup.exe
+          generate_release_notes: true

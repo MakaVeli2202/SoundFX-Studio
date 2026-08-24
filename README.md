@@ -2,6 +2,25 @@
 
 SoundFX Studio is a Windows desktop application for soundboard playback, keyboard-triggered actions, voice-changing workflows, and audio routing. The current release prioritizes stability and a polished desktop experience while preserving existing user workflows.
 
+## Install (one line)
+
+Paste this into PowerShell — it downloads the latest stable release and installs it silently:
+
+```powershell
+irm https://raw.githubusercontent.com/MakaVeli2202/SoundFX-Studio/main/install.ps1 | iex
+```
+
+Re-running it at any time upgrades an existing installation in place (sounds and settings are preserved). SoundFX Studio is also available for one-click install inside the [Forge](https://github.com/MakaVeli2202/Forg) app manager.
+
+## Releasing
+
+Push a version tag to trigger the release pipeline (`GitHub Actions` builds the Inno Setup installer and attaches it to a GitHub Release):
+
+```powershell
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ## Key capabilities
 - Play and organize soundboard entries from keyboard-triggered profiles
 - Use hotkeys and keybindings for rapid sound playback

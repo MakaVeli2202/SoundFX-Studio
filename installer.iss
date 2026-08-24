@@ -1,6 +1,10 @@
 [Setup]
 AppName=SoundFX Studio
-AppVersion=1.0.0
+#define SfxVersion GetEnv('SFX_VERSION')
+#if SfxVersion == ""
+#define SfxVersion "1.0.0"
+#endif
+AppVersion={#SfxVersion}
 AppPublisher=SoundFX Studio
 AppId={{A2B3C4D5-E6F7-4812-9ABC-DEF012345678}
 DefaultDirName={autopf}\SoundFX Studio
