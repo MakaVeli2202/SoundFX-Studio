@@ -8,7 +8,7 @@ namespace SoundFXStudio.Tests;
 
 public class GamingEnhancementTests
 {
-    // ── EqualizerEffect tests ────────────────────────────────────────────────
+    // ΓöÇΓöÇ EqualizerEffect tests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     [Fact]
     public void Equalizer_NoFilters_PassesThrough()
@@ -226,7 +226,7 @@ public class GamingEnhancementTests
         Assert.All(data, v => Assert.True(float.IsFinite(v), $"non-finite value: {v}"));
     }
 
-    // ── GamingEnhancementService tests ───────────────────────────────────────
+    // ΓöÇΓöÇ GamingEnhancementService tests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     [Fact]
     public void GamingService_OwnsItsOwnDSPChain()
@@ -249,7 +249,7 @@ public class GamingEnhancementTests
         Assert.NotNull(service.Chain.Get<NoiseGateEffect>());
         Assert.NotNull(service.Chain.Get<CompressorEffect>());
         Assert.NotNull(service.Chain.Get<LimiterEffect>());
-        Assert.Equal(6, service.Chain.Effects.Count);
+        Assert.Equal(7, service.Chain.Effects.Count);
     }
 
     [Fact]
@@ -447,7 +447,7 @@ public class GamingEnhancementTests
         Assert.Null(service.ActiveProfile);
     }
 
-    // ── GamingProfile DSP chain integration ──────────────────────────────────
+    // ΓöÇΓöÇ GamingProfile DSP chain integration ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     [Fact]
     public void GamingChain_Process_ProducesOutput()
@@ -479,7 +479,7 @@ public class GamingEnhancementTests
         Assert.True(MaxAbs(tail) > 0.1, "chain with disabled EQ should pass through");
     }
 
-    // ── VoiceChangerService isolation tests ──────────────────────────────────
+    // ΓöÇΓöÇ VoiceChangerService isolation tests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     [Fact]
     public void VoiceChangerService_HasEqualizerInChain()
@@ -523,7 +523,7 @@ public class GamingEnhancementTests
         Assert.False(ReferenceEquals(vcGate, gameGate));
     }
 
-    // ── GameProcessInfo tests ────────────────────────────────────────────────
+    // ΓöÇΓöÇ GameProcessInfo tests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     [Fact]
     public void GameProcessInfo_DefaultValues()
@@ -559,7 +559,7 @@ public class GamingEnhancementTests
         Assert.Equal("cod", info.ToString());
     }
 
-    // ── GamingProfile preset tests ───────────────────────────────────────────
+    // ΓöÇΓöÇ GamingProfile preset tests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     [Fact]
     public void GamingPresets_NonEmpty_UniqueIds()
@@ -616,7 +616,7 @@ public class GamingEnhancementTests
         Assert.Equal(id, profile.Id);
     }
 
-    // ── Persistence tests ────────────────────────────────────────────────────
+    // ΓöÇΓöÇ Persistence tests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     [Fact]
     public void ConfigService_PreservesGamingSettings()
@@ -667,7 +667,7 @@ public class GamingEnhancementTests
         Assert.Equal(profile.EqFilters.Count, deserialized.EqFilters.Count);
     }
 
-    // ── Preset immutability tests ─────────────────────────────────────────────
+    // ΓöÇΓöÇ Preset immutability tests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     [Fact]
     public void GetById_ReturnsClone_ModifyingCloneDoesNotAffectPreset()
@@ -733,7 +733,7 @@ public class GamingEnhancementTests
         }
     }
 
-    // ── GamingProfile.Clone tests ─────────────────────────────────────────────
+    // ΓöÇΓöÇ GamingProfile.Clone tests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     [Fact]
     public void Clone_PreservesAllScalarProperties()
@@ -787,7 +787,7 @@ public class GamingEnhancementTests
         Assert.NotEqual(source.EqFilters[0].GainDb, clone.EqFilters[0].GainDb);
     }
 
-    // ── GameAudioService lifecycle tests ───────────────────────────────────────
+    // ΓöÇΓöÇ GameAudioService lifecycle tests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     [Fact]
     public void GameAudioService_StopCapture_WhenNotCapturing_DoesNotCrash()
@@ -835,10 +835,10 @@ public class GamingEnhancementTests
         Assert.NotNull(service.Enhancement.Equalizer);
         Assert.NotNull(service.Enhancement.HeadphoneEqualizer);
         Assert.NotNull(service.Enhancement.HrtfSpatializer);
-        Assert.Equal(6, service.Enhancement.Chain.Effects.Count);
+        Assert.Equal(7, service.Enhancement.Chain.Effects.Count);
     }
 
-    // ── AudioSessionSuppressor state tests ─────────────────────────────────────
+    // ΓöÇΓöÇ AudioSessionSuppressor state tests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     // NOTE: Real session manipulation requires hardware + running audio sessions.
     // These tests verify state-tracking logic only.
 
@@ -884,7 +884,7 @@ public class GamingEnhancementTests
         Assert.Null(exception);
     }
 
-    // ── GamingViewModel tests ────────────────────────────────────────────────
+    // ΓöÇΓöÇ GamingViewModel tests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     [Fact]
     public void GamingViewModel_DefaultState_Ready()
@@ -1019,7 +1019,40 @@ public class GamingEnhancementTests
         Assert.NotNull(vm.SelectedProfile);
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    // ---- Reset-to-defaults output tests (additive) ---------------------------
+    [Fact]
+    public void GamingEnhancementService_ResetToDefaults_BypassesChain()
+    {
+        var service = new GamingEnhancementService();
+        var serviceWithProfile = GamingProfilePresets.GetById("footstep-focus");
+        service.Apply(serviceWithProfile);
+
+        service.ResetToDefaults();
+
+        var probe = Sine(0.5f, 24000);
+        service.Chain.Process(probe);
+
+        Assert.Equal(0.5, MaxAbs(probe.AsSpan(12000)), 2);
+        Assert.Null(service.ActiveProfile);
+    }
+
+    [Fact]
+    public void GamingEnhancementService_ResetToDefaults_DisablesAllEffects()
+    {
+        var service = new GamingEnhancementService();
+        var serviceWithProfile = GamingProfilePresets.GetById("footstep-focus");
+        service.Apply(serviceWithProfile);
+
+        service.ResetToDefaults();
+
+        foreach (var effect in service.Chain.Effects)
+        {
+            Assert.False(effect.IsEnabled, "no effect should remain enabled after reset");
+        }
+
+        Assert.Null(service.ActiveProfile);
+    }
+    // ΓöÇΓöÇ Helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
     private static float[] Sine(float amplitude, int length, float freq = 220f, int sampleRate = 48000)
     {
