@@ -12,7 +12,7 @@ namespace SoundFXStudio.Services;
 /// Game Audio (via ProcessLoopbackCapture) → DSPChain → Voicemeeter → speakers/headphones.
 /// VoiceChangerService is completely independent and untouched.
 ///
-/// DSPChain order: GamingEqualizer → HeadphoneEqualizer → HRTF → NoiseGate → Compressor → Limiter.
+/// DSPChain order: GamingEqualizer → HeadphoneEqualizer → Spatial Engine → HRTF → NoiseGate → Compressor → Limiter.
 /// All effects are owned by this service — zero coupling to VoiceChangerService.
 /// </summary>
 public sealed class GamingEnhancementService
@@ -21,11 +21,13 @@ public sealed class GamingEnhancementService
     private HeadphoneProfile? _activeHeadphoneProfile;
     private HrtfProfile? _activeHrtfProfile;
     private int _currentSampleRate = 48000;
+    private int _currentChannelCount = 8;
 
     public GamingEnhancementService()
     {
         Chain.Add(new EqualizerEffect());
         Chain.Add(new EqualizerEffect());
+        Chain.Add(new SpatialEngineEffect(48000));
         Chain.Add(new HrtfEffect(48000));
         Chain.Add(new NoiseGateEffect(48000));
         Chain.Add(new CompressorEffect(48000));
@@ -33,8 +35,8 @@ public sealed class GamingEnhancementService
     }
 
     /// <summary>
-    /// The gaming DSP chain. Contains gaming equalizer, headphone equalizer,
-    /// noise gate, compressor, and limiter.
+    /// The gaming DSP chain. Contains the gaming/headphone equalizers, the
+    /// ArtTune spatial engine, HRTF, noise gate, compressor, and limiter.
     /// Game audio samples pass through this chain before reaching Voicemeeter.
     /// </summary>
     public DSPChain Chain { get; } = new();
@@ -120,6 +122,17 @@ public sealed class GamingEnhancementService
             limiter.Threshold = profile.LimiterThreshold;
             limiter.ReleaseMs = profile.LimiterReleaseMs;
         }
+
+        var spatial = Chain.Get<SpatialEngineEffect>();
+        if (spatial is not null)
+        {
+            spatial.SampleRate = _currentSampleRate;
+            spatial.ChannelCount = _currentChannelCount;
+            spatial.Preset = profile.AtkPreset;
+            // Engine runs from verified slider defaults; the ATK chunk is held
+            // verbatim for now (see SpatialEngineEffect.Preset docs).
+            spatial.IsEnabled = profile.AtkPreset is not null;
+        }
     }
 
     /// <summary>
@@ -202,6 +215,9 @@ public sealed class GamingEnhancementService
                 case EqualizerEffect eq:
                     eq.SampleRate = sampleRate;
                     break;
+                case SpatialEngineEffect spatial:
+                    spatial.SampleRate = sampleRate;
+                    break;
                 case HrtfEffect hrtf:
                     hrtf.SampleRate = sampleRate;
                     break;
@@ -223,5 +239,35 @@ public sealed class GamingEnhancementService
         {
             ApplyHrtfProfile(_activeHrtfProfile);
         }
+    }
+
+    /// <summary>
+    /// Sets the interleaved channel count the gaming DSP chain receives.
+    /// Used by the spatial engine's channel-mode detection (2/4/6/7/8ch).
+    /// </summary>
+    public void SetChannelCount(int channels)
+    {
+        _currentChannelCount = Math.Clamp(channels, 1, 8);
+        foreach (var effect in Chain.Effects)
+        {
+            if (effect is SpatialEngineEffect spatial)
+                spatial.ChannelCount = _currentChannelCount;
+        }
+    }
+
+    /// <summary>
+    /// Resets the gaming DSP chain to its out-of-box deafults:
+    /// Bypass() the chain, re-apply the default 2ch / 48kHz monoaural-safe state,
+    /// and clear any active HRTF profile. Purely additive — the existing
+    /// Bypass(), SetChannelCount(), SetSampleRate() and ApplyHrtfProfile() are
+    /// left untouched.
+    /// </summary>
+    public void ResetToDefaults()
+    {
+        Bypass();
+        SetChannelCount(1);
+        SetSampleRate(48000);
+        ApplyHrtfProfile(null);
+        _activeHrtfProfile = null;
     }
 }

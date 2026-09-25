@@ -11,6 +11,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Security.Principal;
+using System.ComponentModel;
 
 namespace SoundFXStudio;
 
@@ -31,6 +34,20 @@ public partial class App : Application
     public static bool IsShuttingDown { get; private set; }
 
     public static bool IsSessionEnding { get; private set; }
+
+    private static bool IsRunningAsAdministrator()
+    {
+        try
+        {
+            using var identity = WindowsIdentity.GetCurrent();
+            var principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     public static void RequestShutdown()
     {
@@ -116,6 +133,34 @@ public partial class App : Application
 
     private async void App_Startup(object sender, StartupEventArgs e)
     {
+        if (!IsRunningAsAdministrator())
+        {
+            if (_isFirstInstance)
+            {
+                _singleInstanceMutex.ReleaseMutex();
+            }
+
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName,
+                    UseShellExecute = true,
+                    Verb = "runas",
+                    WorkingDirectory = Environment.CurrentDirectory
+                };
+                _logService.Info("Relaunching elevated (UAC)…");
+                Process.Start(psi);
+            }
+            catch (Win32Exception)
+            {
+                _logService.Info("Elevation cancelled by user.");
+            }
+
+            Shutdown();
+            return;
+        }
+
         var splash = new LoadingScreenWindow();
         splash.Show();
         await Dispatcher.Yield(DispatcherPriority.Background);
@@ -194,6 +239,11 @@ public partial class App : Application
             return;
         }
 
+        if (config.Settings.AutoUpdateTuneLibrary && MainWindow.DataContext is ViewModels.MainViewModel mainVm)
+        {
+            _ = ScheduleTuneLibraryAutoSyncAsync(mainVm);
+        }
+
         _trayIcon = new TaskbarIcon
         {
             IconSource = CreateTrayIcon(),
@@ -267,6 +317,29 @@ public partial class App : Application
             w.Show();
             w.WindowState = WindowState.Normal;
             w.Activate();
+        }
+    }
+
+    private async Task ScheduleTuneLibraryAutoSyncAsync(ViewModels.MainViewModel mainVm)
+    {
+        try
+        {
+            await Task.Delay(2000);
+            await Dispatcher.InvokeAsync(() =>
+            {
+                try
+                {
+                    mainVm.Gaming.UpdateTuneLibraryCommand.Execute(null);
+                }
+                catch (Exception ex)
+                {
+                    _logService.Error("Tune library auto-sync failed", ex);
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            _logService.Error("Tune library auto-sync failed", ex);
         }
     }
 

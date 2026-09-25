@@ -7,11 +7,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>icon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="Assets\UI\HeroSection.png" />
     <None Remove="Assets\UI\MainDashboardLogo.png" />
+    <None Remove="Assets\ArtTune\ArtTune-OneClick.ps1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,6 +36,9 @@
     <Resource Include="Assets\Pics\MainWindowBackground.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
+    <Content Include="Assets\ArtTune\ArtTune-OneClick.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

@@ -11,17 +11,17 @@ public class HrtfIntegrationTests
     // ── Chain structure tests ──────────────────────────────────────────────
 
     [Fact]
-    public void GamingChain_HasExactlySixEffects()
+    public void GamingChain_HasExactlySevenEffects()
     {
         var service = new GamingEnhancementService();
-        Assert.Equal(6, service.Chain.Effects.Count);
+        Assert.Equal(7, service.Chain.Effects.Count);
     }
 
     [Fact]
-    public void GamingChain_HrtfAtIndex2()
+    public void GamingChain_HrtfAtIndex3()
     {
         var service = new GamingEnhancementService();
-        Assert.IsType<HrtfEffect>(service.Chain.Effects[2]);
+        Assert.IsType<HrtfEffect>(service.Chain.Effects[3]);
     }
 
     [Fact]
@@ -1054,8 +1054,8 @@ public class HrtfIntegrationTests
         // VoiceChangerService is not coupled to GamingEnhancementService
         Assert.NotNull(gamingService.Chain);
         Assert.NotNull(gamingService.HrtfSpatializer);
-        // Gaming chain still has 6 effects
-        Assert.Equal(6, gamingService.Chain.Effects.Count);
+        // Gaming chain still has 7 effects
+        Assert.Equal(7, gamingService.Chain.Effects.Count);
     }
 
     // ── Direction interpolation integration tests ─────────────────────────
@@ -1139,8 +1139,8 @@ public class HrtfIntegrationTests
         service.ApplyHrtfProfile(profile);
         service.HrtfSpatializer.SetDirection(45, 0);
 
-        // Chain should still have exactly 6 effects
-        Assert.Equal(6, service.Chain.Effects.Count);
+        // Chain should still have exactly 7 effects
+        Assert.Equal(7, service.Chain.Effects.Count);
     }
 
     [Fact]
@@ -1240,12 +1240,11 @@ public class HrtfIntegrationTests
     }
 
     [Fact]
-    public void HrtfRemainsAtIndex2_RegardlessOfLatencyMode()
+public void HrtfRemainsAtIndex3_RegardlessOfLatencyMode()
     {
         var service = new GamingEnhancementService();
-        // The chain is fixed at construction — latency mode doesn't change it
-        Assert.IsType<HrtfEffect>(service.Chain.Effects[2]);
-        Assert.Equal(6, service.Chain.Effects.Count);
+        Assert.IsType<HrtfEffect>(service.Chain.Effects[3]);
+        Assert.Equal(7, service.Chain.Effects.Count);
     }
 
     [Fact]

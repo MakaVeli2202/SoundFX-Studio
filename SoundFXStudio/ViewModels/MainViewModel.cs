@@ -1708,7 +1708,8 @@ public sealed class MainViewModel : ObservableObject
             or nameof(AppSettings.InputDeviceId)
             or nameof(AppSettings.VirtualCableDeviceId)
             or nameof(AppSettings.VBCableDetected)
-            or nameof(AppSettings.KeyboardPressedTextColor))
+            or nameof(AppSettings.KeyboardPressedTextColor)
+            or nameof(AppSettings.AutoUpdateTuneLibrary))
         {
             UpdateRoutingStatus();
             Save();

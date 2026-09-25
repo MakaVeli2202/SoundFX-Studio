@@ -492,7 +492,7 @@ public class HrtfDirectionInterpolationTests
         service.HrtfSpatializer.SetDirection(-90, 45);
 
         Assert.Same(chainBefore, service.Chain);
-        Assert.Equal(6, service.Chain.Effects.Count);
+        Assert.Equal(7, service.Chain.Effects.Count);
     }
 
     // ── Empty profile ────────────────────────────────────────────────────

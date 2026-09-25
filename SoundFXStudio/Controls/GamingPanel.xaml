@@ -8,6 +8,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -19,11 +20,11 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel>
-                <TextBlock Text="GAMING ENHANCEMENT"
+                <TextBlock Text="ART TUNE · GAME AUDIO"
                            Foreground="#00D4FF"
                            FontSize="24"
                            FontWeight="Bold"/>
-                <TextBlock Text="Capture game audio, apply EQ and dynamics for a competitive edge."
+                <TextBlock Text="The Art of War game audio stack (ArtTuneDB) — VB-CABLE, Voicemeeter, Equalizer APO, HeSuVi, LEQ, and tuned presets for every supported game."
                            Foreground="#A2B4CC"
                            FontSize="13"
                            Margin="0,5,0,0"
@@ -39,16 +40,156 @@
                     MinWidth="260">
                 <StackPanel>
                     <TextBlock Text="SIGNAL FLOW" Foreground="#00D4FF" FontSize="10.5" FontWeight="Bold"/>
-                    <TextBlock Text="Game → Loopback Capture → EQ/DSP → Output"
-                               Foreground="#F7FAFF" FontSize="12.5" FontWeight="SemiBold" Margin="0,4,0,0"/>
-                    <TextBlock Text="Voice Changer and Soundboard are independent."
+                    <TextBlock Text="Game → VB-CABLE (Art Tune 8ch / Art Tune + 16ch) → E-APO (HeSuVi EQ + Boost) → Voicemeeter"
+                               Foreground="#F7FAFF" FontSize="12.5" FontWeight="SemiBold" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="Same stack as ArtIsWar's guide. Voice Changer and Soundboard are independent."
                                Foreground="#8EA2C0" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
         </Grid>
 
+        <!-- ART TUNE STACK -->
+        <StackPanel Grid.Row="1">
+
+        <Border
+                Background="#1A141E2D"
+                BorderBrush="#3318D1FF"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="20"
+                Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="ART TUNE STACK" Foreground="#00D4FF" FontSize="13" FontWeight="Bold"/>
+                        <Border Background="#1A22C55E" CornerRadius="8" Padding="8,3" Margin="10,0,0,0"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="ART TUNE" Foreground="#22C55E" FontSize="10" FontWeight="Bold"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="{Binding ArtTuneStatusText}" Foreground="#F7FAFF" FontSize="13" FontWeight="SemiBold"
+                               Margin="0,6,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding StackStateDescription}" Foreground="#8EA2C0" FontSize="11.5"
+                               Margin="0,3,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal">
+                    <Button Command="{Binding InstallArtTuneStackCommand}"
+                            Content="1-CLICK INSTALL STACK"
+                            Height="42"
+                            Padding="18,0"
+                            Background="#00D4FF"
+                            BorderBrush="#00A3CC"
+                            Foreground="#00121A"
+                            BorderThickness="1"
+                            Cursor="Hand"
+                            FontSize="12.5"
+                            FontWeight="Bold"
+                            Margin="0,0,8,0"
+                            ToolTip="Installs VB-CABLE + Voicemeeter, ReaPlugs, Equalizer APO, HeSuVi, LEQ Control Panel, the ArtTuneDB library (HRIR/JSFX/VST) and renames endpoints. Elevates."/>
+                    <Button Command="{Binding RefreshArtTuneStackCommand}"
+                            Content="&#xE72C;"
+                            Height="42" Width="42" Padding="0"
+                            Background="#1A2A45" BorderBrush="#3A5A7A" Foreground="#D7E3F5"
+                            BorderThickness="1" Cursor="Hand" FontSize="16" Margin="0,0,8,0"
+                            ToolTip="Re-scan installed stack state"/>
+                    <Button Command="{Binding OpenArtTuneGuideCommand}"
+                            Content="Guide"
+                            Height="42"
+                            Padding="14,0"
+                            Background="#1A2A45" BorderBrush="#3A5A7A" Foreground="#D7E3F5"
+                            BorderThickness="1" Cursor="Hand" FontSize="12" FontWeight="SemiBold"
+                            ToolTip="Open the official Art of War setup guide"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- APPLY TUNE -->
+        <Border
+                Background="#9C141E2D"
+                BorderBrush="#2200D4FF"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="20"
+                Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,14,0">
+                    <TextBlock Text="GAME · VERSION" Foreground="#00D4FF" FontSize="10.5" FontWeight="Bold"/>
+                    <ComboBox Width="180" Height="34" Margin="0,4,0,0"
+                              ItemsSource="{Binding ArtTuneVersions}"
+                              SelectedItem="{Binding SelectedArtTuneVersion}"
+                              Background="#141E31" BorderBrush="#3A5A7A" Foreground="#F7FAFF"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0"
+                            Visibility="{Binding HasArtTuneSixteenCh, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="ART TUNE + 16CH VARIANT" Foreground="#00D4FF" FontSize="10.5" FontWeight="Bold"/>
+                    <ComboBox Width="240" Height="34" Margin="0,4,0,0"
+                              ItemsSource="{Binding ArtTuneSixteenChOptions}"
+                              SelectedItem="{Binding SelectedArtTuneSixteenCh}"
+                              Background="#141E31" BorderBrush="#3A5A7A" Foreground="#F7FAFF"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBlock Text="LEQ" Foreground="#00D4FF" FontSize="10.5" FontWeight="Bold"/>
+                    <TextBlock Text="Applied from the version's LEQ file (Insta / Quick / OFF)."
+                               Foreground="#8EA2C0" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap" MaxWidth="220"/>
+                </StackPanel>
+
+                <Button Grid.Column="4"
+                        Command="{Binding ApplyArtTuneTuneCommand}"
+                        Content="APPLY TUNE"
+                        Height="42"
+                        Padding="22,0"
+                        Background="#22C55E"
+                        BorderBrush="#16A34A"
+                        Foreground="White"
+                        BorderThickness="1"
+                        Cursor="Hand"
+                        FontSize="13"
+                        FontWeight="Bold"
+                        VerticalAlignment="Center"
+                        ToolTip="Writes config.txt Includes for the chosen game + version (8ch and 16ch chains), loads the HeSuVi preset line, and sets the LEQ release time — exactly as the ArtTuneDB guide directs."/>
+            </Grid>
+        </Border>
+
+        <!-- RUN LOG -->
+        <Border
+                Background="#0D141E2D"
+                BorderBrush="#2218D1FF"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="14"
+                Margin="0,0,0,14"
+                Visibility="{Binding HasArtTuneLog, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBox Text="{Binding ArtTuneRunLog, Mode=OneWay}"
+                     IsReadOnly="True"
+                     TextWrapping="Wrap"
+                     MaxHeight="180"
+                     VerticalScrollBarVisibility="Auto"
+                     Background="#0B1626"
+                     Foreground="#A9F5C1"
+                     FontFamily="Consolas" FontSize="11.5"
+                     BorderThickness="0"/>
+        </Border>
+
+        </StackPanel>
+
         <!-- STATUS BAR -->
-        <Border Grid.Row="1"
+        <Border Grid.Row="2"
                 Background="#9C141E2D"
                 BorderBrush="#2200D4FF"
                 BorderThickness="1"
@@ -86,7 +227,7 @@
         </Border>
 
         <!-- MAIN CONTENT -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
@@ -487,6 +628,19 @@
                                 FontSize="13"
                                 FontWeight="SemiBold"
                                 Visibility="{Binding IsCapturing, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <Button Command="{Binding ResetToDefaultsCommand}"
+                                Content="Reset System"
+                                Height="40"
+                                Padding="20,0"
+                                Margin="10,0,0,0"
+                                Background="#1A2A45"
+                                BorderBrush="#3A5A7A"
+                                Foreground="#D7E3F5"
+                                BorderThickness="1"
+                                Cursor="Hand"
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                ToolTip="Reset the gaming audio system to its out-of-box defaults — stops capture, restores every suppressed session, and bypasses the DSP chain."/>
                     </StackPanel>
 
                     <!-- LATENCY / PERFORMANCE Section -->

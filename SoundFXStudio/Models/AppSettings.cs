@@ -23,6 +23,8 @@ public class AppSettings : ObservableObject
     private bool _setupCompleted;
     private string _keyboardPressedTextColor = "#22D3FF";
     private KeyboardCalibrationSettings _keyboardCalibration = new();
+    private bool _autoUpdateTuneLibrary = true;
+    private string _tuneLibraryVersion = string.Empty;
 
     // Voicemeeter / audio routing (migrated from MyBoard)
     private string _hearDeviceName = string.Empty;
@@ -442,5 +444,17 @@ public class AppSettings : ObservableObject
     {
         get => _keyboardCalibration;
         set => SetProperty(ref _keyboardCalibration, value ?? new KeyboardCalibrationSettings());
+    }
+
+    public bool AutoUpdateTuneLibrary
+    {
+        get => _autoUpdateTuneLibrary;
+        set => SetProperty(ref _autoUpdateTuneLibrary, value);
+    }
+
+    public string TuneLibraryVersion
+    {
+        get => _tuneLibraryVersion;
+        set => SetProperty(ref _tuneLibraryVersion, value ?? string.Empty);
     }
 }

@@ -2,6 +2,8 @@
 //   - Fixed GetString [Out] marshaling; added Input/Output device enumeration for exact-name match.
 //   - ApplyRouting verifies writes (rc==0); no device.type param exists in API (was causing false failure).
 //   - MainViewModel AutoSetup routes Windows defaults to VoiceMeeter Input/Output + app I/O.
+//   - 2026-09-22 cold-start fix: engine accepted reads but rejected writes after fresh launch / device
+//     changes; added WaitUntilWritable probe, WriteRetry on string writes, retries on channel writes.
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -84,8 +86,7 @@ public sealed class VoicemeeterRemote : IDisposable
         // Ensure VM is running before _login(). If _login() returns rc=1 (launched internally),
         // the API session is broken — writes return -1. So we pre-launch externally and wait
         // until the process is actually detected before calling _login().
-        bool vmRunning = Process.GetProcessesByName("voicemeeter").Length > 0
-                      || Process.GetProcessesByName("voicemeeter_x64").Length > 0;
+        bool vmRunning = VmProcessRunning();
         ActionLog.Instance.Info("VM", $"VM process running: {vmRunning}");
 
         if (!vmRunning)
@@ -100,8 +101,7 @@ public sealed class VoicemeeterRemote : IDisposable
                 for (int i = 0; i < 20; i++)
                 {
                     System.Threading.Thread.Sleep(500);
-                    vmRunning = Process.GetProcessesByName("voicemeeter").Length > 0
-                              || Process.GetProcessesByName("voicemeeter_x64").Length > 0;
+                    vmRunning = VmProcessRunning();
                     if (vmRunning) break;
                 }
                 ActionLog.Instance.Info("VM", $"VM process detected after wait: {vmRunning}");
@@ -122,10 +122,16 @@ public sealed class VoicemeeterRemote : IDisposable
         if (r == 1)
         {
             // Fallback: Login launched VM internally despite our pre-launch.
-            // Give it extra time to initialize.
+            // Wait for the process, then re-login to get a clean session.
             ActionLog.Instance.Info("VM", "Login launched VM internally — waiting for API readiness...");
+            for (int i = 0; i < 20 && !VmProcessRunning(); i++)
+                System.Threading.Thread.Sleep(500);
             HideVmWindow();
-            System.Threading.Thread.Sleep(5000);
+            if (VmProcessRunning())
+            {
+                r = _login!();
+                ActionLog.Instance.Info("VM", $"Re-login after launch: rc={r}");
+            }
             HideVmWindow();
         }
 
@@ -136,8 +142,15 @@ public sealed class VoicemeeterRemote : IDisposable
             HideVmWindow();
         }
 
-        LoggedIn = r >= 0;
+        LoggedIn = r >= 0 || r == -2;
         return LoggedIn;
+    }
+
+    private static bool VmProcessRunning()
+    {
+        foreach (var name in new[] { "voicemeeter", "voicemeeter8", "voicemeeter8x64", "voicemeeterpro", "voicemeeter_x64" })
+            if (Process.GetProcessesByName(name).Length > 0) return true;
+        return false;
     }
 
     /// <summary>
@@ -241,6 +254,7 @@ public sealed class VoicemeeterRemote : IDisposable
 
         onProgress?.Invoke("Waiting for audio engine…");
         if (!WaitUntilReady()) return false;
+        if (!WaitUntilWritable()) return false;
 
         int count = StripCount();
         if (count == 0) return false;
@@ -248,7 +262,7 @@ public sealed class VoicemeeterRemote : IDisposable
 
         onProgress?.Invoke("Enumerating audio devices…");
         var outputs = WaitForOutputDevices();
-        var inputs = GetInputDevices();
+        var inputs = WaitForInputDevices();
 
         bool ok = true;
         if (!string.IsNullOrEmpty(talkDevice))
@@ -305,9 +319,12 @@ public sealed class VoicemeeterRemote : IDisposable
 
     private bool TrySetChannel(string param, float target)
     {
-        int rc = SetFloat(param, target);
-        System.Threading.Thread.Sleep(200);
-        if (rc == 0) return true;
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            int rc = SetFloat(param, target);
+            System.Threading.Thread.Sleep(200);
+            if (rc == 0) return true;
+        }
 
         LastDiagnostics += $"⚠ {param} not set to {target}\n";
         return false;
@@ -440,41 +457,66 @@ public sealed class VoicemeeterRemote : IDisposable
         return Edition() != 0;
     }
 
+    /// <summary>
+    /// Waits until the engine accepts parameter writes. Happens after a cold-start or after a
+    /// device change that restarts the engine: Edition() may report a type and devices may
+    /// enumerate, but SetParameter* calls still fail until the engine is fully up.
+    /// </summary>
+    private bool WaitUntilWritable(int timeoutMs = 15000)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < timeoutMs)
+        {
+            // Probe with a harmless write to its own current value.
+            if (SetFloat("Strip[0].gain", GetFloat("Strip[0].gain")) == 0)
+                return true;
+            System.Threading.Thread.Sleep(400);
+        }
+        LastDiagnostics += $"⚠ audio engine never became writable (after {timeoutMs} ms)\n";
+        return false;
+    }
+
     private bool TrySetBusOutputDevice(List<VmDevice> outputs, string userDevice)
     {
-        var diag = new StringBuilder();
         var match = MatchVmDevice(outputs, userDevice);
         var mmeMatch = MatchVmDevice(outputs.Where(d => d.Types.Contains(1L)), userDevice);
-
         var wdm = match is not null && match.Types.Contains(3L) ? match.Name : null;
         var mmeName = mmeMatch?.Name;
 
-        bool ok;
-        if (!string.IsNullOrEmpty(mmeName))
-        {
-            int r1 = SetString("Bus[0].device.mme", mmeName);
-            diag.AppendLine($"Bus[0].device.mme='{mmeName}' rc={r1}");
-            ok = r1 == 0;
-            diag.AppendLine(ok ? "MME selected (applies async)" : "MME write rejected");
-        }
-        else if (!string.IsNullOrEmpty(wdm))
-        {
-            int r1 = SetString("Bus[0].device.wdm", wdm);
-            diag.AppendLine($"Bus[0].device.wdm='{wdm}' rc={r1}");
-            ok = r1 == 0;
-            diag.AppendLine(ok ? "WDM selected (applies async)" : "WDM write rejected");
-        }
-        else
-        {
-            diag.AppendLine("No matching device entry in Voicemeeter enumeration");
-            ok = false;
-        }
+        if (ApplyBusDevice("Bus[0].device.mme", mmeName, "MME")) return true;
+        if (ApplyBusDevice("Bus[0].device.wdm", wdm, "WDM")) return true;
 
+        LastDiagnostics += $"⚠ No usable output device entry for '{userDevice}'\n";
         System.Threading.Thread.Sleep(1200);
-        var read = GetString("Bus[0].device.name");
-        diag.AppendLine($"read-back '{read}'");
-        LastDiagnostics = diag.ToString();
-        return ok;
+        return false;
+    }
+
+    private bool ApplyBusDevice(string param, string? name, string label)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return false;
+        int rc = WriteRetry(param, name);
+        LastDiagnostics += $"{param}='{name}' rc={rc}\n";
+        if (rc == 0)
+        {
+            LastDiagnostics += $"{label} selected (applies async)\n";
+            System.Threading.Thread.Sleep(1200);
+            string read = GetString("Bus[0].device.name");
+            LastDiagnostics += $"read-back '{read}'\n";
+            return true;
+        }
+        LastDiagnostics += $"{label} write rejected\n";
+        return false;
+    }
+
+    private int WriteRetry(string param, string value, int attempts = 5)
+    {
+        int rc = SetString(param, value);
+        for (int i = 1; rc != 0 && i < attempts; i++)
+        {
+            System.Threading.Thread.Sleep(400);
+            rc = SetString(param, value);
+        }
+        return rc;
     }
 
     private bool TrySetDevice(string readParam, IEnumerable<(string Param, string Name)> attempts)
@@ -489,7 +531,7 @@ public sealed class VoicemeeterRemote : IDisposable
                 continue;
             }
 
-            int rc = SetString(param, name);
+            int rc = WriteRetry(param, name);
             diag.AppendLine($"{param}='{name}' rc={rc}");
             if (rc == 0)
             {

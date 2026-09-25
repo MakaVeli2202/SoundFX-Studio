@@ -447,9 +447,10 @@ public class HrtfHeadTrackingTests
 
         Assert.Same(service.Equalizer, effects[0]);
         Assert.IsType<EqualizerEffect>(effects[1]);
-        Assert.IsType<HrtfEffect>(effects[2]);
-        Assert.IsType<NoiseGateEffect>(effects[3]);
-        Assert.Equal(6, effects.Count);
+        Assert.IsType<SpatialEngineEffect>(effects[2]);
+        Assert.IsType<HrtfEffect>(effects[3]);
+        Assert.IsType<NoiseGateEffect>(effects[4]);
+        Assert.Equal(7, effects.Count);
     }
 
     // ── Integration: manual direction still works ────────────────────────

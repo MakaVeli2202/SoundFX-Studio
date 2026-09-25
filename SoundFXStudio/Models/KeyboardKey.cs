@@ -106,9 +106,11 @@ public class KeyboardKey : ObservableObject
         set => SetProperty(ref _columnIndex, value);
     }
 
-    public string PressHighlightColor { get; } = GenerateRandomHighlightColor();
+    public string PressHighlightColor => SharedPressHighlightColor;
 
     private static readonly System.Random HighlightColorRandom = new();
+
+    private static readonly string SharedPressHighlightColor = GenerateRandomHighlightColor();
 
     private static string GenerateRandomHighlightColor()
     {

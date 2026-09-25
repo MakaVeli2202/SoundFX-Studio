@@ -140,6 +140,13 @@ public class GamingProfile : ObservableObject
     public ObservableCollection<EqFilter> EqFilters { get; set; } = new();
 
     /// <summary>
+    /// Decoded ArtTune spatial-engine preset (V5+ VST chunk), when this profile
+    /// comes from a V5 tune file that carries no classic EQ filter list. The raw
+    /// float state is stored losslessly; see AtkSpatialPreset.
+    /// </summary>
+    public AtkSpatialPreset? AtkPreset { get; set; }
+
+    /// <summary>
     /// Future: spatial mode (HRTF, virtual 7.1, etc.)
     /// </summary>
     public string SpatialMode { get; set; } = "Stereo";
@@ -176,6 +183,7 @@ public class GamingProfile : ObservableObject
             LimiterThreshold = LimiterThreshold,
             LimiterReleaseMs = LimiterReleaseMs,
             EqEnabled = EqEnabled,
+            AtkPreset = AtkPreset?.Clone(),
             SpatialMode = SpatialMode,
             Game = Game,
             Headset = Headset,

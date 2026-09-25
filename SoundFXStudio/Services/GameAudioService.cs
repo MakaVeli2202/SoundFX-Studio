@@ -123,6 +123,7 @@ public sealed class GameAudioService : IDisposable
 
                 var waveFormat = _capture.WaveFormat;
                 Enhancement.SetSampleRate(waveFormat.SampleRate);
+                Enhancement.SetChannelCount(waveFormat.Channels);
 
                 _effectProvider = new EffectSampleProvider(_sampleProvider, Enhancement.Chain);
 
@@ -219,6 +220,17 @@ public sealed class GameAudioService : IDisposable
             _sessionSuppressor.RestoreProcess(pid);
             CaptureStopped?.Invoke(this, "Capture stopped unexpectedly");
         }
+    }
+
+    /// <summary>
+    /// Restores EVERY session this application ever suppressed, regardless of
+    /// whether it is currently capturing. Use this when the user wants the
+    /// system returned to default (as if the app never ran).
+    /// Call StopCapture() first so current capture resources are released cleanly.
+    /// </summary>
+    public void RestoreAllSessions()
+    {
+        _sessionSuppressor.RestoreAll();
     }
 
     public void SetOutputDevice(int deviceIndex)

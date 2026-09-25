@@ -10,6 +10,7 @@ using SoundFXStudio.Services;
 using SoundFXStudio.Services.Diagnostics;
 using SoundFXStudio.Services.DSP;
 using SoundFXStudio.Services.Hrtf;
+using SoundFXStudio.Services.ArtTune;
 
 namespace SoundFXStudio.ViewModels;
 
@@ -22,9 +23,19 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
     private readonly AppSettings? _settings;
     private readonly ISofaHrtfLoader _sofaLoader;
     private readonly IHrtfProfileStore _profileStore;
+    private readonly ArtTuneLibraryService _artTuneLibrary = new();
+    private readonly ArtTuneStackService _artTuneStack = new();
+    private ArtTuneStackState _artTuneStackState = ArtTuneStackService.Detect();
+    private bool _isArtTuneBusy;
+    private string _artTuneRunLog = string.Empty;
+    private string _selectedArtTuneVersion = string.Empty;
+    private string _selectedArtTuneSixteenCh = string.Empty;
+    private List<ArtTuneStackService.InstalledTuneVersion> _installedTuneVersions = new();
     private bool _disposed;
     private bool _isEnabled;
     private bool _isCapturing;
+    private bool _isTuneLibraryUpdating;
+    private string _tuneLibraryStatus = "Not loaded";
     private string _statusText = "Ready";
     private string _errorText = string.Empty;
     private string _headTrackingProviderName = "None";
@@ -77,6 +88,21 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         "none", "synthetic-front", "synthetic-above", "synthetic-left"
     };
 
+    // Game window-title keywords mapped to ArtTuneDB tune categories.
+    private static readonly (string Game, string[] Keywords)[] GameKeywords =
+    {
+        ("BO6", new[] { "black ops", "bo6", "call of duty", "cod" }),
+        ("BF6", new[] { "battlefield", "bf6" }),
+        ("MW", new[] { "warzone", "wz", "modern warfare", "mw3", "mw2" }),
+        ("CS2", new[] { "counter-strike", "cs2", "csgo" }),
+        ("VAL", new[] { "valorant" }),
+        ("APEX", new[] { "apex legends", "apex" }),
+        ("FN", new[] { "fortnite" }),
+        ("PUBG", new[] { "pubg" }),
+        ("HUNT", new[] { "hunt showdown", "hunt" }),
+        ("EFT", new[] { "tarkov", "eft" })
+    };
+
     public GamingViewModel(
         Action? saveAction = null,
         Action<string>? setStatusAction = null,
@@ -92,6 +118,7 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
 
         StartCaptureCommand = new RelayCommand(_ => StartCapture(), _ => CanStartCapture);
         StopCaptureCommand = new RelayCommand(_ => StopCapture(), _ => IsCapturing);
+        ResetToDefaultsCommand = new RelayCommand(_ => ResetSystemToDefaults());
         RefreshProcessesCommand = new RelayCommand(_ => RefreshProcesses());
         ToggleEnableCommand = new RelayCommand(_ => IsEnabled = !IsEnabled);
         ToggleHeadphoneEqCommand = new RelayCommand(_ => IsHeadphoneEqEnabled = !IsHeadphoneEqEnabled);
@@ -99,6 +126,11 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         ImportHrtfProfileCommand = new AsyncRelayCommand(_ => ImportHrtfProfileAsync());
         DeleteHrtfProfileCommand = new RelayCommand(_ => DeleteHrtfProfile(), _ => CanDeleteHrtfProfile);
         CalibrateHeadTrackingCommand = new RelayCommand(_ => CalibrateHeadTracking(), _ => IsHrtfHeadTrackingEnabled);
+        UpdateTuneLibraryCommand = new AsyncRelayCommand(async _ => await UpdateTuneLibraryAsync());
+        InstallArtTuneStackCommand = new AsyncRelayCommand(async _ => await InstallArtTuneStackAsync(), _ => !IsArtTuneBusy);
+        ApplyArtTuneTuneCommand = new AsyncRelayCommand(async _ => await ApplyArtTuneTuneAsync(), _ => !IsArtTuneBusy);
+        RefreshArtTuneStackCommand = new RelayCommand(_ => RefreshArtTuneStack());
+        OpenArtTuneGuideCommand = new RelayCommand(_ => ArtTuneStackService.OpenGuidedGuide());
 
         foreach (var profile in GamingProfilePresets.Profiles)
             AvailableProfiles.Add(profile);
@@ -120,6 +152,8 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
                 AvailableHrtfProfiles.Add(imported);
         }
         catch { /* corrupt/missing store — use defaults */ }
+
+        LoadCachedArtTuneLibrary();
 
         SelectedHrtfProfile = AvailableHrtfProfiles.FirstOrDefault();
 
@@ -252,12 +286,26 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
     public RelayCommand StartCaptureCommand { get; }
     public RelayCommand StopCaptureCommand { get; }
     public RelayCommand RefreshProcessesCommand { get; }
+    public RelayCommand ResetToDefaultsCommand { get; }
     public RelayCommand ToggleEnableCommand { get; }
     public RelayCommand ToggleHeadphoneEqCommand { get; }
     public RelayCommand ToggleHrtfCommand { get; }
     public AsyncRelayCommand ImportHrtfProfileCommand { get; }
     public RelayCommand DeleteHrtfProfileCommand { get; }
     public RelayCommand CalibrateHeadTrackingCommand { get; }
+    public AsyncRelayCommand UpdateTuneLibraryCommand { get; }
+
+    public bool IsTuneLibraryUpdating
+    {
+        get => _isTuneLibraryUpdating;
+        private set => SetProperty(ref _isTuneLibraryUpdating, value);
+    }
+
+    public string TuneLibraryStatus
+    {
+        get => _tuneLibraryStatus;
+        private set => SetProperty(ref _tuneLibraryStatus, value);
+    }
 
     public bool IsHeadphoneEqEnabled
     {
@@ -914,6 +962,148 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         try { _saveAction?.Invoke(); } catch { }
     }
 
+    // ─── ArtTune tune library ────────────────────────────────────────────
+
+    private void LoadCachedArtTuneLibrary()
+    {
+        try
+        {
+            var version = _artTuneLibrary.LoadFromCache();
+            IntegrateArtTuneLibrary();
+            if (_settings is not null && !string.IsNullOrEmpty(version) && string.IsNullOrEmpty(_settings.TuneLibraryVersion))
+                _settings.TuneLibraryVersion = version;
+            TuneLibraryStatus = string.IsNullOrEmpty(version)
+                ? "No cached tune library"
+                : $"Tune library v {version}";
+        }
+        catch
+        {
+            TuneLibraryStatus = "Tune library unavailable";
+        }
+    }
+
+    private void IntegrateArtTuneLibrary()
+    {
+        foreach (var hp in _artTuneLibrary.HeadphoneProfiles)
+            AddUniqueHeadphoneProfile(hp);
+        foreach (var gp in _artTuneLibrary.GamingProfiles)
+            AddUniqueGamingProfile(gp);
+
+        if (_artTuneLibrary.HrtfProfile is { } hrtf
+            && AvailableHrtfProfiles.All(p => !string.Equals(p.Id, hrtf.Id, StringComparison.OrdinalIgnoreCase)))
+        {
+            AvailableHrtfProfiles.Add(hrtf);
+        }
+    }
+
+    private void AddUniqueHeadphoneProfile(HeadphoneProfile profile)
+    {
+        if (AvailableHeadphoneProfiles.Any(p => string.Equals(p.Id, profile.Id, StringComparison.OrdinalIgnoreCase)))
+            return;
+        AvailableHeadphoneProfiles.Add(profile);
+    }
+
+    private void AddUniqueGamingProfile(GamingProfile profile)
+    {
+        if (AvailableProfiles.Any(p => string.Equals(p.Id, profile.Id, StringComparison.OrdinalIgnoreCase)))
+            return;
+        AvailableProfiles.Add(profile);
+    }
+
+    private async Task UpdateTuneLibraryAsync()
+    {
+        if (IsTuneLibraryUpdating)
+            return;
+
+        IsTuneLibraryUpdating = true;
+        try
+        {
+            TuneLibraryStatus = "Checking for tune library updates…";
+            StatusText = "Checking ArtTuneDB…";
+
+            var result = await Task.Run(() => _artTuneLibrary.UpdateAsync(progress => StatusText = progress));
+
+            if (!string.IsNullOrEmpty(result.Error))
+            {
+                ErrorText = result.Error;
+                StatusText = "Tune library update failed.";
+                TuneLibraryStatus = "Update failed";
+                return;
+            }
+
+            if (result.Updated)
+            {
+                ReplaceArtTuneProfiles();
+                if (_settings is not null)
+                {
+                    _settings.TuneLibraryVersion = result.Version;
+                    try { _saveAction?.Invoke(); } catch { }
+                }
+                StatusText = result.Message;
+                TuneLibraryStatus = $"Updated (v {result.Version})";
+            }
+            else if (result.IsCurrent)
+            {
+                StatusText = result.Message;
+                TuneLibraryStatus = $"Current (v {result.Version})";
+            }
+            else
+            {
+                StatusText = result.Message;
+                TuneLibraryStatus = string.IsNullOrEmpty(result.Error) ? "No changes" : "Update failed";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorText = ex.Message;
+            StatusText = "Tune library update failed.";
+            TuneLibraryStatus = "Update failed";
+        }
+        finally
+        {
+            IsTuneLibraryUpdating = false;
+        }
+    }
+
+    private void ReplaceArtTuneProfiles()
+    {
+        var prevGamingId = SelectedProfile?.Id;
+        var prevHpId = SelectedHeadphoneProfile?.Id;
+        var prevHrtfId = SelectedHrtfProfile?.Id;
+
+        for (int i = AvailableProfiles.Count - 1; i >= 0; i--)
+        {
+            if (AvailableProfiles[i].Id.StartsWith("arttune-", StringComparison.OrdinalIgnoreCase))
+                AvailableProfiles.RemoveAt(i);
+        }
+
+        for (int i = AvailableHeadphoneProfiles.Count - 1; i >= 0; i--)
+        {
+            if (AvailableHeadphoneProfiles[i].Id.StartsWith("arttune-", StringComparison.OrdinalIgnoreCase))
+                AvailableHeadphoneProfiles.RemoveAt(i);
+        }
+
+        for (int i = AvailableHrtfProfiles.Count - 1; i >= 0; i--)
+        {
+            if (AvailableHrtfProfiles[i].Id.StartsWith("arttune-", StringComparison.OrdinalIgnoreCase))
+                AvailableHrtfProfiles.RemoveAt(i);
+        }
+
+        IntegrateArtTuneLibrary();
+
+        if (!string.IsNullOrEmpty(prevGamingId))
+            SelectedProfile = prevGamingId is string prevGame
+                ? AvailableProfiles.FirstOrDefault(p => string.Equals(p.Id, prevGame, StringComparison.OrdinalIgnoreCase))
+                  ?? AvailableProfiles.FirstOrDefault()
+                : AvailableProfiles.FirstOrDefault();
+
+        if (!string.IsNullOrEmpty(prevHpId) && prevHpId is string prevHp)
+            SelectedHeadphoneProfile = AvailableHeadphoneProfiles.FirstOrDefault(p => string.Equals(p.Id, prevHp, StringComparison.OrdinalIgnoreCase));
+
+        if (!string.IsNullOrEmpty(prevHrtfId) && prevHrtfId is string prevHrtf)
+            SelectedHrtfProfile = AvailableHrtfProfiles.FirstOrDefault(p => string.Equals(p.Id, prevHrtf, StringComparison.OrdinalIgnoreCase));
+    }
+
     private void RestoreSettings()
     {
         if (_settings is null) return;
@@ -1075,9 +1265,109 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Additive: resets the whole gaming audio system back to a "fresh start"
+    /// state — stops any active capture, restores every suppressed session
+    /// (beyond just the current process), and resets the gaming DSP chain to
+    /// its out-of-box bypassed defaults. Only adds the missing glue; all
+    /// existing method bodies are untouched.
+    /// </summary>
+    private void ResetSystemToDefaults()
+    {
+        try
+        {
+            if (IsCapturing)
+            {
+                StopCapture();
+            }
+            else
+            {
+                _gameAudioService.RestoreAllSessions();
+                _gameAudioService.Enhancement.ResetToDefaults();
+                StatusText = "System restored to default state";
+                ErrorText = string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorText = ex.Message;
+            StatusText = $"Reset failed: {ex.Message}";
+        }
+    }
+
+    // ─── Footstep auto setup (mirrors the original ArtTune workflow) ───────
+
+    /// <summary>
+    /// Picks the ArtTuneDB game tune that matches the selected process and enables
+    /// the EAC HRTF spatializer, so footsteps are EQ-boosted and spatialized the
+    /// same way the original ArtTune app does. Manual selections are respected.
+    /// </summary>
+    private void AutoApplyFootstepEnhancements()
+    {
+        if (SelectedProcess is null)
+            return;
+
+        AutoMatchGameProfile();
+
+        if (SelectedProfile?.Id.StartsWith("arttune-", StringComparison.OrdinalIgnoreCase) != true)
+            return;
+
+        if (!IsHrtfEnabled)
+        {
+            var eac = AvailableHrtfProfiles.FirstOrDefault(p =>
+                string.Equals(p.Id, ArtTuneLibraryService.HrtfProfileId, StringComparison.OrdinalIgnoreCase));
+            SelectedHrtfProfile = eac ?? AvailableHrtfProfiles.FirstOrDefault(p =>
+                !string.Equals(p.Id, "none", StringComparison.OrdinalIgnoreCase));
+            IsHrtfEnabled = true;
+        }
+    }
+
+    /// <summary>
+    /// Selects the matching game tune for the selected process. Only acts when
+    /// the user has not already chosen an ArtTune tune, so manual picks win.
+    /// </summary>
+    private void AutoMatchGameProfile()
+    {
+        var lookFor = SelectedProcess is null ? null :
+            $"{SelectedProcess.DisplayName} {SelectedProcess.ExecutableName}".ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(lookFor))
+            return;
+
+        string? matchedGame = null;
+        foreach (var (game, keywords) in GameKeywords)
+        {
+            if (keywords.Any(k => lookFor.Contains(k, StringComparison.OrdinalIgnoreCase)))
+            {
+                matchedGame = game;
+                break;
+            }
+        }
+        if (matchedGame is null)
+            return;
+
+        var candidates = AvailableProfiles
+            .Where(p => p.Id.StartsWith("arttune-", StringComparison.OrdinalIgnoreCase))
+            .Where(p => string.Equals(p.Category, matchedGame, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (candidates.Count == 0)
+            return;
+
+        // Respect an existing manual pick for this game
+        if (SelectedProfile is { } current
+            && current.Id.StartsWith("arttune-", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(current.Category, matchedGame, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var best = candidates.FirstOrDefault(p => p.Name.Contains("post", StringComparison.OrdinalIgnoreCase))
+                   ?? candidates[0];
+
+        SelectedProfile = best;
+    }
+
     private void OnCaptureStarted(object? sender, EventArgs e)
     {
         IsCapturing = true;
+        AutoApplyFootstepEnhancements();
         StatusText = $"Capturing: {SelectedProcess?.DisplayName ?? "unknown"}";
         StartDiagnosticsTimer();
     }
@@ -1094,6 +1384,224 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         IsCapturing = false;
         ErrorText = ex.Message;
         StatusText = $"Error: {ex.Message}";
+    }
+
+    // ─── ArtTune stack (one-button installer, mirrors ArtTuneDB) ─────────
+
+    public RelayCommand RefreshArtTuneStackCommand { get; private set; } = null!;
+    public RelayCommand OpenArtTuneGuideCommand { get; private set; } = null!;
+    public AsyncRelayCommand InstallArtTuneStackCommand { get; private set; } = null!;
+    public AsyncRelayCommand ApplyArtTuneTuneCommand { get; private set; } = null!;
+
+    public ObservableCollection<string> ArtTuneVersions { get; } = new();
+    public ObservableCollection<string> ArtTuneSixteenChOptions { get; } = new();
+
+    public ArtTuneStackState StackState
+    {
+        get => _artTuneStackState;
+        private set
+        {
+            if (SetProperty(ref _artTuneStackState, value))
+            {
+                OnPropertyChanged(nameof(StackReady));
+                OnPropertyChanged(nameof(MissingComponents));
+                OnPropertyChanged(nameof(ArtTuneStatusText));
+                OnPropertyChanged(nameof(StackStateDescription));
+            }
+        }
+    }
+
+    public bool IsArtTuneBusy
+    {
+        get => _isArtTuneBusy;
+        private set
+        {
+            if (SetProperty(ref _isArtTuneBusy, value))
+            {
+                InstallArtTuneStackCommand.RaiseCanExecuteChanged();
+                ApplyArtTuneTuneCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool HasArtTuneSixteenCh
+    {
+        get => ArtTuneSixteenChOptions.Count > 0;
+        set => OnPropertyChanged(nameof(HasArtTuneSixteenCh));
+    }
+
+    public bool HasArtTuneLog
+    {
+        get => !string.IsNullOrWhiteSpace(ArtTuneRunLog);
+        set => OnPropertyChanged(nameof(HasArtTuneLog));
+    }
+
+    public string ArtTuneRunLog
+    {
+        get => _artTuneRunLog;
+        private set
+        {
+            if (SetProperty(ref _artTuneRunLog, value))
+                OnPropertyChanged(nameof(HasArtTuneLog));
+        }
+    }
+
+    public bool StackReady => StackState.AllCoreInstalled;
+
+    public IReadOnlyList<string> MissingComponents => StackState.MissingComponents;
+
+    public string StackStateDescription => StackReady
+        ? "Art Tune stack installed — pick a game + version and hit Apply."
+        : "Art Tune stack not installed. Run one-click install to match ArtTuneDB.";
+
+    public string ArtTuneStatusText
+    {
+        get
+        {
+            if (StackReady)
+            {
+                var v = StackState.LibraryVersion;
+                return StackState.EndpointsRenamed
+                    ? $"Ready ({v}, endpoints named Art Tune / Art Tune +)"
+                    : $"Ready ({v})";
+            }
+            return StackState.MissingComponents.Count == 0
+                ? "Detecting…"
+                : $"Missing: {string.Join(", ", StackState.MissingComponents)}";
+        }
+    }
+
+    public string SelectedArtTuneVersion
+    {
+        get => _selectedArtTuneVersion;
+        set
+        {
+            if (SetProperty(ref _selectedArtTuneVersion, value))
+                PopulateSixteenChOptions();
+        }
+    }
+
+    public string SelectedArtTuneSixteenCh
+    {
+        get => _selectedArtTuneSixteenCh;
+        set => SetProperty(ref _selectedArtTuneSixteenCh, value);
+    }
+
+    private void PopulateSixteenChOptions()
+    {
+        ArtTuneSixteenChOptions.Clear();
+        SelectedArtTuneSixteenCh = string.Empty;
+        var touch = SplitVersion(_selectedArtTuneVersion);
+        if (touch is null) return;
+        var match = _installedTuneVersions
+            .FirstOrDefault(v => v.Game == touch.Value.Game && v.Version == touch.Value.Version);
+        if (match is null) return;
+        foreach (var f in match.SixteenChFiles)
+            ArtTuneSixteenChOptions.Add(f);
+        OnPropertyChanged(nameof(HasArtTuneSixteenCh));
+    }
+
+    private void RefreshArtTuneStack()
+    {
+        StackState = ArtTuneStackService.Detect();
+        ArtTuneVersions.Clear();
+        _installedTuneVersions = ArtTuneStackService.EnumerateLibrary();
+        foreach (var v in _installedTuneVersions)
+            ArtTuneVersions.Add($"{v.Game}  {v.Version}");
+        OnPropertyChanged(nameof(HasArtTuneSixteenCh));
+    }
+
+    private async Task InstallArtTuneStackAsync()
+    {
+        if (IsArtTuneBusy) return;
+        IsArtTuneBusy = true;
+        ArtTuneRunLog = string.Empty;
+        try
+        {
+            StatusText = "Installing Art Tune stack…";
+            var progress = new Progress<string>(line =>
+            {
+                if (string.IsNullOrWhiteSpace(line)) return;
+                ArtTuneRunLog += line + Environment.NewLine;
+                StatusText = line;
+            });
+            var ok = await _artTuneStack.InstallStackAsync(progress);
+            StatusText = ok ? "Art Tune stack install finished." : "Art Tune stack install reported failures.";
+        }
+        catch (Exception ex)
+        {
+            ErrorText = ex.Message;
+            StatusText = "Art Tune stack install failed.";
+        }
+        finally
+        {
+            IsArtTuneBusy = false;
+            RefreshArtTuneStack();
+        }
+    }
+
+    private async Task ApplyArtTuneTuneAsync()
+    {
+        if (IsArtTuneBusy) return;
+        var touch = SplitVersion(SelectedArtTuneVersion);
+        if (touch is null)
+        {
+            ErrorText = "Select a game + version first.";
+            return;
+        }
+        IsArtTuneBusy = true;
+        ArtTuneRunLog = string.Empty;
+        try
+        {
+            var (game, version) = touch.Value;
+            var match = _installedTuneVersions
+                .FirstOrDefault(v => v.Game == game && v.Version == version);
+            var leqHint = match?.LeqReleaseTimeHint ?? 0;
+            var sixteenCh = string.IsNullOrWhiteSpace(SelectedArtTuneSixteenCh)
+                ? match?.SixteenChFiles.FirstOrDefault()
+                : SelectedArtTuneSixteenCh;
+
+            StatusText = $"Applying {game} {version}…";
+            var progress = new Progress<string>(line =>
+            {
+                if (string.IsNullOrWhiteSpace(line)) return;
+                ArtTuneRunLog += line + Environment.NewLine;
+                StatusText = line;
+            });
+
+            var ok = await _artTuneStack.ApplyTuneAsync(
+                game, version,
+                sixteenChFile: sixteenCh,
+                eqFile: match?.EqFile,
+                leqReleaseTime: leqHint,
+                progress: progress);
+
+            if (_settings is not null)
+            {
+                _settings.ActiveGamingProfileId = $"{game}/{version}";
+                try { _saveAction?.Invoke(); } catch { }
+            }
+            StatusText = ok
+                ? $"Applied {game} {version} — config.txt + LEQ set."
+                : $"Applying {game} {version} reported failures.";
+        }
+        catch (Exception ex)
+        {
+            ErrorText = ex.Message;
+            StatusText = "Apply tune failed.";
+        }
+        finally
+        {
+            IsArtTuneBusy = false;
+        }
+    }
+
+    private static (string Game, string Version)? SplitVersion(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var parts = value.Split(new[] { "  " }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length != 2) return null;
+        return (parts[0].Trim(), parts[1].Trim());
     }
 
     public void Dispose()
