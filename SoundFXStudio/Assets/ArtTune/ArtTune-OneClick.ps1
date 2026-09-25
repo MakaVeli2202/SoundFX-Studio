@@ -708,11 +708,36 @@ function Write-ArtTuneConfig {
     $device16Line = if ($g16) { "Device: Art Tune + VB-Audio Virtual Cable $g16" } else { $null }
 
     $lib = 'ArtTuneDB\library'
+    $configRoot = Join-Path $env:ProgramFiles 'EqualizerAPO\config'
+    $resolvesTo = { param($Rel)
+        if (-not $Rel) { return $false }
+        return Test-Path -LiteralPath (Join-Path $configRoot ($Rel -replace '\\', '\'))
+    }
+    $resolveIncludes = {
+        param($Pieces)
+        $out = @()
+        foreach ($p in $Pieces) {
+            $label = $p.Label
+            $rel = $p.Path
+            if ($rel -and (& $resolvesTo $rel)) {
+                if ($label) { $out += $label }
+                $out += "Include: $rel"
+            } else {
+                if ($label) { $out += $label }
+                $out += 'Include: ArtTuneDB\library\'
+                Write-Warn "Tune file missing (using placeholder): $rel"
+            }
+        }
+        return $out
+    }
+
     $has16 = [bool]($SixteenChFile)
-    $prePath  = if ($Game -and $Version) { "$lib\$Game\$Version\${Game}_${Version}_pre.txt" } else { $null }
-    $targetEq = if ($Game -and $Version) { "$lib\$Game\$Version\${Game}_Target_${Version}.txt" } else { $null }
-    $postPath = if ($Game -and $Version) { "$lib\$Game\$Version\${Game}_${Version}_post.txt" } else { $null }
-    $eq16Path = if ($EqFile) { "$lib\$($EqFile.Replace('/','\'))" } else { $null }
+    $verDir = if ($Game -and $Version) { "$Game\$Version" } else { $null }
+    $prePath   = if ($verDir) { "$lib\$verDir\${Game}_${Version}_pre.txt" } else { $null }
+    $targetEq  = if ($verDir) { "$lib\$verDir\${Game}_Target_${Version}.txt" } else { $null }
+    $postPath  = if ($verDir) { "$lib\$verDir\${Game}_${Version}_post.txt" } else { $null }
+    $sixteenPath = if ($has16 -and $verDir) { "$lib\$verDir\$($SixteenChFile -replace '/','\')" } else { $null }
+    $eq16Path    = if ($EqFile -and $verDir) { "$lib\$verDir\eq\$($EqFile -replace '/','\')" } else { $null }
 
     $lines = @()
     $lines += '# ArtTuneDB config.txt'
@@ -720,25 +745,12 @@ function Write-ArtTuneConfig {
     $lines += ''
     $lines += '# ---- 8ch profile (Art Tune) - uses HeSuVi ----'
     if ($device8Line) { $lines += $device8Line }
-    if ($prePath) {
-        $lines += '# PRE HESUVI'
-        $lines += "Include: $prePath"
-        $lines += '# DO NOT REMOVE HESUVI - LOAD HESUVI PRESET FOR VERSION #'
-        $lines += 'Include: HeSuVi\hesuvi.txt'
-        $lines += '# EQ -- swap for your squig.link EQ (target file is in your version folder)'
-        $lines += "Include: $targetEq"
-        $lines += '# POST HESUVI'
-        $lines += "Include: $postPath"
-    } else {
-        $lines += '# PRE HESUVI'
-        $lines += 'Include: ArtTuneDB\library\'
-        $lines += '# DO NOT REMOVE HESUVI - LOAD HESUVI PRESET FOR VERSION #'
-        $lines += 'Include: HeSuVi\hesuvi.txt'
-        $lines += '# EQ -- swap for your squig.link EQ (target file is in your version folder)'
-        $lines += 'Include: ArtTuneDB\library\'
-        $lines += '# POST HESUVI'
-        $lines += 'Include: ArtTuneDB\library\'
-    }
+    $lines += (& $resolveIncludes @(
+        @{ Label = '# PRE HESUVI'; Path = $prePath },
+        @{ Label = '# DO NOT REMOVE HESUVI - LOAD HESUVI PRESET FOR VERSION #'; Path = 'HeSuVi\hesuvi.txt' },
+        @{ Label = '# EQ -- swap for your squig.link EQ (target file is in your version folder)'; Path = $targetEq },
+        @{ Label = '# POST HESUVI'; Path = $postPath }
+    ))
     $lines += '# OUTPUT BOOST -- set your dB in ArtTuneDB\boost.txt (0 dB = off)'
     $lines += 'Include: ArtTuneDB\boost.txt'
 
@@ -747,15 +759,10 @@ function Write-ArtTuneConfig {
         $lines += '# ---- 16ch profile (Art Tune +) - no HeSuVi, needs the bundled VST ----'
         $lines += '# ONLY use files with _16ch_ in the name (see "Choose a 16ch Tune.txt").'
         $lines += $device16Line
-        $lines += '# 16ch TUNE'
-        $lines += "Include: $lib\$($SixteenChFile.Replace('/','\'))"
-        if ($eq16Path) {
-            $lines += '# EQ -- swap for your squig.link EQ'
-            $lines += "Include: $eq16Path"
-        } else {
-            $lines += '# EQ -- swap for your squig.link EQ'
-            $lines += 'Include: ArtTuneDB\library\'
-        }
+        $lines += (& $resolveIncludes @(
+            @{ Label = '# 16ch TUNE'; Path = $sixteenPath },
+            @{ Label = '# EQ -- swap for your squig.link EQ'; Path = $eq16Path }
+        ))
         $lines += '# OUTPUT BOOST'
         $lines += 'Include: ArtTuneDB\boost.txt'
     }
