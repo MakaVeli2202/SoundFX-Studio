@@ -267,6 +267,52 @@ public sealed class ArtTuneStackService
         return await RunScriptAsync(switches, progress, cancellationToken);
     }
 
+    /// <summary>
+    /// Full rollback: uninstalls ReaPlugs, Equalizer APO, VB-CABLE and
+    /// Voicemeeter, removes the ArtTuneDB library / HeSuVi / JSFX / VST / LEQ,
+    /// clears the endpoint renames, icons and LEQ release-time values, restores
+    /// config.txt, and prunes leftover VB-Audio driver packages. Elevates.
+    /// </summary>
+    public async Task<bool> UninstallEverythingAsync(
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await RunScriptAsync(new[] { "-UninstallEverything" }, progress, cancellationToken);
+    }
+
+    /// <summary>
+    /// Uninstalls only the apps (ReaPlugs, Equalizer APO, VB-CABLE, Voicemeeter).
+    /// Elevates.
+    /// </summary>
+    public async Task<bool> UninstallStackAsync(
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await RunScriptAsync(new[] { "-UninstallStack" }, progress, cancellationToken);
+    }
+
+    /// <summary>
+    /// Removes only the ArtTuneDB library, HeSuVi, JSFX and VST plugins.
+    /// Elevates.
+    /// </summary>
+    public async Task<bool> UninstallLibraryAsync(
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await RunScriptAsync(new[] { "-UninstallLibrary" }, progress, cancellationToken);
+    }
+
+    /// <summary>
+    /// Only resets endpoint names/icons and LEQ release time back to stock.
+    /// Elevates.
+    /// </summary>
+    public async Task<bool> ResetEndpointsAsync(
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await RunScriptAsync(new[] { "-ResetEndpoints" }, progress, cancellationToken);
+    }
+
     private async Task<bool> RunScriptAsync(
         IReadOnlyList<string> switches,
         IProgress<string>? progress,

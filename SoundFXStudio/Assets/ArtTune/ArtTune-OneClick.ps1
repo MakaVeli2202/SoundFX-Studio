@@ -17,6 +17,10 @@ param(
     [switch]$SetupEndpoints,
     [switch]$RenameVoicemeeter,
     [switch]$SkipExisting,
+    [switch]$UninstallEverything,
+    [switch]$UninstallStack,
+    [switch]$UninstallLibrary,
+    [switch]$ResetEndpoints,
     [string]$Game = '',
     [string]$Version = '',
     [string]$SixteenChFile = '',
@@ -831,8 +835,198 @@ function Write-FolderReadme {
     } catch { Write-Warn "Could not write folder shortcut/readme: $($_.Exception.Message)" }
 }
 
+# ══════════════════════════ FULL ROLLBACK ════════════════════════════════════
+function Remove-RegValues {
+    param([string]$KeyPath, [string[]]$Names)
+    foreach ($n in $Names) {
+        try { Remove-ItemProperty -LiteralPath $KeyPath -Name $n -ErrorAction Stop } catch { }
+    }
+}
+
+function Reset-ArtTuneEndpointNames {
+    # Capture cable + Voicemeeter guids FIRST (detection needs the renames), then
+    # delete the friendly-name/icon overrides and LEQ release-time values so
+    # Windows falls back to the stock vendor names like it was never installed.
+    $eps = Get-ArtTuneEndpoints
+    $vmEps = Get-VoicemeeterEndpoints
+    $targets = @()
+    if ($eps.Render8)  { $targets += @{ View = 'Render';  Guid = $eps.Render8 } }
+    if ($eps.Render16) { $targets += @{ View = 'Render';  Guid = $eps.Render16 } }
+    if ($eps.Capture)  { $targets += @{ View = 'Capture'; Guid = $eps.Capture } }
+    if ($vmEps.Render)  { $targets += @{ View = 'Render';  Guid = $vmEps.Render } }
+    if ($vmEps.Capture) { $targets += @{ View = 'Capture'; Guid = $vmEps.Capture } }
+
+    foreach ($t in $targets) {
+        $propsPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\$($t.View)\$($t.Guid)\Properties"
+        if (Test-Path -LiteralPath $propsPath) {
+            Remove-RegValues -KeyPath $propsPath -Names @($script:PKEY_FRIENDLY, $script:PKEY_ICON)
+        }
+    }
+    # LEQ release time on every render endpoint (we only ever wrote these two)
+    if (Test-Path $script:MMDEVICES_RENDER) {
+        foreach ($key in Get-ChildItem $script:MMDEVICES_RENDER -ErrorAction SilentlyContinue) {
+            $fx = Join-Path $key.PSPath 'FxProperties'
+            if (Test-Path $fx) { Remove-RegValues -KeyPath $fx -Names @($script:LeqReleaseTimeKey3, $script:LeqReleaseTimeKey1599) }
+        }
+    }
+    Write-Ok "Endpoint renames/icons and LEQ release-time removed ($($targets.Count) endpoints)."
+}
+
+function Restore-ArtTuneConfig {
+    $configDir = Join-Path $env:ProgramFiles 'EqualizerAPO\config'
+    $configFile = Join-Path $configDir 'config.txt'
+    $backup = Get-ChildItem -Path $configDir -Filter 'config.txt.bak-*' -File -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($backup) {
+        Copy-Item -LiteralPath $backup.FullName -Destination $configFile -Force
+        Write-Ok 'config.txt restored from backup.'
+    }
+    elseif (Test-Path -LiteralPath $configFile) {
+        Set-Content -LiteralPath $configFile -Value '# Equalizer APO config.txt -- restored by SoundFX Studio rollback.' -Force -ErrorAction SilentlyContinue
+        Write-Ok 'config.txt reset to default.'
+    }
+    else { Write-Warn 'No config.txt to restore.' }
+}
+
+function Invoke-SilentUninstall {
+    param([string]$Name, [string]$Exe, [string]$Switch = '/S')
+    if (-not (Test-Path -LiteralPath $Exe)) { Write-Warn "$Name not found, skipping: $Exe"; return }
+    try {
+        Write-Step "Uninstalling $Name..."
+        $proc = Start-Process -FilePath $Exe -ArgumentList $Switch -Wait -PassThru -WindowStyle Hidden
+        Start-Sleep -Seconds 2
+        if ($proc.ExitCode -eq 0) { Write-Ok "$Name uninstalled." }
+        else { Write-Warn "$Name uninstaller returned exit code $($proc.ExitCode)." }
+    } catch { Write-Warn "$Name uninstall failed: $($_.Exception.Message)" }
+}
+
+function Invoke-VbAudioDriverCleanup {
+    # Remove leftover VB-Audio driver packages from the DriverStore (best effort).
+    try {
+        $raw = pnputil /enum-drivers 2>$null
+        $block = @(); $published = @()
+        foreach ($line in $raw) {
+            if ($line -match '^\s*$') { $block = @(); continue }
+            $block += $line
+            if ($line -match 'Published Name:\s*(oem\d+\.inf)') {
+                if (($block -join "`n") -match 'Provider Name:\s*VB-Audio') { $published += $matches[1] }
+            }
+        }
+        foreach ($inf in ($published | Select-Object -Unique)) {
+            Write-Step "Removing leftover VB-Audio driver package $inf..."
+            $out = pnputil /delete-driver "$inf" /uninstall /force 2>&1
+            if ($LASTEXITCODE -ne 0) { Write-Warn "Could not remove driver package $inf : $out" }
+            else { Write-Ok "Driver package $inf removed." }
+        }
+        if (-not $published) { Write-Ok 'No leftover VB-Audio driver packages found.' }
+    } catch { Write-Warn "Driver cleanup skipped: $($_.Exception.Message)" }
+}
+
+function Invoke-ArtTuneRollback {
+    Write-Step 'FULL ROLLBACK: restoring machine to pre-ArtTune state.'
+
+    # 1. config.txt
+    Restore-ArtTuneConfig
+
+    # 2. remove ArtTuneDB library / HeSuVi / JSFX / VST folders first (before E-APO goes)
+    $folders = @(
+        "$($script:ArtTuneDBRoot)",
+        (Join-Path $env:ProgramFiles 'EqualizerAPO\config\HeSuVi'),
+        (Join-Path $env:ProgramFiles 'VSTPlugins\ReaPlugs\JS\Effects\ArtTuneKit'),
+        (Join-Path $env:ProgramFiles 'VSTPlugins\ArtTuneKit'),
+        (Join-Path $env:ProgramData 'ArtTune')
+    )
+    foreach ($f in $folders) {
+        if (Test-Path -LiteralPath $f) { Remove-Item -LiteralPath $f -Recurse -Force -ErrorAction SilentlyContinue; Write-Ok "Removed $f" }
+    }
+    $desktopLnk = Join-Path ([Environment]::GetFolderPath('Desktop')) 'ArtTuneDB.lnk'
+    if (Test-Path $desktopLnk) { Remove-Item $desktopLnk -Force -ErrorAction SilentlyContinue; Write-Ok 'Removed desktop ArtTuneDB shortcut.' }
+
+    # 3. endpoint names/icons + LEQ values (deleting overrides restores stock names)
+    Write-Step 'Resetting endpoint names, icons and LEQ release time...'
+    Reset-ArtTuneEndpointNames
+
+    # 4. LEQ Control Panel (has no uninstaller -- remove manually)
+    Stop-Process -Name 'LEQControlPanel' -Force -ErrorAction SilentlyContinue
+    $leqDest = Join-Path $env:LOCALAPPDATA 'Programs\LEQControlPanel'
+    if (Test-Path -LiteralPath $leqDest) {
+        Remove-Item -LiteralPath $leqDest -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Ok "Removed LEQ Control Panel ($leqDest)"
+    }
+    foreach ($menu in @(
+        (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\LEQ Control Panel.lnk'),
+        (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\LEQ Control Panel'),
+        (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\LEQ Control Panel.lnk')
+    )) {
+        if (Test-Path -LiteralPath $menu) { Remove-Item -LiteralPath $menu -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+    $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+    try { Remove-ItemProperty -LiteralPath $runKey -Name 'LEQControlPanel' -ErrorAction SilentlyContinue } catch { }
+
+    # 5. run the NSIS uninstallers
+    Stop-Process -Name 'voicemeeter' -Force -ErrorAction SilentlyContinue
+    Stop-Process -Name 'Voicemeeter' -Force -ErrorAction SilentlyContinue
+    Invoke-SilentUninstall -Name 'ReaPlugs' -Exe (Join-Path $env:ProgramFiles 'VSTPlugins\ReaPlugs\ReaPlugs-Uninst.exe')
+    Invoke-SilentUninstall -Name 'Equalizer APO' -Exe (Join-Path $env:ProgramFiles 'EqualizerAPO\Uninstall.exe')
+
+    $vbcSetup = Get-ChildItem 'C:\Program Files\VB\CABLE\VBCABLE_Setup*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($vbcSetup) { Invoke-SilentUninstall -Name 'VB-CABLE' -Exe $vbcSetup.FullName }
+
+    $vmRegKey = 'VB:Voicemeeter {17359A74-1236-5467}'
+    $vmSetup = $null
+    foreach ($rp in @("HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$vmRegKey",
+                      "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\$vmRegKey")) {
+        $props = Get-ItemProperty -LiteralPath $rp -ErrorAction SilentlyContinue
+        if ($props -and $props.UninstallString) { $vmSetup = "$($props.UninstallString)".Trim().Trim('"'); break }
+    }
+    if (-not $vmSetup -or -not (Test-Path -LiteralPath $vmSetup)) {
+        foreach ($exe in @("$env:ProgramFiles\VB\Voicemeeter\voicemeetersetup.exe",
+                           "$env:ProgramFiles (x86)\VB\Voicemeeter\voicemeetersetup.exe")) {
+            if (Test-Path -LiteralPath $exe) { $vmSetup = $exe; break }
+        }
+    }
+    if ($vmSetup) { Invoke-SilentUninstall -Name 'Voicemeeter' -Exe $vmSetup }
+
+    # 6. leftover driver packages
+    Invoke-VbAudioDriverCleanup
+
+    # 7. restart audio so Windows rebuilds the endpoint graph from scratch
+    Restart-AudioServices
+    Write-Ok 'Rollback complete. System restored to stock audio.'
+}
+
 # ══════════════════════════ MAIN ════════════════════════════════════════════
 $failed = $false
+
+if ($UninstallEverything -or $UninstallStack -or $UninstallLibrary -or $ResetEndpoints) {
+    if ($ResetEndpoints -and -not $UninstallEverything -and -not $UninstallStack -and -not $UninstallLibrary) {
+        Write-Step 'Reset endpoint names, icons and LEQ release time...'
+        Reset-ArtTuneEndpointNames
+        Restart-AudioServices
+        Write-Host '[ARTTUNE] RESULT:OK'
+        exit 0
+    }
+    if ($UninstallLibrary -and -not $UninstallEverything -and -not $UninstallStack) {
+        Write-Step 'Remove ArtTuneDB library, HeSuVi, JSFX and VST plugins...'
+        foreach ($f in @(
+            "$($script:ArtTuneDBRoot)",
+            (Join-Path $env:ProgramFiles 'EqualizerAPO\config\HeSuVi'),
+            (Join-Path $env:ProgramFiles 'VSTPlugins\ReaPlugs\JS\Effects\ArtTuneKit'),
+            (Join-Path $env:ProgramFiles 'VSTPlugins\ArtTuneKit'),
+            (Join-Path $env:ProgramData 'ArtTune'))) {
+            if (Test-Path -LiteralPath $f) { Remove-Item -LiteralPath $f -Recurse -Force -ErrorAction SilentlyContinue; Write-Ok "Removed $f" }
+        }
+        Write-Host '[ARTTUNE] RESULT:OK'
+        exit 0
+    }
+    Invoke-ArtTuneRollback
+    if ($failed) {
+        Write-Host '[ARTTUNE] RESULT:FAILED'
+        exit 1
+    }
+    Write-Host '[ARTTUNE] RESULT:OK'
+    exit 0
+}
 
 if ($InstallStack) {
     # VB-CABLE

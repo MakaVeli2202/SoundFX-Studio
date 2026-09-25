@@ -131,6 +131,7 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         ApplyArtTuneTuneCommand = new AsyncRelayCommand(async _ => await ApplyArtTuneTuneAsync(), _ => !IsArtTuneBusy);
         RefreshArtTuneStackCommand = new RelayCommand(_ => RefreshArtTuneStack());
         OpenArtTuneGuideCommand = new RelayCommand(_ => ArtTuneStackService.OpenGuidedGuide());
+        RollbackArtTuneStackCommand = new AsyncRelayCommand(async _ => await RollbackArtTuneStackAsync(), _ => !IsArtTuneBusy);
 
         foreach (var profile in GamingProfilePresets.Profiles)
             AvailableProfiles.Add(profile);
@@ -1391,6 +1392,7 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
     public RelayCommand RefreshArtTuneStackCommand { get; private set; } = null!;
     public RelayCommand OpenArtTuneGuideCommand { get; private set; } = null!;
     public AsyncRelayCommand InstallArtTuneStackCommand { get; private set; } = null!;
+    public AsyncRelayCommand RollbackArtTuneStackCommand { get; private set; } = null!;
     public AsyncRelayCommand ApplyArtTuneTuneCommand { get; private set; } = null!;
 
     public ObservableCollection<string> ArtTuneVersions { get; } = new();
@@ -1532,6 +1534,35 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         {
             ErrorText = ex.Message;
             StatusText = "Art Tune stack install failed.";
+        }
+        finally
+        {
+            IsArtTuneBusy = false;
+            RefreshArtTuneStack();
+        }
+    }
+
+    private async Task RollbackArtTuneStackAsync()
+    {
+        if (IsArtTuneBusy) return;
+        IsArtTuneBusy = true;
+        ArtTuneRunLog = string.Empty;
+        try
+        {
+            StatusText = "Uninstalling Art Tune stack…";
+            var progress = new Progress<string>(line =>
+            {
+                if (string.IsNullOrWhiteSpace(line)) return;
+                ArtTuneRunLog += line + Environment.NewLine;
+                StatusText = line;
+            });
+            var ok = await _artTuneStack.UninstallEverythingAsync(progress);
+            StatusText = ok ? "Art Tune stack rollback finished." : "Art Tune stack rollback reported failures.";
+        }
+        catch (Exception ex)
+        {
+            ErrorText = ex.Message;
+            StatusText = "Art Tune stack rollback failed.";
         }
         finally
         {
