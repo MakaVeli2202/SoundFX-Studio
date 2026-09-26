@@ -353,8 +353,12 @@ public class HeadphoneProfileTests
     [Fact]
     public void GamingViewModel_HeadphoneProfiles_Populated()
     {
+        // The VM also merges cached ArtTune-library headphone profiles, so the
+        // preset list is a guaranteed minimum, not an exact total.
         using var vm = new GamingViewModel();
-        Assert.Equal(HeadphoneProfilePresets.Profiles.Count + 1, vm.AvailableHeadphoneProfiles.Count);
+        Assert.True(vm.AvailableHeadphoneProfiles.Count >= HeadphoneProfilePresets.Profiles.Count + 1);
+        foreach (var preset in HeadphoneProfilePresets.Profiles)
+            Assert.Contains(vm.AvailableHeadphoneProfiles, p => string.Equals(p.Id, preset.Id, StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

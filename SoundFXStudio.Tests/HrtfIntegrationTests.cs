@@ -304,8 +304,13 @@ public class HrtfIntegrationTests
     [Fact]
     public void GamingViewModel_HrtfProfiles_Populated()
     {
+        // VM also merges cached ArtTune-library HRTF profiles - preset list
+        // (incl. "none") is a guaranteed minimum, not an exact total.
         using var vm = new GamingViewModel();
-        Assert.Equal(HrtfProfilePresets.Profiles.Count + 1, vm.AvailableHrtfProfiles.Count);
+        Assert.True(vm.AvailableHrtfProfiles.Count >= HrtfProfilePresets.Profiles.Count + 1);
+        Assert.Contains("none", vm.AvailableHrtfProfiles.Select(p => p.Id), StringComparer.OrdinalIgnoreCase);
+        foreach (var preset in HrtfProfilePresets.Profiles)
+            Assert.Contains(vm.AvailableHrtfProfiles, p => string.Equals(p.Id, preset.Id, StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

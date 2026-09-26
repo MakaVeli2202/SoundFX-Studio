@@ -899,8 +899,12 @@ public class GamingEnhancementTests
     [Fact]
     public void GamingViewModel_AvailableProfiles_Populated()
     {
+        // VM also merges cached ArtTune-library gaming profiles (dedup'ed) -
+        // preset list is a guaranteed minimum, not an exact total.
         using var vm = new GamingViewModel();
-        Assert.Equal(GamingProfilePresets.Profiles.Count, vm.AvailableProfiles.Count);
+        Assert.True(vm.AvailableProfiles.Count >= GamingProfilePresets.Profiles.Count);
+        foreach (var preset in GamingProfilePresets.Profiles)
+            Assert.Contains(vm.AvailableProfiles, p => string.Equals(p.Id, preset.Id, StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

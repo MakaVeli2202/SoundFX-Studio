@@ -41,7 +41,7 @@ $script:AppName    = 'SoundFX Studio'
 $script:AppExe     = Join-Path $env:ProgramFiles "SoundFX Studio\SoundFXStudio.exe"
 $script:AppDataDir = Join-Path $env:APPDATA 'SoundFXStudio'
 $script:AppId      = '{A2B3C4D5-E6F7-4812-9ABC-DEF012345678}'
-$script:SfxVersion = '1.0.2'
+$script:SfxVersion = '1.0.3'
 $script:BoxWidth   = 76
 $script:ScreenWidth = 120
 $script:BoxMargin  = ' ' * [Math]::Floor(($script:ScreenWidth - $script:BoxWidth - 2) / 2)
@@ -100,6 +100,28 @@ function Write-Warning {
     Write-Host ''
 }
 
+function Get-ConsoleWidth {
+    try {
+        $w = $Host.UI.RawUI.WindowSize.Width
+        if ($null -ne $w -and $w -gt 60) { return $w }
+    } catch { /* fall through */ }
+    return 120
+}
+
+function Write-BarLine {
+    # Renders a progress bar that OVERWRITES the current console line via \r
+    # (a single progressing bar, never a printout of hundreds of bars).
+    param([int]$Percent, [string]$Message)
+    if ([Console]::IsOutputRedirected) { return }
+    $barWidth = 24
+    $filled = [Math]::Min($barWidth, [Math]::Floor($barWidth * $Percent / 100))
+    $bar = ([string][char]0x2588) * $filled + ([string][char]0x2591) * ($barWidth - $filled)
+    $line = "$($script:BoxMargin)[$bar] {0,3}%  $Message" -f $Percent
+    $max = (Get-ConsoleWidth) - 1
+    if ($line.Length -gt $max) { $line = $line.Substring(0, $max) }
+    Write-Host "`r$line" -NoNewline
+}
+
 function Write-Step {
     param([int]$n, [string]$text)
     $pct = [Math]::Floor($n / $script:TotalSteps * 100)
@@ -151,24 +173,24 @@ function Invoke-WaitSpinner {
 }
 
 function Write-ProcessBar {
-    # Real-time animated fill bar while a process runs. '$Message'.
+    # Real-time animated fill bar while a process runs - ONE line that keeps
+    # overwriting itself (4% -> 8% -> 12% ...), never a printed list of bars.
     param(
         [System.Diagnostics.Process]$Process,
         [string]$Message
     )
-    $width = 24
-    $pad = 100
-    $i = 0
-    while (-not $Process.HasExited) {
-        $i = ($i + 1) % ($width + 1)
-        $bar = ''
-        for ($j = 0; $j -lt $width; $j++) { $bar += if ($j -lt $i) { $([char]0x2588) } else { $([char]0x2591) } }
-        $pct = [Math]::Floor($i / $width * 100)
-        Write-Host "`r$($script:BoxMargin)[$bar] $pct%  $Message$(' ' * [Math]::Max(0, $pad - $Message.Length - 30))" -NoNewline -ForegroundColor $C.Blue
-        Start-Sleep -Milliseconds 150
+    if ([Console]::IsOutputRedirected) {
+        $Process.WaitForExit()
+        return
     }
-    $full = ([string][char]0x2588) * $width
-    Write-Host "`r$($script:BoxMargin)[$full] 100%  $Message$(' ' * [Math]::Max(0, $pad - $Message.Length - 30))" -ForegroundColor $C.Green
+    $frame = 0
+    while (-not $Process.HasExited) {
+        Write-BarLine -Percent (($frame * 4) % 101) -Message $Message
+        $frame++
+        Start-Sleep -Milliseconds 120
+    }
+    Write-BarLine -Percent 100 -Message 'Installing SoundFX Studio... done'
+    Write-Host ''
 }
 
 function Test-IsAdmin {
@@ -210,14 +232,19 @@ function Get-LaunchChoice {
     while ($true) {
         Write-Host ''
         $null = Write-CenteredBlock @(
-            @{ Text = '[l] Launch SoundFX Studio now'; Color = 'White' }
-            @{ Text = '[m] Back to main menu'; Color = $C.Muted }
-            @{ Text = '[q] Quit'; Color = $C.Muted }
+            @{ Text = '[1] / [l]  Launch SoundFX Studio now'; Color = 'White' }
+            @{ Text = '[2] / [m]  Back to main menu'; Color = $C.Muted }
+            @{ Text = '[3] / [q]  Quit'; Color = $C.Muted }
         )
         Write-Host ''
         Write-Host "$($script:BoxMargin)Choice: " -ForegroundColor $C.Warning -NoNewline
         $key = Read-Host
-        switch ($key.ToLower()) {
+        switch ($key.ToLower().Trim()) {
+            '1' { $key = 'l'; break }
+            '2' { $key = 'm'; break }
+            '3' { $key = 'q'; break }
+        }
+        switch ($key) {
             'l' {
                 $null = Start-Process $exe
                 Write-Host "$($script:BoxMargin)Launched $($script:AppName)." -ForegroundColor $C.Green
@@ -358,7 +385,6 @@ function Invoke-Install {
 
     Write-Step 1 'Downloading package'
     $totalBytes = $asset.size
-    $progressId = 100
     $dl = Start-Job -ArgumentList $asset.browser_download_url, $installer -ScriptBlock {
         param($uri, $out)
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
@@ -367,12 +393,13 @@ function Invoke-Install {
     while ($dl.State -eq 'Running') {
         $have = if (Test-Path $installer) { (Get-Item $installer).Length } else { 0 }
         $pct = if ($totalBytes -gt 0) { [math]::Floor($have / $totalBytes * 100) } else { 0 }
-        Write-Progress -Activity "Downloading $($script:AppName)" -Status ("{0:N1} MB / {1:N1} MB" -f ($have / 1MB), ($totalBytes / 1MB)) -PercentComplete $pct -Id $progressId
-        Start-Sleep -Milliseconds 200
+        Write-BarLine -Percent ([Math]::Min(99, $pct)) -Message "Downloading $($asset.name)"
+        Start-Sleep -Milliseconds 150
     }
     Receive-Job $dl | Out-Null
     Remove-Job $dl
-    Write-Progress -Activity "Downloading $($script:AppName)" -Completed -Id $progressId
+    Write-BarLine -Percent 100 -Message "Downloading $($asset.name)"
+    Write-Host ''
     Write-Ok "$($asset.name) downloaded"
 
     Write-Step 2 "Installing $($script:AppName)"

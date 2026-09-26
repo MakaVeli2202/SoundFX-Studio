@@ -133,11 +133,22 @@ public partial class App : Application
 
     private async void App_Startup(object sender, StartupEventArgs e)
     {
+        // Keep the process alive explicitly: the splash/exit-flow windows are
+        // closed during startup and must never trip OnLastWindowClose.
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
         if (!IsRunningAsAdministrator())
         {
             if (_isFirstInstance)
             {
                 _singleInstanceMutex.ReleaseMutex();
+            }
+
+            if (MessageBox.Show("SoundFX Studio needs administrator rights to manage your audio devices.\n\nContinue as administrator?", "SoundFX Studio", MessageBoxButton.OKCancel, MessageBoxImage.Information) != MessageBoxResult.OK)
+            {
+                _logService.Info("Elevation declined by user.");
+                Shutdown();
+                return;
             }
 
             try
@@ -155,6 +166,9 @@ public partial class App : Application
             catch (Win32Exception)
             {
                 _logService.Info("Elevation cancelled by user.");
+                MessageBox.Show("SoundFX Studio did not start because elevation was cancelled.", "SoundFX Studio", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Shutdown();
+                return;
             }
 
             Shutdown();
