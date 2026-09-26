@@ -5,9 +5,18 @@ Usage:
   irm https://raw.githubusercontent.com/MakaVeli2202/SoundFX-Studio/main/install.ps1 | iex
   powershell -ExecutionPolicy Bypass -File install.ps1
 
+Command line (non-interactive):
+  powershell -ExecutionPolicy Bypass -File install.ps1 -Install
+  powershell -ExecutionPolicy Bypass -File install.ps1 -FreshInstall
+  powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall
+  powershell -ExecutionPolicy Bypass -File install.ps1 -UninstallAll
+  powershell -ExecutionPolicy Bypass -File install.ps1 -ArtTuneRollback
+  powershell -ExecutionPolicy Bypass -File install.ps1 -CheckUpdate
+  Combine with -Silent (no prompts) and -NoLaunch.
+
 Downloads the latest stable release from GitHub and installs it silently
 (Inno Setup /VERYSILENT). Existing installations are upgraded in place unless
-you choose to uninstall first.
+you choose the fresh install / uninstall options.
 #>
 
 Set-StrictMode -Version Latest
@@ -36,6 +45,7 @@ $script:SfxVersion = '1.0.0'
 $script:BoxWidth   = 76
 $script:ScreenWidth = 120
 $script:BoxMargin  = ' ' * [Math]::Floor(($script:ScreenWidth - $script:BoxWidth - 2) / 2)
+$script:ArtTunePs1 = Join-Path $env:ProgramFiles "SoundFX Studio\Assets\ArtTune\ArtTune-OneClick.ps1"
 
 # ---------------------------------------------------------------- helpers ---
 
@@ -92,7 +102,12 @@ function Write-Warning {
 
 function Write-Step {
     param([int]$n, [string]$text)
-    Write-Host "$($script:BoxMargin)Installing [$n/$script:TotalSteps]...  $text" -ForegroundColor $C.Muted
+    $pct = [Math]::Floor($n / $script:TotalSteps * 100)
+    $bar = ''
+    $width = 20
+    $filled = [Math]::Floor($width * $n / $script:TotalSteps)
+    for ($i = 0; $i -lt $width; $i++) { $bar += if ($i -lt $filled) { $([char]0x2588) } else { $([char]0x2591) } }
+    Write-Host "$($script:BoxMargin)[$bar] $pct%  $text" -ForegroundColor $C.Muted
 }
 
 function Write-Ok {
@@ -135,8 +150,58 @@ function Invoke-WaitSpinner {
     return $false
 }
 
+function Write-ProcessBar {
+    # Real-time animated fill bar while a process runs. '$Message'.
+    param(
+        [System.Diagnostics.Process]$Process,
+        [string]$Message
+    )
+    $width = 24
+    $pad = 100
+    $i = 0
+    while (-not $Process.HasExited) {
+        $i = ($i + 1) % ($width + 1)
+        $bar = ''
+        for ($j = 0; $j -lt $width; $j++) { $bar += if ($j -lt $i) { $([char]0x2588) } else { $([char]0x2591) } }
+        $pct = [Math]::Floor($i / $width * 100)
+        Write-Host "`r$($script:BoxMargin)[$bar] $pct%  $Message$(' ' * [Math]::Max(0, $pad - $Message.Length - 30))" -NoNewline -ForegroundColor $C.Blue
+        Start-Sleep -Milliseconds 150
+    }
+    $full = ([string][char]0x2588) * $width
+    Write-Host "`r$($script:BoxMargin)[$full] 100%  $Message$(' ' * [Math]::Max(0, $pad - $Message.Length - 30))" -ForegroundColor $C.Green
+}
+
 function Test-IsAdmin {
     return ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+function Resolve-VersionTag {
+    # Strips a leading 'v' from a version tag so 'v1.2.3' and '1.2.3' compare fine.
+    param([string]$Tag)
+    if (-not $Tag) { return '' }
+    return $Tag.Trim().TrimStart('v', 'V').Trim()
+}
+
+function Get-InstalledVersion {
+    $info = Get-UninstallInfo
+    if ($null -ne $info -and $info.Version -ne 'unknown') { return $info.Version }
+    return $null
+}
+
+function Test-LatestRelease {
+    # Returns @{ Available; Latest; Current } or $null if the check fails.
+    try {
+        $release = Invoke-RestMethod "https://api.github.com/repos/$($script:repo)/releases/latest"
+        $latest = Resolve-VersionTag $release.tag_name
+        $current = Resolve-VersionTag (Get-InstalledVersion)
+        if (-not $latest) { return $null }
+        if (-not $current) { return @{ Available = $false; Latest = $latest; Current = $null } }
+        $vNew = [version]$latest
+        $vCur = [version]$current
+        return @{ Available = ($vNew -gt $vCur); Latest = $latest; Current = $current }
+    } catch {
+        return $null
+    }
 }
 
 function Get-LaunchChoice {
@@ -223,6 +288,33 @@ function Get-InstalledVmEdition {
     return [pscustomobject]@{ Present = $false; Paid = $false; Name = '' }
 }
 
+# ------------------------------------------------------------ Art Tune rollback ---
+
+function Invoke-ArtTuneRollback {
+    # Runs the app's own full ArtTune rollback (VB-CABLE, Voicemeeter, E-APO,
+    # ReaPlugs, HeSuVi, LEQ, library, endpoint names, config, driver packages).
+    if (-not (Test-Path -LiteralPath $script:ArtTunePs1)) {
+        Write-Host "$($script:BoxMargin)Art Tune rollback script not found at:" -ForegroundColor $C.Warning
+        Write-Host "$($script:BoxMargin)  $($script:ArtTunePs1)" -ForegroundColor $C.Muted
+        Write-Host "$($script:BoxMargin)Install the app first (menu [1]), or run the app's own 'Reset / Art Tune rollout'." -ForegroundColor $C.Muted
+        return $false
+    }
+    Write-Host ''
+    Write-Host "$($script:BoxMargin)Rolling back Art Tune stack (VB-CABLE, Voicemeeter, E-APO, ReaPlugs, HeSuVi, LEQ, library, endpoints)..." -ForegroundColor $C.Warning
+    try {
+        $proc = Start-Process powershell.exe -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$script:ArtTunePs1`"", '-UninstallEverything' -PassThru -Wait -WindowStyle Hidden
+        if ($proc.ExitCode -eq 0) {
+            Write-Ok 'Art Tune stack rolled back cleanly (audio returned to stock).'
+            return $true
+        }
+        Write-Host "$($script:BoxMargin)Art Tune rollback returned exit code $($proc.ExitCode)." -ForegroundColor $C.Warning
+        return $false
+    } catch {
+        Write-Host "$($script:BoxMargin)Art Tune rollback failed: $($_.Exception.Message)" -ForegroundColor $C.Rose
+        return $false
+    }
+}
+
 # ------------------------------------------------------------- install path ---
 
 function Invoke-Install {
@@ -267,7 +359,9 @@ function Invoke-Install {
     Write-Ok "$($asset.name) downloaded"
 
     Write-Step 2 "Installing $($script:AppName)"
-    Start-Process -FilePath $installer -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait
+    $p = Start-Process -FilePath $installer -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -PassThru
+    Write-ProcessBar -Process $p -Message "Installing $($script:AppName)…"
+    if ($p.ExitCode -ne 0) { Write-ErrorLine "Installer returned exit code $($p.ExitCode)." }
     Write-Ok "$($script:AppName) $($release.tag_name) installed"
     Remove-Item $installer -ErrorAction SilentlyContinue
 
@@ -281,9 +375,6 @@ function Invoke-Install {
     Write-BoxLine 'Press the Windows key and type "SoundFX Studio" to launch.' $C.Muted
     Write-BoxBottom
     Write-Host ''
-
-    $r = Get-LaunchChoice
-    if ($r -eq 'quit') { exit 0 }
 }
 
 # ----------------------------------------------------------- uninstall paths ---
@@ -307,9 +398,9 @@ function Remove-App {
             try {
                 $unPath = ($info.UninstallString -replace '"', '')
                 if ($unPath -match '\.exe$') {
-                    $ok = Start-Process -FilePath $unPath -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -Wait -PassThru
-                    if ($ok.ExitCode -eq 0) { $removed += "$($script:AppName) $($info.Version)" }
-                    else { $kept += "$($script:AppName) (uninstaller returned $($ok.ExitCode))" }
+                    $p = Start-Process -FilePath $unPath -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -PassThru -Wait
+                    if ($p.ExitCode -eq 0) { $removed += "$($script:AppName) $($info.Version)" }
+                    else { $kept += "$($script:AppName) (uninstaller returned $($p.ExitCode))" }
                 } else {
                     $kept += "$($script:AppName) (uninstaller not a .exe)"
                 }
@@ -349,8 +440,8 @@ function Remove-App {
                 if ($vmUn) {
                     try {
                         $vmUnPath = ($vmUn -replace '"', '')
-                        $p = Start-Process -FilePath $vmUnPath -ArgumentList '/S', '/NORESTART' -Wait -PassThru
-                        if ($p.ExitCode -eq 0) { $removed += $vm.Name } else { $kept += "$($vm.Name) (uninstaller returned $($p.ExitCode))" }
+                        $pp = Start-Process -FilePath $vmUnPath -ArgumentList '/S', '/NORESTART' -Wait -PassThru
+                        if ($pp.ExitCode -eq 0) { $removed += $vm.Name } else { $kept += "$($vm.Name) (uninstaller returned $($pp.ExitCode))" }
                     } catch {
                         $kept += "$($vm.Name) (uninstall failed: $($_.Exception.Message))"
                     }
@@ -445,7 +536,92 @@ function Show-ThankYou {
     }
 }
 
-# ------------------------------------------------------------------- main ---
+# --------------------------------------------------------- update check path ---
+
+function Show-UpdateStatus {
+    # Prints a one-line update status (used by the menu + startup).
+    $check = Test-LatestRelease
+    if ($null -eq $check) {
+        Write-Host "$($script:BoxMargin)Update check failed (offline or GitHub unreachable)." -ForegroundColor $C.Muted
+        return
+    }
+    if (-not $check.Current) {
+        Write-Host "$($script:BoxMargin)Latest release: $($check.Latest)" -ForegroundColor $C.Muted
+        return
+    }
+    if ($check.Available) {
+        Write-Host "$($script:BoxMargin)Update available: $($check.Current) -> $($check.Latest)" -ForegroundColor $C.Warning
+    } else {
+        Write-Host "$($script:BoxMargin)You are up to date ($($check.Current))." -ForegroundColor $C.Green
+    }
+}
+
+# ---------------------------------------------------------------- dispatch ---
+
+# --- parse command line ---
+$wantInstall        = $args -contains '-Install' -or $args -contains '-install'
+$wantFresh          = $args -contains '-FreshInstall' -or $args -contains '-freshinstall'
+$wantUninstall      = $args -contains '-Uninstall' -or $args -contains '-uninstall'
+$wantUninstallAll   = $args -contains '-UninstallAll' -or $args -contains '-uninstallall'
+$wantArtTuneRoll    = $args -contains '-ArtTuneRollback' -or $args -contains '-arttunerollback'
+$wantCheckUpdate    = $args -contains '-CheckUpdate' -or $args -contains '-checkupdate'
+$silent             = $args -contains '-Silent' -or $args -contains '-silent'
+$noLaunch           = $args -contains '-NoLaunch' -or $args -contains '-nolaunch'
+
+function Confirm-Prompt {
+    # Silent mode answers NO (or YES for Fresh flow where everything is expected).
+    param([string]$Question, [bool]$DefaultYes = $false)
+    if ($silent) { return $DefaultYes }
+    Write-Host "$($script:BoxMargin)$Question" -ForegroundColor $C.Warning -NoNewline
+    $a = Read-Host
+    if ($DefaultYes) { return ($a -ne 'n' -and $a -ne 'N') }
+    return ($a -eq 'y' -or $a -eq 'Y')
+}
+
+# --- non-interactive CLI flows ---
+if ($wantCheckUpdate) {
+    $r = Test-LatestRelease
+    if ($null -eq $r) { Write-Host '0'; exit 2 }
+    Write-Host $r.Latest
+    exit 0
+}
+
+if ($wantArtTuneRoll) {
+    $ok = Invoke-ArtTuneRollback
+    exit (-not $ok)
+}
+
+if ($wantFresh) {
+    if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required for a fresh install.'; exit 1 }
+    Write-Host "$($script:BoxMargin)FRESH INSTALL: removing everything, then installing the latest version." -ForegroundColor $C.Warning
+    $okRoll = Invoke-ArtTuneRollback
+    Remove-App -RemoveData $true -RemoveVoicemeeter $true
+    if ($silent) { exit 0 }
+    Invoke-Install
+    if (-not $noLaunch) { $null = Start-Process $script:AppExe }
+    exit 0
+}
+
+if ($wantInstall) {
+    if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required.'; exit 1 }
+    Invoke-Install
+    if (-not $noLaunch) { $null = Start-Process $script:AppExe -ErrorAction SilentlyContinue }
+    exit 0
+}
+
+if ($wantUninstallAll) {
+    if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required.'; exit 1 }
+    Remove-App -RemoveData $true -RemoveVoicemeeter $true
+    exit 0
+}
+
+if ($wantUninstall) {
+    if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required.'; exit 1 }
+    Remove-App -RemoveData $false -RemoveVoicemeeter $false
+    exit 0
+}
+
+# --- interactive main ---
 
 Write-Banner
 Write-Warning
@@ -457,6 +633,8 @@ if (-not (Test-IsAdmin)) {
     exit 1
 }
 
+Show-UpdateStatus
+
 :mainMenu while ($true) {
     Write-Host ''
     $menuItems = @(
@@ -467,6 +645,9 @@ if (-not (Test-IsAdmin)) {
         @{ Text = '[2] Upgrade / Repair - re-run the installer, keep everything'; Color = 'White' }
         @{ Text = '[3] Uninstall app - remove the program, keep your sounds and settings'; Color = 'White' }
         @{ Text = '[4] Uninstall everything - app, data, and Voicemeeter'; Color = 'White' }
+        @{ Text = '[5] Fresh install - remove everything, then install the latest version'; Color = 'White' }
+        @{ Text = '[a] Reset / roll back Art Tune stack - clean uninstall of the audio tuning'; Color = $C.Purple }
+        @{ Text = '[u] Check for updates'; Color = $C.Purple }
         @{ Text = '[t] Thank you - credits & developer links'; Color = $C.Purple }
         @{ Text = '[Q] Quit'; Color = $C.Muted }
     )
@@ -483,13 +664,15 @@ if (-not (Test-IsAdmin)) {
             if ($result -eq 'quit') { break mainMenu }
             continue mainMenu
         }
+        if ($selection -eq 'u' -or $selection -eq 'U') { Show-UpdateStatus; continue mainMenu }
+        if ($selection -eq 'a' -or $selection -eq 'A') { $null = Invoke-ArtTuneRollback; continue mainMenu }
         if ($selection -eq 'q' -or $selection -eq 'Q') { break mainMenu }
         $num = 0
-        if ([int]::TryParse($selection, [ref]$num) -and $num -ge 1 -and $num -le 4) {
+        if ([int]::TryParse($selection, [ref]$num) -and $num -ge 1 -and $num -le 5) {
             $menuChoice = $num
             break
         }
-        Write-Host "$menuMarginInvalid choice. Enter 1, 2, 3, 4, t, or q." -ForegroundColor $C.Rose
+        Write-Host "$menuMarginInvalid choice. Enter 1-5, a, u, t, or q." -ForegroundColor $C.Rose
     }
 
     switch ($menuChoice) {
@@ -515,8 +698,20 @@ if (-not (Test-IsAdmin)) {
             Remove-App -RemoveData $true -RemoveVoicemeeter $wantVm
             continue mainMenu
         }
+        5 {
+            Write-Host ''
+            Write-Host "$($script:BoxMargin)FRESH INSTALL: removing everything, then installing the latest version." -ForegroundColor $C.Warning
+            $null = Invoke-ArtTuneRollback
+            Remove-App -RemoveData $true -RemoveVoicemeeter $true
+            Invoke-Install
+            $r = Get-LaunchChoice
+            if ($r -eq 'quit') { break mainMenu }
+            continue mainMenu
+        }
         default {
             Invoke-Install
+            $r = Get-LaunchChoice
+            if ($r -eq 'quit') { break mainMenu }
             continue mainMenu
         }
     }
