@@ -451,7 +451,7 @@ function Remove-App {
                 }
             }
         }
-    } elseif (Test-Path $script:AppExe -or (Get-UninstallInfo) -ne $null) {
+    } elseif ((Test-Path $script:AppExe) -or ($null -ne (Get-UninstallInfo))) {
         $vm = Get-InstalledVmEdition
         if ($vm.Present) { $kept += $vm.Name }
     }
