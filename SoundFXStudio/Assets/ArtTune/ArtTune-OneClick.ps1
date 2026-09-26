@@ -21,6 +21,7 @@ param(
     [switch]$UninstallStack,
     [switch]$UninstallLibrary,
     [switch]$ResetEndpoints,
+    [switch]$SkipVoicemeeter,
     [string]$Game = '',
     [string]$Version = '',
     [string]$SixteenChFile = '',
@@ -1155,6 +1156,47 @@ function Invoke-VbAudioDriverCleanup {
     } catch { Write-Warn "Driver cleanup skipped: $($_.Exception.Message)" }
 }
 
+function Remove-VoicemeeterNative {
+    # VB-Audio's Uninstall.exe ignores /S and pops a "Remove" dialog needing a
+    # click (and can stall / BSOD). Remove Voicemeeter natively instead: stop
+    # the kernel services, delete driver packages, remove software devices,
+    # folders and registry - fully silent.
+    Write-Step 'Removing Voicemeeter natively (silent, no interactive uninstaller)...'
+    foreach ($svc in 'VBAudioVACMME', 'VBAudioVACMME64', 'VBAudioVACMME32', 'VBAudioVMME') {
+        Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue
+        sc.exe delete $svc 2>$null | Out-Null
+    }
+    Start-Sleep -Milliseconds 500
+    Remove-VbAudioDevices
+    Invoke-VbAudioDriverCleanup
+    foreach ($dir in @("C:\Program Files\VB\Voicemeeter", "C:\Program Files (x86)\VB\Voicemeeter",
+                       "C:\Program Files\VB\Voicemeeter Banana", "C:\Program Files (x86)\VB\Voicemeeter Banana",
+                       "C:\Program Files\VB\Voicemeeter Potato", "C:\Program Files (x86)\VB\Voicemeeter Potato")) {
+        if (Test-Path -LiteralPath $dir) {
+            Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue
+            if (-not (Test-Path -LiteralPath $dir)) { Write-Ok "Removed $dir" }
+        }
+    }
+    foreach ($rk in @("HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
+                      "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
+                      "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:VoicemeeterBanana {17359A74-1236-5467}",
+                      "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:VoicemeeterPotato {17359A74-1236-5467}",
+                      'HKLM:\SOFTWARE\VB-Audio', 'HKLM:\SOFTWARE\WOW6432Node\VB-Audio')) {
+        if (Test-Path -LiteralPath $rk) {
+            Remove-Item -LiteralPath $rk -Recurse -Force -ErrorAction SilentlyContinue
+            if (-not (Test-Path -LiteralPath $rk)) { Write-Ok "Removed registry key $rk" }
+        }
+    }
+    foreach ($menu in @((Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\Voicemeeter'),
+                        (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\Voicemeeter Banana'),
+                        (Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\Voicemeeter Potato'))) {
+        if (Test-Path -LiteralPath $menu) {
+            Remove-Item -LiteralPath $menu -Recurse -Force -ErrorAction SilentlyContinue
+            if (-not (Test-Path -LiteralPath $menu)) { Write-Ok "Removed $menu" }
+        }
+    }
+}
+
 function Invoke-ArtTuneRollback {
     Write-Step 'FULL ROLLBACK: restoring machine to pre-ArtTune state.'
 
@@ -1208,20 +1250,11 @@ function Invoke-ArtTuneRollback {
     $vbcSetup = Get-ChildItem 'C:\Program Files\VB\CABLE', 'C:\Program Files (x86)\VB\CABLE' -Filter 'VBCABLE_Setup*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($vbcSetup) { Invoke-SilentUninstall -Name 'VB-CABLE' -Exe $vbcSetup.FullName }
 
-    $vmRegKey = 'VB:Voicemeeter {17359A74-1236-5467}'
-    $vmSetup = $null
-    foreach ($rp in @("HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$vmRegKey",
-                      "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\$vmRegKey")) {
-        $props = Get-ItemProperty -LiteralPath $rp -ErrorAction SilentlyContinue
-        if ($props -and $props.UninstallString) { $vmSetup = "$($props.UninstallString)".Trim().Trim('"'); break }
+    if ($SkipVoicemeeter) {
+        Write-Ok 'Voicemeeter removal handed to the master installer (native silent).'
+    } else {
+        Remove-VoicemeeterNative
     }
-    if (-not $vmSetup -or -not (Test-Path -LiteralPath $vmSetup)) {
-        foreach ($exe in @("$env:ProgramFiles\VB\Voicemeeter\voicemeetersetup.exe",
-                           "$env:ProgramFiles (x86)\VB\Voicemeeter\voicemeetersetup.exe")) {
-            if (Test-Path -LiteralPath $exe) { $vmSetup = $exe; break }
-        }
-    }
-    if ($vmSetup) { Invoke-SilentUninstall -Name 'Voicemeeter' -Exe $vmSetup }
 
     # 6. force-remove any remaining VB-Audio software devices, folders and
     # registry keys so stock state holds even if the NSIS uninstallers stalled.

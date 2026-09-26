@@ -41,7 +41,7 @@ $script:AppName    = 'SoundFX Studio'
 $script:AppExe     = Join-Path $env:ProgramFiles "SoundFX Studio\SoundFXStudio.exe"
 $script:AppDataDir = Join-Path $env:APPDATA 'SoundFXStudio'
 $script:AppId      = '{A2B3C4D5-E6F7-4812-9ABC-DEF012345678}'
-$script:SfxVersion = '1.0.1'
+$script:SfxVersion = '1.0.2'
 $script:BoxWidth   = 76
 $script:ScreenWidth = 120
 $script:BoxMargin  = ' ' * [Math]::Floor(($script:ScreenWidth - $script:BoxWidth - 2) / 2)
@@ -305,6 +305,9 @@ function Get-InstalledVmEdition {
 function Invoke-ArtTuneRollback {
     # Runs the app's own full ArtTune rollback (VB-CABLE, Voicemeeter, E-APO,
     # ReaPlugs, HeSuVi, LEQ, library, endpoint names, config, driver packages).
+    # -SkipVoicemeeter leaves Voicemeeter to Remove-App (still silent), so the
+    # fresh flow never touches VB's interactive Uninstall.exe.
+    param([switch]$SkipVoicemeeter)
     if (-not (Test-Path -LiteralPath $script:ArtTunePs1)) {
         Write-Host "$($script:BoxMargin)Art Tune rollback script not found at:" -ForegroundColor $C.Warning
         Write-Host "$($script:BoxMargin)  $($script:ArtTunePs1)" -ForegroundColor $C.Muted
@@ -314,7 +317,9 @@ function Invoke-ArtTuneRollback {
     Write-Host ''
     Write-Host "$($script:BoxMargin)Rolling back Art Tune stack (VB-CABLE, Voicemeeter, E-APO, ReaPlugs, HeSuVi, LEQ, library, endpoints)..." -ForegroundColor $C.Warning
     try {
-        $proc = Start-Process powershell.exe -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$script:ArtTunePs1`"", '-UninstallEverything' -PassThru -Wait -WindowStyle Hidden
+        $argsList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$script:ArtTunePs1`"", '-UninstallEverything')
+        if ($SkipVoicemeeter) { $argsList += '-SkipVoicemeeter' }
+        $proc = Start-Process powershell.exe -ArgumentList $argsList -PassThru -Wait -WindowStyle Hidden
         if ($proc.ExitCode -eq 0) {
             Write-Ok 'Art Tune stack rolled back cleanly (audio returned to stock).'
             return $true
@@ -394,10 +399,12 @@ function Invoke-Install {
 function Stop-VmAudioService {
     # The VB virtual cable kernel driver is the main BSOD risk during removal.
     try {
-        $svc = Get-CimInstance Win32_Service -Filter "Name='VBAudioVACMME'" -ErrorAction SilentlyContinue
-        if ($null -ne $svc) {
-            Stop-Service 'VBAudioVACMME' -Force -ErrorAction SilentlyContinue
-            sc.exe delete VBAudioVACMME | Out-Null
+        foreach ($svcName in 'VBAudioVACMME', 'VBAudioVACMME64', 'VBAudioVACMME32', 'VBAudioVMME') {
+            $svc = Get-CimInstance Win32_Service -Filter "Name='$svcName'" -ErrorAction SilentlyContinue
+            if ($null -ne $svc) {
+                Stop-Service -Name $svcName -Force -ErrorAction SilentlyContinue
+                sc.exe delete $svcName | Out-Null
+            }
         }
     } catch { /* best effort */ }
 }
@@ -445,9 +452,11 @@ function Invoke-VmManualRemoval {
     foreach ($folder in $vmFolders) {
         if (Test-Path -LiteralPath $folder.Path) {
             try {
-                if ($folder.Path -match "[$([regex]::Escape('VB\Voicemeeter'))]") {
+                if ($folder.Path.TrimEnd('\') -match '\\VB\\Voicemeeter$') {
                     Remove-Item -LiteralPath $folder.Path -Recurse -Force -ErrorAction Stop
                     Write-Ok "Removed $($folder.Path)"
+                } else {
+                    $ok = $false
                 }
             } catch { $ok = $false }
         }
@@ -508,16 +517,15 @@ function Invoke-VmSilentUninstall {
                 Write-Host "Uninstalling $($script:VmEdition) (silent)..." -ForegroundColor $C.Muted
                 $silentArg = if ($vmUnPath -match 'unins000\.exe$') { '/VERYSILENT' } else { '/S' }
                 $pp = Start-Process -FilePath $vmUnPath -ArgumentList $silentArg, '/NORESTART' -PassThru -WindowStyle Hidden
-                $waited = $pp.WaitForExit(90000)
+                $waited = $pp.WaitForExit(30000)
                 if (-not $waited) {
-                    Write-WarnMessage "$($script:VmEdition) uninstaller stalled - force-killing and removing silently."
-                    try { $pp.Kill() } catch { }
+                    Write-WarnMessage "$($script:VmEdition) uninstaller stalled - force-killing."
+                    try { $pp.Kill(); $pp.WaitForExit(5000) } catch { }
                 }
-                if ($pp.ExitCode -eq 0) { return $true }
-                Write-Host "$($script:BoxMargin)$($script:VmEdition) uninstaller exited $($pp.ExitCode) - removing silently." -ForegroundColor $C.Warning
+                Write-Host "$($script:BoxMargin)$($script:VmEdition) cleaned up natively (no more dialogs)." -ForegroundColor $C.Muted
             }
         } catch {
-            Write-Host "$($script:BoxMargin)$($script:VmEdition) uninstaller failed - removing silently." -ForegroundColor $C.Warning
+            Write-WarnMessage "$($script:VmEdition) uninstaller failed - removing natively."
         }
     }
 
@@ -729,7 +737,7 @@ if ($wantArtTuneRoll) {
 if ($wantFresh) {
     if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required for a fresh install.'; exit 1 }
     Write-Host "$($script:BoxMargin)FRESH INSTALL: removing everything, then installing the latest version." -ForegroundColor $C.Warning
-    $okRoll = Invoke-ArtTuneRollback
+    $okRoll = Invoke-ArtTuneRollback -SkipVoicemeeter
     Remove-App -RemoveData $true -RemoveVoicemeeter $true -SkipRestartPrompt
     if ($silent) { exit 0 }
     Invoke-Install
@@ -746,7 +754,7 @@ if ($wantInstall) {
 
 if ($wantUninstallAll) {
     if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required.'; exit 1 }
-    Remove-App -RemoveData $true -RemoveVoicemeeter $true
+    Remove-App -RemoveData $true -RemoveVoicemeeter $true -SkipRestartPrompt
     exit 0
 }
 
@@ -836,7 +844,7 @@ Show-UpdateStatus
         5 {
             Write-Host ''
             Write-Host "$($script:BoxMargin)FRESH INSTALL: removing everything, then installing the latest version." -ForegroundColor $C.Warning
-            $null = Invoke-ArtTuneRollback
+            $null = Invoke-ArtTuneRollback -SkipVoicemeeter
             Remove-App -RemoveData $true -RemoveVoicemeeter $true -SkipRestartPrompt
             Invoke-Install
             $r = Get-LaunchChoice
