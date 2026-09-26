@@ -60,20 +60,36 @@ function Write-Err   { param([string]$msg) Write-Host "[ARTTUNE] ERROR $msg" }
 
 function Get-UrlToFile {
     param([string]$Url, [string]$OutFile, [int]$TimeoutSeconds = 120, [string]$FallbackUrl = '')
-    try {
-        Invoke-WebRequest -Uri $Url -OutFile $OutFile -UseBasicParsing -ErrorAction Stop
-        if (Test-Path $OutFile) { return $true }
-    } catch {
-        Write-Warn "Download failed for $Url : $($_.Exception.Message)"
-    }
-    if ($FallbackUrl) {
-        try {
-            Write-Host "[ARTTUNE] Trying mirror..."
-            Invoke-WebRequest -Uri $FallbackUrl -OutFile $OutFile -UseBasicParsing -ErrorAction Stop
-            if (Test-Path $OutFile) { return $true }
-        } catch {
-            Write-Warn "Mirror download failed for $FallbackUrl : $($_.Exception.Message)"
+    # Cache: reuse a previous good download (real archive/executable, not a partial).
+    if (Test-Path $OutFile) {
+        $cached = Get-Item $OutFile
+        if ($cached.Length -ge 1024 -and (Test-BinaryHeader $OutFile)) {
+            Write-Ok "Using cached $([IO.Path]::GetFileName($OutFile)) ($($cached.Length) bytes)"
+            return $true
         }
+        Remove-Item $OutFile -Force -ErrorAction SilentlyContinue   # stale/partial cache
+    }
+    foreach ($try in @($Url, $FallbackUrl)) {
+        if (-not $try) { continue }
+        $what = if ($try -eq $Url) { 'download' } else { 'mirror' }
+        Write-Host "[ARTTUNE] Downloading ($what)..."
+        $job = Start-Job -ScriptBlock {
+            param($u, $o)
+            Invoke-WebRequest -Uri $u -OutFile $o -UseBasicParsing -ErrorAction Stop
+        } -ArgumentList $try, $OutFile
+        $done = Wait-Job $job -Timeout $TimeoutSeconds
+        if ($done) {
+            Receive-Job $job -ErrorVariable jerr -ErrorAction SilentlyContinue | Out-Null
+            if (-not $jerr -and (Test-Path $OutFile) -and (Get-Item $OutFile).Length -ge 1024 -and (Test-BinaryHeader $OutFile)) {
+                Remove-Job $job -Force -ErrorAction SilentlyContinue
+                return $true
+            }
+            Write-Warn "Download failed for $try : $jerr"
+        } else {
+            Write-Warn "Download timed out after ${TimeoutSeconds}s: $try"
+            Stop-Job $job -ErrorAction SilentlyContinue
+        }
+        Remove-Job $job -Force -ErrorAction SilentlyContinue
     }
     return $false
 }
@@ -84,7 +100,7 @@ function Test-BinaryHeader {
     $bytes = [System.IO.File]::ReadAllBytes($FilePath)
     if ($bytes.Length -lt 2) { return $false }
     $prefix = [System.Text.Encoding]::ASCII.GetString($bytes, 0, 2)
-    return ($prefix -eq 'MZ' -or $prefix -eq '7z')
+    return ($prefix -eq 'MZ' -or $prefix -eq '7z' -or $prefix -eq 'PK')
 }
 
 function Get-VoicemeeterFolder {
@@ -123,7 +139,8 @@ function Test-VoicemeeterEdition {
 }
 
 function Install-VBAudioCertificate {
-    $thumbprint = '00859AAC6A54B8C1B3C139DE67846E64E7B82DB2'
+    param([string]$ExePath = '')
+    $thumbprint = 'A77952D93229D0EC36E2543081EEA7D125732B9C'
     $store = [System.Security.Cryptography.X509Certificates.X509Store]::new('TrustedPublisher', 'LocalMachine')
     try {
         $store.Open('ReadOnly')
@@ -133,12 +150,16 @@ function Install-VBAudioCertificate {
         if ($existing.Count -gt 0) { $store.Close(); return $true }
     } catch { } finally { try { $store.Close() } catch { } }
 
-    $certBase64 = 'MIIFijCCBHKgAwIBAgIQB6z1xadU2q9M1r0ddHkdWTANBgkqhkiG9w0BAQUFADCBtDELMAkGA1UEBhMCVVMxFzAVBgNVBAoTDlZlcmlTaWduLCBJbmMuMR8wHQYDVQQLExZWZXJpU2lnbiBUcnVzdCBOZXR3b3JrMTswOQYDVQQLEzJUZXJtcyBvZiB1c2UgYXQgaHR0cHM6Ly93d3cudmVyaXNpZ24uY29tL3JwYSAoYykxMDEuMCwGA1UEAxMlVmVyaVNpZ24gQ2xhc3MgMyBDb2RlIFNpZ25pbmcgMjAxMCBDQTAeFw0xMzExMDIwMDAwMDBaFw0xNTAxMDEyMzU5NTlaMIG0MQswCQYDVQQGEwJVUzEXMBUGA1UEChMOVmVyaVNpZ24sIEluYy4xHzAdBgNVBAsTFlZlcmlTaWduIFRydXN0IE5ldHdvcmsxOzA5BgNVBAsTMlRlcm1zIG9mIHVzZSBhdCBodHRwczovL3d3dy52ZXJpc2lnbi5jb20vcnBhIChjKTEwMS4wLAYDVQQDEyVWZXJpU2lnbiBDbGFzcyAzIENvZGUgU2lnbmluZyAyMDEwIENBMIIBgjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuNk+86E2JTrndJHcUXmmzD3IhCAXQyqYL4K1RhDDBrHMaSx2l+wW3Z4AuEDM7S+DyJpYJK7G3pJacmBXWYb4cGXjIZtE3yaDnzYLY3x1RDk6l1Gvp+TWyW0Dd6w9cH1lWHRdAq5uV16CBGCvqWwY6UqD71g6oh4cKbJcW3w5j2P8G0dLq0oH0BpxXeCqB24Z8j5Rx7ZXVd0a1V8ySaQn5d0QslzK1f4OcgYz0I2wUfqoYcNjBplDyGOhdh0y+q5dFQd5JkYaQeBKlWQdF7oK9e4c5nkBsNQhUbxa0WFpQ0xG0VJ9l6kQj9ZsU6InSOfCqNeXBcRlFukT3rE2pX4='
+    $cert = $null
+    if ($ExePath -and (Test-Path -LiteralPath $ExePath)) {
+        try { $cert = (Get-AuthenticodeSignature -LiteralPath $ExePath -ErrorAction Stop).SignerCertificate } catch { }
+    }
+    if (-not $cert) {
+        Write-Warn 'Could not extract the VB-Audio publisher certificate.'
+        return $false
+    }
     try {
-        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
-            [Convert]::FromBase64String($certBase64))
-        $store2 = [System.Security.Cryptography.X509Certificates.X509Store]::new(
-            'TrustedPublisher', 'LocalMachine')
+        $store2 = [System.Security.Cryptography.X509Certificates.X509Store]::new('TrustedPublisher', 'LocalMachine')
         $store2.Open('ReadWrite')
         $store2.Add($cert)
         $store2.Close()
@@ -156,10 +177,16 @@ function Get-EapoInstallPath {
 }
 
 # ── VB-CABLE ────────────────────────────────────────────────────────────────
+function Test-VBCableInstalled {
+    $setupPresent = Get-ChildItem "C:\Program Files\VB\CABLE", "C:\Program Files (x86)\VB\CABLE" -Filter 'VBCABLE_Setup*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $setupPresent) { return $false }
+    $dev = Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -eq 'VB-Audio Virtual Cable' -and $_.Status -eq 'OK' }
+    return [bool]$dev
+}
+
 function Install-VBCable {
     param([string]$ZipPath)
-    $inst = Get-ChildItem "C:\Program Files\VB\CABLE", "C:\Program Files (x86)\VB\CABLE" -Filter 'VBCABLE_Setup*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($inst) { Write-Ok 'VB-CABLE already installed'; return $true }
+    if (Test-VBCableInstalled) { Write-Ok 'VB-CABLE already installed'; return $true }
 
     Write-Step 'Installing VB-CABLE...'
     $extractPath = Join-Path $script:TempPath 'VBCable_Extract'
@@ -169,12 +196,22 @@ function Install-VBCable {
     $setupExe = Get-ChildItem -LiteralPath $extractPath -Filter 'VBCABLE_Setup*.exe' -Recurse -ErrorAction Stop | Select-Object -First 1
     if (-not $setupExe) { Write-Err 'VB-CABLE setup exe not found in archive'; return $false }
 
-    $null = Install-VBAudioCertificate
+    $null = Install-VBAudioCertificate -ExePath $setupExe.FullName
     $proc = Start-Process -FilePath $setupExe.FullName -ArgumentList '-i -h' -PassThru -ErrorAction Stop
-    $proc.WaitForExit()
+    if (-not $proc.WaitForExit(240000)) {
+        Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+        Write-Err 'VB-CABLE installer timed out -- try again.'
+        return $false
+    }
     Start-Sleep -Seconds 3
+    $cableDev = Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -eq 'VB-Audio Virtual Cable' } | Select-Object -First 1
+    if ($cableDev) {
+        if ($cableDev.Status -eq 'OK') { Write-Ok 'VB-CABLE installed' }
+        else { Write-Warn "VB-CABLE driver installed; its device is pending restart ($($cableDev.Status)) -- a reboot is required before endpoint setup." }
+    } else {
+        Write-Warn 'VB-CABLE driver installed, but its virtual device will only appear after a reboot. A restart is required before endpoint setup.'
+    }
     Remove-Item $extractPath -Recurse -Force -ErrorAction SilentlyContinue
-    Write-Ok 'VB-CABLE installed'
     return $true
 }
 
@@ -191,9 +228,13 @@ function Install-Voicemeeter {
     $setupExe = Get-ChildItem -LiteralPath $extractPath -Filter '*Setup*.exe' -Recurse -ErrorAction Stop | Select-Object -First 1
     if (-not $setupExe) { Write-Err 'Voicemeeter setup exe not found in archive'; return $false }
 
-    $null = Install-VBAudioCertificate
+    $null = Install-VBAudioCertificate -ExePath $setupExe.FullName
     $proc = Start-Process -FilePath $setupExe.FullName -ArgumentList '-i -h' -PassThru -ErrorAction Stop
-    $proc.WaitForExit()
+    if (-not $proc.WaitForExit(240000)) {
+        Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+        Write-Err 'Voicemeeter installer timed out -- try again.'
+        return $false
+    }
     Start-Sleep -Seconds 2
 
     if (-not (Test-VoicemeeterEdition).Standard) { Write-Err 'Voicemeeter verification failed'; return $false }
@@ -203,6 +244,55 @@ function Install-Voicemeeter {
 }
 
 # ── ReaPlugs ────────────────────────────────────────────────────────────────
+function Confirm-ReaPlugsInstaller {
+    # ReaPlugs' NSIS pages expose their confirm buttons as Panes, not Buttons.
+    # Click the CENTRE of any element whose name matches a confirm word (any
+    # control type) and stop. The old Button-only / bottom-right-click logic
+    # stalled or cancelled the installer.
+    param([int]$ProcId, [int]$TimeoutSeconds = 90)
+    Add-Type -AssemblyName UIAutomationClient
+    Add-Type -AssemblyName UIAutomationTypes
+    try { Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class M {
+    [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, uint dx, uint dy, int dwData, UIntPtr dwExtraInfo);
+}
+"@ -ErrorAction Stop } catch { }
+    $root = [System.Windows.Automation.AutomationElement]::RootElement
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $namePat = 'Agree|^Install|&Install|Next|Finish|^OK|Accept'
+    while ((Get-Date) -lt $deadline) {
+        $p = Get-Process -Id $ProcId -ErrorAction SilentlyContinue
+        if (-not $p -or $p.HasExited) { return }
+        $pidCond = New-Object System.Windows.Automation.PropertyCondition(
+            [System.Windows.Automation.AutomationElement]::ProcessIdProperty, $ProcId)
+        $win = $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $pidCond)
+        if (-not $win) { Start-Sleep -Milliseconds 500; continue }
+        $all = $win.FindAll([System.Windows.Automation.TreeScope]::Descendants,
+            [System.Windows.Automation.Condition]::TrueCondition)
+        foreach ($el in $all) {
+            $nm = "$($el.Current.Name)"
+            if ($nm -match $namePat) {
+                $rect = $el.Current.BoundingRectangle
+                if ($rect.Width -gt 4 -and $rect.Height -gt 4) {
+                    $x = [int]($rect.X + $rect.Width / 2)
+                    $y = [int]($rect.Y + $rect.Height / 2)
+                    [M]::SetCursorPos($x, $y)
+                    Start-Sleep -Milliseconds 150
+                    [M]::mouse_event(0x0002, 0, 0, 0, [UIntPtr]::Zero)
+                    [M]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero)
+                    Write-Host "[ARTTUNE] ReaPlugs dialog auto-confirmed (click-center '$nm' @ $x,$y)."
+                    Start-Sleep -Seconds 2
+                    return
+                }
+            }
+        }
+        Start-Sleep -Milliseconds 700
+    }
+}
+
 function Install-ReaPlugs {
     param([string]$InstallerPath)
     $verifyDir = "${env:ProgramFiles}\VSTPlugins\ReaPlugs"
@@ -211,23 +301,60 @@ function Install-ReaPlugs {
 
     Write-Step 'Installing ReaPlugs...'
     Unblock-File -LiteralPath $InstallerPath -ErrorAction SilentlyContinue
-    $proc = Start-Process -FilePath $InstallerPath -ArgumentList '/S' -PassThru -ErrorAction Stop
-    $proc.WaitForExit()
+    $proc = Start-Process -FilePath $InstallerPath -ArgumentList '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' -PassThru -ErrorAction Stop
+    if (-not $proc.WaitForExit(90000)) {
+        Write-Warn 'ReaPlugs installer still open -- auto-confirming its dialog...'
+        Confirm-ReaPlugsInstaller -ProcId $proc.Id
+        if (-not $proc.WaitForExit(15000)) {
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            Write-Err 'ReaPlugs installer would not complete.'
+            return $false
+        }
+    }
     Start-Sleep -Seconds 2
     Write-Ok 'ReaPlugs installed'
     return $true
 }
 
 # ── Equalizer APO ───────────────────────────────────────────────────────────
+function Start-EapoSelectorWatcher {
+    # The E-APO installer runs the Device Selector configurator at the end.
+    # Watch in the background (>= setup duration) and close it so installs are
+    # fully hands-free. Runs elevated, so it may close the elevated dialog.
+    $job = Start-Job -ScriptBlock {
+        Add-Type -Name U -Namespace W -MemberDefinition @'
+[DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowW(string cn, string tn);
+[DllImport("user32.dll")] public static extern bool PostMessageW(IntPtr h, uint m, IntPtr w, IntPtr l);
+[DllImport("user32.dll")] public static extern bool IsWindow(IntPtr h);
+'@
+        $deadline = (Get-Date).AddMinutes(10)
+        while ((Get-Date) -lt $deadline) {
+            Get-Process -Name 'Configurator' -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+            $h = [W.U]::FindWindowW($null, 'Equalizer APO Device Selector')
+            if ($h -ne [IntPtr]::Zero -and [W.U]::IsWindow($h)) {
+                [W.U]::PostMessageW($h, 0x0012, [IntPtr]::Zero, [IntPtr]::Zero) # WM_CLOSE
+            }
+            Start-Sleep -Milliseconds 700
+        }
+    }
+    return $job
+}
+
 function Install-Eapo {
     param([string]$InstallerPath)
     $eapoRoot = (Get-EapoInstallPath).TrimEnd('\')
-    # /S is semi-silent (the Device Selector dialog still appears). /D sets the
-    # install location. Everything after /D= is read to end of line, unquoted.
-    Write-Step "Installing Equalizer APO (Device Selector dialog will appear)..."
-    $proc = Start-Process -FilePath $InstallerPath -ArgumentList "/S /D=$eapoRoot" -PassThru -ErrorAction Stop
-    $proc.WaitForExit()
-    Start-Sleep -Seconds 2
+    # /S is semi-silent: the Device Selector still spawns afterwards. The
+    # watcher below closes it for us. /D sets the install location.
+    Write-Step 'Installing Equalizer APO (Device Selector auto-dismissed)...'
+    $watcher = Start-EapoSelectorWatcher
+    try {
+        $proc = Start-Process -FilePath $InstallerPath -ArgumentList "/S /D=$eapoRoot" -PassThru -ErrorAction Stop
+        $proc.WaitForExit()
+        Start-Sleep -Seconds 2
+    } finally {
+        Stop-Job $watcher -ErrorAction SilentlyContinue
+        Remove-Job $watcher -Force -ErrorAction SilentlyContinue
+    }
     # Verify. /D= is a REQUEST, not a guarantee -- an existing install's recorded
     # path wins.
     $path = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\EqualizerAPO' -Name 'InstallPath' -ErrorAction SilentlyContinue).InstallPath
@@ -242,14 +369,11 @@ function Install-Eapo {
     return $false
 }
 
-# ── HeSuVi (interactive 7z SFX -- no silent flag) ───────────────────────────
+# ── HeSuVi (silent 7z SFX extraction; interactive fallback if needed) ───────
 function Install-HeSuVi {
     param([string]$InstallerPath)
     $heSuViDir = Join-Path $env:ProgramFiles 'EqualizerAPO\config\HeSuVi'
     if (Test-Path (Join-Path $heSuViDir 'hesuvi.txt')) { Write-Ok 'HeSuVi already installed'; return $true }
-
-    Write-Step 'Launching HeSuVi installer - complete the extraction dialog...'
-    Start-Process -FilePath $InstallerPath -ErrorAction Stop
 
     $detect = {
         param($dirs)
@@ -259,12 +383,34 @@ function Install-HeSuVi {
         return $null
     }
 
-    $deadline = (Get-Date).AddMinutes(5)
+    # Attempt silent SFX extraction (-o"dir" -y). Timeout in case the package
+    # turns out not to be a 7z SFX after all.
+    Write-Step 'Installing HeSuVi...'
+    $proc = Start-Process -FilePath $InstallerPath -ArgumentList "-o`"$heSuViDir`" -y" -PassThru -ErrorAction Stop
+    if (-not $proc.WaitForExit(60000)) {
+        Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+    }
+
+    $deadline = (Get-Date).AddSeconds(120)
     $found = $null
     while ((Get-Date) -lt $deadline -and -not $found) {
         $found = & $detect @(
             $heSuViDir,
-            (Join-Path $env:ProgramFiles 'EqualizerAPO\config\HeSuVi'),
+            (Join-Path $env:APPDATA 'HeSuVi'),
+            (Join-Path $env:USERPROFILE 'HeSuVi')
+        )
+        if (-not $found) { Start-Sleep -Seconds 2 }
+    }
+
+    if ($found) { Write-Ok "HeSuVi installed to $found"; return $true }
+
+    # Fallback: interactive extraction (inform the user, poll 5 minutes).
+    Write-Warn 'Silent HeSuVi extraction failed -- launching visible extractor, complete the dialog...'
+    Start-Process -FilePath $InstallerPath -ErrorAction SilentlyContinue | Out-Null
+    $deadline = (Get-Date).AddMinutes(5)
+    while ((Get-Date) -lt $deadline -and -not $found) {
+        $found = & $detect @(
+            $heSuViDir,
             (Join-Path $env:APPDATA 'HeSuVi'),
             (Join-Path $env:USERPROFILE 'HeSuVi')
         )
@@ -872,6 +1018,75 @@ function Reset-ArtTuneEndpointNames {
     Write-Ok "Endpoint renames/icons and LEQ release-time removed ($($targets.Count) endpoints)."
 }
 
+function Set-EndpointDeviceState {
+    param([string]$View, [string]$Guid, [int]$State)
+    $key = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\$View\$Guid"
+    try {
+        Set-ItemProperty -LiteralPath $key -Name 'DeviceState' -Value $State -Type DWord -ErrorAction Stop
+        return $true
+    } catch { return $false }
+}
+
+function Hide-UnusedVbEndpoints {
+    # Keep only the endpoints the Art Tune stack actually uses and hide the rest
+    # (Voicemeeter B2/B3/Aux/VAIO and other VB-CABLE variants) so they stop
+    # cluttering Windows app device pickers. Windows hides DeviceState=Disabled
+    # endpoints from most applications; we operate on the MMDevices registry so
+    # no physical device is ever touched.
+    function Test-RetainEndpoint {
+        param([string]$name)
+        if (-not $name) { return $false }
+        $n = $name.ToLowerInvariant()
+        if ($n -match 'art tune' -or $n -eq 'normal audio' -or $n -eq 'virtual mix') { return $true }
+        if ($n -match 'voicemeeter input' -and $n -notmatch 'aux') { return $true }
+        if ($n -match 'voicemeeter out b1' -and $n -notmatch 'aux|virtual') { return $true }
+        if ($n -match 'virtual cable' -or $n -match '^cable ' -or $n -match 'cable input|output') { return $true }
+        return $false
+    }
+    $hidden = @()
+    foreach ($view in @(@{ N = 'Render'; Flow = $script:MMDEVICES_RENDER }, @{ N = 'Capture'; Flow = $script:MMDEVICES_CAPTURE })) {
+        if (-not (Test-Path $view.Flow)) { continue }
+        foreach ($key in Get-ChildItem $view.Flow -ErrorAction SilentlyContinue) {
+            $propsPath = Join-Path $key.PSPath 'Properties'
+            $name = ''
+            if (Test-Path $propsPath) {
+                $name = "$((Get-ItemProperty -LiteralPath $propsPath -Name $script:PKEY_FRIENDLY -ErrorAction SilentlyContinue).$script:PKEY_FRIENDLY)"
+            }
+            if (-not $name) {
+                $name = "$((Get-ItemProperty -LiteralPath $key.PSPath -Name 'DeviceDesc' -ErrorAction SilentlyContinue).DeviceDesc)"
+            }
+            if (-not $name) { continue }
+            if ($name -notmatch 'voicemeeter|vb-audio|cable|virtual cable') { continue }
+            if (Test-RetainEndpoint $name) { continue }
+            if (Set-EndpointDeviceState -View $view.N -Guid $key.PSChildName -State 2) { $hidden += "$($view.N):$name" }
+        }
+    }
+    if ($hidden.Count -gt 0) {
+        Write-Ok "Hidden $(@($hidden).Count) unused VB-Audio/Voicemeeter endpoints: $($hidden -join '; ')"
+    } else {
+        Write-Warn 'No unused VB-Audio/Voicemeeter endpoints to hide.'
+    }
+}
+
+function Show-VbEndpoints {
+    # Re-enable every HM Software VB-Audio/Voicemeeter/CABLE endpoint (rollback).
+    $shown = @()
+    foreach ($view in @(@{ N = 'Render'; Flow = $script:MMDEVICES_RENDER }, @{ N = 'Capture'; Flow = $script:MMDEVICES_CAPTURE })) {
+        if (-not (Test-Path $view.Flow)) { continue }
+        foreach ($key in Get-ChildItem $view.Flow -ErrorAction SilentlyContinue) {
+            $propsPath = Join-Path $key.PSPath 'Properties'
+            $name = "$((Get-ItemProperty -LiteralPath $propsPath -Name $script:PKEY_FRIENDLY -ErrorAction SilentlyContinue).$script:PKEY_FRIENDLY)"
+            if (-not $name) { $name = "$((Get-ItemProperty -LiteralPath $key.PSPath -Name 'DeviceDesc' -ErrorAction SilentlyContinue).DeviceDesc)" }
+            if ($name -notmatch 'voicemeeter|vb-audio|cable|virtual cable|art tune|normal audio|virtual mix') { continue }
+            $state = (Get-ItemProperty -LiteralPath $key.PSPath -Name 'DeviceState' -ErrorAction SilentlyContinue).DeviceState
+            if ($null -ne $state -and [int]$state -eq 2) {
+                if (Set-EndpointDeviceState -View $view.N -Guid $key.PSChildName -State 1) { $shown += "$($view.N):$name" }
+            }
+        }
+    }
+    if ($shown.Count -gt 0) { Write-Ok "Re-enabled @($shown.Count) endpoints: $($shown -join '; ')" }
+}
+
 function Restore-ArtTuneConfig {
     $configDir = Join-Path $env:ProgramFiles 'EqualizerAPO\config'
     $configFile = Join-Path $configDir 'config.txt'
@@ -893,11 +1108,29 @@ function Invoke-SilentUninstall {
     if (-not (Test-Path -LiteralPath $Exe)) { Write-Warn "$Name not found, skipping: $Exe"; return }
     try {
         Write-Step "Uninstalling $Name..."
-        $proc = Start-Process -FilePath $Exe -ArgumentList $Switch -Wait -PassThru -WindowStyle Hidden
+        $proc = Start-Process -FilePath $Exe -ArgumentList $Switch -PassThru -WindowStyle Hidden
+        if (-not $proc.WaitForExit(90000)) {
+            Write-Warn "$Name uninstaller did not exit in 90s -- force-killing."
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            return
+        }
         Start-Sleep -Seconds 2
         if ($proc.ExitCode -eq 0) { Write-Ok "$Name uninstalled." }
         else { Write-Warn "$Name uninstaller returned exit code $($proc.ExitCode)." }
     } catch { Write-Warn "$Name uninstall failed: $($_.Exception.Message)" }
+}
+
+function Remove-VbAudioDevices {
+    # VB setup uninstallers can stall on hidden dialogs; remove the software
+    # devices natively so the endpoints are gone regardless.
+    $targets = @(Get-PnpDevice -ErrorAction SilentlyContinue |
+        Where-Object { $_.FriendlyName -match 'VB-Audio' -and $_.InstanceId -match '^ROOT\\MEDIA\\' })
+    if (-not $targets) { Write-Ok 'No VB-Audio software devices to remove.'; return }
+    foreach ($t in $targets) {
+        pnputil /remove-device "$($t.InstanceId)" 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) { Write-Warn "Could not remove $($t.InstanceId)" }
+        else { Write-Ok "Removed $($t.InstanceId)" }
+    }
 }
 
 function Invoke-VbAudioDriverCleanup {
@@ -945,6 +1178,7 @@ function Invoke-ArtTuneRollback {
     # 3. endpoint names/icons + LEQ values (deleting overrides restores stock names)
     Write-Step 'Resetting endpoint names, icons and LEQ release time...'
     Reset-ArtTuneEndpointNames
+    Show-VbEndpoints
 
     # 4. LEQ Control Panel (has no uninstaller -- remove manually)
     Stop-Process -Name 'LEQControlPanel' -Force -ErrorAction SilentlyContinue
@@ -969,7 +1203,9 @@ function Invoke-ArtTuneRollback {
     Invoke-SilentUninstall -Name 'ReaPlugs' -Exe (Join-Path $env:ProgramFiles 'VSTPlugins\ReaPlugs\ReaPlugs-Uninst.exe')
     Invoke-SilentUninstall -Name 'Equalizer APO' -Exe (Join-Path $env:ProgramFiles 'EqualizerAPO\Uninstall.exe')
 
-    $vbcSetup = Get-ChildItem 'C:\Program Files\VB\CABLE\VBCABLE_Setup*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+    # VB-CABLE / Voicemeeter: their NSIS setups are interactive and can stall
+    # silently, so always follow up with a native device/driver removal.
+    $vbcSetup = Get-ChildItem 'C:\Program Files\VB\CABLE', 'C:\Program Files (x86)\VB\CABLE' -Filter 'VBCABLE_Setup*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($vbcSetup) { Invoke-SilentUninstall -Name 'VB-CABLE' -Exe $vbcSetup.FullName }
 
     $vmRegKey = 'VB:Voicemeeter {17359A74-1236-5467}'
@@ -987,10 +1223,31 @@ function Invoke-ArtTuneRollback {
     }
     if ($vmSetup) { Invoke-SilentUninstall -Name 'Voicemeeter' -Exe $vmSetup }
 
-    # 6. leftover driver packages
+    # 6. force-remove any remaining VB-Audio software devices, folders and
+    # registry keys so stock state holds even if the NSIS uninstallers stalled.
+    Remove-VbAudioDevices
+    foreach ($dir in @("C:\Program Files\VB\CABLE", "C:\Program Files (x86)\VB\CABLE",
+                       "C:\Program Files\VB\Voicemeeter", "C:\Program Files (x86)\VB\Voicemeeter")) {
+        if (Test-Path -LiteralPath $dir) {
+            Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue
+            if (-not (Test-Path -LiteralPath $dir)) { Write-Ok "Removed $dir" }
+        }
+    }
+    foreach ($rk in @("HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$vmRegKey",
+                      "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\$vmRegKey",
+                      'HKLM:\SOFTWARE\VB-Audio',
+                      'HKLM:\SOFTWARE\WOW6432Node\VB-Audio')) {
+        if (Test-Path -LiteralPath $rk) {
+            Remove-Item -LiteralPath $rk -Recurse -Force -ErrorAction SilentlyContinue
+            if (-not (Test-Path -LiteralPath $rk)) { Write-Ok "Removed registry key $rk" }
+        }
+    }
+    Remove-Item -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run\LEQControlPanel' -ErrorAction SilentlyContinue
+
+    # 7. leftover driver packages
     Invoke-VbAudioDriverCleanup
 
-    # 7. restart audio so Windows rebuilds the endpoint graph from scratch
+    # 8. restart audio so Windows rebuilds the endpoint graph from scratch
     Restart-AudioServices
     Write-Ok 'Rollback complete. System restored to stock audio.'
 }
@@ -1002,6 +1259,7 @@ if ($UninstallEverything -or $UninstallStack -or $UninstallLibrary -or $ResetEnd
     if ($ResetEndpoints -and -not $UninstallEverything -and -not $UninstallStack -and -not $UninstallLibrary) {
         Write-Step 'Reset endpoint names, icons and LEQ release time...'
         Reset-ArtTuneEndpointNames
+        Show-VbEndpoints
         Restart-AudioServices
         Write-Host '[ARTTUNE] RESULT:OK'
         exit 0
@@ -1030,7 +1288,7 @@ if ($UninstallEverything -or $UninstallStack -or $UninstallLibrary -or $ResetEnd
 
 if ($InstallStack) {
     # VB-CABLE
-    if (-not (Get-ChildItem 'C:\Program Files\VB\CABLE' -Filter 'VBCABLE_Setup*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+    if (-not (Test-VBCableInstalled)) {
         $zip = Join-Path $script:TempPath 'VBCableSetup.zip'
         Write-Step 'Downloading VB-CABLE...'
         if (Get-UrlToFile -Url 'https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack45.zip' -OutFile $zip -TimeoutSeconds 120) {
@@ -1115,6 +1373,7 @@ if ($InstallLibrary) {
 
 if ($SetupEndpoints) {
     $null = Set-ArtTuneEndpoints -IncludeVoicemeeter $RenameVoicemeeter
+    Hide-UnusedVbEndpoints
 }
 
 if ($Game -and $Version) {
