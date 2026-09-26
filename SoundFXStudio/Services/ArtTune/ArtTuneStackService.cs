@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
+using NAudio.CoreAudioApi;
 
 namespace SoundFXStudio.Services.ArtTune;
 
@@ -473,5 +474,263 @@ public sealed class ArtTuneStackService
     {
         var path = Path.Combine(dir, name);
         return File.Exists(path) ? name.Replace('\\', '/') : null;
+    }
+}
+
+/// <summary>Health of the live tuning, verified from what is actually applied.</summary>
+public enum ArtTuneTuningHealth
+{
+    /// <summary>Stack + config + routing all in place; tuning is live.</summary>
+    Active,
+
+    /// <summary>Stack + config present but something is off (broken include, wrong tune, or output not routed).</summary>
+    Partial,
+
+    /// <summary>Stack or config missing entirely - nothing is tuned.</summary>
+    Inactive
+}
+
+/// <summary>One snapshot of a full live verification of the Art Tune chain.</summary>
+public sealed class ArtTuneTuningVerification
+{
+    public static ArtTuneTuningVerification Empty { get; } = new();
+
+    public ArtTuneTuningHealth Health { get; init; } = ArtTuneTuningHealth.Inactive;
+    public bool StackInstalled { get; init; }
+    public bool ConfigPresent { get; init; }
+    public bool ConfigHasMarker { get; init; }
+    public int IncludeCount { get; init; }
+    public IReadOnlyList<string> MissingFiles { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> DeviceSections { get; init; } = Array.Empty<string>();
+    public bool ContainsExpectedTune { get; init; }
+    public bool DefaultRenderRoutedToStack { get; init; }
+    public string DefaultRenderName { get; init; } = string.Empty;
+    public string DefaultCaptureName { get; init; } = string.Empty;
+    public string? DetectedTune { get; init; }
+    public string Summary { get; init; } = string.Empty;
+}
+
+/// <summary>Parsed view of EqualizerAPO's live config.txt (device + include lines).</summary>
+public sealed class ArtTuneConfigSnapshot
+{
+    public bool Present { get; init; }
+    public bool HasMarker { get; init; }
+    public int IncludeCount { get; init; }
+    public IReadOnlyList<string> MissingFiles { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> DeviceSections { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<(string Game, string Version)> DetectedTunes { get; init; } = Array.Empty<(string, string)>();
+}
+
+/// <summary>
+/// Live verification of the Art Tune chain. Unlike <see cref="ArtTuneStackService.Detect"/>,
+/// which only reports presence, this proves the tuning is actually working: the config.txt
+/// that Equalizer APO loads, every include it points at, the tune it selects, and whether the
+/// current default output is actually routed through a tuned endpoint.
+/// </summary>
+public static class ArtTuneVerifier
+{
+    private const string ConfigMarker = "# ArtTuneDB config.txt";
+
+    private static readonly Regex IncludeRegex = new(
+        @"^include\s*[:=]\s*(.*?)\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
+
+    private static readonly Regex DeviceRegex = new(
+        @"^device\s*:\s*(.+?)\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.Multiline | RegexOptions.Compiled);
+
+    private static readonly Regex TunePairRegex = new(
+        @"library[\\/]+([^\\/]+)[\\/]+([^\\/]+)(?:[\\/]|$)",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>Path of the live Equalizer APO config file.</summary>
+    public static string ConfigTxtPath =>
+        Path.Combine(ArtTuneStackService.EqualizerApoRoot, "config", "config.txt");
+
+    /// <summary>
+    /// Parses config.txt into includes (resolved against the config folder) plus any
+    /// per-device sections. Testable - takes an explicit path. Returns an empty snapshot
+    /// when the file is absent.
+    /// </summary>
+    public static ArtTuneConfigSnapshot ReadConfigTxt(string? configPath = null)
+    {
+        var path = configPath ?? ConfigTxtPath;
+        if (!File.Exists(path))
+            return new ArtTuneConfigSnapshot { Present = false };
+
+        string text;
+        try { text = File.ReadAllText(path); }
+        catch { return new ArtTuneConfigSnapshot { Present = false }; }
+
+        var configDir = Path.GetDirectoryName(Path.GetFullPath(path)) ?? string.Empty;
+
+        var markers = text.Contains(ConfigMarker, StringComparison.OrdinalIgnoreCase);
+        var includes = new List<string>();
+        foreach (Match m in IncludeRegex.Matches(text))
+        {
+            var val = m.Groups[1].Value.Trim().Trim('"');
+            if (val.Length == 0) continue;
+            includes.Add(val);
+        }
+
+        var deviceSections = new List<string>();
+        foreach (Match m in DeviceRegex.Matches(text))
+            deviceSections.Add(m.Groups[1].Value.Trim());
+
+        var missing = new List<string>();
+        foreach (var inc in includes)
+        {
+            var full = Path.IsPathRooted(inc)
+                ? inc
+                : Path.Combine(configDir, inc.Replace('/', '\\'));
+            if (!File.Exists(full)) missing.Add(inc);
+        }
+
+        var pairs = new List<(string, string)>();
+        foreach (var inc in includes)
+        {
+            var mm = TunePairRegex.Match(inc.Replace('\\', '/'));
+            if (!mm.Success) continue;
+            var pair = (mm.Groups[1].Value, mm.Groups[2].Value);
+            if (!pairs.Any(p => p.Item1 == pair.Item1 && p.Item2 == pair.Item2))
+                pairs.Add(pair);
+        }
+
+        return new ArtTuneConfigSnapshot
+        {
+            Present = true,
+            HasMarker = markers,
+            IncludeCount = includes.Count,
+            MissingFiles = missing,
+            DeviceSections = deviceSections,
+            DetectedTunes = pairs
+        };
+    }
+
+    /// <summary>
+    /// Full live verification. <paramref name="expectedTune"/> is "GAME/VERSION" (or
+    /// "GAME  VERSION"); when provided the verifier checks the loaded config actually
+    /// selects that tune so "configured but not working" never shows as green.
+    /// </summary>
+    public static ArtTuneTuningVerification VerifyTuning(string? expectedTune = null)
+    {
+        try
+        {
+            var state = ArtTuneStackService.Detect();
+            var cfg = ReadConfigTxt();
+
+            var stackOk = state.EqualizerApoInstalled && state.VbCableDetected && state.LibraryInstalled;
+            var configOk = cfg.Present && cfg.HasMarker;
+            var includesOk = cfg.IncludeCount > 0 && cfg.MissingFiles.Count == 0;
+
+            string? detected = null;
+            if (cfg.DetectedTunes.Count > 0)
+            {
+                var last = cfg.DetectedTunes[cfg.DetectedTunes.Count - 1];
+                detected = $"{last.Game}/{last.Version}";
+            }
+
+            var expectedNorm = string.IsNullOrWhiteSpace(expectedTune)
+                ? null
+                : expectedTune.Replace("  ", "/").Replace('\\', '/').Trim();
+            if (expectedNorm is not null && expectedNorm.Length > 0 && !expectedNorm.Contains('/'))
+                expectedNorm = $"{expectedNorm}";
+            expectedNorm = expectedNorm?.TrimEnd('/');
+
+            var containsExpected = expectedNorm is null
+                || cfg.DetectedTunes.Any(p =>
+                    string.Equals($"{p.Game}/{p.Version}", expectedNorm, StringComparison.OrdinalIgnoreCase));
+
+            var renderName = DefaultEndpointName(DataFlow.Render);
+            var captureName = DefaultEndpointName(DataFlow.Capture);
+            var renderRouted = IsStackEndpoint(renderName);
+
+            ArtTuneTuningHealth health;
+            string summary;
+
+            if (!stackOk)
+            {
+                health = ArtTuneTuningHealth.Inactive;
+                summary = state.MissingComponents.Count == 0
+                    ? "Not installed - run 1-CLICK INSTALL STACK."
+                    : $"Missing: {string.Join(", ", state.MissingComponents)}. Run 1-CLICK INSTALL STACK.";
+            }
+            else if (!configOk)
+            {
+                health = ArtTuneTuningHealth.Inactive;
+                summary = "Equalizer APO is not loading a tuned config.txt - run APPLY TUNE.";
+            }
+            else if (!includesOk)
+            {
+                health = ArtTuneTuningHealth.Partial;
+                summary = $"config.txt references {cfg.MissingFiles.Count} missing file(s): " +
+                          string.Join(", ", cfg.MissingFiles.Take(3)) +
+                          ". Re-run APPLY TUNE.";
+            }
+            else if (!containsExpected)
+            {
+                health = ArtTuneTuningHealth.Partial;
+                summary = detected is null
+                    ? $"config.txt is loaded but does not select {expectedNorm} - run APPLY TUNE."
+                    : $"config.txt selects {detected}, not {expectedNorm} - run APPLY TUNE.";
+            }
+            else if (!renderRouted)
+            {
+                health = ArtTuneTuningHealth.Partial;
+                summary = $"Tuned config is live, but your default output is \"{renderName}\". " +
+                          "Set output to Art Tune / Art Tune + / Voicemeeter / Cable for the tuning to be audible.";
+            }
+            else
+            {
+                health = ArtTuneTuningHealth.Active;
+                summary = detected is null
+                    ? $"LIVE - {cfg.IncludeCount} includes, default output {renderName}."
+                    : $"LIVE - {detected}, {cfg.IncludeCount} includes, default output {renderName}.";
+            }
+
+            return new ArtTuneTuningVerification
+            {
+                Health = health,
+                StackInstalled = stackOk,
+                ConfigPresent = cfg.Present,
+                ConfigHasMarker = cfg.HasMarker,
+                IncludeCount = cfg.IncludeCount,
+                MissingFiles = cfg.MissingFiles,
+                DeviceSections = cfg.DeviceSections,
+                ContainsExpectedTune = containsExpected,
+                DefaultRenderRoutedToStack = renderRouted,
+                DefaultRenderName = renderName,
+                DefaultCaptureName = captureName,
+                DetectedTune = detected,
+                Summary = summary
+            };
+        }
+        catch
+        {
+            return ArtTuneTuningVerification.Empty;
+        }
+    }
+
+    private static bool IsStackEndpoint(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return false;
+        if (name.Contains("Art Tune", StringComparison.OrdinalIgnoreCase)) return true;
+        if (name.Contains("CABLE", StringComparison.OrdinalIgnoreCase) &&
+            name.Contains("VB-Audio", StringComparison.OrdinalIgnoreCase)) return true;
+        return name.Contains("Voicemeeter", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string DefaultEndpointName(DataFlow flow)
+    {
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            var dev = enumerator.GetDefaultAudioEndpoint(flow, Role.Multimedia);
+            return dev?.FriendlyName ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 }

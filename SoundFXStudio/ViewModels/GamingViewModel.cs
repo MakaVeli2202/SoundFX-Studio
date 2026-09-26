@@ -26,6 +26,11 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
     private readonly ArtTuneLibraryService _artTuneLibrary = new();
     private readonly ArtTuneStackService _artTuneStack = new();
     private ArtTuneStackState _artTuneStackState = ArtTuneStackService.Detect();
+    private ArtTuneTuningVerification _artTuneTuning = ArtTuneTuningVerification.Empty;
+    private System.Windows.Threading.DispatcherTimer? _artTuneHealthTimer;
+    private string _tuningHealthText = "TUNING NOT VERIFIED";
+    private System.Windows.Media.Brush _tuningHealthColor = System.Windows.Media.Brushes.DarkGray;
+    private string _tuningHealthDetail = string.Empty;
     private bool _isArtTuneBusy;
     private string _artTuneRunLog = string.Empty;
     private string _selectedArtTuneVersion = string.Empty;
@@ -168,6 +173,8 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         AvailableLatencyModes.Add(AudioLatencyMode.LowLatency);
 
         RefreshProcesses();
+
+        StartArtTuneHealthTimer();
 
         _gameAudioService.CaptureStarted += OnCaptureStarted;
         _gameAudioService.CaptureStopped += OnCaptureStopped;
@@ -1473,6 +1480,78 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         }
     }
 
+    // ─── Live tuning verification (is the tuning actually working) ─────────
+
+    public string TuningHealthText
+    {
+        get => _tuningHealthText;
+        private set => SetProperty(ref _tuningHealthText, value);
+    }
+
+    public System.Windows.Media.Brush TuningHealthColor
+    {
+        get => _tuningHealthColor;
+        private set => SetProperty(ref _tuningHealthColor, value);
+    }
+
+    public string TuningHealthDetail
+    {
+        get => _tuningHealthDetail;
+        private set => SetProperty(ref _tuningHealthDetail, value);
+    }
+
+    private void StartArtTuneHealthTimer()
+    {
+        if (_artTuneHealthTimer is not null) return;
+        try
+        {
+            if (System.Windows.Application.Current is null) return; // headless tests
+            _artTuneHealthTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _artTuneHealthTimer.Tick += (_, _) => VerifyArtTuneTuning();
+            _artTuneHealthTimer.Start();
+        }
+        catch { /* timer unavailable - static checks still run */ }
+        VerifyArtTuneTuning();
+    }
+
+    private void VerifyArtTuneTuning()
+    {
+        string? expected = null;
+        if (_settings?.ActiveGamingProfileId is { Length: > 0 } profileId)
+            expected = profileId.Replace('\\', '/').Trim();
+        else
+        {
+            var touch = SplitVersion(SelectedArtTuneVersion);
+            if (touch is not null) expected = $"{touch.Value.Game}/{touch.Value.Version}";
+        }
+
+        ArtTuneTuningVerification v;
+        try { v = ArtTuneVerifier.VerifyTuning(expected); }
+        catch { return; }
+
+        if (v.Health == _artTuneTuning.Health && v.Summary == _artTuneTuning.Summary) return;
+        _artTuneTuning = v;
+
+        TuningHealthText = v.Health switch
+        {
+            ArtTuneTuningHealth.Active => "TUNING ACTIVE",
+            ArtTuneTuningHealth.Partial => "TUNING PARTIAL",
+            _ => "TUNING NOT ACTIVE"
+        };
+        TuningHealthColor = v.Health switch
+        {
+            ArtTuneTuningHealth.Active => CreateColor(0x22, 0xC5, 0x5E),
+            ArtTuneTuningHealth.Partial => CreateColor(0xF5, 0x9E, 0x0B),
+            _ => CreateColor(0xE8, 0x55, 0x55)
+        };
+        TuningHealthDetail = v.Summary;
+    }
+
+    private static System.Windows.Media.Brush CreateColor(byte r, byte g, byte b) =>
+        new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(r, g, b));
+
+    public void RefreshTuningVerification() => VerifyArtTuneTuning();
+
     public string SelectedArtTuneVersion
     {
         get => _selectedArtTuneVersion;
@@ -1511,6 +1590,7 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         foreach (var v in _installedTuneVersions)
             ArtTuneVersions.Add($"{v.Game}  {v.Version}");
         OnPropertyChanged(nameof(HasArtTuneSixteenCh));
+        VerifyArtTuneTuning();
     }
 
     private async Task InstallArtTuneStackAsync()
@@ -1624,6 +1704,7 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         finally
         {
             IsArtTuneBusy = false;
+            VerifyArtTuneTuning();
         }
     }
 
@@ -1649,6 +1730,12 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         _headTrackingTimer = null;
         _currentProvider?.Dispose();
         _currentProvider = null;
+
+        if (_artTuneHealthTimer is not null)
+        {
+            try { _artTuneHealthTimer.Stop(); } catch { }
+            _artTuneHealthTimer = null;
+        }
 
         _headTrackingService.Dispose();
 
