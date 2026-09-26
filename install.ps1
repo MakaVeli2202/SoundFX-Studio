@@ -232,6 +232,18 @@ function Get-LaunchChoice {
 
 # --------------------------------------------------------- uninstall helpers ---
 
+# StrictMode-safe registry value read: returns $null when the key or value is
+# missing instead of throwing "property cannot be found".
+function Get-RegValue {
+    param([string]$KeyPath, [string]$ValueName)
+    try {
+        $key = Get-Item -LiteralPath $KeyPath -ErrorAction Stop
+        return $key.GetValue($ValueName)
+    } catch {
+        return $null
+    }
+}
+
 function Get-UninstallInfo {
     <#
     Finds the installed copy's uninstall info (uninstall exe + version).
@@ -244,13 +256,13 @@ function Get-UninstallInfo {
     )
     foreach ($key in $keys) {
         if (Test-Path $key) {
-            $props = Get-ItemProperty $key
-            $version = if ($null -ne $props.DisplayVersion) { $props.DisplayVersion } else { 'unknown' }
+            $version = Get-RegValue $key 'DisplayVersion'
+            if ([string]::IsNullOrWhiteSpace($version)) { $version = 'unknown' }
             return [pscustomobject]@{
                 Key     = $key
                 Version = $version
-                UninstallString = $props.UninstallString
-                QuietUninstallString = $props.QuietUninstallString
+                UninstallString = [string](Get-RegValue $key 'UninstallString')
+                QuietUninstallString = [string](Get-RegValue $key 'QuietUninstallString')
             }
         }
     }
@@ -275,11 +287,11 @@ function Get-InstalledVmEdition {
     )
     foreach ($key in $keys) {
         if (Test-Path $key) {
-            $p = Get-ItemProperty $key
-            if ($p.DisplayName -match 'Lookback|Banana|Potato') {
-                return [pscustomobject]@{ Present = $true; Paid = $true; Name = $p.DisplayName }
+            $name = [string](Get-RegValue $key 'DisplayName')
+            if ($name -match 'Lookback|Banana|Potato') {
+                return [pscustomobject]@{ Present = $true; Paid = $true; Name = $name }
             }
-            return [pscustomobject]@{ Present = $true; Paid = $false; Name = $p.DisplayName }
+            return [pscustomobject]@{ Present = $true; Paid = $false; Name = $name }
         }
     }
     if (Test-Path 'C:\Program Files (x86)\VB\Voicemeeter\voicemeeter.exe') {
@@ -433,14 +445,23 @@ function Remove-App {
                 $vmUn = $null
                 foreach ($vk in $vmKeys) {
                     if (Test-Path $vk) {
-                        $vp = Get-ItemProperty $vk
-                        if ($vp.QuietUninstallString) { $vmUn = $vp.QuietUninstallString; break }
+                        $q = [string](Get-RegValue $vk 'QuietUninstallString')
+                        if (-not [string]::IsNullOrWhiteSpace($q)) { $vmUn = $q; break }
+                    }
+                }
+                if (-not $vmUn) {
+                    foreach ($vk in $vmKeys) {
+                        if (Test-Path $vk) {
+                            $u = [string](Get-RegValue $vk 'UninstallString')
+                            if (-not [string]::IsNullOrWhiteSpace($u)) { $vmUn = $u; break }
+                        }
                     }
                 }
                 if ($vmUn) {
                     try {
                         $vmUnPath = ($vmUn -replace '"', '')
-                        $pp = Start-Process -FilePath $vmUnPath -ArgumentList '/S', '/NORESTART' -Wait -PassThru
+                        $silentArg = if ($vmUnPath -match 'unins000\.exe$') { '/VERYSILENT' } else { '/S' }
+                        $pp = Start-Process -FilePath $vmUnPath -ArgumentList $silentArg, '/NORESTART' -Wait -PassThru
                         if ($pp.ExitCode -eq 0) { $removed += $vm.Name } else { $kept += "$($vm.Name) (uninstaller returned $($pp.ExitCode))" }
                     } catch {
                         $kept += "$($vm.Name) (uninstall failed: $($_.Exception.Message))"
@@ -672,7 +693,7 @@ Show-UpdateStatus
             $menuChoice = $num
             break
         }
-        Write-Host "$menuMarginInvalid choice. Enter 1-5, a, u, t, or q." -ForegroundColor $C.Rose
+        Write-Host "$($menuMargin)Invalid choice. Enter 1-5, a, u, t, or q." -ForegroundColor $C.Rose
     }
 
     switch ($menuChoice) {
