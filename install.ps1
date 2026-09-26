@@ -610,14 +610,14 @@ function Write-UninstallCompletion {
     Write-BoxLine '' $C.Muted
     if ($Removed.Count -gt 0) {
         Write-BoxLine 'Removed:' $C.Green
-        foreach ($c in $Removed) { Write-BoxLine "  $([char]0x2713) $c" $C.Green }
+        foreach ($item in $Removed) { Write-BoxLine "  $([char]0x2713) $item" $C.Green }
     } else {
         Write-BoxLine 'Nothing was removed.' $C.Warning
     }
     if ($Kept.Count -gt 0) {
         Write-BoxLine '' $C.Muted
         Write-BoxLine 'Kept:' $C.Muted
-        foreach ($c in $Kept) { Write-BoxLine "  - $c" $C.Muted }
+        foreach ($item in $Kept) { Write-BoxLine "  - $item" $C.Muted }
         Write-BoxLine '' $C.Muted
         Write-BoxLine 'You can change these in Apps & Features or the app.' $C.Muted
     }
@@ -644,8 +644,8 @@ function Show-ThankYou {
         @{ Num = '3'; Tool = '.NET / WPF'; Dev = 'Microsoft'; Url = 'https://dotnet.microsoft.com' }
         @{ Num = '4'; Tool = 'SoundFX Studio'; Dev = 'MakaVeli2202'; Url = 'https://github.com/MakaVeli2202/SoundFX-Studio' }
     )
-    foreach ($c in $credits) {
-        Write-BoxLine "[$($c.Num)] $($c.Tool) - $($c.Dev)" $C.Muted
+    foreach ($credit in $credits) {
+        Write-BoxLine "[$($credit.Num)] $($credit.Tool) - $($credit.Dev)" $C.Muted
     }
     Write-BoxLine '' $C.Muted
     Write-BoxBottom
