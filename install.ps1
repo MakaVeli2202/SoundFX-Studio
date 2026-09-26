@@ -391,10 +391,144 @@ function Invoke-Install {
 
 # ----------------------------------------------------------- uninstall paths ---
 
+function Stop-VmAudioService {
+    # The VB virtual cable kernel driver is the main BSOD risk during removal.
+    try {
+        $svc = Get-CimInstance Win32_Service -Filter "Name='VBAudioVACMME'" -ErrorAction SilentlyContinue
+        if ($null -ne $svc) {
+            Stop-Service 'VBAudioVACMME' -Force -ErrorAction SilentlyContinue
+            sc.exe delete VBAudioVACMME | Out-Null
+        }
+    } catch { /* best effort */ }
+}
+
+function Get-VbDriverPackages {
+    # oemN.inf package names belonging to VB-Audio / Voicemeeter audio drivers.
+    try {
+        $out = pnputil /enum-drivers 2>$null
+        $blocks = @()
+        $cur = [System.Collections.Generic.List[string]]::new()
+        foreach ($line in $out) {
+            if ([string]::IsNullOrWhiteSpace($line)) {
+                if ($cur.Count) { $blocks += ,($cur -join "`n"); $cur = [System.Collections.Generic.List[string]]::new() }
+                continue
+            }
+            $cur.Add([string]$line)
+        }
+        if ($cur.Count) { $blocks += ,($cur -join "`n") }
+        foreach ($b in $blocks) {
+            if ($b -match 'VB-Audio|Voicemeeter') {
+                $m = [regex]::Match($b, '(?m)^Published Name:\s*(.+)$')
+                if ($m.Success) { $m.Groups[1].Value.Trim() }
+            }
+        }
+    } catch { }
+}
+
+function Invoke-VmManualRemoval {
+    # Fully silent removal of VB-Audio Voicemeeter WITHOUT its GUI uninstaller
+    # (VB uninstallers ignore /S and pop a "Remove" dialog). Mirrors what the
+    # app's ArtTune rollback does, all hands-free.
+    Write-Host "$($script:BoxMargin)Removing $($script:VmEdition) files, driver + registry silently..." -ForegroundColor $C.Muted
+    $ok = $true
+
+    Stop-VmAudioService
+
+    foreach ($inf in Get-VbDriverPackages) {
+        try { pnputil /delete-driver "$inf" /uninstall /force 2>$null | Out-Null } catch { }
+    }
+
+    $vmFolders = @(
+        @{ Path = 'C:\Program Files (x86)\VB\Voicemeeter'; Guard = 'Voicemeeter' },
+        @{ Path = 'C:\Program Files\VB\Voicemeeter'; Guard = 'Voicemeeter' }
+    )
+    foreach ($folder in $vmFolders) {
+        if (Test-Path -LiteralPath $folder.Path) {
+            try {
+                if ($folder.Path -match "[$([regex]::Escape('VB\Voicemeeter'))]") {
+                    Remove-Item -LiteralPath $folder.Path -Recurse -Force -ErrorAction Stop
+                    Write-Ok "Removed $($folder.Path)"
+                }
+            } catch { $ok = $false }
+        }
+    }
+
+    $vmKeys = @(
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:VoicemeeterBanana {17359A74-1236-5467}",
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:VoicemeeterPotato {17359A74-1236-5467}"
+    )
+    foreach ($vk in $vmKeys) {
+        try { Remove-Item -Path $vk -Recurse -Force -ErrorAction Stop } catch { }
+    }
+
+    $startMenu = @(
+        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Voicemeeter",
+        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\VB-Audio"
+    )
+    foreach ($dir in $startMenu) {
+        if (Test-Path -LiteralPath $dir) {
+            try { Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction Stop } catch { }
+        }
+    }
+
+    return $ok
+}
+
+function Invoke-VmSilentUninstall {
+    # Tries the recorded uninstaller (hidden, 90s cap, force-kill on stall);
+    # falls back to a fully silent manual removal when it's a VB-style GUI
+    # uninstaller or wasn't recorded.
+    $vmKeys = @(
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}"
+    )
+    $vmUn = $null
+    foreach ($vk in $vmKeys) {
+        if (Test-Path $vk) {
+            $q = [string](Get-RegValue $vk 'QuietUninstallString')
+            if (-not [string]::IsNullOrWhiteSpace($q)) { $vmUn = $q; break }
+        }
+    }
+    if (-not $vmUn) {
+        foreach ($vk in $vmKeys) {
+            if (Test-Path $vk) {
+                $u = [string](Get-RegValue $vk 'UninstallString')
+                if (-not [string]::IsNullOrWhiteSpace($u)) { $vmUn = $u; break }
+            }
+        }
+    }
+
+    if ($vmUn) {
+        try {
+            $vmUnPath = ($vmUn -replace '"', '').Trim()
+            if (Test-Path -LiteralPath $vmUnPath) {
+                Write-Host "$($script:BoxMargin)" -NoNewline
+                Write-Host "Uninstalling $($script:VmEdition) (silent)..." -ForegroundColor $C.Muted
+                $silentArg = if ($vmUnPath -match 'unins000\.exe$') { '/VERYSILENT' } else { '/S' }
+                $pp = Start-Process -FilePath $vmUnPath -ArgumentList $silentArg, '/NORESTART' -PassThru -WindowStyle Hidden
+                $waited = $pp.WaitForExit(90000)
+                if (-not $waited) {
+                    Write-WarnMessage "$($script:VmEdition) uninstaller stalled - force-killing and removing silently."
+                    try { $pp.Kill() } catch { }
+                }
+                if ($pp.ExitCode -eq 0) { return $true }
+                Write-Host "$($script:BoxMargin)$($script:VmEdition) uninstaller exited $($pp.ExitCode) - removing silently." -ForegroundColor $C.Warning
+            }
+        } catch {
+            Write-Host "$($script:BoxMargin)$($script:VmEdition) uninstaller failed - removing silently." -ForegroundColor $C.Warning
+        }
+    }
+
+    return Invoke-VmManualRemoval
+}
+
 function Remove-App {
     param(
         [bool]$RemoveData,
-        [bool]$RemoveVoicemeeter
+        [bool]$RemoveVoicemeeter,
+        [switch]$SkipRestartPrompt
     )
     $removed = @()
     $kept = @()
@@ -434,42 +568,13 @@ function Remove-App {
     if ($RemoveVoicemeeter) {
         $vm = Get-InstalledVmEdition
         if ($vm.Present) {
+            $script:VmEdition = $vm.Name
             if ($vm.Paid) {
                 $kept += "$($vm.Name) (licensed edition - not touched)"
+            } elseif (Invoke-VmSilentUninstall) {
+                $removed += $vm.Name
             } else {
-                Write-Host "$($script:BoxMargin)Also removing $($vm.Name)..." -ForegroundColor $C.Muted
-                $vmKeys = @(
-                    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
-                    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}"
-                )
-                $vmUn = $null
-                foreach ($vk in $vmKeys) {
-                    if (Test-Path $vk) {
-                        $q = [string](Get-RegValue $vk 'QuietUninstallString')
-                        if (-not [string]::IsNullOrWhiteSpace($q)) { $vmUn = $q; break }
-                    }
-                }
-                if (-not $vmUn) {
-                    foreach ($vk in $vmKeys) {
-                        if (Test-Path $vk) {
-                            $u = [string](Get-RegValue $vk 'UninstallString')
-                            if (-not [string]::IsNullOrWhiteSpace($u)) { $vmUn = $u; break }
-                        }
-                    }
-                }
-                if ($vmUn) {
-                    try {
-                        $vmUnPath = ($vmUn -replace '"', '')
-                        $silentArg = if ($vmUnPath -match 'unins000\.exe$') { '/VERYSILENT' } else { '/S' }
-                        $pp = Start-Process -FilePath $vmUnPath -ArgumentList $silentArg, '/NORESTART' -Wait -PassThru
-                        if ($pp.ExitCode -eq 0) { $removed += $vm.Name } else { $kept += "$($vm.Name) (uninstaller returned $($pp.ExitCode))" }
-                    } catch {
-                        $kept += "$($vm.Name) (uninstall failed: $($_.Exception.Message))"
-                    }
-                } else {
-                    Write-Host "$($script:BoxMargin)Voicemeeter has no silent uninstaller. Use Apps & Features." -ForegroundColor $C.Warning
-                    $kept += $vm.Name
-                }
+                $kept += "$($vm.Name) (removal incomplete)"
             }
         }
     } elseif ((Test-Path $script:AppExe) -or ($null -ne (Get-UninstallInfo))) {
@@ -480,11 +585,20 @@ function Remove-App {
     Write-UninstallCompletion -Removed $removed -Kept $kept
 
     if ($removed | Where-Object { $_ -match 'Voicemeeter' }) {
-        Write-Host "$($script:BoxMargin)A restart is recommended to fully clear the removed audio driver." -ForegroundColor $C.Warning
-        Write-Host "$($script:BoxMargin)Restart now? [Y/n]: " -ForegroundColor $C.Warning -NoNewline
-        $restart = Read-Host
-        if ($restart -ne 'n' -and $restart -ne 'N') { Restart-Computer -Force }
+        if ($SkipRestartPrompt) {
+            Write-Host "$($script:BoxMargin)Restart at your convenience to fully clear the removed audio driver." -ForegroundColor $C.Warning
+        } else {
+            Write-Host "$($script:BoxMargin)A restart is recommended to fully clear the removed audio driver." -ForegroundColor $C.Warning
+            Write-Host "$($script:BoxMargin)Restart now? [Y/n]: " -ForegroundColor $C.Warning -NoNewline
+            $restart = Read-Host
+            if ($restart -ne 'n' -and $restart -ne 'N') { Restart-Computer -Force }
+        }
     }
+}
+
+function Write-WarnMessage {
+    param([string]$Text)
+    Write-Host "$($script:BoxMargin)$Text" -ForegroundColor $C.Warning
 }
 
 function Write-UninstallCompletion {
@@ -616,7 +730,7 @@ if ($wantFresh) {
     if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required for a fresh install.'; exit 1 }
     Write-Host "$($script:BoxMargin)FRESH INSTALL: removing everything, then installing the latest version." -ForegroundColor $C.Warning
     $okRoll = Invoke-ArtTuneRollback
-    Remove-App -RemoveData $true -RemoveVoicemeeter $true
+    Remove-App -RemoveData $true -RemoveVoicemeeter $true -SkipRestartPrompt
     if ($silent) { exit 0 }
     Invoke-Install
     if (-not $noLaunch) { $null = Start-Process $script:AppExe }
@@ -723,7 +837,7 @@ Show-UpdateStatus
             Write-Host ''
             Write-Host "$($script:BoxMargin)FRESH INSTALL: removing everything, then installing the latest version." -ForegroundColor $C.Warning
             $null = Invoke-ArtTuneRollback
-            Remove-App -RemoveData $true -RemoveVoicemeeter $true
+            Remove-App -RemoveData $true -RemoveVoicemeeter $true -SkipRestartPrompt
             Invoke-Install
             $r = Get-LaunchChoice
             if ($r -eq 'quit') { break mainMenu }
