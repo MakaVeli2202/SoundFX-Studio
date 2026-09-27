@@ -72,7 +72,15 @@ public sealed class VoicemeeterRemote : IDisposable
         Marshal.GetDelegateForFunctionPointer<T>(NativeLibrary.GetExport(_lib, name));
 
     [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hwnd, int cmd);
+    [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hwnd);
+    [DllImport("user32.dll")] private static extern bool EnumWindows(EnumWindowsProc callback, IntPtr param);
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetWindowText(IntPtr hwnd, System.Text.StringBuilder text, int maxCount);
+    private delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr param);
     private const int SW_HIDE = 0;
+    private const int SW_SHOW = 5;
+    private const int SW_RESTORE = 9;
 
     /// <summary>
     /// Connects to the local Voicemeeter instance and prepares the session for parameter access.
@@ -84,8 +92,7 @@ public sealed class VoicemeeterRemote : IDisposable
         // Ensure VM is running before _login(). If _login() returns rc=1 (launched internally),
         // the API session is broken — writes return -1. So we pre-launch externally and wait
         // until the process is actually detected before calling _login().
-        bool vmRunning = Process.GetProcessesByName("voicemeeter").Length > 0
-                      || Process.GetProcessesByName("voicemeeter_x64").Length > 0;
+        bool vmRunning = IsVmRunning();
         ActionLog.Instance.Info("VM", $"VM process running: {vmRunning}");
 
         if (!vmRunning)
@@ -100,8 +107,7 @@ public sealed class VoicemeeterRemote : IDisposable
                 for (int i = 0; i < 20; i++)
                 {
                     System.Threading.Thread.Sleep(500);
-                    vmRunning = Process.GetProcessesByName("voicemeeter").Length > 0
-                              || Process.GetProcessesByName("voicemeeter_x64").Length > 0;
+                    vmRunning = IsVmRunning();
                     if (vmRunning) break;
                 }
                 ActionLog.Instance.Info("VM", $"VM process detected after wait: {vmRunning}");
@@ -747,12 +753,94 @@ public sealed class VoicemeeterRemote : IDisposable
         return null;
     }
 
+    private static readonly string[] VmProcessNames =
+    {
+        "voicemeeter", "voicemeeter8", "voicemeeterpro", "voicemeeter_x64", "voicemeeter8x64"
+    };
+
     private static void HideVmWindow()
     {
-        foreach (var name in new[] { "voicemeeter8x64", "voicemeeter_x64", "voicemeeter8", "voicemeeterpro", "voicemeeter" })
+        foreach (var name in VmProcessNames)
             foreach (var p in Process.GetProcessesByName(name))
                 if (p.MainWindowHandle != IntPtr.Zero)
                     ShowWindow(p.MainWindowHandle, SW_HIDE);
+    }
+
+    public static bool IsVmRunning()
+    {
+        foreach (var name in VmProcessNames)
+            if (Process.GetProcessesByName(name).Length > 0) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Brings an already-running Voicemeeter window back. The app hides the mixer after
+    /// it launches it, which leaves a running instance with no visible window; Voicemeeter
+    /// is single-instance, so clicking its Start Menu shortcut afterwards just spins up a
+    /// second process that exits and never restores the first one. EnumWindows is used
+    /// instead of Process.MainWindowHandle because that only reports VISIBLE windows.
+    /// </summary>
+    public static bool ShowVmWindow()
+    {
+        foreach (var name in VmProcessNames)
+        {
+            foreach (var p in Process.GetProcessesByName(name))
+            {
+                var hwnd = FindTopLevelWindow(p.Id);
+                if (hwnd == IntPtr.Zero) continue;
+
+                ShowWindow(hwnd, SW_SHOW);
+                ShowWindow(hwnd, SW_RESTORE);
+                SetForegroundWindow(hwnd);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Opens the Voicemeeter console for the user: restores the hidden instance if one is
+    /// running, otherwise launches the app's Voicemeeter visibly.
+    /// </summary>
+    public static bool OpenVmWindow()
+    {
+        if (ShowVmWindow()) return true;
+
+        var exe = FindVmExe();
+        if (exe is null) return false;
+        try
+        {
+            return Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true }) is not null;
+        }
+        catch { return false; }
+    }
+
+    private static IntPtr FindTopLevelWindow(int processId)
+    {
+        IntPtr main = IntPtr.Zero;
+        IntPtr fallback = IntPtr.Zero;
+
+        EnumWindows((hwnd, _) =>
+        {
+            GetWindowThreadProcessId(hwnd, out var pid);
+            if (pid != (uint)processId) return true;
+
+            // Skip the helper windows Voicemeeter owns (GDI+, IME) - only a titled
+            // window is the console itself.
+            var title = new System.Text.StringBuilder(256);
+            GetWindowText(hwnd, title, title.Capacity);
+            if (title.Length == 0) return true;
+
+            fallback = hwnd;
+            if (title.ToString().StartsWith("Voicemeeter", StringComparison.OrdinalIgnoreCase))
+            {
+                main = hwnd;
+                return false;
+            }
+            return true;
+        }, IntPtr.Zero);
+
+        return main != IntPtr.Zero ? main : fallback;
     }
 
     public static bool LaunchHidden()
@@ -795,10 +883,20 @@ public sealed class VoicemeeterRemote : IDisposable
             }
         }
 
+        // Plain Voicemeeter first. The v1.1.2.2 package also ships Voicemeeter 64
+        // (voicemeeter_x64.exe) in the same folder, but that build is the one users
+        // don't expect and it does not always come up after a silent install, so it is
+        // only a last resort.
+        var exeNames = new[]
+        {
+            "voicemeeter.exe", "voicemeeter8.exe", "voicemeeterpro.exe",
+            "voicemeeter_x64.exe", "voicemeeter8x64.exe"
+        };
+
         foreach (var d in new[] { dir, @"C:\Program Files (x86)\VB\Voicemeeter", @"C:\Program Files\VB\Voicemeeter", @"C:\Program Files (x86)\VB-Audio\Voicemeeter", @"C:\Program Files\VB-Audio\Voicemeeter" })
         {
             if (string.IsNullOrEmpty(d)) continue;
-            foreach (var exe in new[] { "voicemeeter8x64.exe", "voicemeeter_x64.exe", "voicemeeter8.exe", "voicemeeterpro.exe", "voicemeeter.exe" })
+            foreach (var exe in exeNames)
             {
                 var p = Path.Combine(d, exe);
                 if (File.Exists(p)) return p;

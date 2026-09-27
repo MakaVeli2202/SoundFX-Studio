@@ -3238,37 +3238,29 @@ public sealed class MainViewModel : ObservableObject
                 Settings.SpeakersDeviceName = hearDevice.Name;
                 Settings.VoicemeeterDetected = true;
 
+                // Routing only. The app's own INPUT/OUTPUT pickers keep whatever the user
+                // has selected: the soundboard and voice changer resolve Voicemeeter Input
+                // themselves whenever Voicemeeter is running, so writing the virtual bus IDs
+                // into Settings here only moved the pickers off the real hardware.
                 var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
                 var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
                 var haveRender = !string.IsNullOrWhiteSpace(vmInputId);
                 var haveCapture = !string.IsNullOrWhiteSpace(vmOutputId);
 
-                if (haveRender)
-                {
-                    Settings.OutputDeviceId = vmInputId!;
-                    Settings.PlaybackDeviceId = vmInputId!;
-                }
-
-                if (haveCapture)
-                {
-                    Settings.InputDeviceId = vmOutputId!;
-                    Settings.MicrophoneDeviceId = vmOutputId!;
-                }
-
                 Save();
 
                 var result = $"✓  Audio configured:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}"
-                           + "\n   Windows input/output: untouched";
+                           + "\n   App input/output selection: unchanged";
 
                 if (haveRender)
-                    result += "\n   ✓ App output → Virtual Audio Input";
+                    result += "\n   ✓ Voicemeeter Input ready for app playback";
                 else
-                    result += "\n   ⚠  Virtual Audio Input device not found — app playback not routed";
+                    result += "\n   ⚠  Voicemeeter Input device not found — app playback not routed";
 
                 if (haveCapture)
-                    result += "\n   ✓ App mic → Virtual Audio Output (B1)";
+                    result += "\n   ✓ Voicemeeter Output (B1) ready for app mic";
                 else
-                    result += "\n   ⚠  Virtual Audio Output (B1) device not found — app mic not routed";
+                    result += "\n   ⚠  Voicemeeter Output (B1) device not found — app mic not routed";
 
                 return result;
             }
@@ -3332,10 +3324,11 @@ public sealed class MainViewModel : ObservableObject
         Settings.HearDeviceName = string.Empty;
         Settings.TalkDeviceName = string.Empty;
         Settings.VoicemeeterDetected = false;
+        RestoreAppDeviceSelectionFromSystem();
         Save();
 
         var line2 = restoredDefaults
-            ? "✓  Windows defaults restored. App device selection kept."
+            ? "✓  Windows defaults restored. App input/output selection back on those devices."
             : string.IsNullOrWhiteSpace(previousRender) && string.IsNullOrWhiteSpace(previousCapture)
                 ? "⚠  No saved Windows defaults to restore."
                 : "⚠  Windows restore failed — will retry on next start.";
@@ -3403,12 +3396,80 @@ public sealed class MainViewModel : ObservableObject
             }
 
             RefreshSavedWindowsDefaults();
+            RestoreAppDeviceSelectionFromSystem();
         }
         catch (Exception ex)
         {
             _logService?.Error("Windows default reconcile failed on startup", ex);
         }
     }
+
+    /// <summary>
+    /// The app's INPUT/OUTPUT pickers must always show real hardware - the devices
+    /// Windows currently has selected - never a Voicemeeter endpoint. Older builds
+    /// wrote VoiceMeeter Input / Out B1 into these settings while applying routing,
+    /// which parked the pickers on the virtual buses and quietly discarded the
+    /// headset the user had chosen. Runs on every startup so a config saved by any
+    /// such build repairs itself, and after every reset.
+    /// </summary>
+    private void RestoreAppDeviceSelectionFromSystem()
+    {
+        var vmInput = _audioDeviceService.GetVoicemeeterInputId();
+        var vmOutput = _audioDeviceService.GetVoicemeeterOutputId();
+
+        var systemOutputId = ResolveSystemDeviceId(OutputDevices, Settings.SavedDefaultRenderId, vmInput);
+        var systemInputId = ResolveSystemDeviceId(InputDevices, Settings.SavedDefaultCaptureId, vmOutput);
+
+        bool changed = false;
+
+        if (IsVoicemeeterEndpoint(Settings.OutputDeviceId, vmInput) && systemOutputId is not null)
+        {
+            Settings.OutputDeviceId = systemOutputId;
+            Settings.PlaybackDeviceId = systemOutputId;
+            changed = true;
+        }
+
+        if (IsVoicemeeterEndpoint(Settings.InputDeviceId, vmOutput) && systemInputId is not null)
+        {
+            Settings.InputDeviceId = systemInputId;
+            Settings.MicrophoneDeviceId = systemInputId;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            _logService?.Info("Startup: app input/output selection was on Voicemeeter - restored to the current system devices.");
+            Save();
+        }
+    }
+
+    /// <summary>
+    /// Picks the device the app should point at: the recorded non-Voicemeeter default,
+    /// else whatever Windows currently defaults to, else the first real device.
+    /// </summary>
+    private static string? ResolveSystemDeviceId(IEnumerable<AudioDeviceInfo> devices, string? savedId, string? voicemeeterId)
+    {
+        var list = devices.ToList();
+
+        if (!IsVoicemeeterEndpoint(savedId, voicemeeterId)
+            && list.Any(d => string.Equals(d.Id, savedId, StringComparison.OrdinalIgnoreCase)))
+        {
+            return savedId;
+        }
+
+        var systemDefault = list.FirstOrDefault(d => d.IsDefaultCommunication) ?? list.FirstOrDefault(d => d.IsDefault);
+        if (systemDefault is not null && !IsVoicemeeterEndpoint(systemDefault.Id, voicemeeterId))
+        {
+            return systemDefault.Id;
+        }
+
+        return list.FirstOrDefault(d => !d.IsVirtual)?.Id;
+    }
+
+    private static bool IsVoicemeeterEndpoint(string? deviceId, string? voicemeeterId)
+        => !string.IsNullOrWhiteSpace(deviceId)
+           && !string.IsNullOrWhiteSpace(voicemeeterId)
+           && string.Equals(deviceId, voicemeeterId, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Hides the Voicemeeter endpoints the app never routes through, so Windows' sound

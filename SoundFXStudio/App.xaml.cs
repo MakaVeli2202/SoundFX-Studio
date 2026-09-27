@@ -271,6 +271,12 @@ public partial class App : Application
         var stopAllItem = new MenuItem { Header = "Stop All Sounds" };
         stopAllItem.Click += (_, _) => (MainWindow?.DataContext as ViewModels.MainViewModel)?.StopAllSounds();
         trayMenu.Items.Add(stopAllItem);
+
+        // The mixer is hidden after the app launches it, and Voicemeeter is
+        // single-instance, so its Start Menu shortcut cannot bring that window back.
+        var openVmItem = new MenuItem { Header = "Open Voicemeeter" };
+        openVmItem.Click += (_, _) => Services.VoicemeeterRemote.OpenVmWindow();
+        trayMenu.Items.Add(openVmItem);
         trayMenu.Items.Add(new Separator());
         var exitItem = new MenuItem { Header = "Exit" };
         exitItem.Click += (_, _) =>

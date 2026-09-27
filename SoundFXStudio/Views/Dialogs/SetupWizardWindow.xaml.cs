@@ -266,14 +266,13 @@ public partial class SetupWizardWindow : Window
                 }
                 else
                 {
-                    // App-internal device selection only. Windows' default input and
-                    // output are never written here - the user's own sound devices
-                    // stay exactly as they are. Anyone who wants other apps to feed
-                    // Voicemeeter picks "VoiceMeeter Input" / "Out B1" by hand.
-                    Settings.OutputDeviceId = vmInputId;
-                    Settings.PlaybackDeviceId = vmInputId;
-                    Settings.InputDeviceId = vmOutputId;
-                    Settings.MicrophoneDeviceId = vmOutputId;
+                    // Voicemeeter routing only. The app's own INPUT/OUTPUT pickers keep
+                    // the devices the user already has selected - the soundboard and voice
+                    // changer resolve Voicemeeter Input on their own, so writing the
+                    // virtual bus IDs here would just move the pickers off real hardware.
+                    // Windows' defaults are never written either; anyone who wants other
+                    // apps to feed Voicemeeter picks "VoiceMeeter Input" / "Out B1" by hand.
+                    RestoreAppDeviceSelection();
 
                     // Idempotent: CleanupAsync does a read-only registry scan first and
                     // returns NothingToHide without a UAC prompt when there is nothing
@@ -287,7 +286,7 @@ public partial class SetupWizardWindow : Window
                     }
 
                     result = $"✓ Audio configured:\n   Playback: {hear.Name}\n   Microphone: {talk.Name}"
-                           + "\n   Windows input/output: untouched";
+                           + "\n   App input/output selection: unchanged";
                     if (!cleanupSucceeded)
                         result += "\n⚠ Unused Voicemeeter channels could not be hidden.";
 
@@ -368,6 +367,7 @@ public partial class SetupWizardWindow : Window
         Settings.HearDeviceName = string.Empty;
         Settings.TalkDeviceName = string.Empty;
         Settings.VoicemeeterDetected = false;
+        RestoreAppDeviceSelection();
         SaveConfig();
 
         WizardResetWindowsBtn.IsEnabled = true;
@@ -405,6 +405,57 @@ public partial class SetupWizardWindow : Window
         try { Process.Start(new ProcessStartInfo("control", "mmsys.cpl,,1") { UseShellExecute = true }); }
         catch { WizardStatusText.Text = "Could not open Windows Sound settings."; }
     }
+
+    /// <summary>
+    /// Repairs an app INPUT/OUTPUT selection that points at a Voicemeeter endpoint -
+    /// older builds wrote VoiceMeeter Input / Out B1 into settings while applying
+    /// routing, which moved the pickers off the user's real hardware. Restores the
+    /// devices Windows currently has selected; a genuine user choice is left alone.
+    /// </summary>
+    private void RestoreAppDeviceSelection()
+    {
+        var vmInput = _audioDeviceService.GetVoicemeeterInputId();
+        var vmOutput = _audioDeviceService.GetVoicemeeterOutputId();
+
+        var outputId = ResolveSystemDeviceId(_audioDeviceService.GetOutputDevices(), Settings.SavedDefaultRenderId, vmInput);
+        var inputId = ResolveSystemDeviceId(_audioDeviceService.GetInputDevices(), Settings.SavedDefaultCaptureId, vmOutput);
+
+        if (IsVoicemeeterEndpoint(Settings.OutputDeviceId, vmInput) && outputId is not null)
+        {
+            Settings.OutputDeviceId = outputId;
+            Settings.PlaybackDeviceId = outputId;
+        }
+
+        if (IsVoicemeeterEndpoint(Settings.InputDeviceId, vmOutput) && inputId is not null)
+        {
+            Settings.InputDeviceId = inputId;
+            Settings.MicrophoneDeviceId = inputId;
+        }
+    }
+
+    private static string? ResolveSystemDeviceId(IEnumerable<AudioDeviceInfo> devices, string? savedId, string? voicemeeterId)
+    {
+        var list = devices.ToList();
+
+        if (!IsVoicemeeterEndpoint(savedId, voicemeeterId)
+            && list.Any(d => string.Equals(d.Id, savedId, StringComparison.OrdinalIgnoreCase)))
+        {
+            return savedId;
+        }
+
+        var systemDefault = list.FirstOrDefault(d => d.IsDefaultCommunication) ?? list.FirstOrDefault(d => d.IsDefault);
+        if (systemDefault is not null && !IsVoicemeeterEndpoint(systemDefault.Id, voicemeeterId))
+        {
+            return systemDefault.Id;
+        }
+
+        return list.FirstOrDefault(d => !d.IsVirtual)?.Id;
+    }
+
+    private static bool IsVoicemeeterEndpoint(string? deviceId, string? voicemeeterId)
+        => !string.IsNullOrWhiteSpace(deviceId)
+           && !string.IsNullOrWhiteSpace(voicemeeterId)
+           && string.Equals(deviceId, voicemeeterId, StringComparison.OrdinalIgnoreCase);
 
     private void ApplySelection()
     {

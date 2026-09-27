@@ -50,6 +50,10 @@ Type: filesandordirs; Name: "{userappdata}\SoundFXStudio"
 
 [Run]
 Filename: "{tmp}\voicemeetersetup.exe"; Parameters: "-i -h"; WorkingDir: "{tmp}"; StatusMsg: "Installing Voicemeeter (silent)…"; Flags: runhidden waituntilterminated; Check: NotVoicemeeterInstalled
+; The v1.1.2.2 package also registers Voicemeeter 64 (voicemeeter_x64.exe). SoundFX
+; drives plain Voicemeeter, and the x64 build does not always come up after a silent
+; install, so drop its Start Menu entry to keep users off it.
+Filename: "cmd.exe"; Parameters: "/c del /f /q ""{commonprograms}\VB Audio\VoiceMeeter\Voicemeeter x64.Lnk"""; Flags: runhidden waituntilterminated; Check: NotVoicemeeterInstalled
 Filename: "{app}\SoundFXStudio.exe"; Description: "Launch SoundFX Studio now"; Flags: nowait postinstall skipifsilent shellexec
 
 [Code]

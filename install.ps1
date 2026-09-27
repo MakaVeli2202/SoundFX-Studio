@@ -429,6 +429,9 @@ function Invoke-Install {
     Write-BoxLine "$([char]0x2713) $($script:AppName) installed" $C.Green
     Write-BoxLine "$([char]0x2713) Voicemeeter handled by the installer" $C.Green
     Write-BoxLine '' $C.Muted
+    Write-BoxLine 'Restart Windows to finish loading the Voicemeeter driver.' $C.Warning
+    Write-BoxLine 'Until then Voicemeeter may not start.' $C.Warning
+    Write-BoxLine '' $C.Muted
     Write-BoxLine 'Press the Windows key and type "SoundFX Studio" to launch.' $C.Muted
     Write-BoxBottom
     Write-Host ''

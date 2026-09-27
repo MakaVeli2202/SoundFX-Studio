@@ -1224,11 +1224,12 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Voicemeeter + app only. Windows' default capture device is never written -
-        // pick "VoiceMeeter Output (B1)" yourself in each app that needs the mic.
+        // Voicemeeter routing only. The app's own INPUT/OUTPUT pickers stay on the
+        // devices the user has selected, and Windows' default capture device is never
+        // written - pick "VoiceMeeter Output (B1)" yourself in each app that needs the
+        // mic. Enabling B1 on the first virtual strip is what actually routes the app
+        // mic into the Voicemeeter B1 bus.
         config.Settings.VoicemeeterDetected = true;
-        config.Settings.InputDeviceId = vmOutputId;
-        config.Settings.MicrophoneDeviceId = vmOutputId;
         configService.Save(config);
 
         ViewModel.Refresh();
