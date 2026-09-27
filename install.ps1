@@ -7,10 +7,10 @@ Usage:
 
 Command line (non-interactive):
   powershell -ExecutionPolicy Bypass -File install.ps1 -Install
+  powershell -ExecutionPolicy Bypass -File install.ps1 -Upgrade
   powershell -ExecutionPolicy Bypass -File install.ps1 -FreshInstall
   powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall
   powershell -ExecutionPolicy Bypass -File install.ps1 -UninstallAll
-  powershell -ExecutionPolicy Bypass -File install.ps1 -ArtTuneRollback
   powershell -ExecutionPolicy Bypass -File install.ps1 -CheckUpdate
   Combine with -Silent (no prompts) and -NoLaunch.
 
@@ -45,7 +45,6 @@ $script:SfxVersion = '1.0.5'
 $script:BoxWidth   = 76
 $script:ScreenWidth = 120
 $script:BoxMargin  = ' ' * [Math]::Floor(($script:ScreenWidth - $script:BoxWidth - 2) / 2)
-$script:ArtTunePs1 = Join-Path $env:ProgramFiles "SoundFX Studio\Assets\ArtTune\ArtTune-OneClick.ps1"
 
 # ---------------------------------------------------------------- helpers ---
 
@@ -343,38 +342,6 @@ function Get-InstalledVmEdition {
     return [pscustomobject]@{ Present = $false; Paid = $false; Name = '' }
 }
 
-# ------------------------------------------------------------ Art Tune rollback ---
-
-function Invoke-ArtTuneRollback {
-    # Runs the app's own full ArtTune rollback (VB-CABLE, Voicemeeter, E-APO,
-    # ReaPlugs, HeSuVi, LEQ, library, endpoint names, config, driver packages).
-    # -SkipVoicemeeter leaves Voicemeeter to Remove-App (still silent), so the
-    # fresh flow never touches VB's interactive Uninstall.exe.
-    param([switch]$SkipVoicemeeter)
-    if (-not (Test-Path -LiteralPath $script:ArtTunePs1)) {
-        Write-Host "$($script:BoxMargin)Art Tune rollback script not found at:" -ForegroundColor $C.Warning
-        Write-Host "$($script:BoxMargin)  $($script:ArtTunePs1)" -ForegroundColor $C.Muted
-        Write-Host "$($script:BoxMargin)Install the app first (menu [1]), or run the app's own 'Reset / Art Tune rollout'." -ForegroundColor $C.Muted
-        return $false
-    }
-    Write-Host ''
-    Write-Host "$($script:BoxMargin)Rolling back Art Tune stack (VB-CABLE, Voicemeeter, E-APO, ReaPlugs, HeSuVi, LEQ, library, endpoints)..." -ForegroundColor $C.Warning
-    try {
-        $argsList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$script:ArtTunePs1`"", '-UninstallEverything')
-        if ($SkipVoicemeeter) { $argsList += '-SkipVoicemeeter' }
-        $proc = Start-Process powershell.exe -ArgumentList $argsList -PassThru -Wait -WindowStyle Hidden
-        if ($proc.ExitCode -eq 0) {
-            Write-Ok 'Art Tune stack rolled back cleanly (audio returned to stock).'
-            return $true
-        }
-        Write-Host "$($script:BoxMargin)Art Tune rollback returned exit code $($proc.ExitCode)." -ForegroundColor $C.Warning
-        return $false
-    } catch {
-        Write-Host "$($script:BoxMargin)Art Tune rollback failed: $($_.Exception.Message)" -ForegroundColor $C.Rose
-        return $false
-    }
-}
-
 # ------------------------------------------------------------- install path ---
 
 function Invoke-Install {
@@ -493,8 +460,8 @@ function Get-VbDriverPackages {
 
 function Invoke-VmManualRemoval {
     # Fully silent removal of VB-Audio Voicemeeter WITHOUT its GUI uninstaller
-    # (VB uninstallers ignore /S and pop a "Remove" dialog). Mirrors what the
-    # app's ArtTune rollback does, all hands-free.
+    # (VB uninstallers ignore /S and pop a "Remove" dialog), so the uninstall
+    # paths stay hands-free.
     Write-Host "$($script:BoxMargin)Removing $($script:VmEdition) files, driver + registry silently..." -ForegroundColor $C.Muted
     $ok = $true
 
@@ -762,10 +729,10 @@ function Show-UpdateStatus {
 
 # --- parse command line ---
 $wantInstall        = $args -contains '-Install' -or $args -contains '-install'
+$wantUpgrade        = $args -contains '-Upgrade' -or $args -contains '-upgrade'
 $wantFresh          = $args -contains '-FreshInstall' -or $args -contains '-freshinstall'
 $wantUninstall      = $args -contains '-Uninstall' -or $args -contains '-uninstall'
 $wantUninstallAll   = $args -contains '-UninstallAll' -or $args -contains '-uninstallall'
-$wantArtTuneRoll    = $args -contains '-ArtTuneRollback' -or $args -contains '-arttunerollback'
 $wantCheckUpdate    = $args -contains '-CheckUpdate' -or $args -contains '-checkupdate'
 $silent             = $args -contains '-Silent' -or $args -contains '-silent'
 $noLaunch           = $args -contains '-NoLaunch' -or $args -contains '-nolaunch'
@@ -788,15 +755,28 @@ if ($wantCheckUpdate) {
     exit 0
 }
 
-if ($wantArtTuneRoll) {
-    $ok = Invoke-ArtTuneRollback
-    exit (-not $ok)
+# Install and Upgrade are the same mechanics - download the latest release and run the
+# Inno setup over the top, which keeps sounds, settings and Voicemeeter. The only
+# difference is the wording, so -Upgrade says so out loud before starting.
+function Invoke-UpgradeOrInstall {
+    param([switch]$IsUpgrade)
+
+    if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required.'; return $false }
+
+    if ($IsUpgrade) {
+        $current = Get-InstalledVersion
+        Write-Host ''
+        Write-Host "$($script:BoxMargin)UPGRADE: reinstalling over the current copy, nothing is removed." -ForegroundColor $C.Green
+        if ($null -ne $current) { Write-Info "Installed version     $current" }
+    }
+
+    Invoke-Install
+    return $true
 }
 
 if ($wantFresh) {
     if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required for a fresh install.'; exit 1 }
     Write-Host "$($script:BoxMargin)FRESH INSTALL: removing everything, then installing the latest version." -ForegroundColor $C.Warning
-    $okRoll = Invoke-ArtTuneRollback -SkipVoicemeeter
     Remove-App -RemoveData $true -RemoveVoicemeeter $true -SkipRestartPrompt
     if ($silent) { exit 0 }
     Invoke-Install
@@ -804,9 +784,14 @@ if ($wantFresh) {
     exit 0
 }
 
+if ($wantUpgrade) {
+    if (-not (Invoke-UpgradeOrInstall -IsUpgrade)) { exit 1 }
+    if (-not $noLaunch) { $null = Start-Process $script:AppExe -ErrorAction SilentlyContinue }
+    exit 0
+}
+
 if ($wantInstall) {
-    if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required.'; exit 1 }
-    Invoke-Install
+    if (-not (Invoke-UpgradeOrInstall)) { exit 1 }
     if (-not $noLaunch) { $null = Start-Process $script:AppExe -ErrorAction SilentlyContinue }
     exit 0
 }
@@ -901,7 +886,6 @@ Show-UpdateStatus
         5 {
             Write-Host ''
             Write-Host "$($script:BoxMargin)FRESH INSTALL: removing everything, then installing the latest version." -ForegroundColor $C.Warning
-            $null = Invoke-ArtTuneRollback -SkipVoicemeeter
             Remove-App -RemoveData $true -RemoveVoicemeeter $true -SkipRestartPrompt
             Invoke-Install
             $r = Get-LaunchChoice
