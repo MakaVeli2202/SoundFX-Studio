@@ -17,9 +17,10 @@
       ... plus -Silent (no prompts), -NoLaunch, -RemoveData, -RemoveVoicemeeter.
 
     WHAT IT DOES
-      Installs the latest GitHub release (Inno Setup) plus the Voicemeeter driver
-      stack, and checks for the .NET 8 Desktop Runtime the app needs to start.
-      Upgrade is install-over-the-top: sounds, settings and bindings are kept.
+      Nothing has to be installed first: the setup carries the app
+      (self-contained, so no .NET runtime) plus the Voicemeeter installer, and
+      handles the rest. Upgrade is install-over-the-top, so sounds, settings and
+      key bindings are kept.
 #>
 
 [CmdletBinding()]
@@ -51,8 +52,7 @@ $script:AppName     = 'SoundFX Studio'
 $script:AppFolder   = Join-Path $env:ProgramFiles $script:AppName
 $script:AppExe      = Join-Path $script:AppFolder 'SoundFXStudio.exe'
 $script:AppDataDir  = Join-Path $env:APPDATA 'SoundFXStudio'
-$script:ScriptVer   = '1.1.0'
-$script:MinRuntime  = 8
+$script:ScriptVer   = '1.2.0'
 
 # Console-safe accents (UI hexes -> console colors).
 $script:Accent = 'Cyan'
@@ -65,8 +65,13 @@ $script:Line   = 'DarkCyan'
 
 # `irm | iex` runs from memory, so there is no file to re-launch. Captured at
 # script scope because $MyInvocation inside a function would describe the
-# function, not this script.
-$script:SelfPath = $MyInvocation.MyCommand.Path
+# function, not this script. Read through PSObject: an IEX'd scriptblock has no
+# Path property at all, and touching it under StrictMode is a fatal error.
+$script:SelfPath = $null
+if ($MyInvocation.MyCommand) {
+    $pathProperty = $MyInvocation.MyCommand.PSObject.Properties['Path']
+    if ($pathProperty) { $script:SelfPath = [string]$pathProperty.Value }
+}
 $script:Width    = 72
 $script:Margin   = '  '
 $script:ExitCode = 0
@@ -305,49 +310,6 @@ function Get-LatestRelease {
     catch { return $null }
 }
 
-function Test-DotNetRuntime {
-    param([int]$Major = $script:MinRuntime)
-    # Registry is fastest; `dotnet --list-runtimes` covers PATH-only installs.
-    foreach ($arch in @('x64', 'x86')) {
-        $value = [string](Get-RegValue "HKLM:\SOFTWARE\dotnet\Setup\InstalledVersions\$arch\Desktop Runtime" 'Version')
-        if ($value) {
-            try { if (([version]$value).Major -ge $Major) { return $true } } catch { }
-        }
-    }
-    $dotnet = Get-Command dotnet.exe -ErrorAction SilentlyContinue
-    if ($dotnet) {
-        $runtimes = @(& $dotnet.Source --list-runtimes 2>$null)
-        foreach ($line in $runtimes) {
-            if ($line -match "Microsoft\.WindowsDesktop\.App\s+($Major)\.(\d+)\.(\d+)") { return $true }
-        }
-    }
-    return $false
-}
-
-function Install-DotNetRuntime {
-    # Silent winget install; a friendly pointer if winget is unavailable.
-    $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
-    if (-not $winget) {
-        Write-WarnLine "The .NET $script:MinRuntime Desktop Runtime is missing and winget is not available."
-        Write-Dim "    Download it from https://dotnet.microsoft.com/download/dotnet/$script:MinRuntime and run this script again."
-        return $false
-    }
-
-    Write-Info "Installing the .NET $script:MinRuntime Desktop Runtime (winget, silent)..."
-    $process = Start-Process -FilePath $winget.Source -PassThru -WindowStyle Hidden -ArgumentList @(
-        'install', '--id', "Microsoft.DotNet.DesktopRuntime.$script:MinRuntime", '--exact',
-        '--silent', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity'
-    )
-    Write-ActivityBar -Process $process -Message 'Runtime install'
-    if ($process.ExitCode -ne 0) {
-        Write-WarnLine "winget could not install the runtime (exit $($process.ExitCode))."
-        Write-Dim "    https://dotnet.microsoft.com/download/dotnet/$script:MinRuntime"
-        return $false
-    }
-    Write-Ok ".NET $script:MinRuntime Desktop Runtime installed"
-    return $true
-}
-
 function Get-VoicemeeterState {
     $keys = @(
         'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}',
@@ -449,14 +411,6 @@ function Install-Release {
 
     if ($IsUpgrade) {
         Write-Ok "Upgrade: keeping your sounds, settings and bindings (installed $($installed.Version) -> v$($release.Tag))"
-    }
-
-    if (-not (Test-DotNetRuntime)) {
-        Write-WarnLine "The .NET $script:MinRuntime Desktop Runtime is required to run $($script:AppName)."
-        if (-not (Install-DotNetRuntime)) {
-            if (-not (Confirm 'Continue installing anyway?' $false)) { return $false }
-        }
-        Write-Host ''
     }
 
     Stop-AppIfRunning
@@ -673,9 +627,7 @@ function Write-Status {
     Write-Pair 'Voicemeeter' $(if ($vm.Present) { $vm.Name } else { 'not installed' }) `
         $(if ($vm.Present) { $script:Good } else { $script:Warn })
 
-    $runtime = Test-DotNetRuntime
-    Write-Pair '.NET runtime' $(if ($runtime) { "WindowsDesktop $script:MinRuntime+ present" } else { "WindowsDesktop $script:MinRuntime MISSING" }) `
-        $(if ($runtime) { $script:Good } else { $script:Warn })
+    Write-Pair 'Prerequisites' 'none - the app and Voicemeeter ship in the setup' $script:Good
 
     Write-Pair 'Folder' $script:AppFolder $script:Dim
     Write-Pair 'Data' $script:AppDataDir $script:Dim

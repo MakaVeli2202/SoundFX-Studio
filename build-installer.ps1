@@ -14,8 +14,20 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $project = Join-Path $scriptDir 'SoundFXStudio\SoundFXStudio.csproj'
 $publishDir = Join-Path $scriptDir 'publish'
 
+# Self-contained single file: the user should not have to install the .NET
+# Desktop Runtime before installing the app. WPF and the NAudio native
+# dependencies do not survive trimming, so PublishTrimmed stays off.
 Write-Host "Publishing project: $project -> $publishDir"
-dotnet publish $project -c Release -r win-x64 --self-contained false -o $publishDir
+if (Test-Path -LiteralPath $publishDir) {
+    # Wipe it first, otherwise a previous framework-dependent publish leaves
+    # loose DLLs behind and the installer ships both layouts.
+    Remove-Item -LiteralPath $publishDir -Recurse -Force
+}
+dotnet publish $project -c Release -r win-x64 --self-contained true `
+    -p:PublishSingleFile=true `
+    -p:IncludeNativeLibrariesForSelfExtract=true `
+    -p:EnableCompressionInSingleFile=true `
+    -o $publishDir
 
 if ($PublishOnly) { Write-Host 'Publish complete (PublishOnly specified).'; exit 0 }
 

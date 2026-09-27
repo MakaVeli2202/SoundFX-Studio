@@ -1,6 +1,6 @@
 [Setup]
 AppName=SoundFX Studio
-AppVersion=1.0.6
+AppVersion=1.0.7
 AppPublisher=SoundFX Studio
 AppId={{A2B3C4D5-E6F7-4812-9ABC-DEF012345678}
 DefaultDirName={autopf}\SoundFX Studio
@@ -28,8 +28,8 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 Name: "startupicon"; Description: "Start SoundFX Studio with &Windows"; GroupDescription: "Additional icons:"
 
 [Files]
-; Main app — all files from publish
-Source: "{#SourcePath}publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Main app — all files from publish (self-contained single exe, no .NET needed)
+Source: "{#SourcePath}publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb"
 ; Voicemeeter setup — used only if Voicemeeter is missing
 Source: "{#SourcePath}voicemeetersetup\voicemeetersetup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
