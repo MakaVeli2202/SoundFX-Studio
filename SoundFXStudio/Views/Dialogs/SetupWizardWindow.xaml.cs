@@ -147,18 +147,23 @@ public partial class SetupWizardWindow : Window
             ?? inputs.FirstOrDefault();
 
         CheckVoicemeeter();
-        await HideUnusedVoicemeeterChannelsOnceAsync();
+        await HideUnusedVoicemeeterChannelsAsync();
     }
 
     /// <summary>
     /// The app only ever routes through Voicemeeter Input (playback) and Out B1
     /// (microphone), so every other Voicemeeter endpoint is dead weight in the
-    /// Windows sound flyout. Runs once ever — the VoicemeeterEndpointsCleaned flag
-    /// is the latch, so later launches never prompt for elevation again.
+    /// Windows sound flyout.
+    ///
+    /// Deliberately NOT latched on Settings.VoicemeeterEndpointsCleaned: Voicemeeter
+    /// re-registers its endpoints on driver reload, resetting DeviceState to 1 and
+    /// making the channels reappear. Re-running is safe because CleanupAsync does a
+    /// read-only registry scan first and returns NothingToHide — without a UAC prompt —
+    /// when there is nothing left to disable.
     /// </summary>
-    private async Task HideUnusedVoicemeeterChannelsOnceAsync()
+    private async Task HideUnusedVoicemeeterChannelsAsync()
     {
-        if (_cleanupInFlight || Settings.VoicemeeterEndpointsCleaned) return;
+        if (_cleanupInFlight) return;
         if (!VoicemeeterService.IsVoicemeeterInstalled()) return;
 
         var renderId = _audioDeviceService.GetVoicemeeterInputId();
@@ -177,8 +182,11 @@ public partial class SetupWizardWindow : Window
                 return;
             }
 
-            Settings.VoicemeeterEndpointsCleaned = true;
-            SaveConfig();
+            if (result == VoicemeeterCleanupResult.Completed && !Settings.VoicemeeterEndpointsCleaned)
+            {
+                Settings.VoicemeeterEndpointsCleaned = true;
+                SaveConfig();
+            }
 
             VmSetupStatus.Text = result == VoicemeeterCleanupResult.Completed
                 ? "Unused Voicemeeter channels hidden from Windows sound settings."
@@ -243,7 +251,7 @@ public partial class SetupWizardWindow : Window
 
             if (applied)
             {
-                overlay.UpdateStep("Routing Windows playback and microphone…");
+                overlay.UpdateStep("Pointing the app at the Voicemeeter buses…");
                 Settings.HearDeviceName = hear.Name;
                 Settings.TalkDeviceName = talk.Name;
                 Settings.SpeakersDeviceName = hear.Name;
@@ -258,70 +266,34 @@ public partial class SetupWizardWindow : Window
                 }
                 else
                 {
-                    var currentCapture = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
-                    var currentRender = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
-                    if (string.IsNullOrWhiteSpace(Settings.SavedDefaultCaptureId)
-                        || string.Equals(Settings.SavedDefaultCaptureId, vmOutputId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        Settings.SavedDefaultCaptureId =
-                            !string.IsNullOrWhiteSpace(currentCapture)
-                            && !string.Equals(currentCapture, vmOutputId, StringComparison.OrdinalIgnoreCase)
-                                ? currentCapture
-                                : talk.Id;
-                    }
-                    if (string.IsNullOrWhiteSpace(Settings.SavedDefaultRenderId)
-                        || string.Equals(Settings.SavedDefaultRenderId, vmInputId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        Settings.SavedDefaultRenderId =
-                            !string.IsNullOrWhiteSpace(currentRender)
-                            && !string.Equals(currentRender, vmInputId, StringComparison.OrdinalIgnoreCase)
-                                ? currentRender
-                                : hear.Id;
-                    }
-
-                    var outputApplied = _windowsAudioRoutingService.TrySetDefaultOutput(vmInputId);
-                    var inputApplied = _windowsAudioRoutingService.TrySetDefaultInput(vmOutputId);
-                    var outputVerified = outputApplied && string.Equals(
-                        _audioDeviceService.GetDefaultDeviceId(DataFlow.Render), vmInputId, StringComparison.OrdinalIgnoreCase);
-                    var inputVerified = inputApplied && string.Equals(
-                        _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture), vmOutputId, StringComparison.OrdinalIgnoreCase);
-
+                    // App-internal device selection only. Windows' default input and
+                    // output are never written here - the user's own sound devices
+                    // stay exactly as they are. Anyone who wants other apps to feed
+                    // Voicemeeter picks "VoiceMeeter Input" / "Out B1" by hand.
                     Settings.OutputDeviceId = vmInputId;
                     Settings.PlaybackDeviceId = vmInputId;
                     Settings.InputDeviceId = vmOutputId;
                     Settings.MicrophoneDeviceId = vmOutputId;
 
-                    var cleanupSucceeded = false;
-                    if (outputVerified && inputVerified)
+                    // Idempotent: CleanupAsync does a read-only registry scan first and
+                    // returns NothingToHide without a UAC prompt when there is nothing
+                    // left to disable, so this is safe to re-run every time.
+                    overlay.UpdateStep("Hiding unused Voicemeeter channels…");
+                    var cleanupResult = await VoicemeeterEndpointCleanupService.CleanupAsync(vmInputId, vmOutputId);
+                    bool cleanupSucceeded = cleanupResult != VoicemeeterCleanupResult.Failed;
+                    if (cleanupSucceeded)
                     {
-                        overlay.UpdateStep("Hiding unused Voicemeeter channels…");
-                        var cleanupResult = Settings.VoicemeeterEndpointsCleaned
-                            ? VoicemeeterCleanupResult.NothingToHide
-                            : await VoicemeeterEndpointCleanupService.CleanupAsync(vmInputId, vmOutputId);
-                        cleanupSucceeded = cleanupResult != VoicemeeterCleanupResult.Failed;
-                        if (cleanupSucceeded)
-                        {
-                            Settings.VoicemeeterEndpointsCleaned = true;
-                            outputApplied = _windowsAudioRoutingService.TrySetDefaultOutput(vmInputId);
-                            inputApplied = _windowsAudioRoutingService.TrySetDefaultInput(vmInputId);
-                            outputVerified = outputApplied && string.Equals(
-                                _audioDeviceService.GetDefaultDeviceId(DataFlow.Render), vmInputId, StringComparison.OrdinalIgnoreCase);
-                            inputVerified = inputApplied && string.Equals(
-                                _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture), vmOutputId, StringComparison.OrdinalIgnoreCase);
-                        }
+                        Settings.VoicemeeterEndpointsCleaned = true;
                     }
 
-                    var routingVerified = outputVerified && inputVerified;
-
-                    result = routingVerified
-                        ? $"✓ Audio configured:\n   Playback: {hear.Name}\n   Microphone: {talk.Name}"
-                        : $"✗ Voicemeeter channels configured, but Windows routing was not verified.\n   Playback: {(outputVerified ? "✓" : "✗")}\n   Microphone: {(inputVerified ? "✓" : "✗")}";
-                    if (routingVerified && !cleanupSucceeded)
-                        result += "\n⚠ Unused Voicemeeter channels could not be hidden; Windows defaults are configured.";
+                    result = $"✓ Audio configured:\n   Playback: {hear.Name}\n   Microphone: {talk.Name}"
+                           + "\n   Windows input/output: untouched";
+                    if (!cleanupSucceeded)
+                        result += "\n⚠ Unused Voicemeeter channels could not be hidden.";
 
                     SaveConfig();
-                    overlay.Complete(routingVerified ? "Ready to play!" : "Windows routing could not be verified.", succeeded: routingVerified);
-                    if (routingVerified) ToastWindow.ShowDiscordStudioTip();
+                    overlay.Complete("Ready to play!", succeeded: true);
+                    ToastWindow.ShowDiscordStudioTip();
                 }
             }
             else
@@ -358,6 +330,8 @@ public partial class SetupWizardWindow : Window
         var previousRender = Settings.SavedDefaultRenderId;
         var previousCapture = Settings.SavedDefaultCaptureId;
 
+        // Repair path only: this build never changes Windows defaults, so these are
+        // just leftover IDs from an older build that parked Windows on Voicemeeter.
         if (!string.IsNullOrWhiteSpace(previousRender) || !string.IsNullOrWhiteSpace(previousCapture))
         {
             bool restored = _windowsAudioRoutingService.TrySetDefaultDevices(previousRender ?? "", previousCapture ?? "");
@@ -372,7 +346,7 @@ public partial class SetupWizardWindow : Window
         }
         else
         {
-            windowsResult = "No saved Windows defaults to restore";
+            windowsResult = "✓ Windows input/output left unchanged";
         }
 
         string vmResult;

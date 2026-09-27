@@ -1216,7 +1216,6 @@ public partial class MainWindow : Window
         var configService = new ConfigService();
         var config = configService.Load();
         var audioDeviceService = new AudioDeviceService();
-        var routing = new WindowsAudioRoutingService();
 
         var vmOutputId = audioDeviceService.GetVoicemeeterOutputId();
         if (string.IsNullOrWhiteSpace(vmOutputId))
@@ -1225,17 +1224,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        var currentCapture = audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
-        if (!string.IsNullOrWhiteSpace(currentCapture)
-            && !string.Equals(currentCapture, vmOutputId, StringComparison.OrdinalIgnoreCase))
-        {
-            config.Settings.SavedDefaultCaptureId = currentCapture;
-        }
-
-        var inputApplied = routing.TrySetDefaultInput(vmOutputId);
-        var reboundInput = audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
-        var verified = inputApplied && string.Equals(reboundInput, vmOutputId, StringComparison.OrdinalIgnoreCase);
-
+        // Voicemeeter + app only. Windows' default capture device is never written -
+        // pick "VoiceMeeter Output (B1)" yourself in each app that needs the mic.
         config.Settings.VoicemeeterDetected = true;
         config.Settings.InputDeviceId = vmOutputId;
         config.Settings.MicrophoneDeviceId = vmOutputId;
@@ -1258,14 +1248,10 @@ public partial class MainWindow : Window
             }
         }
 
-        SetAdvancedVmStatus(verified
-            ? virtualB1Activated
-                ? "✓ Windows input → Virtual Audio Output (B1). Virtual Input B1 also enabled."
-                : "✓ Windows input → Virtual Audio Output (B1). Output device left unchanged."
-            : "⚠ Windows input → Virtual Audio Output (B1) not confirmed. Output device left unchanged.",
-            verified
-                ? Color.FromRgb(0x10, 0xB9, 0x81)
-                : Color.FromRgb(0xF5, 0x9E, 0x0B));
+        SetAdvancedVmStatus(virtualB1Activated
+                ? "✓ App mic → Virtual Audio Output (B1), Virtual Input B1 enabled. Windows input untouched."
+                : "✓ App mic → Virtual Audio Output (B1). Windows input/output untouched.",
+            Color.FromRgb(0x10, 0xB9, 0x81));
     }
 
     private void AdvancedTestHear_Click(object sender, RoutedEventArgs e)
@@ -1279,7 +1265,9 @@ public partial class MainWindow : Window
         var configService = new ConfigService();
         var config = configService.Load();
 
-        string windowsResult = "Windows input device unchanged.";
+        // Repair path only: this build never writes Windows' default capture device,
+        // so a saved ID can only be a leftover from an older build.
+        string windowsResult = "✓ Windows input/output left unchanged";
         if (!string.IsNullOrWhiteSpace(config.Settings.SavedDefaultCaptureId))
         {
             var routing = new WindowsAudioRoutingService();

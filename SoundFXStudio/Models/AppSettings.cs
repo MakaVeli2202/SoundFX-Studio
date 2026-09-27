@@ -371,9 +371,12 @@ public class AppSettings : ObservableObject
         set => SetProperty(ref _voicemeeterDetected, value);
     }
 
-    // Latch for VoicemeeterEndpointCleanupService: set once the unused Voicemeeter
-    // endpoints have been disabled (or confirmed already tidy), so the one elevation
-    // prompt happens at most once per install. The used endpoints are never renamed.
+    // Records that the unused Voicemeeter endpoints have been hidden at least once.
+    // NOT a gate: VoicemeeterEndpointCleanupService re-runs on every startup because
+    // Voicemeeter re-registers its endpoints on driver reload, which would otherwise
+    // leave the channels permanently visible in Windows. Re-running is free - the
+    // service scans the registry read-only and only prompts for elevation when there
+    // is something left to hide. The used endpoints are never renamed.
     public bool VoicemeeterEndpointsCleaned
     {
         get => _voicemeeterEndpointsCleaned;

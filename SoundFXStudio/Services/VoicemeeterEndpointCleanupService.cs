@@ -7,10 +7,12 @@ using Microsoft.Win32;
 namespace SoundFXStudio.Services;
 
 /// <summary>
-/// One-time cleanup: disables every Voicemeeter endpoint SoundFX Studio does
-/// not route through, so Windows' Sound flyout stops listing Input/Aux/B2/B3
-/// entries nobody uses. Same registry mechanism (DeviceState) ArtTuneStackService
-/// already uses for its own endpoints. Requires one elevation prompt (UAC).
+/// Disables every Voicemeeter endpoint SoundFX Studio does not route through, so Windows'
+/// Sound flyout stops listing Input/Aux/B2/B3 entries nobody uses. Same registry mechanism
+/// (DeviceState) ArtTuneStackService already uses for its own endpoints. Requires one
+/// elevation prompt (UAC) — but only when there is actually something to hide: the
+/// registry scan runs first and returns <see cref="VoicemeeterCleanupResult.NothingToHide"/>
+/// without spawning anything, which is what makes it safe to call on every startup.
 /// </summary>
 /// <remarks>
 /// Deliberately does NOT rename the two endpoints actually in use. Renaming
@@ -20,6 +22,12 @@ namespace SoundFXStudio.Services;
 /// them BY that name — renaming would break re-detection on the next run and
 /// could silently misroute playback. Hiding the unused ones carries none of
 /// that risk since nothing in the app ever looks them up.
+///
+/// Not idempotent-by-latch on purpose: Voicemeeter re-registers its endpoints
+/// whenever the VB-Audio driver reloads, which resets DeviceState back to 1 and
+/// makes every hidden channel reappear in Windows. A one-shot "already cleaned"
+/// flag would therefore strand the user with a full device list. Instead this is
+/// re-checked on every launch and is a no-op when the endpoints are already hidden.
 /// </remarks>
 public enum VoicemeeterCleanupResult
 {

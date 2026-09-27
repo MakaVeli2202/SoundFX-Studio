@@ -1913,7 +1913,7 @@
                                                             Click="AdvancedConfigureVmOnly_Click"
                                                             Style="{StaticResource SettingsButton}"
                                                             Width="190"/>
-                                                    <Button Content="Set Input To B1 Only"
+                                                    <Button Content="Route App Mic To B1"
                                                             Click="AdvancedRouteInputOnly_Click"
                                                             Style="{StaticResource SettingsButton}"
                                                             Width="170" Margin="10,0,0,0"/>
@@ -2224,7 +2224,8 @@
                                                         </Button.Template>
                                                     </Button>
                                                     <Button x:Name="AdvancedRouteInputOnlyBtn"
-                                                            Content="Set Input To B1 Only"
+                                                            Content="Route App Mic To B1"
+                                                            ToolTip="Point SoundFX Studio's microphone at VoiceMeeter Out B1. Windows input/output untouched."
                                                             Margin="8,0,0,0"
                                                             Click="AdvancedRouteInputOnly_Click"
                                                             Height="34"

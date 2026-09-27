@@ -312,7 +312,9 @@
                                 <StackPanel>
                                     <TextBlock Text="AUTO CONFIGURE" Foreground="White" FontSize="15" FontWeight="Bold"/>
                                     <TextBlock Text="One click to wire your mic and speakers. No manual setup needed."
-                                               Margin="0,5,0,12" Foreground="{StaticResource MutedBrush}" FontSize="11.5" TextWrapping="Wrap"/>
+                                               Margin="0,5,0,4" Foreground="{StaticResource MutedBrush}" FontSize="11.5" TextWrapping="Wrap"/>
+                                    <TextBlock Text="SoundFX Studio only. Your Windows input and output devices are never changed."
+                                               Margin="0,0,0,12" Foreground="#5A6E8A" FontSize="11" TextWrapping="Wrap"/>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <Button x:Name="WizardAutoSetupBtn"
                                                 Style="{StaticResource HeroButton}"

@@ -3243,26 +3243,6 @@ public sealed class MainViewModel : ObservableObject
                 var haveRender = !string.IsNullOrWhiteSpace(vmInputId);
                 var haveCapture = !string.IsNullOrWhiteSpace(vmOutputId);
 
-                RefreshSavedWindowsDefaults();
-
-                bool outputApplied = false;
-                bool inputApplied = false;
-                string? renderError = null;
-                string? captureError = null;
-                if (haveRender || haveCapture)
-                {
-                    if (haveCapture)
-                    {
-                        inputApplied = _windowsAudioRoutingService.TrySetDefaultInput(vmOutputId!);
-                        captureError = _windowsAudioRoutingService.LastError;
-                    }
-                    if (haveRender)
-                    {
-                        outputApplied = TrySetDefaultOutputVerified(vmInputId!);
-                        renderError = _windowsAudioRoutingService.LastError;
-                    }
-                }
-
                 if (haveRender)
                 {
                     Settings.OutputDeviceId = vmInputId!;
@@ -3277,34 +3257,18 @@ public sealed class MainViewModel : ObservableObject
 
                 Save();
 
-                var result = $"✓  Audio configured:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
+                var result = $"✓  Audio configured:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}"
+                           + "\n   Windows input/output: untouched";
 
                 if (haveRender)
-                {
-                    if (outputApplied)
-                        result += "\n   ✓ App output + Windows playback → Virtual Audio Input";
-                    else
-                        result += $"\n   ⚠  Could not set Windows playback → Virtual Audio Input ({renderError ?? "set failed"})";
-                }
+                    result += "\n   ✓ App output → Virtual Audio Input";
                 else
-                {
-                    result += "\n   ⚠  Virtual Audio Input device not found — playback not routed";
-                }
+                    result += "\n   ⚠  Virtual Audio Input device not found — app playback not routed";
 
                 if (haveCapture)
-                {
-                    var rb = inputApplied ? _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture) : null;
-                    if (inputApplied && string.Equals(rb, vmOutputId, StringComparison.OrdinalIgnoreCase))
-                        result += "\n   ✓ Mic + Windows input → Virtual Audio Output (B1)";
-                    else if (inputApplied)
-                        result += $"\n   ⚠  Input default is '{rb}' — Virtual Audio Output (B1) not applied ({captureError ?? "none"})";
-                    else
-                        result += $"\n   ⚠  Could not set Windows input → Virtual Audio Output (B1) ({captureError ?? "set failed"})";
-                }
+                    result += "\n   ✓ App mic → Virtual Audio Output (B1)";
                 else
-                {
-                    result += "\n   ⚠  Virtual Audio Output (B1) device not found — input not routed";
-                }
+                    result += "\n   ⚠  Virtual Audio Output (B1) device not found — app mic not routed";
 
                 return result;
             }
@@ -3313,19 +3277,6 @@ public sealed class MainViewModel : ObservableObject
                 return $"✗  Setup failed: {ex.Message}";
             }
         });
-    }
-
-    private bool TrySetDefaultOutputVerified(string deviceId)
-    {
-        for (int i = 0; i < 3; i++)
-        {
-            bool applied = _windowsAudioRoutingService.TrySetDefaultOutput(deviceId);
-            var rb = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
-            if (applied && string.Equals(rb, deviceId, StringComparison.OrdinalIgnoreCase))
-                return true;
-            System.Threading.Thread.Sleep(500);
-        }
-        return false;
     }
 
     internal async Task<string> ResetVoicemeeterAsync(Action<string>? reportStep = null)
@@ -3423,6 +3374,11 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Repair path. The app never writes Windows' default input/output, so the only way
+    /// Windows can be parked on a Voicemeeter endpoint is an older build having done it.
+    /// When that happens, put the devices this app had recorded back.
+    /// </summary>
     internal void ReconcileWindowsDefaultsOnStartup()
     {
         try
@@ -3456,16 +3412,21 @@ public sealed class MainViewModel : ObservableObject
 
     /// <summary>
     /// Hides the Voicemeeter endpoints the app never routes through, so Windows' sound
-    /// flyout only lists VoiceMeeter Input and Out B1. The VoicemeeterEndpointsCleaned flag
-    /// is the latch: this runs at most once per install and never prompts for elevation
-    /// again. Skipped when the setup wizard is about to open, since the wizard does the
-    /// same work and would otherwise double-prompt on first run.
+    /// flyout only lists VoiceMeeter Input and Out B1.
+    ///
+    /// Runs on EVERY startup, not once. Voicemeeter re-registers its endpoints whenever the
+    /// driver reloads, which puts DeviceState back to 1 and makes the channels reappear in
+    /// Windows - a one-shot latch would leave them visible forever. The check itself is a
+    /// read-only registry scan; the UAC prompt only fires when there is genuinely something
+    /// to hide (CleanupAsync returns NothingToHide without launching anything).
+    ///
+    /// Skipped when the setup wizard is about to open, since the wizard does the same work
+    /// and would otherwise double-prompt on first run.
     /// </summary>
     private async void CleanupVoicemeeterEndpointsIfNeeded()
     {
         try
         {
-            if (Settings.VoicemeeterEndpointsCleaned) return;
             if (Settings.ShowSetupWizardOnStartup && !Settings.SetupCompleted) return;
             if (!VoicemeeterService.IsVoicemeeterInstalled()) return;
 
@@ -3476,9 +3437,12 @@ public sealed class MainViewModel : ObservableObject
             var result = await VoicemeeterEndpointCleanupService.CleanupAsync(renderId, captureId);
             if (result == VoicemeeterCleanupResult.Failed) return;
 
-            Settings.VoicemeeterEndpointsCleaned = true;
-            Save();
-            _logService?.Info($"Startup: hid unused Voicemeeter channels ({result}).");
+            if (result == VoicemeeterCleanupResult.Completed && !Settings.VoicemeeterEndpointsCleaned)
+            {
+                Settings.VoicemeeterEndpointsCleaned = true;
+                Save();
+            }
+            _logService?.Info($"Startup: Voicemeeter channel visibility — {result}.");
         }
         catch (Exception ex)
         {
