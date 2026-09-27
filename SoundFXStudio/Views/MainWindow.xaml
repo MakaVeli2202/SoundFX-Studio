@@ -1926,9 +1926,16 @@
                                         </Border>
 
                                         <Border Background="#B4141E2D" BorderBrush="#334A647F" BorderThickness="1"
-                                                CornerRadius="12" Padding="18,16" Margin="0,14,0,0">
+                                                CornerRadius="12" Padding="18,16" Margin="0,14,0,0"
+                                                IsEnabled="{Binding Gaming.ArtTuneFeatureEnabled}">
                                             <StackPanel>
-                                                <TextBlock Text="TUNE LIBRARY" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="TUNE LIBRARY" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                                    <Border Background="#1AFFFFFF" CornerRadius="6" Padding="8,2" Margin="8,0,0,6"
+                                                            Visibility="{Binding Gaming.ArtTuneComingSoon, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                        <TextBlock Text="COMING SOON" Foreground="#F59E0B" FontSize="9.5" FontWeight="Bold"/>
+                                                    </Border>
+                                                </StackPanel>
                                                 <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,12"
                                                            Text="Headphone EQ, game tunes and HRTF presets cached from the ArtTuneDB library (Art of War)."/>
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
@@ -1955,9 +1962,16 @@
 
                                         <!-- ART TUNE STACK -->
                                         <Border Background="#B4141E2D" BorderBrush="#334A647F" BorderThickness="1"
-                                                CornerRadius="12" Padding="18,16" Margin="0,14,0,0">
+                                                CornerRadius="12" Padding="18,16" Margin="0,14,0,0"
+                                                IsEnabled="{Binding Gaming.ArtTuneFeatureEnabled}">
                                             <StackPanel>
-                                                <TextBlock Text="ART TUNE STACK" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="ART TUNE STACK" Foreground="#00D4FF" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                                                    <Border Background="#1AFFFFFF" CornerRadius="6" Padding="8,2" Margin="8,0,0,6"
+                                                            Visibility="{Binding Gaming.ArtTuneComingSoon, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                        <TextBlock Text="COMING SOON" Foreground="#F59E0B" FontSize="9.5" FontWeight="Bold"/>
+                                                    </Border>
+                                                </StackPanel>
                                                 <TextBlock Foreground="#A1B2D2" FontSize="10.5" TextWrapping="Wrap" Margin="0,0,0,12"
                                                            Text="One-click install of the Art of War game audio stack: VB-CABLE + Voicemeeter, ReaPlugs, Equalizer APO, HeSuVi, LEQ, library, endpoint rename."/>
                                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
@@ -2448,7 +2462,7 @@
                         <!-- Art Tune (Gaming) -->
                         <Button Click="NavigateGaming_Click"
                                 AutomationProperties.Name="Art Tune"
-                                ToolTip="Art Tune — Art of War game audio stack (ArtTuneDB)">
+                                ToolTip="Art Tune — Art of War game audio stack (ArtTuneDB) — coming soon">
                             <Button.Style>
                                 <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
                                     <Style.Triggers>
@@ -2462,7 +2476,7 @@
                             </Button.Style>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE9F9;" FontFamily="Segoe Fluent Icons" FontSize="15" Width="30" VerticalAlignment="Center"/>
-                                <TextBlock Text="Art Tune" FontSize="13.5" VerticalAlignment="Center"/>
+                                <TextBlock Text="Art Tune (Soon)" FontSize="13.5" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 

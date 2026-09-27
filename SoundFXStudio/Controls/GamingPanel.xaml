@@ -52,6 +52,21 @@
         <!-- ART TUNE STACK -->
         <StackPanel Grid.Row="1">
 
+        <Border Background="#2AF59E0B"
+                BorderBrush="#66F59E0B"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="16,12"
+                Margin="0,0,0,14"
+                Visibility="{Binding ArtTuneComingSoon, Converter={StaticResource BoolToVisibilityConverter}}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="COMING SOON" Foreground="#F59E0B" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock Text="Art Tune (the ArtTuneDB game audio stack) is under development and disabled in this build. Soundboard and Voice Changer are unaffected."
+                           Foreground="#DCE6F5" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <StackPanel IsEnabled="{Binding ArtTuneFeatureEnabled}">
         <Border Background="#14141E2D"
                 BorderBrush="#333800D4"
                 BorderThickness="1"
@@ -224,6 +239,8 @@
                          BorderThickness="0"/>
             </StackPanel>
         </Border>
+
+        </StackPanel>
 
         </StackPanel>
 

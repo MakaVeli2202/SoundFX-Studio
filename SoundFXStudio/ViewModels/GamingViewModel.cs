@@ -974,6 +974,11 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
 
     private void LoadCachedArtTuneLibrary()
     {
+        if (!ArtTuneFeatureEnabled)
+        {
+            TuneLibraryStatus = "Coming soon.";
+            return;
+        }
         try
         {
             var version = _artTuneLibrary.LoadFromCache();
@@ -1020,6 +1025,12 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
 
     private async Task UpdateTuneLibraryAsync()
     {
+        if (!ArtTuneFeatureEnabled)
+        {
+            TuneLibraryStatus = "Coming soon.";
+            StatusText = "Art Tune is coming soon.";
+            return;
+        }
         if (IsTuneLibraryUpdating)
             return;
 
@@ -1461,14 +1472,29 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
 
     public IReadOnlyList<string> MissingComponents => StackState.MissingComponents;
 
-    public string StackStateDescription => StackReady
-        ? "Art Tune stack installed — pick a game + version and hit Apply."
-        : "Art Tune stack not installed. Run 1-CLICK INSTALL STACK to match ArtTuneDB.";
+    // Single flip point to bring Art Tune back: flip to true. Nothing else in
+    // the feature (service, script, view-model, tests) was touched or deleted.
+    public bool ArtTuneFeatureEnabled => false;
+
+    public bool ArtTuneComingSoon => !ArtTuneFeatureEnabled;
+
+    public string StackStateDescription
+    {
+        get
+        {
+            if (!ArtTuneFeatureEnabled) return "Art Tune is coming soon — not available in this build yet.";
+            return StackReady
+                ? "Art Tune stack installed — pick a game + version and hit Apply."
+                : "Art Tune stack not installed. Run 1-CLICK INSTALL STACK to match ArtTuneDB.";
+        }
+    }
 
     public string ArtTuneGuidance
     {
         get
         {
+            if (!ArtTuneFeatureEnabled)
+                return "Art Tune (game audio tuning) is coming soon. Soundboard and Voice Changer are unaffected.";
             if (!StackReady)
                 return "Run 1-CLICK INSTALL STACK below to install the full ArtTuneDB audio chain.";
             if (_artTuneTuning.Health == ArtTuneTuningHealth.Active)
@@ -1499,6 +1525,7 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
     {
         get
         {
+            if (!ArtTuneFeatureEnabled) return "Coming soon.";
             if (StackReady)
             {
                 var v = StackState.LibraryVersion;
@@ -1534,6 +1561,7 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
 
     private void StartArtTuneHealthTimer()
     {
+        if (!ArtTuneFeatureEnabled) return;
         if (_artTuneHealthTimer is not null) return;
         try
         {
@@ -1613,6 +1641,10 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         if (match is null) return;
         foreach (var f in match.SixteenChFiles)
             ArtTuneSixteenChOptions.Add(f);
+        // Preselect ArtIsWar's own recommended starting point (Classic+, Ultra Low
+        // self-gun) instead of leaving the combo blank / defaulting to whatever
+        // sorts first alphabetically (which was the deprecated "Balanced" tune).
+        SelectedArtTuneSixteenCh = ArtTuneStackService.PickRecommendedSixteenChFile(match.SixteenChFiles) ?? string.Empty;
         OnPropertyChanged(nameof(HasArtTuneSixteenCh));
     }
 
@@ -1634,6 +1666,7 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
 
     private async Task InstallArtTuneStackAsync()
     {
+        if (!ArtTuneFeatureEnabled) { StatusText = "Art Tune is coming soon."; return; }
         if (IsArtTuneBusy) return;
         IsArtTuneBusy = true;
         ArtTuneRunLog = string.Empty;
@@ -1663,6 +1696,7 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
 
     private async Task RollbackArtTuneStackAsync()
     {
+        if (!ArtTuneFeatureEnabled) { StatusText = "Art Tune is coming soon."; return; }
         if (IsArtTuneBusy) return;
         IsArtTuneBusy = true;
         ArtTuneRunLog = string.Empty;
@@ -1692,6 +1726,7 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
 
     private async Task ApplyArtTuneTuneAsync()
     {
+        if (!ArtTuneFeatureEnabled) { StatusText = "Art Tune is coming soon."; return; }
         if (IsArtTuneBusy) return;
         var touch = SplitVersion(SelectedArtTuneVersion);
         if (touch is null)
@@ -1708,7 +1743,7 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
                 .FirstOrDefault(v => v.Game == game && v.Version == version);
             var leqHint = match?.LeqReleaseTimeHint ?? 0;
             var sixteenCh = string.IsNullOrWhiteSpace(SelectedArtTuneSixteenCh)
-                ? match?.SixteenChFiles.FirstOrDefault()
+                ? (match is null ? null : ArtTuneStackService.PickRecommendedSixteenChFile(match.SixteenChFiles))
                 : SelectedArtTuneSixteenCh;
 
             StatusText = $"Applying {game} {version}…";

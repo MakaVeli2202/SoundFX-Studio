@@ -832,7 +832,7 @@ Show-UpdateStatus
         @{ Text = '[3] Uninstall app - remove the program, keep your sounds and settings'; Color = 'White' }
         @{ Text = '[4] Uninstall everything - app, data, and Voicemeeter'; Color = 'White' }
         @{ Text = '[5] Fresh install - remove everything, then install the latest version'; Color = 'White' }
-        @{ Text = '[a] Reset / roll back Art Tune stack - clean uninstall of the audio tuning'; Color = $C.Purple }
+        @{ Text = '[a] Reset / roll back Art Tune stack (coming soon in-app; cleanup only)'; Color = $C.Purple }
         @{ Text = '[u] Check for updates'; Color = $C.Purple }
         @{ Text = '[t] Thank you - credits & developer links'; Color = $C.Purple }
         @{ Text = '[Q] Quit'; Color = $C.Muted }

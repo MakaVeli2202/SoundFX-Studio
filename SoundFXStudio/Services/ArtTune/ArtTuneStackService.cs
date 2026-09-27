@@ -475,6 +475,46 @@ public sealed class ArtTuneStackService
         var path = Path.Combine(dir, name);
         return File.Exists(path) ? name.Replace('\\', '/') : null;
     }
+
+    // Ranking from the ArtTuneDB README/changelog: Classic+ is marked
+    // "(default, new)"; Capped/Immersive/Balanced are marked "(deprecated)".
+    // Alphabetical file sort (the old fallback) picked "Balanced" first,
+    // which is exactly backwards from ArtIsWar's own recommendation.
+    private static readonly string[] SixteenChStyleRank =
+        { "ClassicPlus", "Classic", "Open", "Full", "Competitive", "Capped", "Immersive", "Balanced" };
+    private static readonly string[] SixteenChGunRank =
+        { "UltraLoGun", "StockGun", "LoGun", "MedGun", "HiGun" };
+
+    /// <summary>
+    /// Picks the 16ch tune ArtIsWar recommends as a starting point (Classic+,
+    /// Ultra Low self-gun) out of the files installed for a game/version,
+    /// falling back through the ranked lists when that exact file is absent.
+    /// </summary>
+    public static string? PickRecommendedSixteenChFile(IReadOnlyList<string> files)
+    {
+        if (files.Count == 0) return null;
+        return files
+            .OrderBy(f => StyleRankOf(f))
+            .ThenBy(f => GunRankOf(f))
+            .ThenBy(f => f, StringComparer.OrdinalIgnoreCase)
+            .First();
+
+        static int StyleRankOf(string file)
+        {
+            for (var i = 0; i < SixteenChStyleRank.Length; i++)
+                if (file.Contains(SixteenChStyleRank[i], StringComparison.OrdinalIgnoreCase))
+                    return i;
+            return SixteenChStyleRank.Length;
+        }
+
+        static int GunRankOf(string file)
+        {
+            for (var i = 0; i < SixteenChGunRank.Length; i++)
+                if (file.Contains(SixteenChGunRank[i], StringComparison.OrdinalIgnoreCase))
+                    return i;
+            return SixteenChGunRank.Length;
+        }
+    }
 }
 
 /// <summary>Health of the live tuning, verified from what is actually applied.</summary>
