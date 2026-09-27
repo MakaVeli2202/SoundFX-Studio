@@ -351,8 +351,17 @@ public class ConfigService
 
     private static string GetProjectCalibrationFilePath()
     {
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        // Installed/published builds ship the file next to the exe (see the
+        // csproj Content include) - check there first so a fresh install on a
+        // new PC gets the tuned calibration, not just the model's bare defaults.
+        var direct = Path.Combine(AppContext.BaseDirectory, "keyboard-calibration.json");
+        if (File.Exists(direct))
+        {
+            return direct;
+        }
 
+        // Dev fallback: running straight from bin\ before a build has copied it.
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null)
         {
             var solutionPath = Path.Combine(current.FullName, "SoundFXStudio.sln");
@@ -364,7 +373,7 @@ public class ConfigService
             current = current.Parent;
         }
 
-        return Path.Combine(AppContext.BaseDirectory, "keyboard-calibration.json");
+        return direct;
     }
 
     private static bool MigrateLegacySoundAssignments(AppConfig config)

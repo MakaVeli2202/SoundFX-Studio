@@ -15,7 +15,7 @@
     <Window.Resources>
         <PathGeometry x:Key="SpinnerArcGeometry">
             <PathFigure StartPoint="60,10">
-                <ArcSegment Point="16.7,35" Size="50,50" SweepDirection="Clockwise" IsLargeArc="True"/>
+                <ArcSegment Point="60,110" Size="50,50" SweepDirection="Clockwise" IsLargeArc="False"/>
             </PathFigure>
         </PathGeometry>
 

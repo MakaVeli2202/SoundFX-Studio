@@ -3337,6 +3337,21 @@ public sealed class MainViewModel : ObservableObject
         var previousRender = Settings.SavedDefaultRenderId;
         var previousCapture = Settings.SavedDefaultCaptureId;
 
+        // The saved IDs can be empty (never captured) or stale (still point at a
+        // Voicemeeter endpoint from an earlier interrupted run) - either way,
+        // Reset must still land Windows on a real device instead of leaving it
+        // on Voicemeeter with no way to recover except clicking devices by hand.
+        var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
+        var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
+        if (string.IsNullOrWhiteSpace(previousRender) || string.Equals(previousRender, vmInputId, StringComparison.OrdinalIgnoreCase))
+        {
+            previousRender = PickBestDevice(OutputDevices, preferVirtual: false)?.Id ?? string.Empty;
+        }
+        if (string.IsNullOrWhiteSpace(previousCapture) || string.Equals(previousCapture, vmOutputId, StringComparison.OrdinalIgnoreCase))
+        {
+            previousCapture = PickBestDevice(InputDevices, preferVirtual: false)?.Id ?? string.Empty;
+        }
+
         reportStep?.Invoke("Resetting audio routing…");
         string vmResult = await Task.Run(() =>
         {
