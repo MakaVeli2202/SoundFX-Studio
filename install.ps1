@@ -1,57 +1,77 @@
 <#
-SoundFX Studio - guided installer.
+    SoundFX Studio - installer.
 
-Usage:
-  irm https://raw.githubusercontent.com/MakaVeli2202/SoundFX-Studio/main/install.ps1 | iex
-  powershell -ExecutionPolicy Bypass -File install.ps1
+    USAGE
+      One-liner (self-elevates through UAC):
+        irm https://raw.githubusercontent.com/MakaVeli2202/SoundFX-Studio/main/install.ps1 | iex
 
-Command line (non-interactive):
-  powershell -ExecutionPolicy Bypass -File install.ps1 -Install
-  powershell -ExecutionPolicy Bypass -File install.ps1 -Upgrade
-  powershell -ExecutionPolicy Bypass -File install.ps1 -FreshInstall
-  powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall
-  powershell -ExecutionPolicy Bypass -File install.ps1 -UninstallAll
-  powershell -ExecutionPolicy Bypass -File install.ps1 -CheckUpdate
-  Combine with -Silent (no prompts) and -NoLaunch.
+      From a file / any terminal:
+        powershell -ExecutionPolicy Bypass -File install.ps1
 
-Downloads the latest stable release from GitHub and installs it silently
-(Inno Setup /VERYSILENT). Existing installations are upgraded in place unless
-you choose the fresh install / uninstall options.
+    NON-INTERACTIVE
+      powershell -ExecutionPolicy Bypass -File install.ps1 -Install
+      powershell -ExecutionPolicy Bypass -File install.ps1 -Upgrade
+      powershell -ExecutionPolicy Bypass -File install.ps1 -Uninstall
+      powershell -ExecutionPolicy Bypass -File install.ps1 -Status
+      powershell -ExecutionPolicy Bypass -File install.ps1 -CheckUpdate
+      ... plus -Silent (no prompts), -NoLaunch, -RemoveData, -RemoveVoicemeeter.
+
+    WHAT IT DOES
+      Installs the latest GitHub release (Inno Setup) plus the Voicemeeter driver
+      stack, and checks for the .NET 8 Desktop Runtime the app needs to start.
+      Upgrade is install-over-the-top: sounds, settings and bindings are kept.
 #>
+
+[CmdletBinding()]
+param(
+    [switch]$Install,
+    [switch]$Upgrade,
+    [switch]$Uninstall,
+    [switch]$CheckUpdate,
+    [switch]$Status,
+    [switch]$RemoveData,
+    [switch]$RemoveVoicemeeter,
+    [switch]$Silent,
+    [switch]$NoLaunch,
+    [switch]$Help
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-# Theme: SoundFX Studio accent colors, mapped to console-safe values.
-# AccentBlue #00D4FF -> Cyan | AccentGreen #22C55E -> Green | AccentRose #F43F5E -> Red
-# AccentPurple #7B3FFF -> Magenta | AccentWarning #F59E0B -> Yellow | Border #34506E -> DarkCyan
-$C = @{
-    Blue    = 'Cyan'
-    Green   = 'Green'
-    Rose    = 'Red'
-    Purple  = 'Magenta'
-    Warning = 'Yellow'
-    Border  = 'DarkCyan'
-    Muted   = 'DarkGray'
-}
+# ------------------------------------------------------------------ config ---
 
-$script:repo       = 'MakaVeli2202/SoundFX-Studio'
-$script:InstallUrl = 'https://raw.githubusercontent.com/MakaVeli2202/SoundFX-Studio/main/install.ps1'
-$script:AppName    = 'SoundFX Studio'
-$script:AppExe     = Join-Path $env:ProgramFiles "SoundFX Studio\SoundFXStudio.exe"
-$script:AppDataDir = Join-Path $env:APPDATA 'SoundFXStudio'
-$script:AppId      = '{A2B3C4D5-E6F7-4812-9ABC-DEF012345678}'
-$script:SfxVersion = '1.0.5'
-$script:BoxWidth   = 76
-$script:ScreenWidth = 120
-$script:BoxMargin  = ' ' * [Math]::Floor(($script:ScreenWidth - $script:BoxWidth - 2) / 2)
+$script:Repo        = 'MakaVeli2202/SoundFX-Studio'
+$script:AssetName   = 'SoundFXStudio-Setup.exe'
+$script:ApiBase     = "https://api.github.com/repos/$script:Repo"
+$script:DownloadUrl = "https://github.com/$script:Repo/releases/latest/download/$script:AssetName"
+$script:ScriptUrl   = "https://raw.githubusercontent.com/$script:Repo/main/install.ps1"
+$script:AppName     = 'SoundFX Studio'
+$script:AppFolder   = Join-Path $env:ProgramFiles $script:AppName
+$script:AppExe      = Join-Path $script:AppFolder 'SoundFXStudio.exe'
+$script:AppDataDir  = Join-Path $env:APPDATA 'SoundFXStudio'
+$script:ScriptVer   = '1.1.0'
+$script:MinRuntime  = 8
 
-# ------------------------------------------------------------- self-elevate ---
-# Voicemeeter installs drivers, so the whole script needs an elevated token. Without
-# this the script used to print one line and exit, which - when launched with
-# `irm | iex` - closed the window before the message could be read. Relaunch
-# ourselves as admin instead, carrying the original command line across.
+# Console-safe accents (UI hexes -> console colors).
+$script:Accent = 'Cyan'
+$script:Good   = 'Green'
+$script:Warn   = 'Yellow'
+$script:Bad    = 'Red'
+$script:Alt    = 'Magenta'
+$script:Dim    = 'DarkGray'
+$script:Line   = 'DarkCyan'
+
+# `irm | iex` runs from memory, so there is no file to re-launch. Captured at
+# script scope because $MyInvocation inside a function would describe the
+# function, not this script.
+$script:SelfPath = $MyInvocation.MyCommand.Path
+$script:Width    = 72
+$script:Margin   = '  '
+$script:ExitCode = 0
+
+# --------------------------------------------------------------- elevation ---
 
 function Test-Elevated {
     $id = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -59,922 +79,770 @@ function Test-Elevated {
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-function Restart-Elevated {
-    # `irm | iex` runs from memory, so there is no file to re-run. Save a copy
-    # first - the relaunch has to be able to read itself back off disk.
+function Get-CurrentTokens {
+    # Rebuilds the command line from the bound switches so the elevated re-run
+    # repeats the exact same job ($args is empty once a param block has bound).
+    $tokens = @()
+    if ($Install)             { $tokens += '-Install' }
+    if ($Upgrade)             { $tokens += '-Upgrade' }
+    if ($Uninstall)           { $tokens += '-Uninstall' }
+    if ($CheckUpdate)         { $tokens += '-CheckUpdate' }
+    if ($Status)              { $tokens += '-Status' }
+    if ($RemoveData)          { $tokens += '-RemoveData' }
+    if ($RemoveVoicemeeter)   { $tokens += '-RemoveVoicemeeter' }
+    if ($Silent)              { $tokens += '-Silent' }
+    if ($NoLaunch)            { $tokens += '-NoLaunch' }
+    $tokens += @($args)
+    return ,$tokens
+}
+
+function Start-ElevatedRerun {
+    param([string[]]$Tokens)
+
     $self = $script:SelfPath
     if ([string]::IsNullOrWhiteSpace($self) -or -not (Test-Path -LiteralPath $self)) {
         $self = Join-Path $env:TEMP 'SoundFXStudio-install.ps1'
-        Write-Host 'Saving a copy of the installer so it can restart as administrator...'
-        Invoke-WebRequest -Uri $script:InstallUrl -OutFile $self -UseBasicParsing
+        Write-Host ''
+        Write-Info 'Saving a copy of this script so it can restart as admin...'
+        Invoke-WebRequest -Uri $script:ScriptUrl -OutFile $self -UseBasicParsing
     }
 
-    $argList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$self`"") + @($args)
-    $proc = Start-Process powershell.exe -Verb RunAs -ArgumentList $argList -PassThru
+    $argumentList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$self`"") + $Tokens
+    $style = if ($Silent) { 'Hidden' } else { 'Normal' }
+    $null = Start-Process -FilePath 'powershell.exe' -Verb RunAs -WindowStyle $style -ArgumentList $argumentList
     Write-Host ''
-    Write-Host 'Reopened as administrator in a new window. This one can be closed.'
-    return $proc
+    Write-Ok  'Reopened as administrator in a new window.'
+    Write-Dim 'This window can be closed.'
 }
 
-$script:IsElevated = Test-Elevated
+# A read-only run must not drag the user through a UAC prompt. The gate itself
+# sits at the bottom of the file, once every helper it needs exists.
+$script:ReadOnly = $CheckUpdate -or $Status -or $Help
 
-# Captured here at script scope on purpose: inside Restart-Elevated,
-# $MyInvocation.MyCommand.Path would describe the function, not this script.
-$script:SelfPath = $MyInvocation.MyCommand.Path
+# -------------------------------------------------------------------- UI ---
 
-# -CheckUpdate only reads the GitHub API, so don't drag it through a UAC prompt.
-$script:IsReadOnlyRun = (@($args | Where-Object { $_ -notmatch '^-(checkupdate|silent)$' }).Count -eq 0) `
-    -and (@($args | Where-Object { $_ -match '^-(checkupdate)$' }).Count -gt 0)
-
-if (-not $script:IsElevated -and -not $script:IsReadOnlyRun) {
-    Write-Host ''
-    Write-Host '  SoundFX Studio installer needs administrator rights.' -ForegroundColor Yellow
-    Write-Host '  Voicemeeter installs an audio driver, so Windows will ask you to allow it.' -ForegroundColor DarkGray
-    Write-Host ''
-    try {
-        $null = Restart-Elevated
-        exit 0
+function Write-Rule {
+    param([string]$Text = '', [string]$Color = $script:Line)
+    if ([string]::IsNullOrEmpty($Text)) {
+        Write-Host "$($script:Margin)$([string][char]0x2500 * $script:Width)" -ForegroundColor $Color
+        return
     }
-    catch {
-        Write-Host ''
-        Write-Host '  Could not restart as administrator automatically.' -ForegroundColor Red
-        Write-Host '  Right-click PowerShell -> "Run as administrator", then re-run:' -ForegroundColor Yellow
-        Write-Host ''
-        Write-Host "    irm $script:InstallUrl | iex" -ForegroundColor DarkGray
-        Write-Host ''
-        $null = Read-Host '  Press Enter to close'
-        exit 1
-    }
+    Write-Host "$($script:Margin)$Text" -ForegroundColor $Color
 }
-
-# A terminating error mid-install used to kill the window with no explanation.
-trap {
-    Write-Host ''
-    Write-Host "  $($_.Exception.Message)" -ForegroundColor Red
-    if ($_.InvocationInfo -and $_.InvocationInfo.ScriptLineNumber -gt 0) {
-        Write-Host "  at line $($_.InvocationInfo.ScriptLineNumber): $($_.InvocationInfo.Line.Trim())" -ForegroundColor DarkGray
-    }
-    Write-Host ''
-    if ($args -notcontains '-Silent' -and $args -notcontains '-silent') {
-        $null = Read-Host '  Press Enter to close'
-    }
-    break
-}
-
-# ---------------------------------------------------------------- helpers ---
 
 function Center-Text {
     param([string]$Text, [int]$Width)
-    $spaces = [Math]::Max(0, $Width - $Text.Length)
-    $leftPad = [Math]::Floor($spaces / 2)
-    return (' ' * $leftPad) + $Text + (' ' * ($spaces - $leftPad))
+    $pad = [Math]::Max(0, $Width - $Text.Length)
+    $left = [Math]::Floor($pad / 2)
+    return (' ' * $left) + $Text + (' ' * ($pad - $left))
 }
 
-function Write-CenteredBlock {
-    param([hashtable[]]$Lines, [int]$ScreenWidth = $script:ScreenWidth)
-    $maxLen = ($Lines | ForEach-Object { $_.Text.Length } | Measure-Object -Maximum).Maximum
-    $margin = ' ' * [Math]::Max(0, [Math]::Floor(($ScreenWidth - $maxLen) / 2))
-    foreach ($l in $Lines) {
-        Write-Host "$margin$($l.Text)" -ForegroundColor $l.Color
-    }
-    return $margin
-}
-
-function Write-BoxLine {
-    param([string]$Text = '', [string]$Color = 'DarkGray')
-    Write-Host "$($script:BoxMargin)$([char]0x2551)  $Text$(' ' * [Math]::Max(0, $script:BoxWidth - $Text.Length - 2))$([char]0x2551)" -ForegroundColor $Color
-}
-
-function Write-BoxTop { Write-Host "$($script:BoxMargin)$([char]0x2554)$([string]::new([char]0x2550, $script:BoxWidth))$([char]0x2557)" -ForegroundColor $C.Blue }
-function Write-BoxMid  { Write-Host "$($script:BoxMargin)$([char]0x2560)$([string]::new([char]0x2550, $script:BoxWidth))$([char]0x2563)" -ForegroundColor $C.Blue }
-function Write-BoxBottom { Write-Host "$($script:BoxMargin)$([char]0x255A)$([string]::new([char]0x2550, $script:BoxWidth))$([char]0x255D)" -ForegroundColor $C.Blue }
-
-function Write-Banner {
-    Write-Host ''
-    Write-BoxTop
-    Write-Host "$($script:BoxMargin)$([char]0x2551)$(Center-Text $script:AppName $script:BoxWidth)$([char]0x2551)" -ForegroundColor $C.Blue
-    Write-Host "$($script:BoxMargin)$([char]0x2551)$(Center-Text 'A lightweight SFX / voice effects suite' $script:BoxWidth)$([char]0x2551)" -ForegroundColor White
-    Write-Host "$($script:BoxMargin)$([char]0x2551)$(Center-Text 'github.com/MakaVeli2202/SoundFX-Studio' $script:BoxWidth)$([char]0x2551)" -ForegroundColor $C.Muted
-    Write-Host "$($script:BoxMargin)$([char]0x2551)$(' ' * $script:BoxWidth)$([char]0x2551)" -ForegroundColor $C.Blue
-    Write-Host "$($script:BoxMargin)$([char]0x2551)$(Center-Text 'Guided install: app + Voicemeeter driver stack.' $script:BoxWidth)$([char]0x2551)" -ForegroundColor $C.Muted
-    Write-Host "$($script:BoxMargin)$([char]0x2551)$(Center-Text "v$($script:SfxVersion)  $([char]0x2022)  $([char]0x2713) upgrade keeps your sounds & settings" $script:BoxWidth)$([char]0x2551)" -ForegroundColor $C.Border
-    Write-BoxBottom
-    Write-Host ''
-}
-
-function Write-Warning {
-    Write-BoxTop
-    Write-Host "$($script:BoxMargin)$([char]0x2551)$(Center-Text "$([char]0x26A0) WARNING" $script:BoxWidth)$([char]0x2551)" -ForegroundColor $C.Warning
-    Write-BoxMid
-    Write-BoxLine 'This installer installs and manages audio components on this PC.' $C.Warning
-    Write-BoxLine 'Close all apps and save your work before continuing.' $C.Warning
-    Write-BoxLine 'SoundFX Studio uses Voicemeeter to route your sound effects.' $C.Warning
-    Write-BoxLine 'Audio may be interrupted briefly during setup.' $C.Warning
-    Write-BoxBottom
-    Write-Host ''
-}
-
-function Get-ConsoleWidth {
+function Center-Margin {
     try {
         $w = $Host.UI.RawUI.WindowSize.Width
-        if ($null -ne $w -and $w -gt 60) { return $w }
-    } catch { /* fall through */ }
-    return 120
-}
-
-function Write-BarLine {
-    # Renders a progress bar that OVERWRITES the current console line via \r
-    # (a single progressing bar, never a printout of hundreds of bars).
-    param([int]$Percent, [string]$Message)
-    if ([Console]::IsOutputRedirected) { return }
-    $barWidth = 24
-    $filled = [Math]::Min($barWidth, [Math]::Floor($barWidth * $Percent / 100))
-    $bar = ([string][char]0x2588) * $filled + ([string][char]0x2591) * ($barWidth - $filled)
-    $line = "$($script:BoxMargin)[$bar] {0,3}%  $Message" -f $Percent
-    $max = (Get-ConsoleWidth) - 1
-    if ($line.Length -gt $max) { $line = $line.Substring(0, $max) }
-    Write-Host "`r$line" -NoNewline
-}
-
-function Write-Step {
-    param([int]$n, [string]$text)
-    $pct = [Math]::Floor($n / $script:TotalSteps * 100)
-    $bar = ''
-    $width = 20
-    $filled = [Math]::Floor($width * $n / $script:TotalSteps)
-    for ($i = 0; $i -lt $width; $i++) { $bar += if ($i -lt $filled) { $([char]0x2588) } else { $([char]0x2591) } }
-    Write-Host "$($script:BoxMargin)[$bar] $pct%  $text" -ForegroundColor $C.Muted
-}
-
-function Write-Ok {
-    param([string]$text)
-    Write-Host "$($script:BoxMargin)$([char]0x2713) $text" -ForegroundColor $C.Green
-}
-
-function Write-Info {
-    param([string]$text)
-    Write-Host "$($script:BoxMargin)  $text" -ForegroundColor $C.Muted
-}
-
-function Write-ErrorLine {
-    param([string]$text)
-    Write-Host "$($script:BoxMargin)[!] $text" -ForegroundColor $C.Rose
-}
-
-function Invoke-WaitSpinner {
-    param(
-        [string]$Message,
-        [scriptblock]$Until,
-        [int]$TimeoutSeconds = 120
-    )
-    $frames = @('|', '/', '-', '\')
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    $i = 0
-    $pad = 100
-    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
-        $frame = $frames[$i % $frames.Count]
-        $line = "$($script:BoxMargin)$frame $Message"
-        Write-Host "`r$($line.PadRight($pad))" -NoNewline -ForegroundColor $C.Muted
-        if (& $Until) {
-            Write-Host "`r$($script:BoxMargin)$([char]0x2713) $Message$(' ' * [Math]::Max(0, $pad - $Message.Length - 4))" -ForegroundColor $C.Green
-            return $true
-        }
-        Start-Sleep -Milliseconds 200
-        $i++
+        if ($w -gt ($script:Width + 6)) { return ' ' * [Math]::Floor(($w - $script:Width) / 2) }
     }
-    Write-Host "`r$($script:BoxMargin)! $Message (timed out)$(' ' * [Math]::Max(0, $pad - $Message.Length - 4))" -ForegroundColor $C.Warning
-    return $false
+    catch { /* not a real console */ }
+    return $script:Margin
 }
 
-function Write-ProcessBar {
-    # Indeterminate "please wait" sweep while a silent installer runs - it has
-    # no progress to report, so DO NOT fake 0->100 completion repeatedly.
-    # The real 100% line is printed exactly once, when the process has exited.
-    param(
-        [System.Diagnostics.Process]$Process,
-        [string]$Message
-    )
+function Write-Banner {
+    param([string]$Tagline = 'A lightweight SFX / voice effects suite')
+    $m    = Center-Margin
+    $fill = ([string][char]0x2500) * $script:Width
+    $tl   = [string][char]0x250C; $tr = [string][char]0x2510
+    $ml   = [string][char]0x251C; $mr = [string][char]0x2524
+    $bl   = [string][char]0x2514; $br = [string][char]0x2518
+    $v    = [string][char]0x2502
+    $name = $script:AppName.ToUpper()
+    $ver  = "installer v$($script:ScriptVer)"
+
+    Write-Host ''
+    Write-Host "$m$tl$fill$tr" -ForegroundColor $script:Accent
+    Write-Host "$m$v$(Center-Text $name $script:Width)$v" -ForegroundColor $script:Accent
+    Write-Host "$m$v$(Center-Text $Tagline $script:Width)$v" -ForegroundColor White
+    Write-Host "$m$ml$fill$mr" -ForegroundColor $script:Line
+    Write-Host "$m$v$(Center-Text $ver $script:Width)$v" -ForegroundColor $script:Dim
+    Write-Host "$m$bl$fill$br" -ForegroundColor $script:Accent
+    Write-Host ''
+}
+
+function Write-Section {
+    param([string]$Text)
+    Write-Host ''
+    Write-Host "$($script:Margin)$Text" -ForegroundColor $script:Accent
+    Write-Rule
+}
+
+function Write-Ok       { param([string]$Text) Write-Host "$($script:Margin)$([char]0x2714) $Text" -ForegroundColor $script:Good }
+function Write-Info     { param([string]$Text) Write-Host "$($script:Margin)  $Text" -ForegroundColor White }
+function Write-Dim      { param([string]$Text) Write-Host "$($script:Margin)  $Text" -ForegroundColor $script:Dim }
+function Write-WarnLine { param([string]$Text) Write-Host "$($script:Margin)$([char]0x26A0) $Text" -ForegroundColor $script:Warn }
+function Write-ErrorLine{ param([string]$Text) Write-Host "$($script:Margin)$([char]0x2716) $Text" -ForegroundColor $script:Bad }
+
+function Write-Pair {
+    param([string]$Label, [string]$Value, [string]$Color = 'White')
+    $label = ($Label.PadRight(14))
+    Write-Host "$($script:Margin)$label $Value" -ForegroundColor $Color
+}
+
+function Write-ProgressBar {
+    param([int]$Percent, [string]$Message)
+    if ([Console]::IsOutputRedirected) {
+        if ($Percent -ge 100) { Write-Host "$($script:Margin)  $Message" -ForegroundColor $script:Dim }
+        return
+    }
+    $barWidth = 22
+    $filled = [Math]::Min($barWidth, [Math]::Floor($barWidth * $Percent / 100))
+    $bar = ([string][char]0x2588) * $filled + ([string][char]0x2501) * ($barWidth - $filled)
+    Write-Host "`r$($script:Margin)  [$bar] $($Percent.ToString().PadLeft(3))%  $Message " -NoNewline -ForegroundColor $script:Accent
+}
+
+function Write-ActivityBar {
+    # Indeterminate sweep for work that reports no progress (setup, winget).
+    param([System.Diagnostics.Process]$Process, [string]$Message)
     if ([Console]::IsOutputRedirected) {
         $Process.WaitForExit()
         return
     }
-    $barWidth = 24
+    $barWidth = 22
     $sweep = 0
     while (-not $Process.HasExited) {
-        $bar = ([string][char]0x2591) * $barWidth
-        # a 4-cell block sweeps left -> right -> back
+        $bar = ([string][char]0x2501) * $barWidth
         for ($k = $sweep; $k -lt [Math]::Min($sweep + 4, $barWidth); $k++) {
             $bar = $bar.Substring(0, $k) + [char]0x2588 + $bar.Substring($k + 1)
         }
-        Write-BarLineRaw -Bar $bar -Text "$Message (please wait)"
+        Write-ProgressBar -Percent 100 -Message $Message
         $sweep = ($sweep + 1) % ($barWidth - 3)
-        Start-Sleep -Milliseconds 110
+        Start-Sleep -Milliseconds 120
     }
-    Write-BarLine -Percent 100 -Message "$Message done"
+    Write-ProgressBar -Percent 100 -Message $Message
     Write-Host ''
 }
 
-function Write-BarLineRaw {
-    param([string]$Bar, [string]$Text)
-    if ([Console]::IsOutputRedirected) { return }
-    $line = "$($script:BoxMargin)[$Bar]  $Text"
-    $max = (Get-ConsoleWidth) - 1
-    if ($line.Length -gt $max) { $line = $line.Substring(0, $max) }
-    Write-Host "`r$line" -NoNewline
+function Read-Choice {
+    param([string]$Prompt = 'Select', [string[]]$Valid)
+    Write-Host "$($script:Margin)" -NoNewline
+    Write-Host "$Prompt  " -ForegroundColor $script:Warn -NoNewline
+    Write-Host '> ' -ForegroundColor $script:Alt -NoNewline
+    $answer = (Read-Host).Trim().ToLowerInvariant()
+    if ($Valid -contains $answer -or $Valid -contains '*') { return $answer }
+    Write-ErrorLine "Invalid choice. Enter: $($Valid -join ', ')"
+    return ''
 }
 
-function Test-IsAdmin {
-    return ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+function Confirm {
+    param([string]$Question, [bool]$DefaultYes = $false)
+    if ($Silent) { return $DefaultYes }
+    $hint = if ($DefaultYes) { '[Y/n]' } else { '[y/N]' }
+    Write-Host "$($script:Margin)$Question $hint " -ForegroundColor $script:Warn -NoNewline
+    $a = (Read-Host).Trim().ToLowerInvariant()
+    if ($DefaultYes) { return ($a -ne 'n') }
+    return ($a -eq 'y')
 }
 
-function Resolve-VersionTag {
-    # Strips a leading 'v' from a version tag so 'v1.2.3' and '1.2.3' compare fine.
-    param([string]$Tag)
-    if (-not $Tag) { return '' }
-    return $Tag.Trim().TrimStart('v', 'V').Trim()
-}
+# ------------------------------------------------------------------ state ---
 
-function Get-InstalledVersion {
-    $info = Get-UninstallInfo
-    if ($null -ne $info -and $info.Version -ne 'unknown') { return $info.Version }
-    return $null
-}
-
-function Test-LatestRelease {
-    # Returns @{ Available; Latest; Current } or $null if the check fails.
-    try {
-        $release = Invoke-RestMethod "https://api.github.com/repos/$($script:repo)/releases/latest"
-        $latest = Resolve-VersionTag $release.tag_name
-        $current = Resolve-VersionTag (Get-InstalledVersion)
-        if (-not $latest) { return $null }
-        if (-not $current) { return @{ Available = $false; Latest = $latest; Current = $null } }
-        $vNew = [version]$latest
-        $vCur = [version]$current
-        return @{ Available = ($vNew -gt $vCur); Latest = $latest; Current = $current }
-    } catch {
-        return $null
-    }
-}
-
-function Get-LaunchChoice {
-    $exe = $script:AppExe
-    if (-not (Test-Path $exe)) { return }
-    while ($true) {
-        Write-Host ''
-        $null = Write-CenteredBlock @(
-            @{ Text = '[1] Launch SoundFX Studio now'; Color = 'White' }
-            @{ Text = '[2] Back to main menu'; Color = $C.Muted }
-            @{ Text = '[3] Quit'; Color = $C.Muted }
-        )
-        Write-Host ''
-        Write-Host "$($script:BoxMargin)Choice: " -ForegroundColor $C.Warning -NoNewline
-        $key = Read-Host
-        switch ($key.ToLower().Trim()) {
-            '1' { $key = 'l'; break }
-            '2' { $key = 'm'; break }
-            '3' { $key = 'q'; break }
-        }
-        switch ($key) {
-            'l' {
-                $null = Start-Process $exe
-                Write-Host "$($script:BoxMargin)Launched $($script:AppName)." -ForegroundColor $C.Green
-                return 'quit'
-            }
-            'm' { return 'mainMenu' }
-            'q' { return 'quit' }
-            default { Write-Host "$($script:BoxMargin)Invalid choice." -ForegroundColor $C.Rose }
-        }
-    }
-}
-
-# --------------------------------------------------------- uninstall helpers ---
-
-# StrictMode-safe registry value read: returns $null when the key or value is
-# missing instead of throwing "property cannot be found".
 function Get-RegValue {
+    # StrictMode-safe: $null instead of "property cannot be found" when absent.
     param([string]$KeyPath, [string]$ValueName)
-    try {
-        $key = Get-Item -LiteralPath $KeyPath -ErrorAction Stop
-        return $key.GetValue($ValueName)
-    } catch {
-        return $null
-    }
+    try { return (Get-Item -LiteralPath $KeyPath -ErrorAction Stop).GetValue($ValueName) }
+    catch { return $null }
 }
 
-function Get-UninstallInfo {
-    <#
-    Finds the installed copy's uninstall info (uninstall exe + version).
-    Returns $null when SoundFX Studio is not installed.
-    #>
+function Get-AppInstall {
+    # Registered uninstall entry for SoundFX Studio, or $null when not installed.
+    $id = '{A2B3C4D5-E6F7-4812-9ABC-DEF012345678}_is1'
     $keys = @(
-        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$($script:AppId)_is1",
-        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\$($script:AppId)_is1",
-        "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$($script:AppId)_is1"
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$id",
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\$id",
+        "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$id"
     )
     foreach ($key in $keys) {
-        if (Test-Path $key) {
-            $version = Get-RegValue $key 'DisplayVersion'
-            if ([string]::IsNullOrWhiteSpace($version)) { $version = 'unknown' }
-            return [pscustomobject]@{
-                Key     = $key
-                Version = $version
-                UninstallString = [string](Get-RegValue $key 'UninstallString')
-                QuietUninstallString = [string](Get-RegValue $key 'QuietUninstallString')
-            }
+        if (-not (Test-Path -LiteralPath $key)) { continue }
+        $version = [string](Get-RegValue $key 'DisplayVersion')
+        $uninstall = [string](Get-RegValue $key 'UninstallString')
+        $quiet = [string](Get-RegValue $key 'QuietUninstallString')
+        $exe = ($uninstall -replace '"', '') -replace '\s+/VERYSILENT.*$', ''
+        if (-not $exe -or -not (Test-Path -LiteralPath $exe)) {
+            $candidate = Join-Path $script:AppFolder 'unins000.exe'
+            if (Test-Path -LiteralPath $candidate) { $exe = $candidate }
+        }
+        return [pscustomobject]@{
+            Key             = $key
+            Version         = if ($version) { $version } else { 'unknown' }
+            UninstallExe    = $exe
+            QuietUninstall  = if ($quiet) { $quiet } else { $uninstall }
         }
     }
-    # Fallback: locate unins000.exe next to the app any way possible
-    if (Test-Path "$env:ProgramFiles\SoundFX Studio\unins000.exe") {
+
+    # No registry entry (e.g. a manual copy): still offer to clean it up.
+    if (Test-Path -LiteralPath (Join-Path $script:AppFolder 'unins000.exe')) {
+        $candidate = Join-Path $script:AppFolder 'unins000.exe'
         return [pscustomobject]@{
-            Key = $null
-            Version = '(program files)'
-            UninstallString = "`"$env:ProgramFiles\SoundFX Studio\unins000.exe`""
-            QuietUninstallString = "`"$env:ProgramFiles\SoundFX Studio\unins000.exe`" /VERYSILENT"
+            Key          = $null
+            Version      = 'unknown'
+            UninstallExe = $candidate
+            QuietUninstall = $null
         }
     }
     return $null
 }
 
-function Get-InstalledVmEdition {
-    $keys = @(
-        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
-        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
-        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:VoicemeeterBanana {17359A74-1236-5467}",
-        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:VoicemeeterPotato {17359A74-1236-5467}"
-    )
-    foreach ($key in $keys) {
-        if (Test-Path $key) {
-            $name = [string](Get-RegValue $key 'DisplayName')
-            if ($name -match 'Lookback|Banana|Potato') {
-                return [pscustomobject]@{ Present = $true; Paid = $true; Name = $name }
-            }
-            return [pscustomobject]@{ Present = $true; Paid = $false; Name = $name }
+function Get-LatestRelease {
+    try {
+        $release = Invoke-RestMethod -Uri "$script:ApiBase/releases/latest" -Headers @{ 'User-Agent' = 'SoundFXStudio-Installer' } -UseBasicParsing
+        $tag = [string]$release.tag_name
+        if (-not $tag) { return $null }
+        return [pscustomobject]@{
+            Tag     = $tag.Trim().TrimStart('v', 'V')
+            Url     = if ($release.assets | Where-Object { $_.name -like '*Setup*.exe' }) {
+                          $script:DownloadUrl
+                      } else { '' }
+            Size    = 0
         }
     }
-    if (Test-Path 'C:\Program Files (x86)\VB\Voicemeeter\voicemeeter.exe') {
-        return [pscustomobject]@{ Present = $true; Paid = $false; Name = 'Voicemeeter (Standard)' }
+    catch { return $null }
+}
+
+function Test-DotNetRuntime {
+    param([int]$Major = $script:MinRuntime)
+    # Registry is fastest; `dotnet --list-runtimes` covers PATH-only installs.
+    foreach ($arch in @('x64', 'x86')) {
+        $value = [string](Get-RegValue "HKLM:\SOFTWARE\dotnet\Setup\InstalledVersions\$arch\Desktop Runtime" 'Version')
+        if ($value) {
+            try { if (([version]$value).Major -ge $Major) { return $true } } catch { }
+        }
+    }
+    $dotnet = Get-Command dotnet.exe -ErrorAction SilentlyContinue
+    if ($dotnet) {
+        $runtimes = @(& $dotnet.Source --list-runtimes 2>$null)
+        foreach ($line in $runtimes) {
+            if ($line -match "Microsoft\.WindowsDesktop\.App\s+($Major)\.(\d+)\.(\d+)") { return $true }
+        }
+    }
+    return $false
+}
+
+function Install-DotNetRuntime {
+    # Silent winget install; a friendly pointer if winget is unavailable.
+    $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
+    if (-not $winget) {
+        Write-WarnLine "The .NET $script:MinRuntime Desktop Runtime is missing and winget is not available."
+        Write-Dim "    Download it from https://dotnet.microsoft.com/download/dotnet/$script:MinRuntime and run this script again."
+        return $false
+    }
+
+    Write-Info "Installing the .NET $script:MinRuntime Desktop Runtime (winget, silent)..."
+    $process = Start-Process -FilePath $winget.Source -PassThru -WindowStyle Hidden -ArgumentList @(
+        'install', '--id', "Microsoft.DotNet.DesktopRuntime.$script:MinRuntime", '--exact',
+        '--silent', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity'
+    )
+    Write-ActivityBar -Process $process -Message 'Runtime install'
+    if ($process.ExitCode -ne 0) {
+        Write-WarnLine "winget could not install the runtime (exit $($process.ExitCode))."
+        Write-Dim "    https://dotnet.microsoft.com/download/dotnet/$script:MinRuntime"
+        return $false
+    }
+    Write-Ok ".NET $script:MinRuntime Desktop Runtime installed"
+    return $true
+}
+
+function Get-VoicemeeterState {
+    $keys = @(
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}',
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:VoicemeeterBanana {17359A74-1236-5467}',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:VoicemeeterPotato {17359A74-1236-5467}'
+    )
+    foreach ($key in $keys) {
+        if (-not (Test-Path -LiteralPath $key)) { continue }
+        $name = [string](Get-RegValue $key 'DisplayName')
+        $paid = $name -match 'Banana|Potato|Lookback'
+        return [pscustomobject]@{ Present = $true; Paid = $paid; Name = if ($name) { $name } else { 'Voicemeeter' } }
+    }
+    if (Test-Path -LiteralPath 'C:\Program Files (x86)\VB\Voicemeeter\voicemeeter.exe') {
+        return [pscustomobject]@{ Present = $true; Paid = $false; Name = 'Voicemeeter' }
     }
     return [pscustomobject]@{ Present = $false; Paid = $false; Name = '' }
 }
 
-# ------------------------------------------------------------- install path ---
-
-function Invoke-Install {
-    Write-Host ''
-    Write-Host "$($script:BoxMargin)Fetching latest $($script:AppName) release..." -ForegroundColor $C.Muted
-    $release = Invoke-RestMethod "https://api.github.com/repos/$($script:repo)/releases/latest"
-
-    $asset = $release.assets |
-        Where-Object { $_.name -like '*Setup*.exe' } |
-        Select-Object -First 1
-
-    if ($null -eq $asset) {
-        throw "No setup executable found in release $($release.tag_name)."
+function Stop-AppIfRunning {
+    $running = @(Get-Process -Name 'SoundFXStudio' -ErrorAction SilentlyContinue)
+    if ($running.Count -eq 0) { return }
+    Write-Info "Closing $($script:AppName)..."
+    foreach ($p in $running) {
+        try { Stop-Process -Id $p.Id -Force -ErrorAction Stop } catch { }
     }
+    Start-Sleep -Milliseconds 800
+}
 
-    $installer = Join-Path $env:TEMP $asset.name
-    $installerSize = [math]::Round($asset.size / 1MB, 1)
+# ---------------------------------------------------------------- install ---
 
-    Write-Host ''
-    Write-Ok ('Latest release  ' + $release.tag_name)
-    Write-Info ('Size            ' + $installerSize + ' MB')
+function Save-Release {
+    # Streams the asset by hand: Invoke-WebRequest crawls at ~100 KB/s here,
+    # while a plain HttpWebRequest pull runs at ~8 MB/s.
+    param([pscustomobject]$Release)
 
-    # Invoke-WebRequest inside a background job crawls at ~100 KB/s on this box - over
-    # five minutes for a 34 MB asset, while a plain streamed HttpWebRequest pulls the
-    # same file at ~8 MB/s. Stream it by hand and paint the bar from the byte count.
-    if (Test-Path -LiteralPath $installer) { Remove-Item -LiteralPath $installer -Force -ErrorAction SilentlyContinue }
+    $url = $Release.Url
+    if (-not $url) { $url = $script:DownloadUrl }
+    $target = Join-Path $env:TEMP $script:AssetName
+    if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Force -ErrorAction SilentlyContinue }
 
     [System.Net.ServicePointManager]::SecurityProtocol =
         [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
 
-    $request = [System.Net.HttpWebRequest]::Create($asset.browser_download_url)
+    Write-Info "Downloading $script:AssetName (v$($Release.Tag))..."
+    $request = [System.Net.HttpWebRequest]::Create($url)
     $request.UserAgent = 'SoundFXStudio-Installer'
     $request.Timeout = 60000
     $request.ReadWriteTimeout = 120000
     $response = $request.GetResponse()
     try {
         $expected = [int64]$response.ContentLength
-        $source = $response.GetResponseStream()
-        $target = [System.IO.File]::Create($installer)
+        $stream = $response.GetResponseStream()
+        $file = [System.IO.File]::Create($target)
         try {
             $buffer = New-Object byte[] 262144
             $have = 0L
-            while (($read = $source.Read($buffer, 0, $buffer.Length)) -gt 0) {
-                $target.Write($buffer, 0, $read)
+            while (($read = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                $file.Write($buffer, 0, $read)
                 $have += $read
-                $pct = if ($expected -gt 0) { [math]::Floor(100 * $have / $expected) } else { 0 }
-                Write-BarLine -Percent ([Math]::Min(99, $pct)) -Message "Downloading $($asset.name)"
+                $percent = if ($expected -gt 0) { [int][Math]::Min(99, [Math]::Floor(100 * $have / $expected)) } else { 0 }
+                $mb = [Math]::Round($have / 1MB, 1)
+                Write-ProgressBar -Percent $percent -Message "$mb MB"
             }
         }
-        finally { $target.Dispose() }
+        finally { $file.Dispose() }
     }
     finally { $response.Dispose() }
 
-    Write-BarLine -Percent 100 -Message "Downloading $($asset.name)"
+    Write-ProgressBar -Percent 100 -Message 'download complete'
     Write-Host ''
-    Write-Ok "$($asset.name) downloaded"
-
-    $p = Start-Process -FilePath $installer -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -PassThru
-    Write-ProcessBar -Process $p -Message "Installing $($script:AppName)…"
-    if ($p.ExitCode -ne 0) { Write-ErrorLine "Installer returned exit code $($p.ExitCode)." }
-    Write-Ok "$($script:AppName) $($release.tag_name) installed"
-    Remove-Item $installer -ErrorAction SilentlyContinue
-
-    Write-Host ''
-    Write-BoxTop
-    Write-Host "$($script:BoxMargin)$([char]0x2551)$(Center-Text "$([char]0x2713)  SETUP COMPLETE" $script:BoxWidth)$([char]0x2551)" -ForegroundColor $C.Green
-    Write-BoxMid
-    Write-BoxLine "$([char]0x2713) $($script:AppName) installed" $C.Green
-    Write-BoxLine "$([char]0x2713) Voicemeeter handled by the installer" $C.Green
-    Write-BoxLine '' $C.Muted
-    Write-BoxLine 'Restart Windows to finish loading the Voicemeeter driver.' $C.Warning
-    Write-BoxLine 'Until then Voicemeeter may not start.' $C.Warning
-    Write-BoxLine '' $C.Muted
-    Write-BoxLine 'Press the Windows key and type "SoundFX Studio" to launch.' $C.Muted
-    Write-BoxBottom
-    Write-Host ''
+    return $target
 }
 
-# ----------------------------------------------------------- uninstall paths ---
-
-function Stop-VmAudioService {
-    # The VB virtual cable kernel driver is the main BSOD risk during removal.
-    try {
-        foreach ($svcName in 'VBAudioVACMME', 'VBAudioVACMME64', 'VBAudioVACMME32', 'VBAudioVMME') {
-            $svc = Get-CimInstance Win32_Service -Filter "Name='$svcName'" -ErrorAction SilentlyContinue
-            if ($null -ne $svc) {
-                Stop-Service -Name $svcName -Force -ErrorAction SilentlyContinue
-                sc.exe delete $svcName | Out-Null
-            }
-        }
-    } catch { /* best effort */ }
-}
-
-function Get-VbDriverPackages {
-    # oemN.inf package names belonging to VB-Audio / Voicemeeter audio drivers.
-    try {
-        $out = pnputil /enum-drivers 2>$null
-        $blocks = @()
-        $cur = [System.Collections.Generic.List[string]]::new()
-        foreach ($line in $out) {
-            if ([string]::IsNullOrWhiteSpace($line)) {
-                if ($cur.Count) { $blocks += ,($cur -join "`n"); $cur = [System.Collections.Generic.List[string]]::new() }
-                continue
-            }
-            $cur.Add([string]$line)
-        }
-        if ($cur.Count) { $blocks += ,($cur -join "`n") }
-        foreach ($b in $blocks) {
-            if ($b -match 'VB-Audio|Voicemeeter') {
-                $m = [regex]::Match($b, '(?m)^Published Name:\s*(.+)$')
-                if ($m.Success) { $m.Groups[1].Value.Trim() }
-            }
-        }
-    } catch { }
-}
-
-function Invoke-VmManualRemoval {
-    # Fully silent removal of VB-Audio Voicemeeter WITHOUT its GUI uninstaller
-    # (VB uninstallers ignore /S and pop a "Remove" dialog), so the uninstall
-    # paths stay hands-free.
-    Write-Host "$($script:BoxMargin)Removing $($script:VmEdition) files, driver + registry silently..." -ForegroundColor $C.Muted
-    $ok = $true
-
-    Stop-VmAudioService
-
-    foreach ($inf in Get-VbDriverPackages) {
-        try { pnputil /delete-driver "$inf" /uninstall /force 2>$null | Out-Null } catch { }
-    }
-
-    $vmFolders = @(
-        @{ Path = 'C:\Program Files (x86)\VB\Voicemeeter'; Guard = 'Voicemeeter' },
-        @{ Path = 'C:\Program Files\VB\Voicemeeter'; Guard = 'Voicemeeter' }
-    )
-    foreach ($folder in $vmFolders) {
-        if (Test-Path -LiteralPath $folder.Path) {
-            try {
-                if ($folder.Path.TrimEnd('\') -match '\\VB\\Voicemeeter$') {
-                    Remove-Item -LiteralPath $folder.Path -Recurse -Force -ErrorAction Stop
-                    Write-Ok "Removed $($folder.Path)"
-                } else {
-                    $ok = $false
-                }
-            } catch { $ok = $false }
-        }
-    }
-
-    $vmKeys = @(
-        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
-        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
-        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:VoicemeeterBanana {17359A74-1236-5467}",
-        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:VoicemeeterPotato {17359A74-1236-5467}"
-    )
-    foreach ($vk in $vmKeys) {
-        try { Remove-Item -Path $vk -Recurse -Force -ErrorAction Stop } catch { }
-    }
-
-    $startMenu = @(
-        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Voicemeeter",
-        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\VB-Audio"
-    )
-    foreach ($dir in $startMenu) {
-        if (Test-Path -LiteralPath $dir) {
-            try { Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction Stop } catch { }
-        }
-    }
-
-    return $ok
-}
-
-function Invoke-VmSilentUninstall {
-    # Tries the recorded uninstaller (hidden, 90s cap, force-kill on stall);
-    # falls back to a fully silent manual removal when it's a VB-style GUI
-    # uninstaller or wasn't recorded.
-    $vmKeys = @(
-        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}",
-        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}"
-    )
-    $vmUn = $null
-    foreach ($vk in $vmKeys) {
-        if (Test-Path $vk) {
-            $q = [string](Get-RegValue $vk 'QuietUninstallString')
-            if (-not [string]::IsNullOrWhiteSpace($q)) { $vmUn = $q; break }
-        }
-    }
-    if (-not $vmUn) {
-        foreach ($vk in $vmKeys) {
-            if (Test-Path $vk) {
-                $u = [string](Get-RegValue $vk 'UninstallString')
-                if (-not [string]::IsNullOrWhiteSpace($u)) { $vmUn = $u; break }
-            }
-        }
-    }
-
-    if ($vmUn) {
-        try {
-            $vmUnPath = ($vmUn -replace '"', '').Trim()
-            if (Test-Path -LiteralPath $vmUnPath) {
-                Write-Host "$($script:BoxMargin)" -NoNewline
-                Write-Host "Uninstalling $($script:VmEdition) (silent)..." -ForegroundColor $C.Muted
-                $silentArg = if ($vmUnPath -match 'unins000\.exe$') { '/VERYSILENT' } else { '/S' }
-                $pp = Start-Process -FilePath $vmUnPath -ArgumentList $silentArg, '/NORESTART' -PassThru -WindowStyle Hidden
-                $waited = $pp.WaitForExit(30000)
-                if (-not $waited) {
-                    Write-WarnMessage "$($script:VmEdition) uninstaller stalled - force-killing."
-                    try { $pp.Kill(); $pp.WaitForExit(5000) } catch { }
-                }
-                Write-Host "$($script:BoxMargin)$($script:VmEdition) cleaned up natively (no more dialogs)." -ForegroundColor $C.Muted
-            }
-        } catch {
-            Write-WarnMessage "$($script:VmEdition) uninstaller failed - removing natively."
-        }
-    }
-
-    return Invoke-VmManualRemoval
-}
-
-function Remove-App {
-    param(
-        [bool]$RemoveData,
-        [bool]$RemoveVoicemeeter,
-        [switch]$SkipRestartPrompt
-    )
-    $removed = @()
-    $kept = @()
-
-    $info = Get-UninstallInfo
-    if ($null -eq $info) {
-        Write-Host "$($script:BoxMargin)$($script:AppName) is not installed; nothing to remove." -ForegroundColor $C.Warning
-    } else {
-        Write-Host ""
-        Write-Host "$($script:BoxMargin)Uninstalling $($script:AppName) $($info.Version)..." -ForegroundColor $C.Muted
-        $un = if ($info.QuietUninstallString) { $info.QuietUninstallString } elseif ($info.UninstallString) { $info.UninstallString } else { $null }
-        if ($un) {
-            try {
-                $unPath = ($info.UninstallString -replace '"', '')
-                if ($unPath -match '\.exe$') {
-                    $p = Start-Process -FilePath $unPath -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -PassThru -Wait
-                    if ($p.ExitCode -eq 0) { $removed += "$($script:AppName) $($info.Version)" }
-                    else { $kept += "$($script:AppName) (uninstaller returned $($p.ExitCode))" }
-                } else {
-                    $kept += "$($script:AppName) (uninstaller not a .exe)"
-                }
-            } catch {
-                $kept += "$($script:AppName) (uninstall failed: $($_.Exception.Message))"
-            }
-        } else {
-            $kept += "$($script:AppName) (no uninstaller found)"
-        }
-    }
-
-    if ($RemoveData -and (Test-Path $script:AppDataDir)) {
-        Remove-Item $script:AppDataDir -Recurse -Force -ErrorAction SilentlyContinue
-        $removed += 'App data (sounds, settings, bindings)'
-    } elseif (-not $RemoveData -and (Test-Path $script:AppDataDir)) {
-        $kept += 'App data (sounds, settings)'
-    }
-
-    if ($RemoveVoicemeeter) {
-        $vm = Get-InstalledVmEdition
-        if ($vm.Present) {
-            $script:VmEdition = $vm.Name
-            if ($vm.Paid) {
-                $kept += "$($vm.Name) (licensed edition - not touched)"
-            } elseif (Invoke-VmSilentUninstall) {
-                $removed += $vm.Name
-            } else {
-                $kept += "$($vm.Name) (removal incomplete)"
-            }
-        }
-    } elseif ((Test-Path $script:AppExe) -or ($null -ne (Get-UninstallInfo))) {
-        $vm = Get-InstalledVmEdition
-        if ($vm.Present) { $kept += $vm.Name }
-    }
-
-    Write-UninstallCompletion -Removed $removed -Kept $kept
-
-    if ($removed | Where-Object { $_ -match 'Voicemeeter' }) {
-        if ($SkipRestartPrompt) {
-            Write-Host "$($script:BoxMargin)Restart at your convenience to fully clear the removed audio driver." -ForegroundColor $C.Warning
-        } else {
-            Write-Host "$($script:BoxMargin)A restart is recommended to fully clear the removed audio driver." -ForegroundColor $C.Warning
-            Write-Host "$($script:BoxMargin)Restart now? [Y/n]: " -ForegroundColor $C.Warning -NoNewline
-            $restart = Read-Host
-            if ($restart -ne 'n' -and $restart -ne 'N') { Restart-Computer -Force }
-        }
-    }
-}
-
-function Write-WarnMessage {
-    param([string]$Text)
-    Write-Host "$($script:BoxMargin)$Text" -ForegroundColor $C.Warning
-}
-
-function Write-UninstallCompletion {
-    param([string[]]$Removed, [string[]]$Kept)
-    Write-Host ''
-    Write-BoxTop
-    Write-Host "$($script:BoxMargin)$([char]0x2551)$(Center-Text "$([char]0x2713)  UNINSTALL COMPLETE" $script:BoxWidth)$([char]0x2551)" -ForegroundColor $C.Green
-    Write-BoxMid
-    Write-BoxLine '' $C.Muted
-    if ($Removed.Count -gt 0) {
-        Write-BoxLine 'Removed:' $C.Green
-        foreach ($item in $Removed) { Write-BoxLine "  $([char]0x2713) $item" $C.Green }
-    } else {
-        Write-BoxLine 'Nothing was removed.' $C.Warning
-    }
-    if ($Kept.Count -gt 0) {
-        Write-BoxLine '' $C.Muted
-        Write-BoxLine 'Kept:' $C.Muted
-        foreach ($item in $Kept) { Write-BoxLine "  - $item" $C.Muted }
-        Write-BoxLine '' $C.Muted
-        Write-BoxLine 'You can change these in Apps & Features or the app.' $C.Muted
-    }
-    Write-BoxLine '' $C.Muted
-    Write-BoxLine 'Set your Windows default audio device back to your' $C.Muted
-    Write-BoxLine 'headphones/DAC from the Sound settings if needed.' $C.Muted
-    Write-BoxBottom
-    Write-Host ''
-}
-
-# ------------------------------------------------------------- thank you path ---
-
-function Show-ThankYou {
-    Write-Host ''
-    Write-BoxTop
-    Write-Host "$($script:BoxMargin)$([char]0x2551)$(Center-Text 'Thank You' $script:BoxWidth)$([char]0x2551)" -ForegroundColor $C.Blue
-    Write-BoxMid
-    Write-BoxLine 'This project relies on tools built by talented' $C.Muted
-    Write-BoxLine 'developers. Show them some love:' $C.Muted
-    Write-BoxLine '' $C.Muted
-    $credits = @(
-        @{ Num = '1'; Tool = 'Voicemeeter'; Dev = 'Vincent Burel (VB-Audio)'; Url = 'https://vb-audio.com/Voicemeeter/' }
-        @{ Num = '2'; Tool = 'Inno Setup'; Dev = 'jrsoftware'; Url = 'https://jrsoftware.org/isinfo.php' }
-        @{ Num = '3'; Tool = '.NET / WPF'; Dev = 'Microsoft'; Url = 'https://dotnet.microsoft.com' }
-        @{ Num = '4'; Tool = 'SoundFX Studio'; Dev = 'MakaVeli2202'; Url = 'https://github.com/MakaVeli2202/SoundFX-Studio' }
-    )
-    foreach ($credit in $credits) {
-        Write-BoxLine "[$($credit.Num)] $($credit.Tool) - $($credit.Dev)" $C.Muted
-    }
-    Write-BoxLine '' $C.Muted
-    Write-BoxBottom
-    Write-Host ''
-
-    while ($true) {
-        $null = Write-CenteredBlock @(
-            @{ Text = '[1-4] Open developer page'; Color = 'White' }
-            @{ Text = '[m] Back to main menu'; Color = $C.Purple }
-            @{ Text = '[q] Quit'; Color = $C.Muted }
-        )
-        Write-Host ''
-        Write-Host "$($script:BoxMargin)Choice: " -ForegroundColor $C.Warning -NoNewline
-        $key = Read-Host
-        $num = 0
-        if ([int]::TryParse($key, [ref]$num) -and $num -ge 1 -and $num -le $credits.Count) {
-            $null = Start-Process $credits[$num - 1].Url
-            Write-Host "$($script:BoxMargin)Opened $($credits[$num - 1].Dev) in browser." -ForegroundColor $C.Green
-        }
-        elseif ($key -eq 'm' -or $key -eq 'M') { return 'mainMenu' }
-        elseif ($key -eq 'q' -or $key -eq 'Q') { return 'quit' }
-        else { Write-Host "$($script:BoxMargin)Invalid choice." -ForegroundColor $C.Rose }
-    }
-}
-
-# --------------------------------------------------------- update check path ---
-
-function Show-UpdateStatus {
-    # Prints a one-line update status (used by the menu + startup).
-    $check = Test-LatestRelease
-    if ($null -eq $check) {
-        Write-Host "$($script:BoxMargin)Update check failed (offline or GitHub unreachable)." -ForegroundColor $C.Muted
-        return
-    }
-    if (-not $check.Current) {
-        Write-Host "$($script:BoxMargin)Latest release: $($check.Latest)" -ForegroundColor $C.Muted
-        return
-    }
-    if ($check.Available) {
-        Write-Host "$($script:BoxMargin)Update available: $($check.Current) -> $($check.Latest)" -ForegroundColor $C.Warning
-    } else {
-        Write-Host "$($script:BoxMargin)You are up to date ($($check.Current))." -ForegroundColor $C.Green
-    }
-}
-
-# ---------------------------------------------------------------- dispatch ---
-
-# --- parse command line ---
-$wantInstall        = $args -contains '-Install' -or $args -contains '-install'
-$wantUpgrade        = $args -contains '-Upgrade' -or $args -contains '-upgrade'
-$wantFresh          = $args -contains '-FreshInstall' -or $args -contains '-freshinstall'
-$wantUninstall      = $args -contains '-Uninstall' -or $args -contains '-uninstall'
-$wantUninstallAll   = $args -contains '-UninstallAll' -or $args -contains '-uninstallall'
-$wantCheckUpdate    = $args -contains '-CheckUpdate' -or $args -contains '-checkupdate'
-$silent             = $args -contains '-Silent' -or $args -contains '-silent'
-$noLaunch           = $args -contains '-NoLaunch' -or $args -contains '-nolaunch'
-
-function Confirm-Prompt {
-    # Silent mode answers NO (or YES for Fresh flow where everything is expected).
-    param([string]$Question, [bool]$DefaultYes = $false)
-    if ($silent) { return $DefaultYes }
-    Write-Host "$($script:BoxMargin)$Question" -ForegroundColor $C.Warning -NoNewline
-    $a = Read-Host
-    if ($DefaultYes) { return ($a -ne 'n' -and $a -ne 'N') }
-    return ($a -eq 'y' -or $a -eq 'Y')
-}
-
-# --- non-interactive CLI flows ---
-if ($wantCheckUpdate) {
-    $r = Test-LatestRelease
-    if ($null -eq $r) { Write-Host '0'; exit 2 }
-    Write-Host $r.Latest
-    exit 0
-}
-
-# Install and Upgrade are the same mechanics - download the latest release and run the
-# Inno setup over the top, which keeps sounds, settings and Voicemeeter. The only
-# difference is the wording, so -Upgrade says so out loud before starting.
-function Invoke-UpgradeOrInstall {
+function Install-Release {
+    <#
+      Install and Upgrade share this path: the Inno Setup package installs over
+      an existing copy, so sounds, settings and key bindings survive. The only
+      difference between the two is the wording around it.
+    #>
     param([switch]$IsUpgrade)
 
-    if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required.'; return $false }
+    $installed = Get-AppInstall
 
-    if ($IsUpgrade) {
-        $current = Get-InstalledVersion
-        Write-Host ''
-        Write-Host "$($script:BoxMargin)UPGRADE: reinstalling over the current copy, nothing is removed." -ForegroundColor $C.Green
-        if ($null -ne $current) { Write-Info "Installed version     $current" }
+    if ($IsUpgrade -and $null -eq $installed) {
+        Write-WarnLine 'Nothing is installed yet - continuing with a first-time install.'
+        $IsUpgrade = $false
     }
 
-    Invoke-Install
+    $release = Get-LatestRelease
+    if ($null -eq $release) {
+        Write-WarnLine 'Could not reach GitHub to look up the latest release.'
+        if (-not (Confirm 'Download the latest release anyway?' $true)) { return $false }
+        $release = [pscustomobject]@{ Tag = 'latest'; Url = $script:DownloadUrl; Size = 0 }
+    }
+    if (-not $release.Url) {
+        throw "Release v$($release.Tag) has no *$script:AssetName asset - build and upload the setup first."
+    }
+
+    if ($IsUpgrade) {
+        Write-Ok "Upgrade: keeping your sounds, settings and bindings (installed $($installed.Version) -> v$($release.Tag))"
+    }
+
+    if (-not (Test-DotNetRuntime)) {
+        Write-WarnLine "The .NET $script:MinRuntime Desktop Runtime is required to run $($script:AppName)."
+        if (-not (Install-DotNetRuntime)) {
+            if (-not (Confirm 'Continue installing anyway?' $false)) { return $false }
+        }
+        Write-Host ''
+    }
+
+    Stop-AppIfRunning
+
+    $setup = Save-Release -Release $release
+    if (-not (Test-Path -LiteralPath $setup)) { throw 'The setup file could not be downloaded.' }
+
+    $process = Start-Process -FilePath $setup -PassThru -ArgumentList @(
+        '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', '/CLOSEAPPLICATIONS'
+    )
+    Write-ActivityBar -Process $process -Message 'Installing'
+    $exit = $process.ExitCode
+    Remove-Item -LiteralPath $setup -Force -ErrorAction SilentlyContinue
+
+    if ($exit -ne 0 -and $exit -ne 5) {
+        throw "Setup failed with exit code $exit. Close $($script:AppName) and any Voicemeeter window, then try again."
+    }
+
+    if (-not (Test-Path -LiteralPath $script:AppExe)) {
+        throw "Setup finished but $($script:AppExe) is missing - the install did not complete."
+    }
+
+    Write-Ok "$($script:AppName) v$($release.Tag) installed to $($script:AppFolder)"
     return $true
 }
 
-if ($wantFresh) {
-    if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required for a fresh install.'; exit 1 }
-    Write-Host "$($script:BoxMargin)FRESH INSTALL: removing everything, then installing the latest version." -ForegroundColor $C.Warning
-    Remove-App -RemoveData $true -RemoveVoicemeeter $true -SkipRestartPrompt
-    if ($silent) { exit 0 }
-    Invoke-Install
-    if (-not $noLaunch) { $null = Start-Process $script:AppExe }
-    exit 0
+function Get-TagObject {
+    # Version stamp for the completion panel, tolerant of a failed API call.
+    $release = Get-LatestRelease
+    return [pscustomobject]@{ Tag = $(if ($null -ne $release) { $release.Tag } else { 'latest' }) }
 }
 
-if ($wantUpgrade) {
-    if (-not (Invoke-UpgradeOrInstall -IsUpgrade)) { exit 1 }
-    if (-not $noLaunch) { $null = Start-Process $script:AppExe -ErrorAction SilentlyContinue }
-    exit 0
-}
-
-if ($wantInstall) {
-    if (-not (Invoke-UpgradeOrInstall)) { exit 1 }
-    if (-not $noLaunch) { $null = Start-Process $script:AppExe -ErrorAction SilentlyContinue }
-    exit 0
-}
-
-if ($wantUninstallAll) {
-    if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required.'; exit 1 }
-    Remove-App -RemoveData $true -RemoveVoicemeeter $true -SkipRestartPrompt
-    exit 0
-}
-
-if ($wantUninstall) {
-    if (-not (Test-IsAdmin)) { Write-ErrorLine 'Elevated PowerShell is required.'; exit 1 }
-    Remove-App -RemoveData $false -RemoveVoicemeeter $false
-    exit 0
-}
-
-# --- interactive main ---
-
-Write-Banner
-Write-Warning
-
-if (-not (Test-IsAdmin)) {
-    Write-ErrorLine 'Elevated (Run as Administrator) PowerShell is required.'
-    Write-ErrorLine 'Right-click PowerShell -> "Run as administrator", then re-run.'
+function Write-InstallComplete {
+    param([pscustomobject]$Release)
+    $vm = Get-VoicemeeterState
     Write-Host ''
-    exit 1
+    Write-Rule "  $($script:AppName) is ready"
+    Write-Rule
+    Write-Ok "  App        v$($Release.Tag)"
+    Write-Info ("  Voicemeeter " + $(if ($vm.Present) { $vm.Name } else { 'not detected - run the setup again if audio routing fails' }))
+    Write-Info  "  Launch     Start menu -> $script:AppName"
+    Write-Dim   "  Settings   $script:AppDataDir"
+    if (-not $vm.Present) {
+        Write-WarnLine 'Restart Windows once so the Voicemeeter audio driver finishes loading.'
+    }
+    Write-Rule
+    Write-Host ''
 }
 
-Show-UpdateStatus
+# -------------------------------------------------------------- uninstall ---
 
-:mainMenu while ($true) {
+function Remove-VoicemeeterDriver {
+    <#
+      Voicemeeter's own uninstaller ignores /S and pops a "Remove" dialog, so
+      the driver is torn down natively instead. The VB virtual cable kernel
+      driver is the main BSOD risk here - stop the service first.
+    #>
+    Write-Info 'Removing Voicemeeter driver, service and registry entries...'
+
+    foreach ($name in @('VBAudioVACMME', 'VBAudioVACMME64', 'VBAudioVACMME32', 'VBAudioVMME')) {
+        if (Get-Service -Name $name -ErrorAction SilentlyContinue) {
+            try {
+                Stop-Service -Name $name -Force -ErrorAction SilentlyContinue
+                $null = & sc.exe delete $name
+            }
+            catch { }
+        }
+    }
+
+    try {
+        $blocks = (((& pnputil.exe /enum-drivers 2>$null) | Out-String) -split "(?:\r?\n){2,}")
+        foreach ($block in $blocks) {
+            if ($block -notmatch 'VB-Audio|Voicemeeter') { continue }
+            $match = [regex]::Match($block, '(?m)^Published Name:\s*(.+)$')
+            if ($match.Success) {
+                $null = & pnputil.exe /delete-driver $match.Groups[1].Value.Trim() /uninstall /force 2>$null
+            }
+        }
+    }
+    catch { }
+
+    foreach ($folder in @('C:\Program Files (x86)\VB\Voicemeeter', 'C:\Program Files\VB\Voicemeeter')) {
+        if (Test-Path -LiteralPath $folder) {
+            try { Remove-Item -LiteralPath $folder -Recurse -Force -ErrorAction Stop }
+            catch { Write-WarnLine "Could not fully remove $folder" }
+        }
+    }
+
+    foreach ($key in @(
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}',
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\VB:Voicemeeter {17359A74-1236-5467}',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:VoicemeeterBanana {17359A74-1236-5467}',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\VB:VoicemeeterPotato {17359A74-1236-5467}'
+    )) {
+        if (Test-Path -LiteralPath $key) { Remove-Item -LiteralPath $key -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+
+    foreach ($dir in @(
+        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Voicemeeter",
+        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\VB-Audio"
+    )) {
+        if (Test-Path -LiteralPath $dir) { Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue }
+    }
+
+    Write-Ok 'Voicemeeter removed'
+}
+
+function Uninstall-App {
+    $removed = @()
+    $kept    = @()
+
+    Stop-AppIfRunning
+
+    $installed = Get-AppInstall
+    if ($null -eq $installed) {
+        Write-WarnLine "$($script:AppName) is not installed - nothing to remove."
+    }
+    elseif (-not $installed.UninstallExe) {
+        $kept += "$($script:AppName) (no uninstaller found - remove $script:AppFolder by hand)"
+    }
+    else {
+        Write-Info "Uninstalling $($script:AppName) $($installed.Version)..."
+        try {
+            $process = Start-Process -FilePath $installed.UninstallExe -PassThru -ArgumentList @(
+                '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'
+            )
+            Write-ActivityBar -Process $process -Message 'Uninstalling'
+            if ($process.ExitCode -eq 0) { $removed += "$($script:AppName) $($installed.Version)" }
+            else { $kept += "$($script:AppName) (uninstaller returned $($process.ExitCode))" }
+        }
+        catch {
+            $kept += "$($script:AppName) (uninstall failed: $($_.Exception.Message))"
+        }
+    }
+
+    $dropData = $RemoveData
+    if ((Test-Path -LiteralPath $script:AppDataDir) -and -not $dropData) {
+        $dropData = Confirm 'Also delete your sounds, settings and key bindings?' $false
+    }
+    if ($dropData) {
+        if (Test-Path -LiteralPath $script:AppDataDir) {
+            Remove-Item -LiteralPath $script:AppDataDir -Recurse -Force -ErrorAction SilentlyContinue
+            $removed += 'App data (sounds, settings, bindings)'
+        }
+    }
+    elseif (Test-Path -LiteralPath $script:AppDataDir) {
+        $kept += 'App data (sounds, settings, bindings)'
+    }
+
+    $vm = Get-VoicemeeterState
+    if ($vm.Present) {
+        $dropVm = $RemoveVoicemeeter
+        if ($vm.Paid) {
+            $kept += "$($vm.Name) (licensed edition - left untouched)"
+        }
+        elseif (-not $dropVm) {
+            $dropVm = Confirm 'Also remove Voicemeeter and its audio driver? (needed only if nothing else uses it)' $false
+        }
+        if ($vm.Paid) { $dropVm = $false }
+        if ($dropVm) {
+            Remove-VoicemeeterDriver
+            $removed += $vm.Name
+        }
+        else {
+            $kept += $vm.Name
+        }
+    }
+
     Write-Host ''
-    $menuItems = @(
-        @{ Text = 'What would you like to do?'; Color = $C.Blue }
-        @{ Text = ''; Color = 'White' }
-        @{ Text = '[1] Install SoundFX Studio - download and set up (start here)'; Color = 'White' }
-        @{ Text = '    Installs the app and Voicemeeter. Upgrades keep your sounds and settings.'; Color = $C.Muted }
-        @{ Text = '[2] Upgrade / Repair - re-run the installer, keep everything'; Color = 'White' }
-        @{ Text = '[3] Uninstall app - remove the program, keep your sounds and settings'; Color = 'White' }
-        @{ Text = '[4] Uninstall everything - app, data, and Voicemeeter'; Color = 'White' }
-        @{ Text = '[5] Fresh install - remove everything, then install the latest version'; Color = 'White' }
-        @{ Text = '[u] Check for updates'; Color = $C.Purple }
-        @{ Text = '[t] Thank you - credits & developer links'; Color = $C.Purple }
-        @{ Text = '[Q] Quit'; Color = $C.Muted }
-    )
-    $menuMargin = Write-CenteredBlock $menuItems
+    Write-Rule '  Uninstall complete'
+    Write-Rule
+    if ($removed.Count -gt 0) {
+        Write-Info 'Removed'
+        foreach ($item in $removed) { Write-Host "$($script:Margin)    $([char]0x2714) $item" -ForegroundColor $script:Good }
+    }
+    if ($kept.Count -gt 0) {
+        Write-Info 'Kept'
+        foreach ($item in $kept) { Write-Host "$($script:Margin)    - $item" -ForegroundColor $script:Dim }
+    }
+    if ($removed.Count -eq 0 -and $kept.Count -eq 0) { Write-Dim 'Nothing to remove.' }
+    if ($removed | Where-Object { $_ -match 'Voicemeeter' }) {
+        Write-WarnLine 'Restart Windows to fully unload the removed audio driver.'
+    }
+    Write-Dim 'If audio sounds wrong, set your headphones/DAC as default in Windows Sound settings.'
+    Write-Rule
     Write-Host ''
+}
+
+# ----------------------------------------------------------------- status ---
+
+function Write-Status {
+    $installed = Get-AppInstall
+    $release = Get-LatestRelease
+
+    Write-Pair 'Installed' $(if ($null -eq $installed) { 'no' } else { "$($script:AppName) $($installed.Version)" }) `
+        $(if ($null -eq $installed) { $script:Dim } else { $script:Good })
+    if ($null -eq $installed) {
+        Write-Dim '           nothing in Program Files yet'
+    }
+
+    if ($null -eq $release) {
+        Write-Pair 'Latest' 'unknown (GitHub unreachable)' $script:Warn
+    }
+    else {
+        $upToDate = ($null -ne $installed) -and ($installed.Version -eq $release.Tag)
+        Write-Pair 'Latest' "v$($release.Tag)  $([char]0x00B7)  github.com/$script:Repo/releases" `
+            $(if ($upToDate) { $script:Good } else { $script:Alt })
+        if (-not $upToDate) {
+            Write-Dim $(if ($null -eq $installed) { '           start with option 1 below' } else { '           option 2 below updates in place' })
+        }
+    }
+
+    $vm = Get-VoicemeeterState
+    Write-Pair 'Voicemeeter' $(if ($vm.Present) { $vm.Name } else { 'not installed' }) `
+        $(if ($vm.Present) { $script:Good } else { $script:Warn })
+
+    $runtime = Test-DotNetRuntime
+    Write-Pair '.NET runtime' $(if ($runtime) { "WindowsDesktop $script:MinRuntime+ present" } else { "WindowsDesktop $script:MinRuntime MISSING" }) `
+        $(if ($runtime) { $script:Good } else { $script:Warn })
+
+    Write-Pair 'Folder' $script:AppFolder $script:Dim
+    Write-Pair 'Data' $script:AppDataDir $script:Dim
+    Write-Host ''
+}
+
+function Write-Help {
+    Write-Banner -Tagline 'A lightweight SFX / voice effects suite'
+    Write-Section '  Usage'
+    Write-Info "irm $script:ScriptUrl | iex"
+    Write-Info 'powershell -ExecutionPolicy Bypass -File install.ps1 [-Install|-Upgrade|-Uninstall]'
+    Write-Host ''
+    Write-Pair '-Install'  'Download and set up the latest release' $script:Accent
+    Write-Pair '-Upgrade'  'Install over the current copy, keeping your data' $script:Accent
+    Write-Pair '-Uninstall' 'Remove the app (asks about your sounds and Voicemeeter)' $script:Accent
+    Write-Pair '-CheckUpdate' 'Print the latest release tag and exit (no admin needed)' $script:Accent
+    Write-Pair '-Status'       'Show what is installed right now (no admin needed)' $script:Accent
+    Write-Pair '-RemoveData' 'With -Uninstall: also delete sounds/settings/bindings' $script:Dim
+    Write-Pair '-RemoveVoicemeeter' 'With -Uninstall: also remove Voicemeeter + driver' $script:Dim
+    Write-Pair '-Silent' 'No prompts (for scripts and CI)' $script:Dim
+    Write-Pair '-NoLaunch' 'Do not start the app when the install finishes' $script:Dim
+    Write-Host ''
+    Write-Info "  Installer v$($script:ScriptVer)  $([char]0x00B7)  github.com/$script:Repo"
+    Write-Host ''
+}
+
+# ------------------------------------------------------------------- main ---
+
+function Invoke-Main {
+    # Returns nothing on purpose: the menu prints through the host, and the
+    # process exit code travels in $script:ExitCode so nothing leaks into the
+    # pipeline (which would break -CheckUpdate's machine-readable output).
+
+    # --- read-only jobs -------------------------------------------------
+    if ($args.Count -gt 0) {
+        Write-WarnLine "Ignoring unknown argument(s): $($args -join ' ')"
+        Write-Dim 'Run with -Help to see the supported switches.'
+        Write-Host ''
+    }
+
+    if ($Help) { Write-Help; $script:ExitCode = 0; return }
+
+    if ($CheckUpdate) {
+        $release = Get-LatestRelease
+        if ($null -eq $release) { Write-ErrorLine 'Update check failed (offline or GitHub unreachable).'; $script:ExitCode = 2; return }
+        Write-Output $release.Tag
+        $script:ExitCode = 0
+        return
+    }
+
+    Write-Banner
+
+    # --- status (read-only, so it also works before elevating) -----------
+    if ($Status) { Write-Status; $script:ExitCode = 0; return }
+
+    # --- non-interactive jobs -------------------------------------------
+    if ($Uninstall) { Uninstall-App; $script:ExitCode = 0; return }
+
+    if ($Install -or $Upgrade) {
+        $release = Get-LatestRelease
+        $installed = Get-AppInstall
+        if ($Upgrade -and $null -ne $installed -and $null -ne $release -and $installed.Version -eq $release.Tag) {
+            Write-Ok "Already on v$($release.Tag) - running the installer again to repair files."
+        }
+        if (-not (Install-Release -IsUpgrade:$Upgrade)) { $script:ExitCode = 1; return }
+        Write-InstallComplete -Release (Get-TagObject)
+        if (-not $NoLaunch -and -not $Silent) {
+            if (Confirm 'Launch it now?' $true) { $null = Start-Process -FilePath $script:AppExe }
+        }
+        $script:ExitCode = 0
+        return
+    }
+
+    # --- interactive menu ----------------------------------------------
+    if (-not (Test-Elevated)) {
+        Write-ErrorLine 'Run this from an elevated PowerShell (Run as administrator).'
+        $script:ExitCode = 1
+        return
+    }
 
     while ($true) {
-        Write-Host "$menuMargin" -NoNewline
-        Write-Host 'Choice: ' -ForegroundColor $C.Warning -NoNewline
-        $selection = Read-Host
+        Write-Section '  SoundFX Studio'
+        Write-Status
 
-        if ($selection -eq 't' -or $selection -eq 'T') {
-            $result = Show-ThankYou
-            if ($result -eq 'quit') { break mainMenu }
-            continue mainMenu
+        $items = @(
+            @{ Key = '1'; Text = 'Install';   Hint = 'first-time setup: app + Voicemeeter' }
+            @{ Key = '2'; Text = 'Upgrade';   Hint = 'latest release, your sounds and settings stay' }
+            @{ Key = '3'; Text = 'Uninstall'; Hint = 'remove the app (asks what else to keep)' }
+            @{ Key = '0'; Text = 'Exit';      Hint = 'close this window' }
+        )
+        Write-Host ''
+        foreach ($item in $items) {
+            $label = "[$($item.Key)]  $($item.Text)".PadRight(17)
+            Write-Host "$($script:Margin)$label" -ForegroundColor $script:Accent -NoNewline
+            Write-Host "$($item.Hint)" -ForegroundColor $script:Dim
         }
-        if ($selection -eq 'u' -or $selection -eq 'U') { Show-UpdateStatus; continue mainMenu }
-        if ($selection -eq 'q' -or $selection -eq 'Q') { break mainMenu }
-        $num = 0
-        if ([int]::TryParse($selection, [ref]$num) -and $num -ge 1 -and $num -le 5) {
-            $menuChoice = $num
-            break
-        }
-        Write-Host "$($menuMargin)Invalid choice. Enter 1-5, u, t, or q." -ForegroundColor $C.Rose
-    }
+        Write-Host ''
 
-    switch ($menuChoice) {
-        3 {
-            Remove-App -RemoveData $false -RemoveVoicemeeter $false
-            continue mainMenu
-        }
-        4 {
-            $vm = Get-InstalledVmEdition
-            $wantVm = $false
-            if ($vm.Present) {
-                Write-Host ''
-                if ($vm.Paid) {
-                    Write-Host "$($script:BoxMargin)$($vm.Name) detected - a licensed edition SoundFX did not install." -ForegroundColor $C.Warning
-                    Write-Host "$($script:BoxMargin)Leaving it untouched." -ForegroundColor $C.Warning
-                } else {
-                    Write-Host "$($script:BoxMargin)$($vm.Name) detected (installed by SoundFX Studio)." -ForegroundColor $C.Warning
-                    Write-Host "$($script:BoxMargin)Remove it too? [Y/n]: " -ForegroundColor $C.Warning -NoNewline
-                    $vmAns = Read-Host
-                    $wantVm = ($vmAns -ne 'n' -and $vmAns -ne 'N')
+        $choice = Read-Choice -Prompt 'Choice' -Valid @('1', '2', '3', '0')
+
+        if ($choice -eq '0') { $script:ExitCode = 0; return }
+
+        if ($choice -eq '1' -or $choice -eq '2') {
+            $isUpgrade = ($choice -eq '2')
+            if (-not $isUpgrade) {
+                $installed = Get-AppInstall
+                if ($null -ne $installed) {
+                    Write-WarnLine "v$($installed.Version) is already installed - continuing upgrades it in place."
+                    $isUpgrade = $true
                 }
             }
-            Remove-App -RemoveData $true -RemoveVoicemeeter $wantVm
-            continue mainMenu
+            if (Install-Release -IsUpgrade:$isUpgrade) {
+                Write-InstallComplete -Release (Get-TagObject)
+                if (Confirm 'Launch it now?' $true) { $null = Start-Process -FilePath $script:AppExe }
+            }
         }
-        5 {
-            Write-Host ''
-            Write-Host "$($script:BoxMargin)FRESH INSTALL: removing everything, then installing the latest version." -ForegroundColor $C.Warning
-            Remove-App -RemoveData $true -RemoveVoicemeeter $true -SkipRestartPrompt
-            Invoke-Install
-            $r = Get-LaunchChoice
-            if ($r -eq 'quit') { break mainMenu }
-            continue mainMenu
+        elseif ($choice -eq '3') {
+            Uninstall-App
         }
-        default {
-            Invoke-Install
-            $r = Get-LaunchChoice
-            if ($r -eq 'quit') { break mainMenu }
-            continue mainMenu
-        }
+        else { continue }
+
+        if ($Silent) { $script:ExitCode = 0; return }
+        Write-Host ''
+        $null = Read-Host '  Press Enter for the menu'
     }
 }
 
-Write-Host "$($script:BoxMargin)Quit. Nothing changed." -ForegroundColor $C.Muted
-Write-Host ''
+# ------------------------------------------------------------- elevation ---
+
+# Runs last, so the UAC prompt only appears once the job is known. Voicemeeter
+# installs an audio driver, so anything that touches it needs a real admin
+# token. Instead of printing an error and dying, hand the whole job to a new
+# elevated window and step aside.
+if (-not $script:ReadOnly -and -not (Test-Elevated)) {
+    Write-Host ''
+    Write-WarnLine 'Administrator rights are required - Voicemeeter installs an audio driver.'
+    Write-Dim 'Windows will ask you to allow it in a moment.'
+    Write-Host ''
+    try {
+        Start-ElevatedRerun -Tokens (Get-CurrentTokens)
+        exit 0
+    }
+    catch {
+        Write-Host ''
+        Write-ErrorLine 'Could not restart as administrator automatically.'
+        Write-WarnLine 'Right-click PowerShell -> "Run as administrator", then run this again:'
+        Write-Host ''
+        Write-Dim "    irm $script:ScriptUrl | iex"
+        Write-Host ''
+        if (-not $Silent) { $null = Read-Host '  Press Enter to close' }
+        exit 1
+    }
+}
+
+try {
+    Invoke-Main
+    exit $script:ExitCode
+}
+catch {
+    Write-Host ''
+    Write-ErrorLine $_.Exception.Message
+    if ($_.InvocationInfo -and $_.InvocationInfo.ScriptLineNumber -gt 0) {
+        $line = [string]$_.InvocationInfo.Line
+        if ($line) { Write-Dim "line $($_.InvocationInfo.ScriptLineNumber): $($line.Trim())" }
+    }
+    Write-Host ''
+    Write-Dim "  Need help? https://github.com/$script:Repo/issues"
+    if (-not $Silent) { $null = Read-Host '  Press Enter to close' }
+    exit 1
+}

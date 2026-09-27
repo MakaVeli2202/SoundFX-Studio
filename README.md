@@ -2,6 +2,27 @@
 
 SoundFX Studio is a Windows desktop application for soundboard playback, keyboard-triggered actions, voice-changing workflows, and audio routing. The current release prioritizes stability and a polished desktop experience while preserving existing user workflows.
 
+## Install
+
+Open PowerShell (no admin rights needed, it asks for them itself) and run:
+
+```powershell
+irm https://raw.githubusercontent.com/MakaVeli2202/SoundFX-Studio/main/install.ps1 | iex
+```
+
+That downloads the latest release, installs it with the Voicemeeter audio driver, and checks for the .NET 8 Desktop Runtime. From the menu you can **Install**, **Upgrade**, **Uninstall**, or **Exit**. Upgrading installs over the current copy, so your sounds, settings and key bindings are kept.
+
+Prefer a file? Download [install.ps1](install.ps1) and run `powershell -ExecutionPolicy Bypass -File install.ps1`.
+
+Useful switches:
+- `-Install` / `-Upgrade` / `-Uninstall` - run a job without the menu
+- `-Status` - show what is installed right now
+- `-CheckUpdate` - print the latest release tag
+- `-Silent` - no prompts (scripts and CI)
+- `-RemoveData` / `-RemoveVoicemeeter` - with `-Uninstall`, also drop your sounds/settings or the Voicemeeter driver
+
+Requires Windows x64. Administrator rights are needed because Voicemeeter installs a kernel audio driver; restart once after the first install so the driver finishes loading.
+
 ## Key capabilities
 - Play and organize soundboard entries from keyboard-triggered profiles
 - Use hotkeys and keybindings for rapid sound playback
