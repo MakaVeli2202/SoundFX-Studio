@@ -76,8 +76,8 @@ public partial class TeamMonitorWindow : Window
 
     private void PopulateDevices()
     {
-        var captures = _audioDeviceService.GetAllInputDevices().ToList();
-        var playbacks = _audioDeviceService.GetAllOutputDevices().ToList();
+        var captures = _audioDeviceService.GetMonitorCaptureDevices().ToList();
+        var playbacks = _audioDeviceService.GetOutputDevices().ToList();
 
         CaptureCombo.ItemsSource = captures;
         PlaybackCombo.ItemsSource = playbacks;

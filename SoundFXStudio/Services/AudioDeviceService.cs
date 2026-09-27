@@ -26,6 +26,22 @@ public sealed class AudioDeviceService
         return GetDevices(DataFlow.Render, includeVirtual: true);
     }
 
+    // For pickers that monitor the Voicemeeter mix (Team Monitor): only the bus
+    // outputs auto-config actually wires up (B1/B2/B3), never the Input/Aux
+    // strips — those aren't valid monitor sources and just clutter the list.
+    public IReadOnlyList<AudioDeviceInfo> GetMonitorCaptureDevices()
+    {
+        return GetDevices(DataFlow.Capture, includeVirtual: true)
+            .Where(d => !IsVirtualDevice(d.Name) || IsVoicemeeterMonitorBus(d.Name))
+            .ToList();
+    }
+
+    private static bool IsVoicemeeterMonitorBus(string name)
+        => name.Contains("Voicemeeter", StringComparison.OrdinalIgnoreCase)
+           && name.Contains("Out B", StringComparison.OrdinalIgnoreCase)
+           && !name.Contains("Aux", StringComparison.OrdinalIgnoreCase)
+           && !name.Contains("Virtual", StringComparison.OrdinalIgnoreCase);
+
     public string? GetVoicemeeterInputId()
     {
         return GetVoicemeeterDeviceId(DataFlow.Render, "VoiceMeeter Input");

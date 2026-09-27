@@ -832,7 +832,6 @@ Show-UpdateStatus
         @{ Text = '[3] Uninstall app - remove the program, keep your sounds and settings'; Color = 'White' }
         @{ Text = '[4] Uninstall everything - app, data, and Voicemeeter'; Color = 'White' }
         @{ Text = '[5] Fresh install - remove everything, then install the latest version'; Color = 'White' }
-        @{ Text = '[a] Reset / roll back Art Tune stack (coming soon in-app; cleanup only)'; Color = $C.Purple }
         @{ Text = '[u] Check for updates'; Color = $C.Purple }
         @{ Text = '[t] Thank you - credits & developer links'; Color = $C.Purple }
         @{ Text = '[Q] Quit'; Color = $C.Muted }
@@ -851,14 +850,13 @@ Show-UpdateStatus
             continue mainMenu
         }
         if ($selection -eq 'u' -or $selection -eq 'U') { Show-UpdateStatus; continue mainMenu }
-        if ($selection -eq 'a' -or $selection -eq 'A') { $null = Invoke-ArtTuneRollback; continue mainMenu }
         if ($selection -eq 'q' -or $selection -eq 'Q') { break mainMenu }
         $num = 0
         if ([int]::TryParse($selection, [ref]$num) -and $num -ge 1 -and $num -le 5) {
             $menuChoice = $num
             break
         }
-        Write-Host "$($menuMargin)Invalid choice. Enter 1-5, a, u, t, or q." -ForegroundColor $C.Rose
+        Write-Host "$($menuMargin)Invalid choice. Enter 1-5, u, t, or q." -ForegroundColor $C.Rose
     }
 
     switch ($menuChoice) {

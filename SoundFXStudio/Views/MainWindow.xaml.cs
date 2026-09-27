@@ -1364,8 +1364,8 @@ public partial class MainWindow : Window
         }
 
         var devices = new AudioDeviceService();
-        var captures = devices.GetAllInputDevices();
-        var playbacks = devices.GetAllOutputDevices();
+        var captures = devices.GetMonitorCaptureDevices();
+        var playbacks = devices.GetOutputDevices();
 
         var capture = captures.FirstOrDefault(d =>
             d.Name.Contains("Voicemeeter", StringComparison.OrdinalIgnoreCase)

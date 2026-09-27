@@ -57,11 +57,11 @@
                           SelectionChanged="ModeCombo_SelectionChanged"/>
 
                 <TextBlock Text="Monitor from (mic mix)" Foreground="#8891B8" FontSize="11" FontWeight="Bold" Margin="0,14,0,4"/>
-                <ComboBox x:Name="CaptureCombo" Height="32" DisplayMemberPath="Name"
+                <ComboBox x:Name="CaptureCombo" Height="32" DisplayMemberPath="DisplayName"
                           Background="#44111A2E" BorderBrush="#5A00D4FF" Foreground="White" FontSize="12"/>
 
                 <TextBlock Text="Play through" Foreground="#8891B8" FontSize="11" FontWeight="Bold" Margin="0,12,0,4"/>
-                <ComboBox x:Name="PlaybackCombo" Height="32" DisplayMemberPath="Name"
+                <ComboBox x:Name="PlaybackCombo" Height="32" DisplayMemberPath="DisplayName"
                           Background="#44111A2E" BorderBrush="#5A00D4FF" Foreground="White" FontSize="12"/>
 
                 <TextBlock Text="Volume" Foreground="#8891B8" FontSize="11" FontWeight="Bold" Margin="0,14,0,4"/>

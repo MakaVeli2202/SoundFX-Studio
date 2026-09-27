@@ -69,5 +69,11 @@ public class AudioDeviceInfo : ObservableObject
         set => SetProperty(ref _state, value);
     }
 
+    // Friendly label for pickers (strips the "(VB-Audio Voicemeeter VAIO)" driver
+    // suffix). Name itself is left untouched — settings persist and match on it.
+    public string DisplayName => Name.Contains(" (", StringComparison.Ordinal)
+        ? Name[..Name.IndexOf(" (", StringComparison.Ordinal)]
+        : Name;
+
     public override string ToString() => Name;
 }
