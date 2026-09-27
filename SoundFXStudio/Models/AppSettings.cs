@@ -371,8 +371,9 @@ public class AppSettings : ObservableObject
         set => SetProperty(ref _voicemeeterDetected, value);
     }
 
-    // Set once VoicemeeterEndpointCleanupService has renamed the used endpoints
-    // and disabled the rest, so it never re-prompts for elevation on later runs.
+    // Latch for VoicemeeterEndpointCleanupService: set once the unused Voicemeeter
+    // endpoints have been disabled (or confirmed already tidy), so the one elevation
+    // prompt happens at most once per install. The used endpoints are never renamed.
     public bool VoicemeeterEndpointsCleaned
     {
         get => _voicemeeterEndpointsCleaned;

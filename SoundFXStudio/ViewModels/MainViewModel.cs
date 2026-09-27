@@ -1582,6 +1582,16 @@ public sealed class MainViewModel : ObservableObject
         KeyboardLayoutPanel.ButtonScale = calibration.ButtonScale;
         KeyboardLayoutPanel.DebugKeyboardCalibration = calibration.DebugCalibration;
 
+        // Layouts anchored before "Set as Default" learned to re-base ButtonScale stored the
+        // captured size with ButtonScale already applied. Fold that value in once so the keys
+        // render at exactly the size the user last saw, then restart the slider from 1.0.
+        if (calibration.KeyBaselines.Count > 0 && calibration.BaselineButtonScale <= 0)
+        {
+            calibration.BaselineButtonScale = calibration.ButtonScale;
+            calibration.ButtonScale = 1.0;
+            KeyboardLayoutPanel.ButtonScale = 1.0;
+        }
+
         KeyboardClusterLayout.ApplyPreset(
             calibration.EscOffsetX,
             calibration.EscOffsetY,
@@ -1675,6 +1685,7 @@ public sealed class MainViewModel : ObservableObject
         }
 
         KeyboardLayoutPanel.ClearKeyBaselines();
+        KeyboardLayoutPanel.BaselineButtonScale = calibration.BaselineButtonScale;
         foreach (var entry in calibration.KeyBaselines)
         {
             KeyboardLayoutPanel.SetKeyBaseline(entry.Key, entry.Value.X, entry.Value.Y, entry.Value.Width, entry.Value.Height);
@@ -3103,7 +3114,7 @@ public sealed class MainViewModel : ObservableObject
 
     private void OpenSetupWizard()
     {
-        var wizard = new SetupWizardWindow
+        var wizard = new SetupWizardWindow(this)
         {
             Owner = _window
         };
@@ -3265,22 +3276,6 @@ public sealed class MainViewModel : ObservableObject
                 }
 
                 Save();
-
-                // One-time: rename the two endpoints we actually route through and hide
-                // the rest of Voicemeeter's endpoints from Windows' Sound flyout. Fires
-                // a single UAC prompt; never repeats once it succeeds.
-                if (haveRender && haveCapture && !Settings.VoicemeeterEndpointsCleaned)
-                {
-                    _ = Task.Run(async () =>
-                    {
-                        var cleaned = await VoicemeeterEndpointCleanupService.CleanupAsync(vmInputId, vmOutputId);
-                        if (cleaned)
-                        {
-                            Settings.VoicemeeterEndpointsCleaned = true;
-                            try { Save(); } catch { /* best effort */ }
-                        }
-                    });
-                }
 
                 var result = $"✓  Audio configured:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
 
@@ -3459,27 +3454,36 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    // Runs on every startup, but only ever does work once: hides Voicemeeter's
-    // unused endpoints as soon as they exist (right after install), instead of
-    // waiting for the user to run Configure. By the time they open the wizard,
-    // Windows' own device list is already down to what they actually need.
-    private void CleanupVoicemeeterEndpointsIfNeeded()
+    /// <summary>
+    /// Hides the Voicemeeter endpoints the app never routes through, so Windows' sound
+    /// flyout only lists VoiceMeeter Input and Out B1. The VoicemeeterEndpointsCleaned flag
+    /// is the latch: this runs at most once per install and never prompts for elevation
+    /// again. Skipped when the setup wizard is about to open, since the wizard does the
+    /// same work and would otherwise double-prompt on first run.
+    /// </summary>
+    private async void CleanupVoicemeeterEndpointsIfNeeded()
     {
-        if (Settings.VoicemeeterEndpointsCleaned) return;
-
-        var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
-        var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
-        if (string.IsNullOrWhiteSpace(vmInputId) && string.IsNullOrWhiteSpace(vmOutputId)) return;
-
-        _ = Task.Run(async () =>
+        try
         {
-            var cleaned = await VoicemeeterEndpointCleanupService.CleanupAsync(vmInputId, vmOutputId);
-            if (cleaned)
-            {
-                Settings.VoicemeeterEndpointsCleaned = true;
-                try { Save(); } catch { /* best effort */ }
-            }
-        });
+            if (Settings.VoicemeeterEndpointsCleaned) return;
+            if (Settings.ShowSetupWizardOnStartup && !Settings.SetupCompleted) return;
+            if (!VoicemeeterService.IsVoicemeeterInstalled()) return;
+
+            var renderId = _audioDeviceService.GetVoicemeeterInputId();
+            var captureId = _audioDeviceService.GetVoicemeeterOutputId();
+            if (string.IsNullOrWhiteSpace(renderId) || string.IsNullOrWhiteSpace(captureId)) return;
+
+            var result = await VoicemeeterEndpointCleanupService.CleanupAsync(renderId, captureId);
+            if (result == VoicemeeterCleanupResult.Failed) return;
+
+            Settings.VoicemeeterEndpointsCleaned = true;
+            Save();
+            _logService?.Info($"Startup: hid unused Voicemeeter channels ({result}).");
+        }
+        catch (Exception ex)
+        {
+            _logService?.Error("Voicemeeter endpoint cleanup failed on startup", ex);
+        }
     }
 
     private void RefreshSavedWindowsDefaults()
@@ -3527,7 +3531,7 @@ public sealed class MainViewModel : ObservableObject
     {
         try
         {
-            var wizard = new SetupWizardWindow { Owner = owner };
+            var wizard = new SetupWizardWindow(this) { Owner = owner };
             wizard.ShowDialog();
             Refresh();
         }

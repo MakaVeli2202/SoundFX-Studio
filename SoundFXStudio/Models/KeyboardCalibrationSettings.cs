@@ -23,6 +23,15 @@ public class KeyboardCalibrationSettings
     public double ReferenceHeroWidth { get; set; }
     public double ReferenceHeroHeight { get; set; }
 
+    // Set once the user saves a calibration. Stops the shipped seed file from
+    // overwriting a calibration that only touched the grid/cluster/row sliders
+    // (those leave KeyOverrides and KeyBaselines empty).
+    public bool IsUserCalibrated { get; set; }
+
+    // The ButtonScale that was folded into KeyBaselines by "Set as Default".
+    // ButtonScale is then applied relative to this value. 0 = baselines are absolute.
+    public double BaselineButtonScale { get; set; }
+
     public void RescaleForHeroSize(double currentHeroWidth, double currentHeroHeight)
     {
         if (ReferenceHeroWidth <= 0 || ReferenceHeroHeight <= 0) return;

@@ -630,15 +630,26 @@ public partial class KeyboardWindow : Window, INotifyPropertyChanged
 
     private static (double X, double Y) ComputeEscTopLeft(KeyboardCalibrationSettings calibration)
     {
+        if (calibration.KeyBaselines.TryGetValue("ESC-0-0", out var baseline))
+        {
+            var liveScale = calibration.ButtonScale > 0 ? calibration.ButtonScale : 1d;
+            var baselineScale = calibration.BaselineButtonScale > 0 ? liveScale / calibration.BaselineButtonScale : 1d;
+            var baselineWidth = Math.Max(1d, (baseline.Width * baselineScale) + calibration.EscWidthAdjustment);
+            var baselineHeight = Math.Max(1d, (baseline.Height * baselineScale) + calibration.EscHeightAdjustment);
+            return (
+                baseline.X + ((baseline.Width - baselineWidth) / 2d) + calibration.EscOffsetX,
+                baseline.Y + ((baseline.Height - baselineHeight) / 2d) + calibration.EscOffsetY);
+        }
+
         var keyUnit = calibration.KeyUnit > 0 ? calibration.KeyUnit : 43d;
-        var buttonScale = calibration.ButtonScale > 0 ? calibration.ButtonScale : 1d;
+        var scale = calibration.ButtonScale > 0 ? calibration.ButtonScale : 1d;
 
         calibration.KeyOverrides.TryGetValue("ESC-0-0", out var escOverride);
 
         var baseWidth = (EscWidthUnits * keyUnit) + (escOverride?.WidthAdjustment ?? 0d);
         var baseHeight = keyUnit + (escOverride?.HeightAdjustment ?? 0d);
-        var width = Math.Max(1d, (baseWidth * buttonScale) + calibration.EscWidthAdjustment);
-        var height = Math.Max(1d, (baseHeight * buttonScale) + calibration.EscHeightAdjustment);
+        var width = Math.Max(1d, (baseWidth * scale) + calibration.EscWidthAdjustment);
+        var height = Math.Max(1d, (baseHeight * scale) + calibration.EscHeightAdjustment);
 
         var x = calibration.OffsetX + calibration.EscOffsetX + (escOverride?.OffsetX ?? 0d) + ((baseWidth - width) / 2d);
         var y = calibration.OffsetY + calibration.EscOffsetY + (escOverride?.OffsetY ?? 0d) + ((baseHeight - height) / 2d);

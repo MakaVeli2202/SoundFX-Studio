@@ -16,6 +16,7 @@ public sealed class KeyboardLayoutPanel : Panel
     private static double _offsetX = 65;
     private static double _offsetY = 72;
     private static double _buttonScale = 1.0;
+    private static double _baselineButtonScale;
 
     private static readonly Dictionary<string, SpecialKeyOverride> SpecialKeyOverrides = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<string, PerKeyOverride> PerKeyOverrides = new(StringComparer.OrdinalIgnoreCase);
@@ -219,8 +220,31 @@ public sealed class KeyboardLayoutPanel : Panel
     public static void ClearKeyBaselines()
     {
         KeyBaselines.Clear();
+        _baselineButtonScale = 0d;
         NotifyCalibrationChanged();
     }
+
+    // The ButtonScale value that was already folded into the captured baselines.
+    // The live ButtonScale is applied relative to it, so a layout captured at 1.3
+    // still renders at 1.3 when the slider is untouched, and the slider keeps
+    // working as a multiplier afterwards. 0 means "baselines are absolute".
+    public static double BaselineButtonScale
+    {
+        get => _baselineButtonScale;
+        set
+        {
+            if (Math.Abs(_baselineButtonScale - value) < double.Epsilon)
+            {
+                return;
+            }
+
+            _baselineButtonScale = value;
+            NotifyCalibrationChanged();
+        }
+    }
+
+    public static double EffectiveBaselineButtonScale
+        => _baselineButtonScale > 0d ? ButtonScale / _baselineButtonScale : 1d;
 
     public static KeyboardCluster GetClusterOf(KeyboardKey key) => GetCluster(key);
 
@@ -239,6 +263,8 @@ public sealed class KeyboardLayoutPanel : Panel
             kv => (kv.Value.X, kv.Value.Y, kv.Value.Width, kv.Value.Height),
             StringComparer.OrdinalIgnoreCase);
     }
+
+    public static bool HasKeyBaselines => KeyBaselines.Count > 0;
 
     public KeyboardLayoutPanel()
     {
@@ -328,10 +354,11 @@ public sealed class KeyboardLayoutPanel : Panel
     {
         if (GetBaseline(key) is KeyBaseline baseline)
         {
+            var scale = EffectiveBaselineButtonScale;
             var baselineKeyOverride = GetPerKeyOverride(key);
             return new Size(
-                Math.Max(1d, baseline.Width + clusterCalibration.WidthAdjustment + baselineKeyOverride.WidthAdjustment),
-                Math.Max(1d, baseline.Height + clusterCalibration.HeightAdjustment));
+                Math.Max(1d, (baseline.Width * scale) + clusterCalibration.WidthAdjustment + baselineKeyOverride.WidthAdjustment),
+                Math.Max(1d, (baseline.Height * scale) + clusterCalibration.HeightAdjustment));
         }
 
         var specialOverride = GetSpecialOverride(key);
@@ -351,8 +378,8 @@ public sealed class KeyboardLayoutPanel : Panel
         if (GetBaseline(key) is KeyBaseline baseline)
         {
             return new Point(
-                baseline.X + clusterCalibration.OffsetX + rowOffset.OffsetX + keyOverride.OffsetX,
-                baseline.Y + clusterCalibration.OffsetY + rowOffset.OffsetY + keyOverride.OffsetY);
+                baseline.X + ((baseline.Width - size.Width) / 2d) + clusterCalibration.OffsetX + rowOffset.OffsetX + keyOverride.OffsetX,
+                baseline.Y + ((baseline.Height - size.Height) / 2d) + clusterCalibration.OffsetY + rowOffset.OffsetY + keyOverride.OffsetY);
         }
 
         var (gapX, gapY) = GetEffectiveGaps(key, clusterCalibration);

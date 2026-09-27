@@ -98,12 +98,12 @@
                         </Ellipse.Fill>
                     </Ellipse>
 
-                    <Grid Width="88" Height="88" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid Width="120" Height="120" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Path x:Name="Spinner"
                               Stroke="#2E5C7896" StrokeThickness="5"
                               Visibility="Visible">
                             <Path.Data>
-                                <EllipseGeometry Center="44,44" RadiusX="36" RadiusY="36"/>
+                                  <EllipseGeometry Center="60,60" RadiusX="50" RadiusY="50"/>
                             </Path.Data>
                         </Path>
 
@@ -140,6 +140,18 @@
                               VerticalAlignment="Center">
                             <Path.Data>
                                 <PathGeometry Figures="M 0,12 L 8,20 L 22,2"/>
+                            </Path.Data>
+                        </Path>
+                        <Path x:Name="FailureIcon"
+                              Visibility="Collapsed"
+                              Stroke="#F43F5E"
+                              StrokeThickness="6"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center">
+                            <Path.Data>
+                                <PathGeometry Figures="M 3,3 L 21,21 M 21,3 L 3,21"/>
                             </Path.Data>
                         </Path>
                     </Grid>

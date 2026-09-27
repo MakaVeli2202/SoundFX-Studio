@@ -2,6 +2,7 @@ using SoundFXStudio.Controls;
 using SoundFXStudio.Infrastructure;
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
+using SoundFXStudio.ViewModels;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
@@ -18,8 +19,7 @@ namespace SoundFXStudio.Views.Dialogs;
 
 public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 {
-    private readonly ConfigService _configService = new();
-    private readonly AppConfig _config;
+    private readonly MainViewModel _viewModel;
     private readonly KeyboardLayoutService _keyboardLayoutService = new();
     private readonly RelayCommand _noopCommand;
     private readonly ObservableCollection<ClusterCalibrationItem> _clusterItems = new();
@@ -69,7 +69,7 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
     private KeyCalibrationItem? _selectedKeyItem;
     private string _perKeyOverridesJson = "{}";
-    private string _jsonEditorStatus = "Ready";
+    private string _calibrationStatus = "Ready";
 
     private bool _keyboardDragActive;
     private bool _keyboardDragMoved;
@@ -93,10 +93,11 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     private const double KeyboardHudBaseWidth = 1512.6;
     private const double KeyboardHudBaseHeight = 608;
 
-    public KeyboardCalibrationWindow()
+    public KeyboardCalibrationWindow(MainViewModel viewModel)
     {
         InitializeComponent();
         DataContext = this;
+        _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         _livePreviewThrottle = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
         _livePreviewThrottle.Tick += OnLivePreviewThrottleTick;
         Loaded += (_, _) =>
@@ -104,7 +105,6 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             UpdateOverlayPreview();
         };
 
-        _config = _configService.Load();
         _noopCommand = new RelayCommand(SelectPreviewKey);
 
         BuildKeyboard();
@@ -387,19 +387,34 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         }
     }
 
-    public string JsonEditorStatus
+    public string CalibrationStatus
     {
-        get => _jsonEditorStatus;
+        get => _calibrationStatus;
         set
         {
-            if (_jsonEditorStatus == value)
+            if (_calibrationStatus == value)
             {
                 return;
             }
 
-            _jsonEditorStatus = value;
+            _calibrationStatus = value;
             OnPropertyChanged();
         }
+    }
+
+    public bool HasKeyBaselines => KeyboardLayoutPanel.HasKeyBaselines;
+
+    public bool IsGridCalibrationEnabled => !KeyboardLayoutPanel.HasKeyBaselines;
+
+    public string BaselineWarningText => KeyboardLayoutPanel.HasKeyBaselines
+        ? "Set as Default is active. Every key is anchored to an absolute position, so the grid sliders (move, key size, gap) no longer move anything. Use the key, group and row controls, or press Reset All to go back to the grid."
+        : string.Empty;
+
+    private void RaiseBaselineStateChanged()
+    {
+        OnPropertyChanged(nameof(HasKeyBaselines));
+        OnPropertyChanged(nameof(IsGridCalibrationEnabled));
+        OnPropertyChanged(nameof(BaselineWarningText));
     }
 
     private void BuildKeyboard()
@@ -428,7 +443,7 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
     private KeyboardLayoutMode GetPreviewLayoutMode()
     {
-        var layoutMode = _config.Settings.KeyboardLayout;
+        var layoutMode = _viewModel.Settings.KeyboardLayout;
         if (layoutMode != KeyboardLayoutMode.Automatic)
         {
             return layoutMode;
@@ -455,11 +470,12 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         }
     }
 
+    private KeyboardCalibrationSettings SourceCalibration
+        => _viewModel.Settings.KeyboardCalibration ?? new KeyboardCalibrationSettings();
+
     private void LoadFromSettings()
     {
-        var settings = _config.Settings.KeyboardCalibration ?? new KeyboardCalibrationSettings();
-
-        LoadFromCalibration(settings);
+        LoadFromCalibration(SourceCalibration);
     }
 
     private void LoadFromCalibration(KeyboardCalibrationSettings settings)
@@ -551,6 +567,8 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             SetRowItem(3, settings.MainRowOffsetX3, settings.MainRowOffsetY3, GetRowGap(settings.RowGapOverridesX, 3), GetRowGap(settings.RowGapOverridesY, 3));
             SetRowItem(4, settings.MainRowOffsetX4, settings.MainRowOffsetY4, GetRowGap(settings.RowGapOverridesX, 4), GetRowGap(settings.RowGapOverridesY, 4));
 
+            KeyboardLayoutPanel.ClearKeyBaselines();
+            KeyboardLayoutPanel.BaselineButtonScale = settings.BaselineButtonScale;
             foreach (var entry in settings.KeyBaselines)
             {
                 KeyboardLayoutPanel.SetKeyBaseline(entry.Key, entry.Value.X, entry.Value.Y, entry.Value.Width, entry.Value.Height);
@@ -612,6 +630,7 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         OnPropertyChanged(nameof(ClosePanelY));
         OnPropertyChanged(nameof(ClosePanelWidth));
         OnPropertyChanged(nameof(ClosePanelHeight));
+        RaiseBaselineStateChanged();
 
         RefreshPerKeyOverridesJsonFromItems();
     }
@@ -1228,9 +1247,32 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         }
     }
 
+    private KeyboardCalibrationSettings CreateCalibrationShell()
+    {
+        var source = SourceCalibration;
+        return new KeyboardCalibrationSettings
+        {
+            KeyboardWindowScale = source.KeyboardWindowScale,
+            IsUserCalibrated = source.IsUserCalibrated,
+            ReferenceHeroWidth = source.ReferenceHeroWidth,
+            ReferenceHeroHeight = source.ReferenceHeroHeight,
+            DebugCalibration = source.DebugCalibration,
+            InnerSectionInsetPercent = source.InnerSectionInsetPercent,
+            SpacebarWidthAdjustment = source.SpacebarWidthAdjustment,
+            BackspaceWidthAdjustment = source.BackspaceWidthAdjustment,
+            EnterWidthAdjustment = source.EnterWidthAdjustment,
+            IsoEnterWidthAdjustment = source.IsoEnterWidthAdjustment,
+            LeftShiftWidthAdjustment = source.LeftShiftWidthAdjustment,
+            RightShiftWidthAdjustment = source.RightShiftWidthAdjustment,
+            NumpadEnterWidthAdjustment = source.NumpadEnterWidthAdjustment,
+            TabWidthAdjustment = source.TabWidthAdjustment,
+            CapsLockWidthAdjustment = source.CapsLockWidthAdjustment
+        };
+    }
+
     public KeyboardCalibrationSettings BuildCalibration()
     {
-        var calibration = _config.Settings.KeyboardCalibration ?? new KeyboardCalibrationSettings();
+        var calibration = CreateCalibrationShell();
         calibration.KeyUnit = PreviewKeyUnit;
         calibration.GapX = PreviewGapX;
         calibration.GapY = PreviewGapY;
@@ -1238,6 +1280,7 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         calibration.OffsetX = PreviewOffsetX;
         calibration.OffsetY = PreviewOffsetY;
         calibration.ButtonScale = PreviewButtonScale;
+        calibration.BaselineButtonScale = KeyboardLayoutPanel.BaselineButtonScale;
         calibration.InnerSectionInsetXPercent = PreviewInnerInsetXPercent;
         calibration.InnerSectionInsetYPercent = PreviewInnerInsetYPercent;
         calibration.InnerSectionInsetPercent = (PreviewInnerInsetXPercent + PreviewInnerInsetYPercent) / 2d;
@@ -1360,14 +1403,16 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
     {
         var calibration = BuildCalibration();
 
+        calibration.IsUserCalibrated = true;
+
         if (HeroOverlayWidth > 0 && HeroOverlayHeight > 0)
         {
             calibration.ReferenceHeroWidth = HeroOverlayWidth;
             calibration.ReferenceHeroHeight = HeroOverlayHeight;
         }
 
-        _config.Settings.KeyboardCalibration = calibration;
-        _configService.Save(_config);
+        _viewModel.Settings.KeyboardCalibration = calibration;
+        _viewModel.SaveKeyboardCalibrationSettings();
 
         if (notifyMainViewModel)
         {
@@ -1435,8 +1480,7 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
 
         KeyboardLayoutPanel.ClearKeyBaselines();
 
-        OnPropertyChanged(nameof(PreviewKeyUnit));
-        OnPropertyChanged(nameof(PreviewGapX));
+        OnPropertyChanged(nameof(PreviewKeyUnit));        OnPropertyChanged(nameof(PreviewGapX));
         OnPropertyChanged(nameof(PreviewGapY));
         OnPropertyChanged(nameof(PreviewOffsetX));
         OnPropertyChanged(nameof(PreviewOffsetY));
@@ -1466,15 +1510,17 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         OnPropertyChanged(nameof(ClosePanelY));
         OnPropertyChanged(nameof(ClosePanelWidth));
         OnPropertyChanged(nameof(ClosePanelHeight));
+        RaiseBaselineStateChanged();
 
         ApplyAllCalibration();
         RefreshPreview();
+        CalibrationStatus = "Reset to stock grid. Press Save to keep it.";
     }
 
     private void SavePermanently_Click(object sender, RoutedEventArgs e)
     {
         SaveCalibration(notifyMainViewModel: true);
-        JsonEditorStatus = "Saved";
+        CalibrationStatus = "Saved";
     }
 
     private void SetAsDefault_Click(object sender, RoutedEventArgs e)
@@ -1490,6 +1536,11 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
                 KeyboardLayoutPanel.SetKeyBaseline(key.Id, geometry.X, geometry.Y, geometry.Width, geometry.Height);
             }
         }
+
+        // Anchor at the size just captured, then restart ButtonScale at 1.0 so the
+        // captured size is the zero point and the slider still multiplies from here.
+        KeyboardLayoutPanel.BaselineButtonScale = 1.0;
+        _previewButtonScale = 1.0;
 
         _suppressUpdates = true;
         try
@@ -1514,12 +1565,17 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
             _suppressUpdates = false;
         }
 
+        OnPropertyChanged(nameof(PreviewButtonScale));
+        ApplyAllCalibration();
         ApplyClusterCalibration();
         ApplyRowCalibration();
         ApplyPerKeyOverrides();
         RefreshPerKeyOverridesJsonFromItems();
         RefreshPreview();
-        JsonEditorStatus = "Set as Default captured";
+        RaiseBaselineStateChanged();
+
+        SaveCalibration(notifyMainViewModel: true);
+        CalibrationStatus = "Set as Default captured and saved. Grid sliders are now inert — use Reset All to go back to the grid.";
     }
 
     private void ResetSelectedKey_Click(object sender, RoutedEventArgs e)

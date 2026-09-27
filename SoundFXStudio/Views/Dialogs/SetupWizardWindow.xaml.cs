@@ -1,5 +1,6 @@
 using SoundFXStudio.Models;
 using SoundFXStudio.Services;
+using SoundFXStudio.ViewModels;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -17,16 +18,37 @@ public partial class SetupWizardWindow : Window
     private readonly ConfigService _configService = new();
     private readonly AudioDeviceService _audioDeviceService = new();
     private readonly WindowsAudioRoutingService _windowsAudioRoutingService = new();
+    private readonly MainViewModel? _viewModel;
     private AppConfig _config;
+    private bool _cleanupInFlight;
 
-    public SetupWizardWindow()
+    /// <summary>
+    /// Pass the live <paramref name="viewModel"/> so the wizard edits the same
+    /// settings instance the running app uses. The startup path (App.xaml) has no
+    /// view model yet and passes null, which falls back to a freshly loaded config.
+    /// </summary>
+    public SetupWizardWindow(MainViewModel? viewModel = null)
     {
         InitializeComponent();
+        _viewModel = viewModel;
         _config = _configService.Load();
         Loaded += SetupWizardWindow_Loaded;
         PreviewMouseLeftButtonDown += TryDragWindow;
         PreviewKeyDown += SetupWizardWindow_PreviewKeyDown;
         SourceInitialized += SetupWizardWindow_SourceInitialized;
+    }
+
+    private AppSettings Settings => _viewModel?.Settings ?? _config.Settings;
+
+    private void SaveConfig()
+    {
+        if (_viewModel is not null)
+        {
+            _viewModel.Save();
+            return;
+        }
+
+        try { _configService.Save(_config); } catch { }
     }
 
     private void SetupWizardWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -102,7 +124,7 @@ public partial class SetupWizardWindow : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
-    private void SetupWizardWindow_Loaded(object sender, RoutedEventArgs e)
+    private async void SetupWizardWindow_Loaded(object sender, RoutedEventArgs e)
     {
         var outputs = _audioDeviceService.GetOutputDevices().ToList();
         var inputs = _audioDeviceService.GetInputDevices().ToList();
@@ -110,14 +132,14 @@ public partial class SetupWizardWindow : Window
         WizardHearCombo.ItemsSource = outputs;
         WizardTalkCombo.ItemsSource = inputs;
 
-        WizardHearCombo.SelectedItem = outputs.FirstOrDefault(d => d.Name == _config.Settings.HearDeviceName)
+        WizardHearCombo.SelectedItem = outputs.FirstOrDefault(d => d.Name == Settings.HearDeviceName)
             ?? outputs.FirstOrDefault(d => d.Id == _audioDeviceService.GetDefaultDeviceId(DataFlow.Render))
             ?? outputs.FirstOrDefault(d => d.Id == _audioDeviceService.GetDefaultCommunicationDeviceId(DataFlow.Render))
             ?? outputs.FirstOrDefault(d => d.IsDefaultCommunication)
             ?? outputs.FirstOrDefault(d => d.IsDefault)
             ?? outputs.FirstOrDefault();
 
-        WizardTalkCombo.SelectedItem = inputs.FirstOrDefault(d => d.Name == _config.Settings.TalkDeviceName)
+        WizardTalkCombo.SelectedItem = inputs.FirstOrDefault(d => d.Name == Settings.TalkDeviceName)
             ?? inputs.FirstOrDefault(d => d.Id == _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture))
             ?? inputs.FirstOrDefault(d => d.Id == _audioDeviceService.GetDefaultCommunicationDeviceId(DataFlow.Capture))
             ?? inputs.FirstOrDefault(d => d.IsDefaultCommunication)
@@ -125,6 +147,53 @@ public partial class SetupWizardWindow : Window
             ?? inputs.FirstOrDefault();
 
         CheckVoicemeeter();
+        await HideUnusedVoicemeeterChannelsOnceAsync();
+    }
+
+    /// <summary>
+    /// The app only ever routes through Voicemeeter Input (playback) and Out B1
+    /// (microphone), so every other Voicemeeter endpoint is dead weight in the
+    /// Windows sound flyout. Runs once ever — the VoicemeeterEndpointsCleaned flag
+    /// is the latch, so later launches never prompt for elevation again.
+    /// </summary>
+    private async Task HideUnusedVoicemeeterChannelsOnceAsync()
+    {
+        if (_cleanupInFlight || Settings.VoicemeeterEndpointsCleaned) return;
+        if (!VoicemeeterService.IsVoicemeeterInstalled()) return;
+
+        var renderId = _audioDeviceService.GetVoicemeeterInputId();
+        var captureId = _audioDeviceService.GetVoicemeeterOutputId();
+        if (string.IsNullOrWhiteSpace(renderId) || string.IsNullOrWhiteSpace(captureId)) return;
+
+        _cleanupInFlight = true;
+        try
+        {
+            VmSetupStatus.Text = "Tidying unused Voicemeeter channels — Windows may ask for permission…";
+
+            var result = await VoicemeeterEndpointCleanupService.CleanupAsync(renderId, captureId);
+            if (result == VoicemeeterCleanupResult.Failed)
+            {
+                VmSetupStatus.Text = "Voicemeeter channels left as they are (permission declined).";
+                return;
+            }
+
+            Settings.VoicemeeterEndpointsCleaned = true;
+            SaveConfig();
+
+            VmSetupStatus.Text = result == VoicemeeterCleanupResult.Completed
+                ? "Unused Voicemeeter channels hidden from Windows sound settings."
+                : "Voicemeeter channels are already tidy.";
+            Services.ActionLog.Instance.Action("Wizard", $"Voicemeeter endpoint cleanup: {result}");
+        }
+        catch (Exception ex)
+        {
+            VmSetupStatus.Text = "Could not tidy Voicemeeter channels.";
+            Services.ActionLog.Instance.Error("Wizard", $"Voicemeeter endpoint cleanup failed: {ex.Message}");
+        }
+        finally
+        {
+            _cleanupInFlight = false;
+        }
     }
 
     private void CheckVoicemeeter()
@@ -174,61 +243,99 @@ public partial class SetupWizardWindow : Window
 
             if (applied)
             {
-                overlay.UpdateStep("Wiring Windows input…");
-                _config.Settings.HearDeviceName = hear.Name;
-                _config.Settings.TalkDeviceName = talk.Name;
-                _config.Settings.SpeakersDeviceName = hear.Name;
-                _config.Settings.VoicemeeterDetected = true;
+                overlay.UpdateStep("Routing Windows playback and microphone…");
+                Settings.HearDeviceName = hear.Name;
+                Settings.TalkDeviceName = talk.Name;
+                Settings.SpeakersDeviceName = hear.Name;
+                Settings.VoicemeeterDetected = true;
 
+                var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
                 var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
-                if (string.IsNullOrWhiteSpace(vmOutputId))
+                if (string.IsNullOrWhiteSpace(vmInputId) || string.IsNullOrWhiteSpace(vmOutputId))
                 {
-                    result = $"✓ Channels configured:\n   Output: {hear.Name}\n   Mic: {talk.Name}\n   ⚠  Windows input not routed — virtual output not found";
+                    result = "✗ Voicemeeter endpoints were not found; Windows devices were not changed.";
+                    overlay.Complete("Voicemeeter endpoints not found.", succeeded: false);
                 }
                 else
                 {
                     var currentCapture = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
-                    if (!string.IsNullOrWhiteSpace(currentCapture)
-                        && !string.Equals(currentCapture, vmOutputId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        _config.Settings.SavedDefaultCaptureId = currentCapture;
-                    }
-
                     var currentRender = _audioDeviceService.GetDefaultDeviceId(DataFlow.Render);
-                    if (!string.IsNullOrWhiteSpace(currentRender))
+                    if (string.IsNullOrWhiteSpace(Settings.SavedDefaultCaptureId)
+                        || string.Equals(Settings.SavedDefaultCaptureId, vmOutputId, StringComparison.OrdinalIgnoreCase))
                     {
-                        _config.Settings.SavedDefaultRenderId = currentRender;
+                        Settings.SavedDefaultCaptureId =
+                            !string.IsNullOrWhiteSpace(currentCapture)
+                            && !string.Equals(currentCapture, vmOutputId, StringComparison.OrdinalIgnoreCase)
+                                ? currentCapture
+                                : talk.Id;
+                    }
+                    if (string.IsNullOrWhiteSpace(Settings.SavedDefaultRenderId)
+                        || string.Equals(Settings.SavedDefaultRenderId, vmInputId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Settings.SavedDefaultRenderId =
+                            !string.IsNullOrWhiteSpace(currentRender)
+                            && !string.Equals(currentRender, vmInputId, StringComparison.OrdinalIgnoreCase)
+                                ? currentRender
+                                : hear.Id;
                     }
 
+                    var outputApplied = _windowsAudioRoutingService.TrySetDefaultOutput(vmInputId);
                     var inputApplied = _windowsAudioRoutingService.TrySetDefaultInput(vmOutputId);
-                    var reboundInput = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
-                    var verified = inputApplied && string.Equals(reboundInput, vmOutputId, StringComparison.OrdinalIgnoreCase);
+                    var outputVerified = outputApplied && string.Equals(
+                        _audioDeviceService.GetDefaultDeviceId(DataFlow.Render), vmInputId, StringComparison.OrdinalIgnoreCase);
+                    var inputVerified = inputApplied && string.Equals(
+                        _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture), vmOutputId, StringComparison.OrdinalIgnoreCase);
 
-                    _config.Settings.InputDeviceId = vmOutputId;
-                    _config.Settings.MicrophoneDeviceId = vmOutputId;
+                    Settings.OutputDeviceId = vmInputId;
+                    Settings.PlaybackDeviceId = vmInputId;
+                    Settings.InputDeviceId = vmOutputId;
+                    Settings.MicrophoneDeviceId = vmOutputId;
 
-                    result = $"✓ Channels configured:\n   Output: {hear.Name}\n   Mic: {talk.Name}\n   " +
-                        (verified
-                            ? "✓ Windows input wired"
-                            : "⚠  Windows input wiring unconfirmed");
+                    var cleanupSucceeded = false;
+                    if (outputVerified && inputVerified)
+                    {
+                        overlay.UpdateStep("Hiding unused Voicemeeter channels…");
+                        var cleanupResult = Settings.VoicemeeterEndpointsCleaned
+                            ? VoicemeeterCleanupResult.NothingToHide
+                            : await VoicemeeterEndpointCleanupService.CleanupAsync(vmInputId, vmOutputId);
+                        cleanupSucceeded = cleanupResult != VoicemeeterCleanupResult.Failed;
+                        if (cleanupSucceeded)
+                        {
+                            Settings.VoicemeeterEndpointsCleaned = true;
+                            outputApplied = _windowsAudioRoutingService.TrySetDefaultOutput(vmInputId);
+                            inputApplied = _windowsAudioRoutingService.TrySetDefaultInput(vmInputId);
+                            outputVerified = outputApplied && string.Equals(
+                                _audioDeviceService.GetDefaultDeviceId(DataFlow.Render), vmInputId, StringComparison.OrdinalIgnoreCase);
+                            inputVerified = inputApplied && string.Equals(
+                                _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture), vmOutputId, StringComparison.OrdinalIgnoreCase);
+                        }
+                    }
+
+                    var routingVerified = outputVerified && inputVerified;
+
+                    result = routingVerified
+                        ? $"✓ Audio configured:\n   Playback: {hear.Name}\n   Microphone: {talk.Name}"
+                        : $"✗ Voicemeeter channels configured, but Windows routing was not verified.\n   Playback: {(outputVerified ? "✓" : "✗")}\n   Microphone: {(inputVerified ? "✓" : "✗")}";
+                    if (routingVerified && !cleanupSucceeded)
+                        result += "\n⚠ Unused Voicemeeter channels could not be hidden; Windows defaults are configured.";
+
+                    SaveConfig();
+                    overlay.Complete(routingVerified ? "Ready to play!" : "Windows routing could not be verified.", succeeded: routingVerified);
+                    if (routingVerified) ToastWindow.ShowDiscordStudioTip();
                 }
-
-            try { _configService.Save(_config); } catch { }
-                overlay.Complete("Ready to play!");
-                ToastWindow.ShowDiscordStudioTip();
             }
             else
             {
                 result = "✗ Setup failed — check your devices and retry.";
                 if (!string.IsNullOrWhiteSpace(diagnostics))
                     result += $"\n\n{diagnostics}";
-                overlay.Complete("Setup failed — check status.");
+                overlay.Complete("Setup failed — check status.", succeeded: false);
             }
         }
         catch (Exception ex)
         {
             result = $"✗ Setup failed: {ex.Message}";
-            overlay.Complete("Setup failed — check the status below.");
+            overlay.Complete("Setup failed — check the status below.", succeeded: false);
         }
 
         await Task.Delay(1400);
@@ -248,8 +355,8 @@ public partial class SetupWizardWindow : Window
         WizardResetWindowsBtn.IsEnabled = false;
 
         string windowsResult = "";
-        var previousRender = _config.Settings.SavedDefaultRenderId;
-        var previousCapture = _config.Settings.SavedDefaultCaptureId;
+        var previousRender = Settings.SavedDefaultRenderId;
+        var previousCapture = Settings.SavedDefaultCaptureId;
 
         if (!string.IsNullOrWhiteSpace(previousRender) || !string.IsNullOrWhiteSpace(previousCapture))
         {
@@ -259,8 +366,8 @@ public partial class SetupWizardWindow : Window
                 : "⚠  Could not restore Windows defaults";
             if (restored)
             {
-                _config.Settings.SavedDefaultRenderId = string.Empty;
-                _config.Settings.SavedDefaultCaptureId = string.Empty;
+                Settings.SavedDefaultRenderId = string.Empty;
+                Settings.SavedDefaultCaptureId = string.Empty;
             }
         }
         else
@@ -284,10 +391,10 @@ public partial class SetupWizardWindow : Window
             vmResult = $"✗ Reset failed: {ex.Message}";
         }
 
-        _config.Settings.HearDeviceName = string.Empty;
-        _config.Settings.TalkDeviceName = string.Empty;
-        _config.Settings.VoicemeeterDetected = false;
-        try { _configService.Save(_config); } catch { }
+        Settings.HearDeviceName = string.Empty;
+        Settings.TalkDeviceName = string.Empty;
+        Settings.VoicemeeterDetected = false;
+        SaveConfig();
 
         WizardResetWindowsBtn.IsEnabled = true;
         WizardStatusText.Text = $"{vmResult}\n{windowsResult}";
@@ -301,14 +408,14 @@ public partial class SetupWizardWindow : Window
     {
         ApplySelection();
         if (DontShowAgainCheckBox.IsChecked == true)
-            _config.Settings.ShowSetupWizardOnStartup = false;
+            Settings.ShowSetupWizardOnStartup = false;
 
-        _config.Settings.SetupCompleted = true;
-        _config.Settings.LastConfigurationDate = DateTime.UtcNow;
+        Settings.SetupCompleted = true;
+        Settings.LastConfigurationDate = DateTime.UtcNow;
 
         try
         {
-            _configService.Save(_config);
+            SaveConfig();
             Services.ActionLog.Instance.Info("Wizard", $"Finish: SetupCompleted=true saved to disk");
         }
         catch (Exception ex)
@@ -327,8 +434,8 @@ public partial class SetupWizardWindow : Window
 
     private void ApplySelection()
     {
-        _config.Settings.VirtualCableDeviceId = string.Empty;
-        _config.Settings.VBCableDetected = false;
+        Settings.VirtualCableDeviceId = string.Empty;
+        Settings.VBCableDetected = false;
         WizardStatusText.Text = "Settings saved.";
     }
 }

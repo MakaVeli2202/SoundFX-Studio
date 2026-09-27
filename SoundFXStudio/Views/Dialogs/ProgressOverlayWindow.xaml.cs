@@ -22,18 +22,19 @@ public partial class ProgressOverlayWindow : Window
         StepText.Text = step;
     }
 
-    public void Complete(string finalStep = "Everything ready — have fun!")
+    public void Complete(string finalStep = "Everything ready — have fun!", bool succeeded = true)
     {
         if (!Dispatcher.CheckAccess())
         {
-            Dispatcher.BeginInvoke(() => Complete(finalStep));
+            Dispatcher.BeginInvoke(() => Complete(finalStep, succeeded));
             return;
         }
 
         Spinner.Visibility = Visibility.Collapsed;
         SpinnerGlow.Visibility = Visibility.Collapsed;
         SpinnerBright.Visibility = Visibility.Collapsed;
-        CheckIcon.Visibility = Visibility.Visible;
+        CheckIcon.Visibility = succeeded ? Visibility.Visible : Visibility.Collapsed;
+        FailureIcon.Visibility = succeeded ? Visibility.Collapsed : Visibility.Visible;
         StepText.Text = finalStep;
     }
 }

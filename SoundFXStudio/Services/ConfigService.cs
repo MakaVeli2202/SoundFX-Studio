@@ -266,13 +266,14 @@ public class ConfigService
             var existing = config.Settings.KeyboardCalibration ?? new KeyboardCalibrationSettings();
             existing.KeyOverrides ??= new Dictionary<string, KeyCalibrationOverrideSettings>();
 
-            // Once the user has anchored any key with "Set as Default" (baselines) or
-            // saved per-key overrides, the shipped calibration must NOT re-inject its
-            // ~110 per-key offsets on top of those user positions every load. Re-injecting
-            // made saved calibrations drift back to the project file's values on restart,
-            // so keys no longer matched the physical keyboard. Absent any user marks we
+            // Once the user has saved a calibration of any kind, the shipped calibration must
+            // NOT re-inject its ~110 per-key offsets on top of the saved values every load.
+            // Re-injecting made saved calibrations drift back to the project file's values on
+            // restart, so keys no longer matched the physical keyboard. Absent any user mark we
             // still seed the baseline overrides so a fresh install is pre-positioned.
-            if ((existing.KeyBaselines?.Count ?? 0) == 0 && existing.KeyOverrides.Count == 0)
+            if (!existing.IsUserCalibrated
+                && (existing.KeyBaselines?.Count ?? 0) == 0
+                && existing.KeyOverrides.Count == 0)
             {
                 MergeCalibration(existing, projectCal);
             }

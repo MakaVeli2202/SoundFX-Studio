@@ -4,7 +4,8 @@
              xmlns:models="clr-namespace:SoundFXStudio.Models"
              Foreground="#F7FAFF">
 
-    <Grid Margin="24">
+        <Grid>
+            <Grid Margin="24" Visibility="{Binding ArtTuneFeatureEnabled, Converter={StaticResource BoolToVisibilityConverter}}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -20,11 +21,11 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <StackPanel>
+                <StackPanel>
                 <TextBlock Text="ART TUNE · GAME AUDIO"
-                           Foreground="#00D4FF"
-                           FontSize="24"
-                           FontWeight="Bold"/>
+                       Foreground="#00D4FF"
+                       FontSize="24"
+                       FontWeight="Bold"/>
                 <TextBlock Text="The Art of War game audio stack (ArtTuneDB) — VB-CABLE, Voicemeeter, Equalizer APO, HeSuVi, LEQ, and tuned presets for every supported game."
                            Foreground="#A2B4CC"
                            FontSize="13"
@@ -66,7 +67,7 @@
             </StackPanel>
         </Border>
 
-        <StackPanel IsEnabled="{Binding ArtTuneFeatureEnabled}">
+        <StackPanel Visibility="{Binding ArtTuneFeatureEnabled, Converter={StaticResource BoolToVisibilityConverter}}">
         <Border Background="#14141E2D"
                 BorderBrush="#333800D4"
                 BorderThickness="1"
@@ -890,4 +891,18 @@
             </Border>
         </Grid>
     </Grid>
+    <Border Margin="24"
+            Background="#B3080D17"
+            BorderBrush="#665A6B84"
+            BorderThickness="1"
+            CornerRadius="12"
+            Visibility="{Binding ArtTuneComingSoon, Converter={StaticResource BoolToVisibilityConverter}}">
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="32">
+            <TextBlock Text="ART TUNE" Foreground="#00D4FF" FontSize="18" FontWeight="Bold"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="COMING SOON" Foreground="#F59E0B" FontSize="13" FontWeight="Bold"
+                       HorizontalAlignment="Center" Margin="0,12,0,0"/>
+        </StackPanel>
+    </Border>
+</Grid>
 </UserControl>

@@ -397,12 +397,10 @@ function Invoke-Install {
     Write-Ok ('Latest release  ' + $release.tag_name)
     Write-Info ('Size            ' + $installerSize + ' MB')
 
-    $script:TotalSteps = 2
-
-    Write-Step 1 'Downloading package'
     $totalBytes = $asset.size
     $dl = Start-Job -ArgumentList $asset.browser_download_url, $installer -ScriptBlock {
         param($uri, $out)
+        $ProgressPreference = 'SilentlyContinue'
         [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
         Invoke-WebRequest -Uri $uri -OutFile $out -UseBasicParsing
     }
@@ -418,7 +416,6 @@ function Invoke-Install {
     Write-Host ''
     Write-Ok "$($asset.name) downloaded"
 
-    Write-Step 2 "Installing $($script:AppName)"
     $p = Start-Process -FilePath $installer -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART' -PassThru
     Write-ProcessBar -Process $p -Message "Installing $($script:AppName)…"
     if ($p.ExitCode -ne 0) { Write-ErrorLine "Installer returned exit code $($p.ExitCode)." }

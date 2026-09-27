@@ -768,7 +768,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _keyboardCalibrationWindow = new KeyboardCalibrationWindow
+        _keyboardCalibrationWindow = new KeyboardCalibrationWindow(ViewModel)
         {
             Owner = this,
             HeroOverlayWidth = HeroOverlaySize.Width,
@@ -801,7 +801,6 @@ public partial class MainWindow : Window
         };
         _keyboardCalibrationWindow.CalibrationSaved += (_, _) =>
         {
-            ViewModel.RefreshCommand.Execute(null);
             ViewModel.ClearLiveKeyboardCalibration();
             ApplyOpenKeyboardButtonCalibration();
             _keyboardWindow?.RefreshPanels();

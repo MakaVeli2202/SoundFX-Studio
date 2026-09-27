@@ -21,6 +21,18 @@ namespace SoundFXStudio.Services;
 /// could silently misroute playback. Hiding the unused ones carries none of
 /// that risk since nothing in the app ever looks them up.
 /// </remarks>
+public enum VoicemeeterCleanupResult
+{
+    /// <summary>No unused Voicemeeter endpoint was active, so nothing was changed and no prompt was shown.</summary>
+    NothingToHide,
+
+    /// <summary>Unused endpoints were disabled and verified.</summary>
+    Completed,
+
+    /// <summary>An endpoint could not be identified, UAC was declined, or a registry write failed.</summary>
+    Failed
+}
+
 public static class VoicemeeterEndpointCleanupService
 {
     private const string PkeyFriendly = "{a45c254e-df1c-4efd-8020-67d146a850e0},2";
@@ -32,29 +44,33 @@ public static class VoicemeeterEndpointCleanupService
     /// Disables every active Voicemeeter endpoint except the given used
     /// render/capture ones. IDs are NAudio MMDevice.ID strings (the trailing
     /// {guid} is extracted to match the registry key name).
-    /// Returns true if nothing needed elevating, or the elevated import
-    /// succeeded; false if the user declined UAC or it failed.
+    /// Returns <see cref="VoicemeeterCleanupResult.Failed"/> if either used endpoint
+    /// cannot be identified, UAC is declined, or any requested endpoint state fails
+    /// its registry read-back.
     /// </summary>
-    public static async Task<bool> CleanupAsync(string? usedRenderDeviceId, string? usedCaptureDeviceId)
+    public static async Task<VoicemeeterCleanupResult> CleanupAsync(string? usedRenderDeviceId, string? usedCaptureDeviceId)
     {
         var usedRenderGuid = ExtractGuid(usedRenderDeviceId);
         var usedCaptureGuid = ExtractGuid(usedCaptureDeviceId);
+        if (usedRenderGuid is null || usedCaptureGuid is null) return VoicemeeterCleanupResult.Failed;
 
-        var regBlocks = new List<string>();
-        regBlocks.AddRange(BuildDisableBlocks(PmDevRender, usedRenderGuid));
-        regBlocks.AddRange(BuildDisableBlocks(PmDevCapture, usedCaptureGuid));
+        var endpointPaths = new List<string>();
+        endpointPaths.AddRange(GetUnusedEndpointPaths(PmDevRender, usedRenderGuid));
+        endpointPaths.AddRange(GetUnusedEndpointPaths(PmDevCapture, usedCaptureGuid));
 
-        if (regBlocks.Count == 0) return true; // nothing unused to hide
+        if (endpointPaths.Count == 0) return VoicemeeterCleanupResult.NothingToHide;
 
-        var regFile = Path.Combine(Path.GetTempPath(), $"sfx-vm-cleanup-{Guid.NewGuid():N}.reg");
-        var regContent = "Windows Registry Editor Version 5.00\r\n\r\n" + string.Join("\r\n\r\n", regBlocks);
-        await File.WriteAllTextAsync(regFile, regContent, Encoding.ASCII);
-
-        var script =
-            $"regedit /s \"{regFile}\"; " +
-            "Restart-Service -Name Audiosrv -Force -ErrorAction SilentlyContinue; " +
-            "Start-Sleep -Milliseconds 500; " +
-            $"Remove-Item \"{regFile}\" -Force -ErrorAction SilentlyContinue";
+        var quotedPaths = string.Join(",", endpointPaths.Select(path => $"'{path}'"));
+        var script = $@"
+$ErrorActionPreference = 'Stop'
+try {{
+    foreach ($path in @({quotedPaths})) {{
+        Set-ItemProperty -LiteralPath $path -Name DeviceState -Value 2 -ErrorAction Stop
+        if ((Get-ItemProperty -LiteralPath $path -Name DeviceState -ErrorAction Stop).DeviceState -ne 2) {{ exit 2 }}
+    }}
+    Restart-Service -Name Audiosrv -Force -ErrorAction Stop
+    exit 0
+}} catch {{ exit 1 }}";
         var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
 
         var psi = new ProcessStartInfo
@@ -70,22 +86,22 @@ public static class VoicemeeterEndpointCleanupService
         try
         {
             using var process = Process.Start(psi);
-            if (process is null) return false;
+            if (process is null) return VoicemeeterCleanupResult.Failed;
             await process.WaitForExitAsync();
-            return process.ExitCode == 0;
+            return process.ExitCode == 0 ? VoicemeeterCleanupResult.Completed : VoicemeeterCleanupResult.Failed;
         }
         catch
         {
             // UAC declined, or elevation unavailable — leave devices as they are.
-            return false;
+            return VoicemeeterCleanupResult.Failed;
         }
     }
 
-    private static List<string> BuildDisableBlocks(string registryRoot, string? usedGuid)
+    private static List<string> GetUnusedEndpointPaths(string registryRoot, string usedGuid)
     {
-        var blocks = new List<string>();
+        var paths = new List<string>();
         using var root = Registry.LocalMachine.OpenSubKey(registryRoot);
-        if (root is null) return blocks;
+        if (root is null) return paths;
 
         foreach (var guid in root.GetSubKeyNames())
         {
@@ -99,15 +115,23 @@ public static class VoicemeeterEndpointCleanupService
             var friendly = props?.GetValue(PkeyFriendly) as string ?? string.Empty;
             if (!friendly.Contains("Voicemeeter", StringComparison.OrdinalIgnoreCase)) continue;
 
-            blocks.Add($"[HKEY_LOCAL_MACHINE\\{registryRoot}\\{guid}]\r\n\"DeviceState\"=dword:00000002");
+            paths.Add($@"HKLM:\{registryRoot}\{guid}");
         }
-        return blocks;
+        return paths;
     }
 
     private static int? SafeInt(object? value)
     {
-        try { return value is null ? null : Convert.ToInt32(value); }
-        catch { return null; }
+        return value switch
+        {
+            int i => i,
+            uint u => (int)u,
+            long l => (int)l,
+            short s => s,
+            byte b => b,
+            string s when int.TryParse(s, out var parsed) => parsed,
+            _ => null
+        };
     }
 
     private static string? ExtractGuid(string? mmDeviceId)
