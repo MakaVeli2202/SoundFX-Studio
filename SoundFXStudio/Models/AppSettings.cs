@@ -59,6 +59,7 @@ public class AppSettings : ObservableObject
     private string _savedDefaultRenderId = string.Empty;
     private string _savedDefaultCaptureId = string.Empty;
     private bool _voicemeeterDetected;
+    private bool _voicemeeterEndpointsCleaned;
 
     // Hotkey mode (migrated from MyBoard)
     private string _soundboardToggleKey = "Insert";
@@ -368,6 +369,14 @@ public class AppSettings : ObservableObject
     {
         get => _voicemeeterDetected;
         set => SetProperty(ref _voicemeeterDetected, value);
+    }
+
+    // Set once VoicemeeterEndpointCleanupService has renamed the used endpoints
+    // and disabled the rest, so it never re-prompts for elevation on later runs.
+    public bool VoicemeeterEndpointsCleaned
+    {
+        get => _voicemeeterEndpointsCleaned;
+        set => SetProperty(ref _voicemeeterEndpointsCleaned, value);
     }
 
     // ─── Hotkey mode properties ────────────────────────────────────────────

@@ -3265,6 +3265,22 @@ public sealed class MainViewModel : ObservableObject
 
                 Save();
 
+                // One-time: rename the two endpoints we actually route through and hide
+                // the rest of Voicemeeter's endpoints from Windows' Sound flyout. Fires
+                // a single UAC prompt; never repeats once it succeeds.
+                if (haveRender && haveCapture && !Settings.VoicemeeterEndpointsCleaned)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        var cleaned = await VoicemeeterEndpointCleanupService.CleanupAsync(vmInputId, vmOutputId);
+                        if (cleaned)
+                        {
+                            Settings.VoicemeeterEndpointsCleaned = true;
+                            try { Save(); } catch { /* best effort */ }
+                        }
+                    });
+                }
+
                 var result = $"✓  Audio configured:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
 
                 if (haveRender)
