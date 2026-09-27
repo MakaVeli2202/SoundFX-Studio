@@ -213,6 +213,7 @@ public sealed class KeyboardLayoutPanel : Panel
     public static void SetKeyBaseline(string keyId, double x, double y, double width, double height)
     {
         KeyBaselines[keyId] = new KeyBaseline(x, y, width, height);
+        NotifyCalibrationChanged();
     }
 
     public static void ClearKeyBaselines()

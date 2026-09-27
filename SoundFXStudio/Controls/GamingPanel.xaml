@@ -10,6 +10,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- HEADER -->
@@ -50,6 +51,21 @@
 
         <!-- ART TUNE STACK -->
         <StackPanel Grid.Row="1">
+
+        <Border Background="#14141E2D"
+                BorderBrush="#333800D4"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="16,12"
+                Margin="0,0,0,14">
+            <StackPanel Orientation="Horizontal">
+                <Border Width="10" Height="34" CornerRadius="5"
+                        Background="{Binding ArtTuneGuidanceAccent}"
+                        VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <TextBlock Text="{Binding ArtTuneGuidance}" Foreground="#DCE6F5" FontSize="12.5"
+                           TextWrapping="Wrap" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
 
         <Border
                 Background="#1A141E2D"
@@ -195,15 +211,18 @@
                 Padding="14"
                 Margin="0,0,0,14"
                 Visibility="{Binding HasArtTuneLog, Converter={StaticResource BoolToVisibilityConverter}}">
-            <TextBox Text="{Binding ArtTuneRunLog, Mode=OneWay}"
-                     IsReadOnly="True"
-                     TextWrapping="Wrap"
-                     MaxHeight="180"
-                     VerticalScrollBarVisibility="Auto"
-                     Background="#0B1626"
-                     Foreground="#A9F5C1"
-                     FontFamily="Consolas" FontSize="11.5"
-                     BorderThickness="0"/>
+            <StackPanel>
+                <TextBlock Text="RUN LOG" Foreground="#00D4FF" FontSize="10.5" FontWeight="Bold" Margin="0,0,0,6"/>
+                <TextBox Text="{Binding ArtTuneRunLog, Mode=OneWay}"
+                         IsReadOnly="True"
+                         TextWrapping="Wrap"
+                         MaxHeight="180"
+                         VerticalScrollBarVisibility="Auto"
+                         Background="#0B1626"
+                         Foreground="#A9F5C1"
+                         FontFamily="Consolas" FontSize="11.5"
+                         BorderThickness="0"/>
+            </StackPanel>
         </Border>
 
         </StackPanel>

@@ -1416,6 +1416,8 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
                 OnPropertyChanged(nameof(MissingComponents));
                 OnPropertyChanged(nameof(ArtTuneStatusText));
                 OnPropertyChanged(nameof(StackStateDescription));
+                OnPropertyChanged(nameof(ArtTuneGuidance));
+                OnPropertyChanged(nameof(ArtTuneGuidanceAccent));
             }
         }
     }
@@ -1461,7 +1463,37 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
 
     public string StackStateDescription => StackReady
         ? "Art Tune stack installed — pick a game + version and hit Apply."
-        : "Art Tune stack not installed. Run one-click install to match ArtTuneDB.";
+        : "Art Tune stack not installed. Run 1-CLICK INSTALL STACK to match ArtTuneDB.";
+
+    public string ArtTuneGuidance
+    {
+        get
+        {
+            if (!StackReady)
+                return "Run 1-CLICK INSTALL STACK below to install the full ArtTuneDB audio chain.";
+            if (_artTuneTuning.Health == ArtTuneTuningHealth.Active)
+                return "Tuning is live — just launch the game. Audio routes through Art Tune automatically, no extra switch needed.";
+            if (_artTuneTuning.Health == ArtTuneTuningHealth.Partial)
+                return "Almost there — check the status line below, then fix the issue (usually re-run APPLY TUNE).";
+            if (ArtTuneVersions.Count == 0)
+                return "Stack installed, but no tune versions were found in the library. Re-run 1-CLICK INSTALL STACK.";
+            return "Pick your game + version, then press APPLY TUNE. After that, just start the game.";
+        }
+    }
+
+    public System.Windows.Media.Brush ArtTuneGuidanceAccent
+    {
+        get
+        {
+            if (!StackReady) return CreateColor(0x00, 0xD4, 0xFF);
+            return _artTuneTuning.Health switch
+            {
+                ArtTuneTuningHealth.Active => CreateColor(0x22, 0xC5, 0x5E),
+                ArtTuneTuningHealth.Partial => CreateColor(0xF5, 0x9E, 0x0B),
+                _ => CreateColor(0x00, 0xD4, 0xFF)
+            };
+        }
+    }
 
     public string ArtTuneStatusText
     {
@@ -1545,6 +1577,8 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
             _ => CreateColor(0xE8, 0x55, 0x55)
         };
         TuningHealthDetail = v.Summary;
+        OnPropertyChanged(nameof(ArtTuneGuidance));
+        OnPropertyChanged(nameof(ArtTuneGuidanceAccent));
     }
 
     private static System.Windows.Media.Brush CreateColor(byte r, byte g, byte b) =>
@@ -1589,6 +1623,11 @@ public sealed class GamingViewModel : ObservableObject, IDisposable
         _installedTuneVersions = ArtTuneStackService.EnumerateLibrary();
         foreach (var v in _installedTuneVersions)
             ArtTuneVersions.Add($"{v.Game}  {v.Version}");
+        if (ArtTuneVersions.Count > 0 &&
+            string.IsNullOrWhiteSpace(_selectedArtTuneVersion))
+        {
+            SelectedArtTuneVersion = ArtTuneVersions[0];
+        }
         OnPropertyChanged(nameof(HasArtTuneSixteenCh));
         VerifyArtTuneTuning();
     }

@@ -41,7 +41,7 @@ $script:AppName    = 'SoundFX Studio'
 $script:AppExe     = Join-Path $env:ProgramFiles "SoundFX Studio\SoundFXStudio.exe"
 $script:AppDataDir = Join-Path $env:APPDATA 'SoundFXStudio'
 $script:AppId      = '{A2B3C4D5-E6F7-4812-9ABC-DEF012345678}'
-$script:SfxVersion = '1.0.3'
+$script:SfxVersion = '1.0.4'
 $script:BoxWidth   = 76
 $script:ScreenWidth = 120
 $script:BoxMargin  = ' ' * [Math]::Floor(($script:ScreenWidth - $script:BoxWidth - 2) / 2)
@@ -173,8 +173,9 @@ function Invoke-WaitSpinner {
 }
 
 function Write-ProcessBar {
-    # Real-time animated fill bar while a process runs - ONE line that keeps
-    # overwriting itself (4% -> 8% -> 12% ...), never a printed list of bars.
+    # Indeterminate "please wait" sweep while a silent installer runs - it has
+    # no progress to report, so DO NOT fake 0->100 completion repeatedly.
+    # The real 100% line is printed exactly once, when the process has exited.
     param(
         [System.Diagnostics.Process]$Process,
         [string]$Message
@@ -183,14 +184,29 @@ function Write-ProcessBar {
         $Process.WaitForExit()
         return
     }
-    $frame = 0
+    $barWidth = 24
+    $sweep = 0
     while (-not $Process.HasExited) {
-        Write-BarLine -Percent (($frame * 4) % 101) -Message $Message
-        $frame++
-        Start-Sleep -Milliseconds 120
+        $bar = ([string][char]0x2591) * $barWidth
+        # a 4-cell block sweeps left -> right -> back
+        for ($k = $sweep; $k -lt [Math]::Min($sweep + 4, $barWidth); $k++) {
+            $bar = $bar.Substring(0, $k) + [char]0x2588 + $bar.Substring($k + 1)
+        }
+        Write-BarLineRaw -Bar $bar -Text "$Message (please wait)"
+        $sweep = ($sweep + 1) % ($barWidth - 3)
+        Start-Sleep -Milliseconds 110
     }
-    Write-BarLine -Percent 100 -Message 'Installing SoundFX Studio... done'
+    Write-BarLine -Percent 100 -Message "$Message done"
     Write-Host ''
+}
+
+function Write-BarLineRaw {
+    param([string]$Bar, [string]$Text)
+    if ([Console]::IsOutputRedirected) { return }
+    $line = "$($script:BoxMargin)[$Bar]  $Text"
+    $max = (Get-ConsoleWidth) - 1
+    if ($line.Length -gt $max) { $line = $line.Substring(0, $max) }
+    Write-Host "`r$line" -NoNewline
 }
 
 function Test-IsAdmin {
@@ -232,9 +248,9 @@ function Get-LaunchChoice {
     while ($true) {
         Write-Host ''
         $null = Write-CenteredBlock @(
-            @{ Text = '[1] / [l]  Launch SoundFX Studio now'; Color = 'White' }
-            @{ Text = '[2] / [m]  Back to main menu'; Color = $C.Muted }
-            @{ Text = '[3] / [q]  Quit'; Color = $C.Muted }
+            @{ Text = '[1] Launch SoundFX Studio now'; Color = 'White' }
+            @{ Text = '[2] Back to main menu'; Color = $C.Muted }
+            @{ Text = '[3] Quit'; Color = $C.Muted }
         )
         Write-Host ''
         Write-Host "$($script:BoxMargin)Choice: " -ForegroundColor $C.Warning -NoNewline

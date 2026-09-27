@@ -1555,12 +1555,12 @@ public partial class KeyboardCalibrationWindow : Window, INotifyPropertyChanged
         }
 
         var parts = tag.Split(':', 2);
-        if (parts.Length != 2 || !string.Equals(parts[1].Trim(), "key", StringComparison.OrdinalIgnoreCase))
+        if (parts.Length != 2 || !parts[1].Trim().EndsWith("key", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
-        var sign = parts[1].StartsWith("-", StringComparison.Ordinal) ? -1d : 1d;
+        var sign = parts[1].Trim().StartsWith("-", StringComparison.Ordinal) ? -1d : 1d;
         var delta = (PreviewKeyUnit + PreviewGapX) * sign;
 
         if (string.Equals(parts[0], "X", StringComparison.OrdinalIgnoreCase))

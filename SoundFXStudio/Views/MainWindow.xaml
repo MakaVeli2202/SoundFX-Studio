@@ -1098,7 +1098,10 @@
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
-                <controls:GamingPanel x:Name="GamingPanelControl" DataContext="{Binding Gaming}"/>
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <controls:GamingPanel x:Name="GamingPanelControl" DataContext="{Binding Gaming}"/>
+                </ScrollViewer>
             </Border>
 
             <!-- Library Page (tile grid) — MyBoard design with dark theme -->
