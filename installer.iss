@@ -1,6 +1,6 @@
 [Setup]
 AppName=SoundFX Studio
-AppVersion=1.0.7
+AppVersion=1.0.8
 AppPublisher=SoundFX Studio
 AppId={{A2B3C4D5-E6F7-4812-9ABC-DEF012345678}
 DefaultDirName={autopf}\SoundFX Studio

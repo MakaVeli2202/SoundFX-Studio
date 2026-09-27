@@ -3092,8 +3092,8 @@ public sealed class MainViewModel : ObservableObject
             loader.Show();
             await Task.Delay(450);
 
-            var output = PickBestDevice(OutputDevices, preferVirtual: false);
-            var input = PickBestDevice(InputDevices, preferVirtual: false);
+            var output = PickWindowsSelectedDevice(OutputDevices, DataFlow.Render);
+            var input = PickWindowsSelectedDevice(InputDevices, DataFlow.Capture);
             if (output is not null)
             {
                 Settings.OutputDeviceId = output.Id;
@@ -3115,7 +3115,7 @@ public sealed class MainViewModel : ObservableObject
 
             var outputName = output?.Name ?? "no output device";
             var inputName = input?.Name ?? "no input device";
-            StatusText = $"Auto-configured audio: {outputName} / {inputName}";
+            StatusText = $"Auto-configured audio to your selected devices: {outputName} / {inputName}";
 
             loader.SetStatus("Setup complete. Discord input profile should be Studio.");
             await Task.Delay(500);
@@ -3216,21 +3216,10 @@ public sealed class MainViewModel : ObservableObject
                     }
                 }
 
-                if (haveRender)
-                {
-                    Settings.OutputDeviceId = vmInputId!;
-                    Settings.PlaybackDeviceId = vmInputId!;
-                }
-
-                if (haveCapture)
-                {
-                    Settings.InputDeviceId = vmOutputId!;
-                    Settings.MicrophoneDeviceId = vmOutputId!;
-                }
-
                 Save();
 
-                var result = $"✓  Configured for Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}";
+                var result = $"✓  Configured for Voicemeeter:\n   Hear: {hearDevice.Name}\n   Talk: {talkDevice.Name}"
+                           + "\n   App INPUT/OUTPUT: kept on your selected devices";
 
                 if (haveRender)
                 {
@@ -3319,10 +3308,11 @@ public sealed class MainViewModel : ObservableObject
         Settings.HearDeviceName = string.Empty;
         Settings.TalkDeviceName = string.Empty;
         Settings.VoicemeeterDetected = false;
+        RestoreAppDeviceSelectionFromSystem();
         Save();
 
         var line2 = restoredDefaults
-            ? "✓  Windows defaults restored. App device selection kept."
+            ? "✓  Windows defaults restored. App input/output selection is back on those devices."
             : string.IsNullOrWhiteSpace(previousRender) && string.IsNullOrWhiteSpace(previousCapture)
                 ? "⚠  No saved Windows defaults to restore."
                 : "⚠  Windows restore failed — will retry on next start.";
@@ -3385,10 +3375,54 @@ public sealed class MainViewModel : ObservableObject
             }
 
             RefreshSavedWindowsDefaults();
+            RestoreAppDeviceSelectionFromSystem();
         }
         catch (Exception ex)
         {
             _logService?.Error("Windows default reconcile failed on startup", ex);
+        }
+    }
+
+    /// <summary>
+    /// The app's INPUT/OUTPUT pickers must always show the devices Windows has selected,
+    /// never a Voicemeeter endpoint. Voicemeeter setup only applies routing here - the
+    /// soundboard and voice changer resolve Voicemeeter Input themselves whenever
+    /// Voicemeeter is running, so the pickers never needed to move onto the virtual bus.
+    /// Runs on every startup so a config saved by an older build repairs itself, and
+    /// again after every reset.
+    /// </summary>
+    private void RestoreAppDeviceSelectionFromSystem()
+    {
+        var vmInput = _audioDeviceService.GetVoicemeeterInputId();
+        var vmOutput = _audioDeviceService.GetVoicemeeterOutputId();
+
+        var outputs = OutputDevices.Count > 0 ? OutputDevices.ToList() : _audioDeviceService.GetOutputDevices().ToList();
+        var inputs = InputDevices.Count > 0 ? InputDevices.ToList() : _audioDeviceService.GetInputDevices().ToList();
+
+        var outputId = AudioDeviceSelection.ResolveIfVoicemeeter(
+            Settings.OutputDeviceId, Settings.SavedDefaultRenderId, outputs, vmInput);
+        var inputId = AudioDeviceSelection.ResolveIfVoicemeeter(
+            Settings.InputDeviceId, Settings.SavedDefaultCaptureId, inputs, vmOutput);
+
+        bool changed = false;
+        if (outputId is not null)
+        {
+            Settings.OutputDeviceId = outputId;
+            Settings.PlaybackDeviceId = outputId;
+            changed = true;
+        }
+
+        if (inputId is not null)
+        {
+            Settings.InputDeviceId = inputId;
+            Settings.MicrophoneDeviceId = inputId;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            _logService?.Info("App INPUT/OUTPUT was left on a Voicemeeter endpoint - restored the selected Windows devices.");
+            Save();
         }
     }
 
@@ -3633,6 +3667,47 @@ public sealed class MainViewModel : ObservableObject
         }
 
         return path;
+    }
+
+    /// <summary>
+    /// Auto-config has to land on the devices the user has selected in Windows, not on a
+    /// guess and never on a Voicemeeter endpoint. Windows' current default wins, then the
+    /// device saved before Voicemeeter took the bus, then the normal best-device pick.
+    /// </summary>
+    private AudioDeviceInfo? PickWindowsSelectedDevice(IEnumerable<AudioDeviceInfo> devices, DataFlow flow)
+    {
+        var list = devices.ToList();
+        if (list.Count == 0)
+        {
+            return null;
+        }
+
+        var vmId = flow == DataFlow.Render
+            ? _audioDeviceService.GetVoicemeeterInputId()
+            : _audioDeviceService.GetVoicemeeterOutputId();
+
+        var currentDefault = flow == DataFlow.Render
+            ? _audioDeviceService.GetDefaultDeviceId(DataFlow.Render)
+            : _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
+        var savedId = flow == DataFlow.Render
+            ? Settings.SavedDefaultRenderId
+            : Settings.SavedDefaultCaptureId;
+
+        foreach (var candidate in new[] { currentDefault, savedId })
+        {
+            if (string.IsNullOrWhiteSpace(candidate) || AudioDeviceSelection.IsVoicemeeterEndpoint(candidate, vmId))
+            {
+                continue;
+            }
+
+            var match = list.FirstOrDefault(d => string.Equals(d.Id, candidate, StringComparison.OrdinalIgnoreCase));
+            if (match is not null)
+            {
+                return match;
+            }
+        }
+
+        return PickBestDevice(list, preferVirtual: false);
     }
 
     private static AudioDeviceInfo? PickBestDevice(IEnumerable<AudioDeviceInfo> devices, bool preferVirtual)

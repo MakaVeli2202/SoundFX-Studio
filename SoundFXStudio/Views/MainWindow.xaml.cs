@@ -1180,9 +1180,11 @@ public partial class MainWindow : Window
         var reboundInput = audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
         var verified = inputApplied && string.Equals(reboundInput, vmOutputId, StringComparison.OrdinalIgnoreCase);
 
+        // Voicemeeter routing only. The app's own INPUT/OUTPUT pickers stay on the devices
+        // the user has selected, and the soundboard/voice changer resolve Voicemeeter Input
+        // themselves while Voicemeeter runs. Enabling B1 on the first virtual strip is what
+        // actually routes the app mic into the Voicemeeter B1 bus.
         config.Settings.VoicemeeterDetected = true;
-        config.Settings.InputDeviceId = vmOutputId;
-        config.Settings.MicrophoneDeviceId = vmOutputId;
         configService.Save(config);
 
         ViewModel.Refresh();
@@ -1202,11 +1204,12 @@ public partial class MainWindow : Window
             }
         }
 
-        SetAdvancedVmStatus(verified
-            ? virtualB1Activated
-                ? "✓ Windows input → VoiceMeeter Output (B1). Virtual Input B1 also enabled."
-                : "✓ Windows input → VoiceMeeter Output (B1). Output device left unchanged."
-            : "⚠ Windows input → VoiceMeeter Output (B1) not confirmed. Output device left unchanged.",
+        SetAdvancedVmStatus((verified
+            ? "✓ Windows input → VoiceMeeter Output (B1)."
+            : "⚠ Windows input → VoiceMeeter Output (B1) not confirmed.")
+            + (virtualB1Activated
+                ? " Virtual Input B1 also enabled."
+                : " App INPUT/OUTPUT left on your selected devices."),
             verified
                 ? Color.FromRgb(0x10, 0xB9, 0x81)
                 : Color.FromRgb(0xF5, 0x9E, 0x0B));

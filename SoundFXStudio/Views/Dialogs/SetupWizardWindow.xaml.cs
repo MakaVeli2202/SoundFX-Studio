@@ -186,12 +186,13 @@ public partial class SetupWizardWindow : Window
                     var reboundInput = _audioDeviceService.GetDefaultDeviceId(DataFlow.Capture);
                     var verified = inputApplied && string.Equals(reboundInput, vmOutputId, StringComparison.OrdinalIgnoreCase);
 
-                    _config.Settings.InputDeviceId = vmOutputId;
-                    _config.Settings.MicrophoneDeviceId = vmOutputId;
+                    // Routing only - the app's own INPUT/OUTPUT pickers keep the devices the
+                    // user has selected in Windows.
+                    RestoreAppDeviceSelection();
 
                     result = $"✓ Voicemeeter configured:\n   Hear: {hear.Name}\n   Talk: {talk.Name}\n   " +
                         (verified
-                            ? "✓ Windows input → VoiceMeeter Output (B1)"
+                            ? "✓ Windows input → VoiceMeeter Output (B1)\n   App INPUT/OUTPUT: kept on your selected devices"
                             : "⚠  Windows input → VoiceMeeter Output (B1) not confirmed");
                 }
 
@@ -259,6 +260,7 @@ public partial class SetupWizardWindow : Window
         }
 
         WizardResetWindowsBtn.IsEnabled = true;
+        RestoreAppDeviceSelection();
         WizardStatusText.Text = $"{windowsResult}\n{vmResult}";
         WizardStatusText.Foreground = new System.Windows.Media.SolidColorBrush(vmResult.StartsWith("✓")
             ? System.Windows.Media.Color.FromRgb(0x10, 0xB9, 0x81)
@@ -287,6 +289,43 @@ public partial class SetupWizardWindow : Window
     {
         _config.Settings.VirtualCableDeviceId = string.Empty;
         _config.Settings.VBCableDetected = false;
+        RestoreAppDeviceSelection();
         WizardStatusText.Text = "Settings saved.";
+    }
+
+    /// <summary>
+    /// Repairs an app INPUT/OUTPUT selection that points at a Voicemeeter endpoint - older
+    /// builds wrote VoiceMeeter Input / Out B1 into settings while applying routing, which
+    /// moved the pickers off the user's real hardware. Restores the devices Windows has
+    /// selected; a genuine user choice is left alone.
+    /// </summary>
+    private void RestoreAppDeviceSelection()
+    {
+        var vmInput = _audioDeviceService.GetVoicemeeterInputId();
+        var vmOutput = _audioDeviceService.GetVoicemeeterOutputId();
+
+        var outputId = AudioDeviceSelection.ResolveIfVoicemeeter(
+            _config.Settings.OutputDeviceId,
+            _config.Settings.SavedDefaultRenderId,
+            _audioDeviceService.GetOutputDevices(),
+            vmInput);
+
+        var inputId = AudioDeviceSelection.ResolveIfVoicemeeter(
+            _config.Settings.InputDeviceId,
+            _config.Settings.SavedDefaultCaptureId,
+            _audioDeviceService.GetInputDevices(),
+            vmOutput);
+
+        if (outputId is not null)
+        {
+            _config.Settings.OutputDeviceId = outputId;
+            _config.Settings.PlaybackDeviceId = outputId;
+        }
+
+        if (inputId is not null)
+        {
+            _config.Settings.InputDeviceId = inputId;
+            _config.Settings.MicrophoneDeviceId = inputId;
+        }
     }
 }
