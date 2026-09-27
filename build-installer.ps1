@@ -21,9 +21,18 @@ if ($PublishOnly) { Write-Host 'Publish complete (PublishOnly specified).'; exit
 
 $iscc = Get-Command iscc.exe -ErrorAction SilentlyContinue
 if ($null -eq $iscc) {
-    Write-Host 'Inno Setup compiler (ISCC.exe) not found on PATH.'
-    Write-Host 'Install Inno Setup and ensure ISCC.exe is on PATH, then re-run this script.'
-    Write-Host 'Alternatively, open installer.iss in Inno Setup IDE and compile it manually.'
+    # A per-user Inno Setup install is not on PATH, so check the usual spots.
+    $candidates = @(@(
+        (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe'),
+        (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe')
+    ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) })
+    if ($candidates) { $iscc = [pscustomobject]@{ Path = $candidates[0] } }
+}
+if ($null -eq $iscc) {
+    Write-Host 'Inno Setup compiler (ISCC.exe) not found on PATH or in the standard install folders.'
+    Write-Host 'Install Inno Setup (winget install JRSoftware.InnoSetup), then re-run this script.'
+    Write-Host 'Alternatively, open installer.iss in the Inno Setup IDE and compile it manually.'
     exit 1
 }
 
