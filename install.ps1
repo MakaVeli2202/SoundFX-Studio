@@ -37,6 +37,7 @@ $C = @{
 }
 
 $script:repo       = 'MakaVeli2202/SoundFX-Studio'
+$script:InstallUrl = 'https://raw.githubusercontent.com/MakaVeli2202/SoundFX-Studio/main/install.ps1'
 $script:AppName    = 'SoundFX Studio'
 $script:AppExe     = Join-Path $env:ProgramFiles "SoundFX Studio\SoundFXStudio.exe"
 $script:AppDataDir = Join-Path $env:APPDATA 'SoundFXStudio'
@@ -45,6 +46,80 @@ $script:SfxVersion = '1.0.5'
 $script:BoxWidth   = 76
 $script:ScreenWidth = 120
 $script:BoxMargin  = ' ' * [Math]::Floor(($script:ScreenWidth - $script:BoxWidth - 2) / 2)
+
+# ------------------------------------------------------------- self-elevate ---
+# Voicemeeter installs drivers, so the whole script needs an elevated token. Without
+# this the script used to print one line and exit, which - when launched with
+# `irm | iex` - closed the window before the message could be read. Relaunch
+# ourselves as admin instead, carrying the original command line across.
+
+function Test-Elevated {
+    $id = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($id)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+function Restart-Elevated {
+    # `irm | iex` runs from memory, so there is no file to re-run. Save a copy
+    # first - the relaunch has to be able to read itself back off disk.
+    $self = $script:SelfPath
+    if ([string]::IsNullOrWhiteSpace($self) -or -not (Test-Path -LiteralPath $self)) {
+        $self = Join-Path $env:TEMP 'SoundFXStudio-install.ps1'
+        Write-Host 'Saving a copy of the installer so it can restart as administrator...'
+        Invoke-WebRequest -Uri $script:InstallUrl -OutFile $self -UseBasicParsing
+    }
+
+    $argList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$self`"") + @($args)
+    $proc = Start-Process powershell.exe -Verb RunAs -ArgumentList $argList -PassThru
+    Write-Host ''
+    Write-Host 'Reopened as administrator in a new window. This one can be closed.'
+    return $proc
+}
+
+$script:IsElevated = Test-Elevated
+
+# Captured here at script scope on purpose: inside Restart-Elevated,
+# $MyInvocation.MyCommand.Path would describe the function, not this script.
+$script:SelfPath = $MyInvocation.MyCommand.Path
+
+# -CheckUpdate only reads the GitHub API, so don't drag it through a UAC prompt.
+$script:IsReadOnlyRun = (@($args | Where-Object { $_ -notmatch '^-(checkupdate|silent)$' }).Count -eq 0) `
+    -and (@($args | Where-Object { $_ -match '^-(checkupdate)$' }).Count -gt 0)
+
+if (-not $script:IsElevated -and -not $script:IsReadOnlyRun) {
+    Write-Host ''
+    Write-Host '  SoundFX Studio installer needs administrator rights.' -ForegroundColor Yellow
+    Write-Host '  Voicemeeter installs an audio driver, so Windows will ask you to allow it.' -ForegroundColor DarkGray
+    Write-Host ''
+    try {
+        $null = Restart-Elevated
+        exit 0
+    }
+    catch {
+        Write-Host ''
+        Write-Host '  Could not restart as administrator automatically.' -ForegroundColor Red
+        Write-Host '  Right-click PowerShell -> "Run as administrator", then re-run:' -ForegroundColor Yellow
+        Write-Host ''
+        Write-Host "    irm $script:InstallUrl | iex" -ForegroundColor DarkGray
+        Write-Host ''
+        $null = Read-Host '  Press Enter to close'
+        exit 1
+    }
+}
+
+# A terminating error mid-install used to kill the window with no explanation.
+trap {
+    Write-Host ''
+    Write-Host "  $($_.Exception.Message)" -ForegroundColor Red
+    if ($_.InvocationInfo -and $_.InvocationInfo.ScriptLineNumber -gt 0) {
+        Write-Host "  at line $($_.InvocationInfo.ScriptLineNumber): $($_.InvocationInfo.Line.Trim())" -ForegroundColor DarkGray
+    }
+    Write-Host ''
+    if ($args -notcontains '-Silent' -and $args -notcontains '-silent') {
+        $null = Read-Host '  Press Enter to close'
+    }
+    break
+}
 
 # ---------------------------------------------------------------- helpers ---
 
