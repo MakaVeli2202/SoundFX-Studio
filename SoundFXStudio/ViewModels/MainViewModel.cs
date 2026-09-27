@@ -207,6 +207,7 @@ public sealed class MainViewModel : ObservableObject
             status => StatusText = status,
             Settings);
         ReconcileWindowsDefaultsOnStartup();
+        CleanupVoicemeeterEndpointsIfNeeded();
         InitializeKeybindings();
         UpdateTitle();
 
@@ -3456,6 +3457,29 @@ public sealed class MainViewModel : ObservableObject
         {
             _logService?.Error("Windows default reconcile failed on startup", ex);
         }
+    }
+
+    // Runs on every startup, but only ever does work once: hides Voicemeeter's
+    // unused endpoints as soon as they exist (right after install), instead of
+    // waiting for the user to run Configure. By the time they open the wizard,
+    // Windows' own device list is already down to what they actually need.
+    private void CleanupVoicemeeterEndpointsIfNeeded()
+    {
+        if (Settings.VoicemeeterEndpointsCleaned) return;
+
+        var vmInputId = _audioDeviceService.GetVoicemeeterInputId();
+        var vmOutputId = _audioDeviceService.GetVoicemeeterOutputId();
+        if (string.IsNullOrWhiteSpace(vmInputId) && string.IsNullOrWhiteSpace(vmOutputId)) return;
+
+        _ = Task.Run(async () =>
+        {
+            var cleaned = await VoicemeeterEndpointCleanupService.CleanupAsync(vmInputId, vmOutputId);
+            if (cleaned)
+            {
+                Settings.VoicemeeterEndpointsCleaned = true;
+                try { Save(); } catch { /* best effort */ }
+            }
+        });
     }
 
     private void RefreshSavedWindowsDefaults()
